@@ -4,8 +4,9 @@ import { ArticleCard } from "@/components/ui/article-card";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { ARTICLES } from "@/data/dummy";
 
-export default function CategoryPage({ params }: { params: { category: string } }) {
-    const categoryTitle = params.category ? params.category.replace(/-/g, " ") : "News";
+export default async function CategoryPage({ params }: { params: Promise<{ category: string }> }) {
+    const { category } = await params;
+    const categoryTitle = category ? category.replace(/-/g, " ") : "News";
     const categoryArticles = ARTICLES; // Mock data
 
     return (
