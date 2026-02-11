@@ -1,0 +1,41 @@
+import { MetadataRoute } from "next";
+import { ARTICLES, SECTORS } from "@/data/dummy";
+
+export default function sitemap(): MetadataRoute.Sitemap {
+    const baseUrl = "https://energdive.com";
+
+    const staticRoutes = [
+        "",
+        "/news",
+        "/reports",
+        "/opinion",
+        "/magazine",
+        "/events",
+        "/data",
+        "/search",
+        "/subscribe",
+        "/login",
+        "/register",
+    ].map((route) => ({
+        url: `${baseUrl}${route}`,
+        lastModified: new Date(),
+        changeFrequency: "daily" as const,
+        priority: route === "" ? 1 : 0.8,
+    }));
+
+    const articleRoutes = ARTICLES.map((article) => ({
+        url: `${baseUrl}/news/${article.slug}`,
+        lastModified: new Date(),
+        changeFrequency: "weekly" as const,
+        priority: 0.7,
+    }));
+
+    const sectorRoutes = SECTORS.map((sector) => ({
+        url: `${baseUrl}/sectors/${sector.slug}`,
+        lastModified: new Date(),
+        changeFrequency: "daily" as const,
+        priority: 0.8
+    }));
+
+    return [...staticRoutes, ...articleRoutes, ...sectorRoutes];
+}
