@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { Search, ChevronDown, Facebook, Twitter, Linkedin, Megaphone, ChevronRight, Zap } from "lucide-react";
 import { SECTORS } from "@/data/dummy";
-import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 
 export function Header() {
@@ -102,14 +102,14 @@ export function Header() {
                                 </AnimatePresence>
                             </Link>
                         </motion.div>
-                        <Search className="w-4 h-4 md:w-5 h-5 cursor-pointer hover:text-[#00A651] shrink-0" />
+                        <Search className="w-4 h - 4 md:w-5 h-5 cursor-pointer hover:text-[#00A651] shrink-0" />
                     </div>
                 </div>
             </div>
 
             {/* SHARED STATISTA-STYLE MEGA MENU CONTAINER */}
             <div className={cn(
-                "fixed left-0 w-full bg-white shadow-2xl border-t transition-all duration-300 origin-top overflow-hidden z-[60]",
+                "fixed left-0 w-full bg-white shadow-2xl border-t transition-all duration-300 origin-top overflow-hidden z-60",
                 activeMenu ? "opacity-100 visible h-[450px]" : "opacity-0 invisible h-0"
             )}>
                 <div className="max-w-[1600px] mx-auto w-full flex h-full">
