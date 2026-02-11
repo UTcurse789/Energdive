@@ -1,0 +1,33 @@
+export interface Author {
+    name: string;
+    avatar: string;
+    bio?: string;
+}
+
+export interface Article {
+    id: string;
+    title: string;
+    slug: string;
+    excerpt: string;
+    content?: string;
+    author?: Author;
+    category: string;
+    image: string;
+    date: string;
+    readTime: string;
+    featured?: boolean;
+    trending?: boolean;
+}
+
+export interface Sector {
+    title: string;
+    slug: string;
+}
+
+export interface Event {
+    id: string;
+    title: string;
+    date: string;
+    location: string;
+    image: string;
+}
