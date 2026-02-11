@@ -69,7 +69,7 @@ export const ARTICLES: Article[] = [
             bio: "Climate policy researcher."
         },
         category: "Climate Policy",
-        image: "https://images.unsplash.com/photo-1623190829878-c1e1381e46bc?q=80&w=1000&auto=format&fit=crop",
+        image: "/images/hero1.jpg",
         date: "Oct 21, 2024",
         readTime: "6 min read",
     },
@@ -103,7 +103,7 @@ export const EVENTS: Event[] = [
         title: "Future Power Grid Conference",
         date: "Dec 05, 2025",
         location: "Houston, TX",
-        image: "https://images.unsplash.com/photo-1596232604084-219ee5433385?auto=format&fit=crop&q=80&w=1000"
+        image: "/images/hero1.jpg"
     },
     {
         id: "3",
