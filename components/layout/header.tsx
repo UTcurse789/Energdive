@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { Search, ChevronDown, Facebook, Twitter, Linkedin, Megaphone, ChevronRight, Zap } from "lucide-react";
 import { SECTORS } from "@/data/dummy";
-import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 
 export function Header() {
@@ -102,7 +102,7 @@ export function Header() {
                                 </AnimatePresence>
                             </Link>
                         </motion.div>
-                        <Search className="w-4 h-4 md:w-5 md:h-5 cursor-pointer hover:text-[#00A651] shrink-0" />
+                        <Search className="w-4 h - 4 md:w-5 h-5 cursor-pointer hover:text-[#00A651] shrink-0" />
                     </div>
                 </div>
             </div>
