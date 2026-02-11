@@ -1,5 +1,7 @@
-// const FMP_API_KEY = "TBohKroMmZXDeAGVqLEVlv0M40oreFDG";
-// const BASE_URL = "https://financialmodelingprep.com/api/v3";
+
+
+// lib/fmp.ts
+
 
 // export interface Quote {
 //     symbol: string;
@@ -27,97 +29,84 @@
 //     currency?: string;
 // }
 
-// export interface HistoricalData {
-//     date: string;
-//     open: number;
-//     high: number;
-//     low: number;
-//     close: number;
-//     adjClose: number;
-//     volume: number;
-//     unadjustedVolume: number;
-//     change: number;
-//     changePercent: number;
-//     vwap: number;
-//     label: string;
-//     changeOverTime: number;
-// }
-
-// export const MAJOR_INDICES = [
-//     "^GSPC", // S&P 500
-//     "^IXIC", // Nasdaq
-//     "^DJI",  // Dow Jones
-//     "^NSEI", // Nifty 50
-//     "^BSESN", // Sensex
-//     "BTCUSD", // Bitcoin
-//     "CLUSD", // Crude Oil (WTI) - relevant for Energy news
-//     "NGUSD"  // Natural Gas - relevant for Energy news
-// ];
+// export const MAJOR_INDICES = ["^GSPC", "^IXIC", "^DJI", "BTCUSD", "ETHUSD"];
 
 // export async function getQuotes(symbols: string[]): Promise<Quote[]> {
-//     const symbolString = symbols.join(",");
-
 //     try {
-//         const res = await fetch(`${BASE_URL}/quote/${symbolString}?apikey=${FMP_API_KEY}`, { next: { revalidate: 60 } });
+//         const symbolStr = symbols.map(s => encodeURIComponent(s)).join(",");
+//         const url = `https://financialmodelingprep.com/api/v3/quote/${symbolStr}?apikey=${process.env.FMP_API_KEY}`;
+//         const res = await fetch(url, { next: { revalidate: 30 } });
 
-//         // If response is not OK or contains error message (FMP sometimes returns 200 with error body)
-//         if (res.ok) {
-//             const data = await res.json();
-//             // Check if data is array and not an error object
-//             if (Array.isArray(data) && data.length > 0) {
-//                 return data;
-//             }
-//             // Check for specific error message in object
-//             if (data["Error Message"]) {
-//                 console.warn("FMP API Error:", data["Error Message"]);
-//             }
-//         } else {
-//             const errorText = await res.text();
-//             // Suppress error logging for known legacy endpoint restriction to avoid console noise
-//             if (res.status === 403 && errorText.includes("Legacy Endpoint")) {
-//                 // specific log for debugging if needed, or just silent fallback
-//                 // console.log("FMP API Legacy Endpoint restriction detected. Using mock data.");
-//             } else {
-//                 console.error("Failed to fetch quotes, HTTP error:", res.status, errorText);
-//             }
-//         }
+//         if (!res.ok) throw new Error("API Limit/Legacy Error");
+
+//         const data = await res.json();
+
+//         // FMP sometimes returns 200 OK with an Error Message object
+//         if (data["Error Message"]) throw new Error(data["Error Message"]);
+//         if (!Array.isArray(data)) throw new Error("Invalid API response format");
+
+//         return data;
 //     } catch (e) {
-//         console.error("FMP API Fetch Failed", e);
+//         console.error("FMP API Error, using fallback:", e);
+//         // Dummy data for testing UI
+//         return [
+//             {
+//                 symbol: "^GSPC", name: "S&P 500", price: 5123.42, changesPercentage: 1.2, change: 60.5, dayLow: 5080, dayHigh: 5150, yearHigh: 5200, yearLow: 4000,
+//                 marketCap: 0, priceAvg50: 5000, priceAvg200: 4800, volume: 1000000, avgVolume: 1000000, exchange: "INDEX", open: 5100, previousClose: 5060,
+//                 eps: 0, pe: 0, earningsAnnouncement: "", sharesOutstanding: 0, timestamp: Date.now()
+//             },
+//             {
+//                 symbol: "^IXIC", name: "NASDAQ", price: 16274.95, changesPercentage: -0.45, change: -73.2, dayLow: 16200, dayHigh: 16400, yearHigh: 17000, yearLow: 12000,
+//                 marketCap: 0, priceAvg50: 16000, priceAvg200: 14000, volume: 1000000, avgVolume: 1000000, exchange: "INDEX", open: 16300, previousClose: 16348,
+//                 eps: 0, pe: 0, earningsAnnouncement: "", sharesOutstanding: 0, timestamp: Date.now()
+//             },
+//             {
+//                 symbol: "^DJI", name: "Dow Jones", price: 39127.14, changesPercentage: 0.15, change: 58.6, dayLow: 39000, dayHigh: 39300, yearHigh: 40000, yearLow: 32000,
+//                 marketCap: 0, priceAvg50: 38000, priceAvg200: 35000, volume: 1000000, avgVolume: 1000000, exchange: "INDEX", open: 39050, previousClose: 39068,
+//                 eps: 0, pe: 0, earningsAnnouncement: "", sharesOutstanding: 0, timestamp: Date.now()
+//             },
+//             {
+//                 symbol: "BTCUSD", name: "Bitcoin", price: 63240.12, changesPercentage: 2.4, change: 1500, dayLow: 61000, dayHigh: 64000, yearHigh: 73000, yearLow: 25000,
+//                 marketCap: 0, priceAvg50: 60000, priceAvg200: 45000, volume: 1000000, avgVolume: 1000000, exchange: "CRYPTO", open: 61700, previousClose: 61740,
+//                 eps: 0, pe: 0, earningsAnnouncement: "", sharesOutstanding: 0, timestamp: Date.now()
+//             }
+//         ];
 //     }
-
-//     // Fallback if API fails or returns legacy error (handled inside logic above but let's be safe)
-//     // If we are here, it means we don't have data, so we let the fallback run.
-
-//     // Fallback Mock Data
-//     console.log("Using Mock Market Data due to API failure.");
-//     return [
-//         { symbol: "^GSPC", name: "S&P 500", price: 5893.62, changesPercentage: 0.40, change: 23.4, dayLow: 5870, dayHigh: 5900, yearHigh: 6000, yearLow: 4000, marketCap: 0, priceAvg50: 5700, priceAvg200: 5400, volume: 1000000, avgVolume: 1000000, exchange: "INDEX", open: 5870, previousClose: 5870.22, eps: 0, pe: 0, earningsAnnouncement: "", sharesOutstanding: 0, timestamp: Date.now() },
-//         { symbol: "^IXIC", name: "Nasdaq", price: 18432.55, changesPercentage: 0.65, change: 110.2, dayLow: 18300, dayHigh: 18500, yearHigh: 19000, yearLow: 13000, marketCap: 0, priceAvg50: 18000, priceAvg200: 16000, volume: 1000000, avgVolume: 1000000, exchange: "INDEX", open: 18320, previousClose: 18322.35, eps: 0, pe: 0, earningsAnnouncement: "", sharesOutstanding: 0, timestamp: Date.now() },
-//         { symbol: "^DJI", name: "Dow Jones", price: 42875.12, changesPercentage: -0.12, change: -50.5, dayLow: 42800, dayHigh: 43000, yearHigh: 43500, yearLow: 33000, marketCap: 0, priceAvg50: 42000, priceAvg200: 39000, volume: 1000000, avgVolume: 1000000, exchange: "INDEX", open: 42925, previousClose: 42925.62, eps: 0, pe: 0, earningsAnnouncement: "", sharesOutstanding: 0, timestamp: Date.now() },
-//         { symbol: "CLUSD", name: "Crude Oil", price: 71.24, changesPercentage: 1.25, change: 0.88, dayLow: 70.1, dayHigh: 71.5, yearHigh: 90, yearLow: 65, marketCap: 0, priceAvg50: 72, priceAvg200: 75, volume: 100000, avgVolume: 100000, exchange: "COMMODITY", open: 70.36, previousClose: 70.36, eps: 0, pe: 0, earningsAnnouncement: "", sharesOutstanding: 0, timestamp: Date.now() },
-//         { symbol: "NGUSD", name: "Natural Gas", price: 2.85, changesPercentage: -0.50, change: -0.015, dayLow: 2.8, dayHigh: 2.9, yearHigh: 3.5, yearLow: 1.5, marketCap: 0, priceAvg50: 2.5, priceAvg200: 2.3, volume: 100000, avgVolume: 100000, exchange: "COMMODITY", open: 2.86, previousClose: 2.86, eps: 0, pe: 0, earningsAnnouncement: "", sharesOutstanding: 0, timestamp: Date.now() }
-//     ].filter(q => symbols.includes(q.symbol));
+// }
+// export interface NewsItem {
+//     symbol: string;
+//     publishedDate: string;
+//     title: string;
+//     image: string;
+//     site: string;
+//     text: string;
+//     url: string;
 // }
 
-// export async function getHistoricalChart(symbol: string, interval: '1min' | '5min' | '15min' | '30min' | '1hour' | '4hour' = '1hour'): Promise<HistoricalData[]> {
-//     const res = await fetch(`${BASE_URL}/historical-chart/${interval}/${symbol}?apikey=${FMP_API_KEY}`, { next: { revalidate: 3600 } });
-//     if (!res.ok) {
-//         const errorText = await res.text();
-//         if (res.status === 403 && errorText.includes("Legacy Endpoint")) {
-//             // console.log("FMP Historical Data Legacy restriction. Returning empty.");
+// export async function getIndexNews(symbol: string): Promise<NewsItem[]> {
+//     try {
+//         const url = `${BASE_URL}/stock_news?tickers=${symbol}&limit=10&apikey=${API_KEY}`;
+//         const res = await fetch(url, { next: { revalidate: 3600 } });
+
+//         if (!res.ok) {
+//             console.error("Failed to fetch news:", res.status, await res.text());
 //             return [];
 //         }
-//         console.error("Failed to fetch historical data", errorText);
+
+//         return await res.json();
+//     } catch (error) {
+//         console.error("Error fetching news:", error);
 //         return [];
 //     }
-//     return res.json();
 // }
+
 
 
 // lib/fmp.ts
+// lib/fmp.ts
+const YAHOO_BASE = "https://query1.finance.yahoo.com/v8/finance/chart";
 const API_KEY = process.env.FMP_API_KEY;
 const BASE_URL = "https://financialmodelingprep.com/api/v3";
-
 export interface Quote {
     symbol: string;
     name: string;
@@ -144,56 +133,193 @@ export interface Quote {
     currency?: string;
 }
 
-export const MAJOR_INDICES = ["^GSPC", "^IXIC", "^DJI", "BTCUSD", "ETHUSD"];
+// Yahoo Finance symbols (different from FMP)
+export const MAJOR_INDICES = ["^GSPC", "^IXIC", "^DJI", "BTC-USD"];
 
 export async function getQuotes(symbols: string[]): Promise<Quote[]> {
     try {
-        const symbolStr = symbols.map(s => encodeURIComponent(s)).join(",");
-        const url = `https://financialmodelingprep.com/api/v3/quote/${symbolStr}?apikey=${process.env.FMP_API_KEY}`;
-        const res = await fetch(url, { next: { revalidate: 30 } });
+        const quotes = await Promise.all(
+            symbols.map(async (symbol) => {
+                try {
+                    const url = `${YAHOO_BASE}/${symbol}?interval=1d&range=1d`;
+                    const res = await fetch(url, {
+                        next: { revalidate: 60 },
+                        headers: {
+                            'User-Agent': 'Mozilla/5.0'
+                        }
+                    });
 
-        if (!res.ok) throw new Error("API Limit/Legacy Error");
+                    if (!res.ok) throw new Error(`Failed to fetch ${symbol}`);
 
-        const data = await res.json();
+                    const data = await res.json();
+                    const result = data.chart.result[0];
+                    const meta = result.meta;
+                    const quote = result.indicators.quote[0];
 
-        // FMP sometimes returns 200 OK with an Error Message object
-        if (data["Error Message"]) throw new Error(data["Error Message"]);
-        if (!Array.isArray(data)) throw new Error("Invalid API response format");
+                    const currentPrice = meta.regularMarketPrice;
+                    const previousClose = meta.chartPreviousClose || meta.previousClose;
+                    const change = currentPrice - previousClose;
+                    const changePercent = (change / previousClose) * 100;
 
-        return data;
-    } catch (e) {
-        // Log warning instead of error for expected API limits to avoid cluttering terminal
-        if (e instanceof Error && (e.message.includes("API Limit") || e.message.includes("Legacy"))) {
-            console.warn(`[FMP] API Limit or Legacy Endpoint usage detected. Switching to fallback data. (${e.message})`);
-        } else {
-            console.error("[FMP] Failed to fetch quotes:", e);
+                    // Get name mapping
+                    const nameMap: Record<string, string> = {
+                        "^GSPC": "S&P 500",
+                        "^IXIC": "NASDAQ",
+                        "^DJI": "Dow Jones",
+                        "BTC-USD": "Bitcoin"
+                    };
+
+                    const quoteData: Quote = {
+                        symbol,
+                        name: nameMap[symbol] || meta.symbol,
+                        price: currentPrice,
+                        changesPercentage: changePercent,
+                        change: change,
+                        dayLow: meta.regularMarketDayLow || quote.low?.[0] || currentPrice,
+                        dayHigh: meta.regularMarketDayHigh || quote.high?.[0] || currentPrice,
+                        yearHigh: meta.fiftyTwoWeekHigh || currentPrice,
+                        yearLow: meta.fiftyTwoWeekLow || currentPrice,
+                        marketCap: 0,
+                        priceAvg50: 0,
+                        priceAvg200: 0,
+                        volume: meta.regularMarketVolume || quote.volume?.[0] || 0,
+                        avgVolume: 0,
+                        exchange: meta.exchangeName || "INDEX",
+                        open: quote.open?.[0] || currentPrice,
+                        previousClose: previousClose,
+                        eps: 0,
+                        pe: 0,
+                        earningsAnnouncement: "",
+                        sharesOutstanding: 0,
+                        timestamp: Date.now(),
+                        currency: meta.currency
+                    };
+
+                    return quoteData;
+                } catch (err) {
+                    console.error(`Error fetching ${symbol}:`, err);
+                    return null;
+                }
+            })
+        );
+
+        // Filter out nulls with proper type guard
+        const validQuotes = quotes.filter((q): q is Quote => q !== null);
+
+        if (validQuotes.length === 0) {
+            throw new Error("No valid quotes");
         }
 
-        // Return robust fallback data
+        return validQuotes;
+    } catch (e) {
+        console.error("[Yahoo Finance] Error, using fallback:", e);
+
+        // Fallback data
         return [
             {
-                symbol: "^GSPC", name: "S&P 500", price: 5123.42, changesPercentage: 1.2, change: 60.5, dayLow: 5080, dayHigh: 5150, yearHigh: 5200, yearLow: 4000,
-                marketCap: 0, priceAvg50: 5000, priceAvg200: 4800, volume: 1000000, avgVolume: 1000000, exchange: "INDEX", open: 5100, previousClose: 5060,
-                eps: 0, pe: 0, earningsAnnouncement: "", sharesOutstanding: 0, timestamp: Date.now()
+                symbol: "S&P 500",
+                name: "S&P 500",
+                price: 5850.34,
+                changesPercentage: 0.75,
+                change: 43.65,
+                dayLow: 5820.12,
+                dayHigh: 5862.45,
+                yearHigh: 5900.00,
+                yearLow: 4200.00,
+                marketCap: 0,
+                priceAvg50: 5750.00,
+                priceAvg200: 5400.00,
+                volume: 3500000000,
+                avgVolume: 3200000000,
+                exchange: "INDEX",
+                open: 5825.00,
+                previousClose: 5806.69,
+                eps: 0,
+                pe: 0,
+                earningsAnnouncement: "",
+                sharesOutstanding: 0,
+                timestamp: Date.now(),
+                currency: "USD"
             },
             {
-                symbol: "^IXIC", name: "NASDAQ", price: 16274.95, changesPercentage: -0.45, change: -73.2, dayLow: 16200, dayHigh: 16400, yearHigh: 17000, yearLow: 12000,
-                marketCap: 0, priceAvg50: 16000, priceAvg200: 14000, volume: 1000000, avgVolume: 1000000, exchange: "INDEX", open: 16300, previousClose: 16348,
-                eps: 0, pe: 0, earningsAnnouncement: "", sharesOutstanding: 0, timestamp: Date.now()
+                symbol: "NASDAQ",
+                name: "NASDAQ",
+                price: 18421.45,
+                changesPercentage: -0.28,
+                change: -51.89,
+                dayLow: 18350.00,
+                dayHigh: 18480.00,
+                yearHigh: 18600.00,
+                yearLow: 14200.00,
+                marketCap: 0,
+                priceAvg50: 18100.00,
+                priceAvg200: 16800.00,
+                volume: 5100000000,
+                avgVolume: 4900000000,
+                exchange: "NASDAQ",
+                open: 18450.00,
+                previousClose: 18473.34,
+                eps: 0,
+                pe: 0,
+                earningsAnnouncement: "",
+                sharesOutstanding: 0,
+                timestamp: Date.now(),
+                currency: "USD"
             },
             {
-                symbol: "^DJI", name: "Dow Jones", price: 39127.14, changesPercentage: 0.15, change: 58.6, dayLow: 39000, dayHigh: 39300, yearHigh: 40000, yearLow: 32000,
-                marketCap: 0, priceAvg50: 38000, priceAvg200: 35000, volume: 1000000, avgVolume: 1000000, exchange: "INDEX", open: 39050, previousClose: 39068,
-                eps: 0, pe: 0, earningsAnnouncement: "", sharesOutstanding: 0, timestamp: Date.now()
+                symbol: "Dow Jones",
+                name: "Dow Jones",
+                price: 43256.78,
+                changesPercentage: 0.52,
+                change: 223.45,
+                dayLow: 43100.00,
+                dayHigh: 43300.00,
+                yearHigh: 43500.00,
+                yearLow: 35500.00,
+                marketCap: 0,
+                priceAvg50: 42800.00,
+                priceAvg200: 40500.00,
+                volume: 415000000,
+                avgVolume: 390000000,
+                exchange: "NYSE",
+                open: 43120.00,
+                previousClose: 43033.33,
+                eps: 0,
+                pe: 0,
+                earningsAnnouncement: "",
+                sharesOutstanding: 0,
+                timestamp: Date.now(),
+                currency: "USD"
             },
             {
-                symbol: "BTCUSD", name: "Bitcoin", price: 63240.12, changesPercentage: 2.4, change: 1500, dayLow: 61000, dayHigh: 64000, yearHigh: 73000, yearLow: 25000,
-                marketCap: 0, priceAvg50: 60000, priceAvg200: 45000, volume: 1000000, avgVolume: 1000000, exchange: "CRYPTO", open: 61700, previousClose: 61740,
-                eps: 0, pe: 0, earningsAnnouncement: "", sharesOutstanding: 0, timestamp: Date.now()
+                symbol: "BTC-USD",
+                name: "Bitcoin",
+                price: 98567.23,
+                changesPercentage: 2.85,
+                change: 2734.56,
+                dayLow: 96200.00,
+                dayHigh: 99100.00,
+                yearHigh: 105000.00,
+                yearLow: 26500.00,
+                marketCap: 0,
+                priceAvg50: 93000.00,
+                priceAvg200: 68000.00,
+                volume: 28900000000,
+                avgVolume: 26000000000,
+                exchange: "CRYPTO",
+                open: 95832.67,
+                previousClose: 95832.67,
+                eps: 0,
+                pe: 0,
+                earningsAnnouncement: "",
+                sharesOutstanding: 0,
+                timestamp: Date.now(),
+                currency: "USD"
             }
         ];
     }
 }
+
 export interface NewsItem {
     symbol: string;
     publishedDate: string;
@@ -207,20 +333,43 @@ export interface NewsItem {
 export async function getIndexNews(symbol: string): Promise<NewsItem[]> {
     try {
         const url = `${BASE_URL}/stock_news?tickers=${symbol}&limit=10&apikey=${API_KEY}`;
-        const res = await fetch(url);
-        if (!res.ok) throw new Error("Legacy API");
-        return await res.json();
+        const res = await fetch(url, { next: { revalidate: 3600 } });
+
+        if (!res.ok) throw new Error("API Limit or Legacy Error");
+
+        const data = await res.json();
+        if (data["Error Message"]) throw new Error(data["Error Message"]);
+
+        return data;
     } catch (error) {
-        // Fallback dummy news for UI testing
+        // Fallback Section: Unique URLs are essential here to avoid React Key errors
         return [
             {
-                symbol: symbol,
-                publishedDate: "2026-02-11",
-                title: `${symbol} showing strong resilience in current energy market`,
-                site: "Energdive Insights",
-                url: "#",
-                text: "Full analysis on market trends...",
-                image: ""
+                symbol,
+                publishedDate: new Date(Date.now() - 3600000).toISOString(),
+                title: `${symbol} Analysis: Global Market Trends and Intelligence`,
+                image: "https://placehold.co/600x400/09090b/white?text=Market+Insights",
+                site: "Energdive Intelligence",
+                text: "Geopolitical shifts are impacting market dynamics as investors recalibrate risk exposure in the energy sector.",
+                url: `fallback-1-${symbol}-${Date.now()}` // Unique ID
+            },
+            {
+                symbol,
+                publishedDate: new Date(Date.now() - 7200000).toISOString(),
+                title: `Institutional Volume Increases in ${symbol} Trading`,
+                image: "https://placehold.co/600x400/09090b/white?text=Volume+Analysis",
+                site: "Market Analysis",
+                text: "Accumulation phase observed by lead analysts suggests a long-term bullish sentiment despite short-term volatility.",
+                url: `fallback-2-${symbol}-${Date.now()}` // Unique ID
+            },
+            {
+                symbol,
+                publishedDate: new Date(Date.now() - 10800000).toISOString(),
+                title: "Energy Sector Faces Headwinds as Commodity Prices Fluctuate",
+                image: "https://placehold.co/600x400/09090b/white?text=Energy+Trends",
+                site: "Wall Street Journal",
+                text: "Oil and gas companies navigate a volatile pricing environment driven by supply chain constraints.",
+                url: `fallback-3-${symbol}-${Date.now()}` // Unique ID
             }
         ];
     }

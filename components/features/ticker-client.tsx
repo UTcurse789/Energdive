@@ -1,9 +1,10 @@
+// components/features/ticker/ticker-client.tsx
 "use client";
 
 import { Quote } from "@/lib/fmp";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
-import { ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { MoveUpRight, MoveDownRight } from "lucide-react";
 import { useState } from "react";
 
 interface TickerClientProps {
@@ -13,40 +14,42 @@ interface TickerClientProps {
 export function TickerClient({ initialQuotes }: TickerClientProps) {
     const [quotes] = useState(initialQuotes);
 
-    // Agar data nahi hai toh kuch mat dikhao
     if (!Array.isArray(quotes) || quotes.length === 0) return null;
 
-    // Seamless scroll ke liye data repeat karna
     const tickerQuotes = [...quotes, ...quotes, ...quotes, ...quotes];
 
     return (
-        <div className="w-full h-11 bg-slate-100 dark:bg-slate-900 border-b border-border overflow-hidden relative z-[50] flex items-center">
-            {/* Left/Right Gradients for smooth look */}
-            <div className="absolute left-0 z-10 h-full w-12 bg-linear-to-r from-slate-100 dark:from-slate-900 to-transparent pointer-events-none" />
+        <div className="sticky top-16 w-full h-12 bg-white dark:bg-zinc-950 border-b border-zinc-200 dark:border-zinc-800 overflow-hidden z-40 flex items-center shadow-sm">
+            {/* Left gradient - FIXED */}
+            <div className="absolute left-0 z-10 h-full w-20 bg-linear-to-r from-white dark:from-zinc-950 to-transparent pointer-events-none" />
 
-            <div className="flex animate-ticker whitespace-nowrap hover:[animation-play-state:paused]">
+            <div className="flex animate-ticker whitespace-nowrap hover:[animation-play-state:paused] w-full">
                 {tickerQuotes.map((quote, i) => (
                     <Link
                         key={`${quote.symbol}-${i}`}
                         href={`/market/${encodeURIComponent(quote.symbol)}`}
-                        className="inline-flex items-center gap-2 px-8 border-r border-border/50 text-sm hover:bg-muted transition-colors cursor-pointer py-2 h-full"
+                        className="inline-flex items-center gap-3 px-10 border-r border-zinc-100 dark:border-zinc-800/50 hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors cursor-pointer py-3 h-full group"
                     >
-                        <span className="font-bold text-slate-900 dark:text-white">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 transition-colors">
                             {quote.name || quote.symbol}
                         </span>
-                        <span className="font-mono text-slate-700 dark:text-slate-300">
-                            {quote.price?.toFixed(2)}
+
+                        <span className="font-mono font-bold text-sm tracking-tighter text-zinc-900 dark:text-zinc-100">
+                            {quote.price?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </span>
+
                         <span
                             className={cn(
-                                "flex items-center text-xs font-semibold",
-                                (quote.changesPercentage || 0) >= 0 ? "text-green-600" : "text-red-600"
+                                "flex items-center text-[10px] font-bold px-2 py-0.5 rounded-full",
+                                (quote.changesPercentage || 0) >= 0
+                                    ? "text-emerald-700 bg-emerald-50 dark:bg-emerald-500/10"
+                                    : "text-rose-700 bg-rose-50 dark:bg-rose-500/10"
                             )}
                         >
                             {(quote.changesPercentage || 0) >= 0 ? (
-                                <ArrowUpRight className="w-3 h-3 mr-0.5" />
+                                <MoveUpRight className="w-3 h-3 mr-1" />
                             ) : (
-                                <ArrowDownRight className="w-3 h-3 mr-0.5" />
+                                <MoveDownRight className="w-3 h-3 mr-1" />
                             )}
                             {Math.abs(quote.changesPercentage || 0).toFixed(2)}%
                         </span>
@@ -54,7 +57,8 @@ export function TickerClient({ initialQuotes }: TickerClientProps) {
                 ))}
             </div>
 
-            <div className="absolute right-0 z-10 h-full w-12 bg-linear-to-l from-slate-100 dark:from-slate-900 to-transparent pointer-events-none" />
+            {/* Right gradient - FIXED */}
+            <div className="absolute right-0 z-10 h-full w-20 bg-linear-to-l from-white dark:from-zinc-950 to-transparent pointer-events-none" />
         </div>
     );
 }

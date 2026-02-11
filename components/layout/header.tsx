@@ -11,7 +11,7 @@ import { motion, AnimatePresence } from "framer-motion";
 export function Header() {
     const [isScrolled, setIsScrolled] = useState(false);
     const [activeMenu, setActiveMenu] = useState<string | null>(null); // 'sectors' | 'magazine' | 'more' | null
-    const [magazinePreview, setMagazinePreview] = useState("/magazine-default.png");
+    const [magazinePreview, setMagazinePreview] = useState("/magazine-default.jpg");
     const [isLoginHovered, setIsLoginHovered] = useState(false);
 
     const brandGreen = "#00A651";
@@ -61,7 +61,7 @@ export function Header() {
                         <Link href="/opinion" className="text-[10px] md:text-[12px] xl:text-[13px] font-bold uppercase tracking-[1px] hover:opacity-70 whitespace-nowrap">OPINION</Link>
 
                         {/* MAGAZINE MEGA MENU */}
-                        <div className="relative group cursor-pointer" onMouseEnter={() => { setActiveMenu('magazine'); setMagazinePreview("/magazine-default.png"); }}>
+                        <div className="relative group cursor-pointer" onMouseEnter={() => { setActiveMenu('magazine'); setMagazinePreview("/magazine-default.jpg"); }}>
                             <button className="flex items-center gap-1 text-[10px] md:text-[12px] xl:text-[13px] font-bold uppercase tracking-[1px] hover:opacity-70 whitespace-nowrap">
                                 MAGAZINE <ChevronDown className={cn("w-3 h-3 transition-transform", activeMenu === 'magazine' && "rotate-180")} />
                             </button>
@@ -153,14 +153,14 @@ export function Header() {
                                 <div className="flex flex-col gap-2">
                                     <Link
                                         href="/magazine/current"
-                                        onMouseEnter={() => setMagazinePreview("/current-issue-cover.png")}
+                                        onMouseEnter={() => setMagazinePreview("/current-magazine.jpg")}
                                         className="px-4 py-4 text-[14px] font-bold text-gray-800 hover:bg-[#00A651] hover:text-white flex justify-between items-center transition-colors"
                                     >
                                         CURRENT ISSUE <ChevronRight size={14} />
                                     </Link>
                                     <Link
                                         href="/magazine/latest"
-                                        onMouseEnter={() => setMagazinePreview("/latest-issue-cover.png")}
+                                        onMouseEnter={() => setMagazinePreview("/magazine-default.jpg")}
                                         className="px-4 py-4 text-[14px] font-bold text-gray-800 hover:bg-[#00A651] hover:text-white flex justify-between items-center transition-colors"
                                     >
                                         LATEST ISSUES <ChevronRight size={14} />
