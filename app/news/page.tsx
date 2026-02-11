@@ -6,7 +6,7 @@ import Image from "next/image";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { ARTICLES } from "@/data/dummy";
-import { ArrowUpRight, Plus, MoveRight, Bookmark, Command, BarChart3, Zap, Globe2, ShieldCheck } from "lucide-react";
+import { ArrowUpRight, Plus, MoveRight, Bookmark, BarChart3, Zap, Globe2, ShieldCheck } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function ArchitectEditorialPage() {
@@ -48,7 +48,7 @@ export default function ArchitectEditorialPage() {
                 </section>
 
                 {/* 2. TICKER BAR */}
-                <div className="bg-white border-b border-gray-200 py-4 overflow-hidden sticky top-[80px] z-40 backdrop-blur-md bg-white/90">
+                <div className="border-b border-gray-200 py-4 overflow-hidden sticky top-[80px] z-40 backdrop-blur-md bg-white/90">
                     <div className="container mx-auto px-6 lg:px-12 flex items-center">
                         <div className="flex gap-16 items-center animate-marquee whitespace-nowrap text-[11px] font-bold text-gray-400 uppercase">
                             {ARTICLES.concat(ARTICLES).map((a, i) => (
@@ -62,16 +62,17 @@ export default function ArchitectEditorialPage() {
 
                 <div className="container mx-auto px-6 lg:px-12 py-16">
 
-                    {/* 3. EDITORIAL GRID (8:4) */}
+                    {/* 3. EDITORIAL GRID (8:4) - FIXED SYNTAX */}
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 pt-10 lg:gap-6 mb-24">
                         <div className="lg:col-span-8 group">
                             <Link href={`/news/${heroArticle.slug}`} className="block">
-                                <div className="relative aspect-[16/9] overflow-hidden bg-gray-100 mb-4 border border-gray-100">
+                                <div className="relative aspect-video overflow-hidden bg-gray-100 mb-4 border border-gray-100">
                                     <Image src={heroArticle.image} alt={heroArticle.title} fill priority className="object-cover group-hover:scale-105 transition-transform duration-1000" />
                                     <div className="absolute top-0 right-0 bg-[#00A651] text-white p-4 md:p-6 z-10">
                                         <ArrowUpRight size={28} />
                                     </div>
-                                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent flex flex-col justify-end p-6 md:p-10">
+                                    {/* Fixed Gradient Class */}
+                                    <div className="absolute inset-0 bg-linear-to-t from-black/90 via-transparent to-transparent flex flex-col justify-end p-6 md:p-10">
                                         <span className="bg-[#00A651] text-white text-[10px] font-black uppercase px-3 py-1 w-fit mb-4">Lead Report</span>
                                         <h2 className="text-3xl md:text-5xl lg:text-6xl font-black text-white tracking-tighter leading-[0.9] group-hover:underline decoration-white/30">{heroArticle.title}</h2>
                                     </div>
@@ -101,7 +102,6 @@ export default function ArchitectEditorialPage() {
                     {/* --- BENTO LAYOUT SECTION --- */}
                     <section className="mb-32">
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 auto-rows-[240px]">
-                            {/* Card 1: Large Performance Insight */}
                             <div className="md:col-span-2 md:row-span-2 bg-black text-white p-8 relative overflow-hidden flex flex-col justify-between group">
                                 <div className="z-10">
                                     <BarChart3 className="text-[#00A651] mb-4" size={32} />
@@ -114,7 +114,6 @@ export default function ArchitectEditorialPage() {
                                 </div>
                             </div>
 
-                            {/* Card 2: Medium Grid Intelligence */}
                             <div className="md:col-span-2 bg-gray-100 p-8 flex flex-col justify-between hover:bg-[#00A651] hover:text-white transition-all group">
                                 <div className="flex justify-between items-start">
                                     <Zap size={24} />
@@ -126,14 +125,12 @@ export default function ArchitectEditorialPage() {
                                 </div>
                             </div>
 
-                            {/* Card 3: Small Global Coverage */}
                             <div className="bg-white border border-gray-200 p-8 flex flex-col justify-between hover:border-black transition-all">
                                 <Globe2 size={24} className="text-[#00A651]" />
                                 <div className="text-3xl font-black italic">142</div>
                                 <p className="text-[9px] font-black uppercase text-gray-400">Regions Tracked</p>
                             </div>
 
-                            {/* Card 4: Small Compliance */}
                             <div className="bg-white border border-gray-200 p-8 flex flex-col justify-between hover:border-black transition-all">
                                 <ShieldCheck size={24} className="text-[#00A651]" />
                                 <div className="text-3xl font-black italic">99%</div>
@@ -142,7 +139,7 @@ export default function ArchitectEditorialPage() {
                         </div>
                     </section>
 
-                    {/* 4. DYNAMIC SECTOR GRID */}
+                    {/* 4. DYNAMIC SECTOR GRID - FIXED SYNTAX */}
                     <section className="mb-32">
                         <div className="flex flex-col md:flex-row md:items-end justify-between border-t-2 border-black pt-8 mb-16 gap-6">
                             <h2 className="text-5xl md:text-7xl font-black tracking-tighter uppercase italic leading-none">
@@ -152,7 +149,7 @@ export default function ArchitectEditorialPage() {
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-10 gap-y-20">
                             {allNews.map((item, idx) => (
                                 <div key={idx} className="group flex flex-col border-t border-gray-100 pt-8 hover:border-black transition-all duration-500">
-                                    <div className="relative aspect-[4/3] mb-8 overflow-hidden bg-gray-50 border border-gray-100">
+                                    <div className="relative aspect-4/3 mb-8 overflow-hidden bg-gray-50 border border-gray-100">
                                         <Image src={item.image} alt="" fill className="object-cover group-hover:scale-110 transition-transform duration-700" />
                                     </div>
                                     <div className="flex flex-col flex-1">
@@ -181,7 +178,7 @@ export default function ArchitectEditorialPage() {
                                 {opinionSection.map((item, idx) => (
                                     <div key={idx} className="bg-white p-10 border border-gray-100 hover:border-[#00A651] transition-all flex flex-col h-full shadow-sm hover:shadow-xl">
                                         <div className="w-14 h-14 bg-gray-100 rounded-full mb-8 border border-gray-200 shadow-inner"></div>
-                                        <h4 className="font-bold text-xl mb-10 flex-grow italic leading-tight">{item.title}</h4>
+                                        <h4 className="font-bold text-xl mb-10 grow italic leading-tight">{item.title}</h4>
                                         <div className="flex items-center justify-between text-[10px] font-black text-gray-400 uppercase tracking-widest pt-6 border-t border-gray-50">
                                             <span>Editorial Staff</span>
                                             <Bookmark size={16} className="hover:text-[#00A651] cursor-pointer transition-colors" />
@@ -196,7 +193,7 @@ export default function ArchitectEditorialPage() {
 
             <Footer />
 
-            <style jsx global>{`
+            {/* <style jsx global>{`
                 @keyframes marquee {
                     0% { transform: translateX(0); }
                     100% { transform: translateX(-50%); }
@@ -204,10 +201,7 @@ export default function ArchitectEditorialPage() {
                 .animate-marquee {
                     animation: marquee 40s linear infinite;
                 }
-                .animate-marquee:hover {
-                    animation-play-state: paused;
-                }
-            `}</style>
+            `}</style> */}
         </div>
     );
 }
