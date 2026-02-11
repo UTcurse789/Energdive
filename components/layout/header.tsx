@@ -38,7 +38,7 @@ export function Header() {
             <div className="container flex items-center justify-between h-16">
                 {/* Left: Logo */}
                 <Link href="/" className="shrink-0 z-50">
-                    <Image className="font-serif text-3xl font-black tracking-tight text-primary" src="/Energdive-Logo.png" alt="EnergDive" width={200} height={200} />
+                    <Image className="font-serif text-3xl font-black tracking-tight text-primary" src="/Energdive-Logo.png" alt="EnergDive" width={200} height={200} style={{ width: 'auto', height: 'auto' }} />
                 </Link>
 
                 {/* Center: Navigation (Desktop) */}

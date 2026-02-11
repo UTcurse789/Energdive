@@ -21,7 +21,7 @@ export const ARTICLES: Article[] = [
             bio: "Senior Energy Analyst covering APAC markets."
         },
         category: "Oil & Gas",
-        image: "https://images.unsplash.com/photo-1473341304170-971dccb5ac1e?auto=format&fit=crop&q=80&w=1000",
+        image: "https://placehold.co/1000x600/e2e8f0/1e293b?text=Oil+Rig", // Oil rig placeholder
         date: "Oct 24, 2024",
         readTime: "5 min read",
         featured: true,
@@ -38,7 +38,7 @@ export const ARTICLES: Article[] = [
             bio: "Tech editor specializing in clean energy innovations."
         },
         category: "Renewables",
-        image: "https://images.unsplash.com/photo-1532601224476-15c79f2f7a51?auto=format&fit=crop&q=80&w=1000",
+        image: "https://placehold.co/1000x600/e2e8f0/1e293b?text=Solar+Hydrogen", // Solar/Hydrogen placeholder
         date: "Oct 23, 2024",
         readTime: "8 min read",
         trending: true,
@@ -54,7 +54,7 @@ export const ARTICLES: Article[] = [
             bio: "Europe correspondent."
         },
         category: "Power & Utilities",
-        image: "https://images.unsplash.com/photo-1466611653911-95081537e5b7?auto=format&fit=crop&q=80&w=1000",
+        image: "https://placehold.co/1000x600/e2e8f0/1e293b?text=Wind+Turbines", // Wind turbines placeholder
         date: "Oct 22, 2024",
         readTime: "4 min read",
     },
@@ -69,7 +69,7 @@ export const ARTICLES: Article[] = [
             bio: "Climate policy researcher."
         },
         category: "Climate Policy",
-        image: "https://images.unsplash.com/photo-1623190829878-c1e1381e46bc?q=80&w=1000&auto=format&fit=crop",
+        image: "https://placehold.co/1000x600/e2e8f0/1e293b?text=Carbon+Capture", // Factory/Carbon placeholder
         date: "Oct 21, 2024",
         readTime: "6 min read",
     },
@@ -84,7 +84,7 @@ export const ARTICLES: Article[] = [
             bio: "Senior Energy Analyst covering APAC markets."
         },
         category: "Renewables",
-        image: "https://images.unsplash.com/photo-1509391366360-2e959784a276?auto=format&fit=crop&q=80&w=1000",
+        image: "https://placehold.co/1000x600/e2e8f0/1e293b?text=Solar+Panels", // Solar panels placeholder
         date: "Oct 20, 2024",
         readTime: "3 min read",
     }
@@ -96,20 +96,20 @@ export const EVENTS: Event[] = [
         title: "Global Energy Transition Summit 2025",
         date: "Nov 12-14, 2025",
         location: "London, UK",
-        image: "https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&q=80&w=1000"
+        image: "https://placehold.co/1000x600/e2e8f0/1e293b?text=Energy+Summit" // Conference placeholder
     },
     {
         id: "2",
         title: "Future Power Grid Conference",
         date: "Dec 05, 2025",
         location: "Houston, TX",
-        image: "https://images.unsplash.com/photo-1596232604084-219ee5433385?auto=format&fit=crop&q=80&w=1000"
+        image: "https://placehold.co/1000x600/e2e8f0/1e293b?text=Power+Grid" // Grid/Transmission placeholder
     },
     {
         id: "3",
         title: "Renewable Finance Forum",
         date: "Jan 10, 2026",
         location: "Singapore",
-        image: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&q=80&w=1000"
+        image: "https://placehold.co/1000x600/e2e8f0/1e293b?text=Renewable+Finance" // Finance/Office placeholder
     }
-]
+];

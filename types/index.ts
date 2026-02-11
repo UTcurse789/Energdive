@@ -31,3 +31,11 @@ export interface Event {
     location: string;
     image: string;
 }
+
+export interface MarketQuote {
+    symbol: string;
+    name: string;
+    price: number;
+    changesPercentage: number;
+    change: number;
+}
