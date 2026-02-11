@@ -1,0 +1,74 @@
+import Link from "next/link";
+import Image from "next/image";
+import { cn } from "@/lib/utils";
+import { Clock } from "lucide-react";
+
+import { Article } from "@/types";
+
+interface ArticleCardProps {
+    article: Article;
+    className?: string;
+    variant?: "vertical" | "horizontal" | "compact";
+}
+
+export function ArticleCard({ article, className, variant = "vertical" }: ArticleCardProps) {
+    return (
+        <Link href={`/news/${article.slug}`} className={cn("group block h-full", className)}>
+            <article className={cn("flex flex-col h-full gap-4", variant === "horizontal" && "md:flex-row md:items-center")}>
+                {/* Image Container */}
+                <div className={cn(
+                    "relative overflow-hidden bg-muted aspect-3/2 w-full",
+                    variant === "horizontal" && "md:w-1/3 aspect-3/2",
+                    variant === "compact" && "aspect-square w-24 h-24 shrink-0"
+                )}>
+                    <Image
+                        src={article.image}
+                        alt={article.title}
+                        fill
+                        className="object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
+                </div>
+
+                {/* Content */}
+                <div className={cn("flex flex-col flex-1", variant === "horizontal" && "md:w-2/3")}>
+                    <div className="flex items-center gap-2 mb-2">
+                        <span className="text-xs font-bold text-primary tracking-wider uppercase">
+                            {article.category}
+                        </span>
+                        <span className="text-xs text-muted-foreground">•</span>
+                        <span className="text-xs text-muted-foreground">{article.date}</span>
+                    </div>
+
+                    <h3 className={cn(
+                        "font-serif font-bold leading-tight group-hover:text-primary transition-colors",
+                        variant === "compact" ? "text-sm line-clamp-2" : "text-xl mb-2"
+                    )}>
+                        {article.title}
+                    </h3>
+
+                    {variant !== "compact" && (
+                        <p className="text-muted-foreground text-sm line-clamp-3 mb-4 flex-1">
+                            {article.excerpt}
+                        </p>
+                    )}
+
+                    {variant !== "compact" && (
+                        <div className="mt-auto flex items-center justify-between text-xs text-muted-foreground">
+                            <div className="flex items-center gap-2">
+                                {article.author && (
+                                    <>
+                                        <span>{article.author.name}</span>
+                                    </>
+                                )}
+                            </div>
+                            <div className="flex items-center gap-1">
+                                <Clock className="w-3 h-3" />
+                                <span>{article.readTime}</span>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </article>
+        </Link>
+    );
+}
