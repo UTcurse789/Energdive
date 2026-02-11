@@ -1,10 +1,8 @@
 import type { Metadata } from "next";
 import { Inter, Merriweather } from "next/font/google";
 import "./globals.css";
-import { MarketTicker } from "@/components/features/ticker";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
-import { ReactNode } from "react";
 
 const sans = Inter({
   subsets: ["latin"],
@@ -28,20 +26,18 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://energdive.com"),
 };
 
-// app/layout.tsx
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children
+}: {
+  children: React.ReactNode
+}) {
   return (
     <html lang="en" className={`${sans.variable} ${serif.variable}`}>
-      <body className="antialiased">
-        {/* Header ko top par rakhein */}
+      <body className="antialiased font-sans">
         <Header />
-
-        {/* Ticker Container: Header fixed hai toh margin/padding add karein */}
-        <div className="relative pt-[64px] w-full bg-background border-b z-40">
-          <MarketTicker />
-        </div>
-
-        <main className="min-h-screen">{children}</main>
+        <main className="min-h-screen pt-[120px] md:pt-[140px]">
+          {children}
+        </main>
         <Footer />
       </body>
     </html>

@@ -7,6 +7,7 @@ import { EventsSection } from "@/components/sections/events";
 import { SubscribeCTA } from "@/components/sections/subscribe-cta";
 import { ARTICLES, SECTORS } from "@/data/dummy";
 import { SectionHeading } from "@/components/ui/section-heading";
+import { MarketTicker } from "@/components/features/ticker";
 
 export default function Home() {
   // Mocking data distribution
@@ -24,11 +25,12 @@ export default function Home() {
 
   return (
     <>
-      {/* Hero Section */}
+
       <Hero />
+      <MarketTicker />
 
       {/* Trending (Bento Grid) */}
-      <section className="py-12 border-b border-border">
+      <section className="py-20 border-b border-border">
         <div className="container">
           <SectionHeading title="Trending Now" />
           <BentoGrid items={bentoItems} />

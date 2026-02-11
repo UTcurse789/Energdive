@@ -71,28 +71,38 @@
 //     );
 // }
 
-
 "use client";
 
-interface Props {
+interface MarketChartProps {
     symbol: string;
 }
 
-export function MarketChart({ symbol }: Props) {
-    // 1. Symbol se '^' hatao
-    let cleanSymbol = symbol.startsWith('^') ? symbol.substring(1) : symbol;
+export function MarketChart({ symbol }: MarketChartProps) {
+    let cleanSymbol = decodeURIComponent(symbol);
+    cleanSymbol = cleanSymbol.replace('^', '');
 
-    // 2. Specific mapping (TradingView compatibility)
-    if (cleanSymbol === "GSPC") cleanSymbol = "SPX";
-    if (cleanSymbol === "IXIC") cleanSymbol = "IXIC";
-    if (cleanSymbol === "DJI") cleanSymbol = "DJI";
+    // Precise mapping for TradingView symbols
+    const symbolMap: Record<string, string> = {
+        "GSPC": "TVC:SPX",
+        "DJI": "TVC:DJI",
+        "IXIC": "NASDAQ:IXIC",
+        "RUT": "TVC:RUT",
+        "VIX": "TVC:VIX",
+        "BTCUSD": "COINBASE:BTCUSD", // Example for crypto if needed
+    };
+
+    const tvSymbol = symbolMap[cleanSymbol] || cleanSymbol;
 
     return (
-        <div className="w-full h-[420px] rounded-xl overflow-hidden border bg-black">
+        <div className="w-full h-[450px] rounded-xl overflow-hidden border border-border bg-black shadow-lg">
             <iframe
-                src={`https://s.tradingview.com/widgetembed/?symbol=${cleanSymbol}&interval=30&theme=dark&style=1`}
+                src={`https://s.tradingview.com/widgetembed/?symbol=${tvSymbol}&interval=D&theme=dark&style=1&timezone=Etc%2FUTC&withdateranges=1&hide_side_toolbar=1&allow_symbol_change=0&save_image=0&details=1`}
                 className="w-full h-full"
-                frameBorder="0"
+                style={{ border: 0 }}
+                title={`Market Chart for ${tvSymbol}`}
+                loading="lazy"
+                // @ts-expect-error - allowTransparency is a non-standard attribute but required for some iframes
+                allowtransparency="true"
             />
         </div>
     );
