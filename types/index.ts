@@ -1,6 +1,7 @@
 export interface Author {
     name: string;
     avatar: string;
+    role?: string; // e.g. "Senior Energy Analyst"
     bio?: string;
 }
 
@@ -44,4 +45,20 @@ export interface MarketQuote {
     price: number;
     changesPercentage: number;
     change: number;
+}
+
+export interface Opinion {
+    id: string;
+    title: string;
+    author: {
+        name: string;
+        role: string;
+        image: string; // Large portrait image
+        bio?: string;
+    };
+    date: string;
+    excerpt: string;
+    content: string;
+    category?: string;
+    slug: string;
 }
