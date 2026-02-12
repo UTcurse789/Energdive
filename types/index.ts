@@ -1,6 +1,7 @@
 export interface Author {
     name: string;
     avatar: string;
+    role?: string; // e.g. "Senior Energy Analyst"
     bio?: string;
 }
 
@@ -62,4 +63,18 @@ export interface Issue {
         title: string;
         articles: Article[];
     }[];
+export interface Opinion {
+    id: string;
+    title: string;
+    author: {
+        name: string;
+        role: string;
+        image: string; // Large portrait image
+        bio?: string;
+    };
+    date: string;
+    excerpt: string;
+    content: string;
+    category?: string;
+    slug: string;
 }
