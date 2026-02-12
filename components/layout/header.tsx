@@ -2,16 +2,16 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { Search, ChevronDown, Facebook, Twitter, Linkedin, Megaphone, ChevronRight, Zap } from "lucide-react";
 import { SECTORS } from "@/data/dummy";
-import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 
 export function Header() {
     const [isScrolled, setIsScrolled] = useState(false);
     const [activeMenu, setActiveMenu] = useState<string | null>(null); // 'sectors' | 'magazine' | 'more' | null
-    const [magazinePreview, setMagazinePreview] = useState("/magazine-default.png");
+    const [magazinePreview, setMagazinePreview] = useState("/magazine-default.jpg");
     const [isLoginHovered, setIsLoginHovered] = useState(false);
 
     const brandGreen = "#00A651";
@@ -61,7 +61,7 @@ export function Header() {
                         <Link href="/opinion" className="text-[10px] md:text-[12px] xl:text-[13px] font-bold uppercase tracking-[1px] hover:opacity-70 whitespace-nowrap">OPINION</Link>
 
                         {/* MAGAZINE MEGA MENU */}
-                        <div className="relative group cursor-pointer" onMouseEnter={() => { setActiveMenu('magazine'); setMagazinePreview("/magazine-default.png"); }}>
+                        <div className="relative group cursor-pointer" onMouseEnter={() => { setActiveMenu('magazine'); setMagazinePreview("/magazine-default.jpg"); }}>
                             <button className="flex items-center gap-1 text-[10px] md:text-[12px] xl:text-[13px] font-bold uppercase tracking-[1px] hover:opacity-70 whitespace-nowrap">
                                 MAGAZINE <ChevronDown className={cn("w-3 h-3 transition-transform", activeMenu === 'magazine' && "rotate-180")} />
                             </button>
@@ -102,14 +102,14 @@ export function Header() {
                                 </AnimatePresence>
                             </Link>
                         </motion.div>
-                        <Search className="w-4 h-4 md:w-5 h-5 cursor-pointer hover:text-[#00A651] shrink-0" />
+                        <Search className="w-4 h - 4 md:w-5 h-5 cursor-pointer hover:text-[#00A651] shrink-0" />
                     </div>
                 </div>
             </div>
 
             {/* SHARED STATISTA-STYLE MEGA MENU CONTAINER */}
             <div className={cn(
-                "fixed left-0 w-full bg-white shadow-2xl border-t transition-all duration-300 origin-top overflow-hidden z-[60]",
+                "fixed left-0 w-full bg-white shadow-2xl border-t transition-all duration-300 origin-top overflow-hidden z-60",
                 activeMenu ? "opacity-100 visible h-[450px]" : "opacity-0 invisible h-0"
             )}>
                 <div className="max-w-[1600px] mx-auto w-full flex h-full">
@@ -152,18 +152,18 @@ export function Header() {
                                 <h3 className="text-[10px] font-black text-gray-400 uppercase mb-6 tracking-widest">EnergDive Magazine</h3>
                                 <div className="flex flex-col gap-2">
                                     <Link
-                                        href="/magazine/current"
-                                        onMouseEnter={() => setMagazinePreview("/current-issue-cover.png")}
+                                        href="/issues/january-2026"
+                                        onMouseEnter={() => setMagazinePreview("/magazine-default.jpg")}
                                         className="px-4 py-4 text-[14px] font-bold text-gray-800 hover:bg-[#00A651] hover:text-white flex justify-between items-center transition-colors"
                                     >
                                         CURRENT ISSUE <ChevronRight size={14} />
                                     </Link>
                                     <Link
-                                        href="/magazine/latest"
-                                        onMouseEnter={() => setMagazinePreview("/latest-issue-cover.png")}
+                                        href="/issues/december-2025"
+                                        onMouseEnter={() => setMagazinePreview("/current-magazine.jpg")}
                                         className="px-4 py-4 text-[14px] font-bold text-gray-800 hover:bg-[#00A651] hover:text-white flex justify-between items-center transition-colors"
                                     >
-                                        LATEST ISSUES <ChevronRight size={14} />
+                                        PAST ISSUES <ChevronRight size={14} />
                                     </Link>
                                 </div>
                             </div>

@@ -7,9 +7,8 @@ import { ArticleCard } from "@/components/ui/article-card";
 import { ARTICLES } from "@/data/dummy";
 import { Facebook, Linkedin, Twitter, Share2 } from "lucide-react";
 
-export default function ArticlePage({ params }: { params: { slug: string } }) {
-    // In a real app, await params
-    // const slug = params.slug;
+export default async function ArticlePage({ params }: { params: Promise<{ slug: string }> }) {
+    const { slug } = await params;
     const article = ARTICLES[0]; // Mock article
     const relatedArticles = ARTICLES.slice(1, 4);
 
@@ -138,7 +137,7 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
                 </article>
             </main>
 
-            <Footer />
+
         </div>
     );
 }

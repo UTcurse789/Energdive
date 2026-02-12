@@ -1,5 +1,3 @@
-import { Header } from "@/components/layout/header";
-import { Footer } from "@/components/layout/footer";
 import { Hero } from "@/components/sections/hero";
 import { BentoGrid } from "@/components/ui/bento-grid";
 import { SectorBlock } from "@/components/ui/sector-block";
@@ -9,6 +7,7 @@ import { EventsSection } from "@/components/sections/events";
 import { SubscribeCTA } from "@/components/sections/subscribe-cta";
 import { ARTICLES, SECTORS } from "@/data/dummy";
 import { SectionHeading } from "@/components/ui/section-heading";
+import { MarketTicker } from "@/components/features/ticker";
 
 export default function Home() {
   // Mocking data distribution
@@ -25,49 +24,44 @@ export default function Home() {
   }));
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col font-sans">
-      <Header />
+    <>
 
-      <main className="flex-1 mt-16 pt-4">
-        {/* Hero Section */}
-        <Hero />
+      <Hero />
+      <MarketTicker />
 
-        {/* Trending (Bento Grid) */}
-        <section className="py-12 border-b border-border">
-          <div className="container">
-            <SectionHeading title="Trending Now" />
-            <BentoGrid items={bentoItems} />
-          </div>
-        </section>
-
-        {/* Sector Blocks */}
-        <div className="border-b border-border">
-          <div className="container">
-            {SECTORS.map((sector) => (
-              <SectorBlock
-                key={sector.slug}
-                title={sector.title}
-                slug={sector.slug}
-                articles={ARTICLES.filter(a => a.category === sector.title || true).slice(0, 4)} // Mock filter logic
-              />
-            ))}
-          </div>
+      {/* Trending (Bento Grid) */}
+      <section className="py-20 border-b border-border">
+        <div className="container">
+          <SectionHeading title="Trending Now" />
+          <BentoGrid items={bentoItems} />
         </div>
+      </section>
 
-        {/* Opinion & Analysis */}
-        <OpinionSection />
+      {/* Sector Blocks */}
+      <div className="border-b border-border">
+        <div className="container">
+          {SECTORS.map((sector) => (
+            <SectorBlock
+              key={sector.slug}
+              title={sector.title}
+              slug={sector.slug}
+              articles={ARTICLES.filter(a => a.category === sector.title || true).slice(0, 4)} // Mock filter logic
+            />
+          ))}
+        </div>
+      </div>
 
-        {/* Data & Insights */}
-        <DataInsightsSection />
+      {/* Opinion & Analysis */}
+      <OpinionSection />
 
-        {/* Subscribe CTA */}
-        <SubscribeCTA />
+      {/* Data & Insights */}
+      <DataInsightsSection />
 
-        {/* Events */}
-        <EventsSection />
-      </main>
+      {/* Subscribe CTA */}
+      <SubscribeCTA />
 
-      <Footer />
-    </div>
+      {/* Events */}
+      <EventsSection />
+    </>
   );
 }

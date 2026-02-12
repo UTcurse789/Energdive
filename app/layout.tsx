@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Inter, Merriweather } from "next/font/google";
 import "./globals.css";
+import { Header } from "@/components/layout/header";
+import { Footer } from "@/components/layout/footer";
 
 const sans = Inter({
   subsets: ["latin"],
@@ -25,14 +27,18 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+  children
+}: {
+  children: React.ReactNode
+}) {
   return (
     <html lang="en" className={`${sans.variable} ${serif.variable}`}>
-      <body className="min-h-screen bg-background font-sans text-foreground">
-        {children}
+      <body className="antialiased font-sans">
+        <Header />
+        <main className="min-h-screen pt-[120px] md:pt-[140px]">
+          {children}
+        </main>
+        <Footer />
       </body>
     </html>
   );

@@ -8,7 +8,7 @@ const topStories = ARTICLES.slice(1, 6);
 
 export function Hero() {
     return (
-        <section className="py-8 md:py-12 border-b border-border">
+        <section className="py-8 md:py-12 mb-12 md:mb-16 border-b border-border">
             <div className="container grid grid-cols-1 lg:grid-cols-12 gap-8 md:gap-12">
 
                 {/* Main Hero Story (70%) */}
