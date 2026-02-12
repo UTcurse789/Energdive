@@ -37,6 +37,13 @@ export interface Event {
     date: string;
     location: string;
     image: string;
+    url: string;
+    // Add these new properties:
+    status: 'upcoming' | 'ongoing' | 'past';
+    time: string;
+    venue: string;
+    mapUrl: string;
+    description: string;
 }
 
 export interface MarketQuote {
