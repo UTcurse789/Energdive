@@ -1,58 +1,82 @@
-// components/ReportCard.tsx
-import { motion } from "framer-motion";
-import { ArrowRight, Clock, User } from "lucide-react";
+"use client";
 
-interface Report {
-    image: string;
-    title: string;
-    category: string;
-    date: string;
-    excerpt: string;
-    author: string;
-    readTime: string;
+import Link from "next/link";
+import Image from "next/image";
+import { motion } from "framer-motion";
+import { ArrowRight, FileText, Download } from "lucide-react";
+import { Article } from "@/types";
+import { cn } from "@/lib/utils";
+
+export interface ReportCardProps {
+    article: Article;
+    className?: string;
+    variant?: "default" | "compact" | "featured";
+    baseUrl?: string;
 }
 
-export const ReportCard = ({ report }: { report: Report }) => (
-    <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        whileHover={{ y: -10 }}
-        className="group relative flex flex-col bg-[#1A1A1A] border border-white/5 overflow-hidden transition-all duration-500 hover:border-[#00C6A7]/40 hover:shadow-[0_0_30px_rgba(0,198,167,0.1)]"
-    >
-        {/* Image Container */}
-        <div className="relative aspect-16/10 overflow-hidden">
-            <img
-                src={report.image}
-                alt={report.title}
-                className="object-cover w-full h-full grayscale-[0.2] group-hover:grayscale-0 group-hover:scale-110 transition-all duration-700"
-            />
-            <div className="absolute top-4 left-4">
-                <span className="bg-[#00C6A7] text-[#0F0F0F] text-[9px] font-black px-3 py-1 uppercase tracking-widest">
-                    {report.category}
-                </span>
-            </div>
-        </div>
+export function ReportCard({ article, className, variant = "default", baseUrl = "/reports" }: ReportCardProps) {
+    const isFeatured = variant === "featured";
 
-        {/* Content Area */}
-        <div className="p-6 flex flex-col flex-1">
-            <span className="text-[#B3B3B3] text-[10px] font-bold uppercase tracking-widest mb-3">
-                {report.date}
-            </span>
-            <h3 className="text-xl font-bold text-white leading-tight mb-3 group-hover:text-[#00C6A7] transition-colors line-clamp-2">
-                {report.title}
-            </h3>
-            <p className="text-[#B3B3B3]/70 text-sm line-clamp-1 mb-6 font-light">
-                {report.excerpt}
-            </p>
-
-            <div className="mt-auto pt-4 border-t border-white/5 flex justify-between items-center">
-                <div className="flex items-center gap-2 text-[10px] text-white/40 uppercase font-medium">
-                    <User size={12} className="text-[#00C6A7]" /> {report.author}
-                    <span className="mx-1">•</span>
-                    <Clock size={12} /> {report.readTime}
+    return (
+        <motion.div
+            whileHover={{ y: -5 }}
+            className={cn(
+                "group relative bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl overflow-hidden flex flex-col shadow-sm hover:shadow-xl transition-all duration-300",
+                className
+            )}
+        >
+            <Link href={`${baseUrl}/${article.slug}`} className="block relative aspect-4/3 overflow-hidden">
+                <Image
+                    src={article.image}
+                    alt={article.title}
+                    fill
+                    className="object-cover transition-transform duration-700 group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-linear-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-6">
+                    <span className="text-white text-xs font-bold uppercase tracking-widest flex items-center gap-2">
+                        View Report <ArrowRight className="w-4 h-4 ml-1" />
+                    </span>
                 </div>
-                <ArrowRight size={16} className="text-[#00C6A7] opacity-0 group-hover:opacity-100 transition-all -translate-x-2 group-hover:translate-x-0" />
+            </Link>
+
+            <div className="p-6 flex flex-col grow">
+                <div className="flex items-center justify-between mb-4">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-primary bg-primary/10 px-2 py-1 rounded">
+                        {article.category}
+                    </span>
+                    <span className="text-xs text-zinc-500 font-medium">
+                        {article.date}
+                    </span>
+                </div>
+
+                <Link href={`${baseUrl}/${article.slug}`} className="block mb-3">
+                    <h3 className={cn(
+                        "font-serif font-bold text-zinc-900 dark:text-zinc-100 group-hover:text-primary transition-colors leading-tight",
+                        isFeatured ? "text-2xl md:text-3xl" : "text-xl"
+                    )}>
+                        {article.title}
+                    </h3>
+                </Link>
+
+                <p className="text-sm text-zinc-500 dark:text-zinc-400 line-clamp-3 mb-6 font-serif leading-relaxed grow">
+                    {article.excerpt}
+                </p>
+
+                <div className="pt-4 border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-between mt-auto">
+                    <div className="flex items-center gap-3">
+                        {article.author && (
+                            <div className="text-xs font-bold text-zinc-600 dark:text-zinc-400">
+                                {article.author.name}
+                            </div>
+                        )}
+                        {article.pdfSize && (
+                            <span className="text-[10px] bg-zinc-100 dark:bg-zinc-800 text-zinc-500 px-2 py-0.5 rounded flex items-center gap-1">
+                                <FileText className="w-3 h-3" /> {article.pdfSize}
+                            </span>
+                        )}
+                    </div>
+                </div>
             </div>
-        </div>
-    </motion.div>
-);
+        </motion.div>
+    );
+}
