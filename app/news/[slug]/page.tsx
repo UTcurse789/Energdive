@@ -137,7 +137,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
                 </article>
             </main>
 
-            <Footer />
+
         </div>
     );
 }

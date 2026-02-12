@@ -395,6 +395,115 @@ export const EVENTS: Event[] = [
         image: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&q=80&w=1000"
     }
 ];
+export const ISSUES: Issue[] = [
+    {
+        id: "1",
+        title: "The Decarbonisation Roadmap",
+        slug: "decarbonisation-roadmap",
+        description: "Exploring the global shift towards net-zero emissions and the technologies driving this transition.",
+        coverImage: "https://images.unsplash.com/photo-1473341304170-971dccb5ac1e?auto=format&fit=crop&q=80&w=800",
+        date: "Jan 2026",
+        month: "January",
+        year: "2026",
+        pdfUrl: "#",
+        volume: "105",
+        number: "1",
+        sections: [
+            {
+                title: "Essays",
+                articles: [
+                    {
+                        id: "101",
+                        title: "The Geopolitics of Green Energy",
+                        slug: "geopolitics-green-energy",
+                        excerpt: "How the shift to renewables is reshaping global power dynamics.",
+                        author: { name: "Dr. Aris Vlahos", avatar: "", bio: "" },
+                        category: "Essay",
+                        image: "https://images.unsplash.com/photo-1466611653911-95081537e5b7?auto=format&fit=crop&q=80&w=400",
+                        date: "Jan 10, 2026",
+                        readTime: "12 min read"
+                    },
+                    {
+                        id: "102",
+                        title: "Beyond the Grid",
+                        slug: "beyond-the-grid",
+                        excerpt: "Decentralised power systems are the future of resilience.",
+                        author: { name: "Sarah Jenkings", avatar: "", bio: "" },
+                        category: "Essay",
+                        image: "https://images.unsplash.com/photo-1473341304170-971dccb5ac1e?auto=format&fit=crop&q=80&w=400",
+                        date: "Jan 12, 2026",
+                        readTime: "8 min read"
+                    }
+                ]
+            },
+            {
+                title: "Review & Response",
+                articles: [
+                    {
+                        id: "103",
+                        title: "Carbon Markets 2.0",
+                        slug: "carbon-markets-2",
+                        excerpt: "A critique of the new voluntary carbon credit standards.",
+                        author: { name: "Michael Chen", avatar: "", bio: "" },
+                        category: "Review",
+                        image: "https://images.unsplash.com/photo-1611273426858-450d8e3c9fce?auto=format&fit=crop&q=80&w=400",
+                        date: "Jan 15, 2026",
+                        readTime: "6 min read"
+                    }
+                ]
+            },
+            {
+                title: "Letters to the Editor",
+                articles: [
+                    {
+                        id: "104",
+                        title: "On Nuclear Safety",
+                        slug: "on-nuclear-safety",
+                        excerpt: "Response to last month's cover story on SMR safety protocols.",
+                        author: { name: "Elena M.", avatar: "", bio: "" },
+                        category: "Letter",
+                        image: "https://images.unsplash.com/photo-1591768793355-74d04bb6608f?auto=format&fit=crop&q=80&w=400",
+                        date: "Jan 18, 2026",
+                        readTime: "3 min read"
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        id: "2",
+        title: "Nuclear Renaissance",
+        slug: "nuclear-renaissance",
+        description: "Is nuclear energy making a comeback? We dive deep into SMRs and the future of baseload power.",
+        coverImage: "https://images.unsplash.com/photo-1591768793355-74d04bb6608f?auto=format&fit=crop&q=80&w=800",
+        date: "Dec 2025",
+        month: "December",
+        year: "2025",
+        pdfUrl: "#",
+    },
+    {
+        id: "3",
+        title: "The Hydrogen Hype",
+        slug: "hydrogen-hype",
+        description: "Separating reality from rumors in the green hydrogen economy. A comprehensive look at the value chain.",
+        coverImage: "https://images.unsplash.com/photo-1532601224476-15c79f2f7a51?auto=format&fit=crop&q=80&w=800",
+        date: "Nov 2025",
+        month: "November",
+        year: "2025",
+        pdfUrl: "#",
+    },
+    {
+        id: "4",
+        title: "Offshore Wind Frontiers",
+        slug: "offshore-wind-frontiers",
+        description: "The challenges and opportunities of taking wind power further offshore with floating turbine technology.",
+        coverImage: "https://images.unsplash.com/photo-1466611653911-95081537e5b7?auto=format&fit=crop&q=80&w=800",
+        date: "Oct 2025",
+        month: "October",
+        year: "2025",
+        pdfUrl: "#",
+    },
+];
 
 export const OPINIONS: Opinion[] = [
     {

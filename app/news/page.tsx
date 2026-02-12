@@ -191,7 +191,7 @@ export default function ArchitectEditorialPage() {
                 </div>
             </main>
 
-            <Footer />
+
 
             <style jsx global>{`
                 @keyframes marquee {
