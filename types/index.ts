@@ -80,3 +80,21 @@ export interface Opinion {
     category?: string;
     slug: string;
 }
+
+export interface Video {
+    id: string;
+    title: string;
+    slug: string;
+    description: string;
+    youtubeId: string;
+    thumbnail: string;
+    date: string;
+    duration: string;
+    author: {
+        name: string;
+        role: string;
+        avatar: string; // Small avatar
+    };
+    category: string;
+    views?: string;
+}
