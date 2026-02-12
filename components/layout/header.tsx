@@ -152,18 +152,18 @@ export function Header() {
                                 <h3 className="text-[10px] font-black text-gray-400 uppercase mb-6 tracking-widest">EnergDive Magazine</h3>
                                 <div className="flex flex-col gap-2">
                                     <Link
-                                        href="/magazine/current"
-                                        onMouseEnter={() => setMagazinePreview("/current-magazine.jpg")}
+                                        href="/issues/january-2026"
+                                        onMouseEnter={() => setMagazinePreview("/magazine-default.jpg")}
                                         className="px-4 py-4 text-[14px] font-bold text-gray-800 hover:bg-[#00A651] hover:text-white flex justify-between items-center transition-colors"
                                     >
                                         CURRENT ISSUE <ChevronRight size={14} />
                                     </Link>
                                     <Link
-                                        href="/magazine/latest"
-                                        onMouseEnter={() => setMagazinePreview("/magazine-default.jpg")}
+                                        href="/issues/december-2025"
+                                        onMouseEnter={() => setMagazinePreview("/current-magazine.jpg")}
                                         className="px-4 py-4 text-[14px] font-bold text-gray-800 hover:bg-[#00A651] hover:text-white flex justify-between items-center transition-colors"
                                     >
-                                        LATEST ISSUES <ChevronRight size={14} />
+                                        PAST ISSUES <ChevronRight size={14} />
                                     </Link>
                                 </div>
                             </div>

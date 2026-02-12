@@ -115,7 +115,7 @@
 // ];
 
 
-import { Article, Sector, Event, Opinion, Issue } from "@/types";
+import { Article, Sector, Event, Opinion, Issue, Video } from "@/types";
 
 
 export const SECTORS: Sector[] = [
@@ -489,10 +489,10 @@ export const EVENTS: Event[] = [
 export const ISSUES: Issue[] = [
     {
         id: "1",
-        title: "The Decarbonisation Roadmap",
-        slug: "decarbonisation-roadmap",
+        title: "January 2026",
+        slug: "january-2026",
         description: "Exploring the global shift towards net-zero emissions and the technologies driving this transition.",
-        coverImage: "https://images.unsplash.com/photo-1473341304170-971dccb5ac1e?auto=format&fit=crop&q=80&w=800",
+        coverImage: "/magazine-default.jpg",
         date: "Jan 2026",
         month: "January",
         year: "2026",
@@ -563,36 +563,16 @@ export const ISSUES: Issue[] = [
     },
     {
         id: "2",
-        title: "Nuclear Renaissance",
-        slug: "nuclear-renaissance",
+        title: "December 2025",
+        slug: "december-2025",
         description: "Is nuclear energy making a comeback? We dive deep into SMRs and the future of baseload power.",
-        coverImage: "https://images.unsplash.com/photo-1591768793355-74d04bb6608f?auto=format&fit=crop&q=80&w=800",
+        coverImage: "/current-magazine.jpg",
         date: "Dec 2025",
         month: "December",
         year: "2025",
         pdfUrl: "#",
-    },
-    {
-        id: "3",
-        title: "The Hydrogen Hype",
-        slug: "hydrogen-hype",
-        description: "Separating reality from rumors in the green hydrogen economy. A comprehensive look at the value chain.",
-        coverImage: "https://images.unsplash.com/photo-1532601224476-15c79f2f7a51?auto=format&fit=crop&q=80&w=800",
-        date: "Nov 2025",
-        month: "November",
-        year: "2025",
-        pdfUrl: "#",
-    },
-    {
-        id: "4",
-        title: "Offshore Wind Frontiers",
-        slug: "offshore-wind-frontiers",
-        description: "The challenges and opportunities of taking wind power further offshore with floating turbine technology.",
-        coverImage: "https://images.unsplash.com/photo-1466611653911-95081537e5b7?auto=format&fit=crop&q=80&w=800",
-        date: "Oct 2025",
-        month: "October",
-        year: "2025",
-        pdfUrl: "#",
+        volume: "104",
+        number: "12",
     },
 ];
 
@@ -667,3 +647,73 @@ export const ABOUT_DATA = {
         content: "Energdive is a premier intelligence platform dedicated to the global energy sector. We provide actionable insights, rigourous analysis, and exclusive reporting on Oil & Gas, Power & Utilities, Renewables, and Climate Policy. Our mission is to empower leaders with the knowledge to make high-stakes decisions with confidence. We are not just observers; we are the chroniclers of the energy transition."
     }
 };
+export const VIDEOS: Video[] = [
+    {
+        id: "v-1",
+        title: "The Future of Green Hydrogen: Challenges & Opportunities",
+        slug: "future-of-green-hydrogen",
+        description: "An in-depth look at how green hydrogen is poised to revolutionize the energy sector, from transportation to heavy industry.",
+        youtubeId: "dQw4w9WgXcQ", // Placeholder ID
+        thumbnail: "https://images.unsplash.com/photo-1532601224476-15c79f2f7a51?auto=format&fit=crop&q=80&w=1000",
+        date: "Feb 10, 2026",
+        duration: "12:45",
+        author: {
+            name: "Dr. Aris Vlahos",
+            role: "Energy Analyst",
+            avatar: "https://i.pravatar.cc/150?u=aris"
+        },
+        category: "New Energies",
+        views: "1.2K views"
+    },
+    {
+        id: "v-2",
+        title: "Global Energy Transition Summit 2025 Highlights",
+        slug: "energy-transition-summit-2025",
+        description: "Key takeaways and panel discussions from the biggest energy event of the year.",
+        youtubeId: "Rlskemjd79U", // Placeholder ID
+        thumbnail: "https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&q=80&w=1000",
+        date: "Nov 15, 2025",
+        duration: "45:20",
+        author: {
+            name: "EnergDive Team",
+            role: "Editorial",
+            avatar: "https://i.pravatar.cc/150?u=energdive"
+        },
+        category: "Events",
+        views: "5.4K views"
+    },
+    {
+        id: "v-3",
+        title: "Understanding Carbon Markets",
+        slug: "understanding-carbon-markets",
+        description: "A beginner's guide to how carbon credits work and their impact on global emissions.",
+        youtubeId: "dQw4w9WgXcQ", // Placeholder ID
+        thumbnail: "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&q=80&w=1000",
+        date: "Jan 05, 2026",
+        duration: "08:30",
+        author: {
+            name: "Sarah Jenkings",
+            role: "Senior Analyst",
+            avatar: "https://i.pravatar.cc/150?u=sarah"
+        },
+        category: "Sustainability",
+        views: "3.1K views"
+    },
+    {
+        id: "v-4",
+        title: "Offshore Wind: The Next Frontier",
+        slug: "offshore-wind-next-frontier",
+        description: "Exploring the engineering marvels of offshore wind farms in the North Sea.",
+        youtubeId: "dQw4w9WgXcQ", // Placeholder ID
+        thumbnail: "https://images.unsplash.com/photo-1466611653911-95081537e5b7?auto=format&fit=crop&q=80&w=1000",
+        date: "Dec 12, 2025",
+        duration: "15:10",
+        author: {
+            name: "Elena M.",
+            role: "Europe Correspondent",
+            avatar: "https://i.pravatar.cc/150?u=elena"
+        },
+        category: "Power & Utilities",
+        views: "2.8K views"
+    }
+];
