@@ -42,15 +42,17 @@ export default async function VideoDetailPage({ params }: { params: Promise<{ sl
             <div className="bg-white border-b border-gray-100">
                 <div className="mx-auto px-6 max-w-[1400px] pt-8 pb-12">
 
-                    {/* Video Player Wrapper with Shadow */}
-                    <div className="relative aspect-video w-full bg-black rounded-2xl overflow-hidden shadow-2xl border-4 border-gray-900 mb-8">
-                        <iframe
-                            src={`https://www.youtube.com/embed/${video.youtubeId}?autoplay=0&rel=0`}
-                            title={video.title}
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                            allowFullScreen
-                            className="absolute inset-0 w-full h-full"
-                        />
+                    {/* Video Player Wrapper with Shadow - YouTube Aspect Ratio */}
+                    <div className="mx-auto max-w-4xl">
+                        <div className="relative aspect-video w-full bg-black rounded-2xl overflow-hidden shadow-2xl border-4 border-gray-900 mb-8">
+                            <iframe
+                                src={`https://www.youtube.com/embed/${video.youtubeId}?autoplay=0&rel=0`}
+                                title={video.title}
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                allowFullScreen
+                                className="absolute inset-0 w-full h-full"
+                            />
+                        </div>
                     </div>
 
                     {/* Video Title & Actions */}

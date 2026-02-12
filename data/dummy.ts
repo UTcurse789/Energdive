@@ -656,7 +656,7 @@ export const VIDEOS: Video[] = [
         title: "Global Energy Transition Summit 2025 Highlights",
         slug: "energy-transition-summit-2025",
         description: "Key takeaways and panel discussions from the biggest energy event of the year.",
-        youtubeId: "dQw4w9WgXcQ", // Placeholder ID
+        youtubeId: "Rlskemjd79U", // Placeholder ID
         thumbnail: "https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&q=80&w=1000",
         date: "Nov 15, 2025",
         duration: "45:20",
