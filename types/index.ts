@@ -17,6 +17,8 @@ export interface Article {
     readTime: string;
     featured?: boolean;
     trending?: boolean;
+    downloadUrl?: string; // New field for report download
+    pdfSize?: string;     // New field for report size
 }
 
 export interface Sector {
