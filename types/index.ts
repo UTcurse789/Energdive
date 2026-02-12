@@ -63,6 +63,8 @@ export interface Issue {
         title: string;
         articles: Article[];
     }[];
+}
+
 export interface Opinion {
     id: string;
     title: string;

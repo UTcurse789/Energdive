@@ -115,7 +115,7 @@
 // ];
 
 
-import { Article, Sector, Event, Opinion } from "@/types";
+import { Article, Sector, Event, Opinion, Issue } from "@/types";
 
 
 export const SECTORS: Sector[] = [
@@ -398,10 +398,10 @@ export const EVENTS: Event[] = [
 export const ISSUES: Issue[] = [
     {
         id: "1",
-        title: "The Decarbonisation Roadmap",
-        slug: "decarbonisation-roadmap",
+        title: "January 2026",
+        slug: "january-2026",
         description: "Exploring the global shift towards net-zero emissions and the technologies driving this transition.",
-        coverImage: "https://images.unsplash.com/photo-1473341304170-971dccb5ac1e?auto=format&fit=crop&q=80&w=800",
+        coverImage: "/magazine-default.jpg",
         date: "Jan 2026",
         month: "January",
         year: "2026",
@@ -472,36 +472,16 @@ export const ISSUES: Issue[] = [
     },
     {
         id: "2",
-        title: "Nuclear Renaissance",
-        slug: "nuclear-renaissance",
+        title: "December 2025",
+        slug: "december-2025",
         description: "Is nuclear energy making a comeback? We dive deep into SMRs and the future of baseload power.",
-        coverImage: "https://images.unsplash.com/photo-1591768793355-74d04bb6608f?auto=format&fit=crop&q=80&w=800",
+        coverImage: "/current-magazine.jpg",
         date: "Dec 2025",
         month: "December",
         year: "2025",
         pdfUrl: "#",
-    },
-    {
-        id: "3",
-        title: "The Hydrogen Hype",
-        slug: "hydrogen-hype",
-        description: "Separating reality from rumors in the green hydrogen economy. A comprehensive look at the value chain.",
-        coverImage: "https://images.unsplash.com/photo-1532601224476-15c79f2f7a51?auto=format&fit=crop&q=80&w=800",
-        date: "Nov 2025",
-        month: "November",
-        year: "2025",
-        pdfUrl: "#",
-    },
-    {
-        id: "4",
-        title: "Offshore Wind Frontiers",
-        slug: "offshore-wind-frontiers",
-        description: "The challenges and opportunities of taking wind power further offshore with floating turbine technology.",
-        coverImage: "https://images.unsplash.com/photo-1466611653911-95081537e5b7?auto=format&fit=crop&q=80&w=800",
-        date: "Oct 2025",
-        month: "October",
-        year: "2025",
-        pdfUrl: "#",
+        volume: "104",
+        number: "12",
     },
 ];
 
