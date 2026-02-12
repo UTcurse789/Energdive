@@ -115,7 +115,7 @@
 // ];
 
 
-import { Article, Sector, Event } from "@/types";
+import { Article, Sector, Event, Opinion } from "@/types";
 
 
 export const SECTORS: Sector[] = [
@@ -393,5 +393,62 @@ export const EVENTS: Event[] = [
         date: "Jan 10, 2026",
         location: "Singapore",
         image: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&q=80&w=1000"
+    }
+];
+
+export const OPINIONS: Opinion[] = [
+    {
+        id: "op-1",
+        title: "Building a Robust Energy System",
+        category: "Strategy",
+        slug: "building-robust-energy-system",
+        excerpt: "India is building energy resilience, not simply replacing fuels. Security, refining flexibility, grid execution, and policy reform now shape reliable decarbonisation. The next decade demands structural choices, not marginal gains.",
+        content: "Full opinion content...",
+        author: {
+            name: "Abhishek Bhatnagar",
+            image: "https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=800",
+            role: "Energy Strategist",
+            bio: "Expert in global energy markets and infrastructure."
+        },
+        date: "January 20, 2026",
+    },
+    {
+        id: "op-2",
+        title: "Our Energy Transition is Well on Course",
+        slug: "energy-transition-on-course",
+        excerpt: "Kerala Additional Chief Secretary Puneet Kumar argues that the state's roadmap to 100% renewable energy by 2040 is backed by concrete policy actions and investment.",
+        content: "Full opinion content...",
+        author: {
+            name: "Puneet Kumar",
+            image: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=800",
+            role: "Additional Chief Secretary (Power), Kerala"
+        },
+        date: "January 20, 2026",
+    },
+    {
+        id: "op-3",
+        title: "India did Well Globally by First Positioning Itself as an Energy Leader",
+        slug: "india-energy-leader-positioning",
+        excerpt: "Dr. Ajay Mathur discusses how India's strategic maneuvering in the global energy market has set the stage for its renewable leadership.",
+        content: "Full opinion content...",
+        author: {
+            name: "Dr. Ajay Mathur",
+            image: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&q=80&w=800",
+            role: "Director General, ISA"
+        },
+        date: "January 20, 2026",
+    },
+    {
+        id: "op-4",
+        title: "India's Energy Security by 2047: From Import Dependence to System Resilience",
+        slug: "india-energy-security-2047",
+        excerpt: "Achieving energy independence requires a paradigm shift in how we view storage, grid connectivity, and domestic manufacturing.",
+        content: "Full opinion content...",
+        author: {
+            name: "Abhishek Bhatnagar",
+            image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=800",
+            role: "Energy Strategist"
+        },
+        date: "January 20, 2026",
     }
 ];
