@@ -85,7 +85,7 @@ export function Header() {
                     {/* RIGHT NAV */}
                     <div className="flex items-center justify-center lg:justify-end gap-x-3 md:gap-x-5 xl:gap-x-7 flex-1 order-3">
                         <nav className="flex items-center gap-x-3 md:gap-x-5 xl:gap-x-7">
-                            <Link href="/data-insights" className="text-[10px] md:text-[12px] xl:text-[13px] font-bold uppercase tracking-[1px] hover:opacity-70 whitespace-nowrap">DATA & INSIGHTS</Link>
+                            {/* <Link href="/data-insights" className="text-[10px] md:text-[12px] xl:text-[13px] font-bold uppercase tracking-[1px] hover:opacity-70 whitespace-nowrap">DATA & INSIGHTS</Link> */}
                             <Link href="/energclub" className="text-[10px] md:text-[12px] xl:text-[13px] font-bold uppercase tracking-[1px] hover:opacity-70 whitespace-nowrap">ENERGCLUB</Link>
                             <Link href="/subscribe" style={{ color: brandGreen }} className="text-[10px] md:text-[12px] xl:text-[13px] font-bold uppercase tracking-[1px] hover:opacity-70 whitespace-nowrap">SUBSCRIBE</Link>
                         </nav>
