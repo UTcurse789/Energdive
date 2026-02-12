@@ -12,6 +12,7 @@ export interface Article {
     content?: string;
     author?: Author;
     category: string;
+    subCategory?: string;
     image: string;
     date: string;
     readTime: string;
@@ -22,6 +23,9 @@ export interface Article {
 export interface Sector {
     title: string;
     slug: string;
+    description?: string;
+    heroImage?: string;
+    subSectors?: string[];
 }
 
 export interface Event {
