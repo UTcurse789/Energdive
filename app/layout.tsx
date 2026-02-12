@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Merriweather } from "next/font/google";
 import "./globals.css";
-import { Header } from "@/components/layout/header";
-import { Footer } from "@/components/layout/footer";
+import SiteLayout from "@/components/layout/site-layout";
 
 const sans = Inter({
   subsets: ["latin"],
@@ -34,11 +33,9 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${sans.variable} ${serif.variable}`}>
       <body className="antialiased font-sans">
-        <Header />
-        <main className="min-h-screen pt-[120px] md:pt-[140px]">
+        <SiteLayout>
           {children}
-        </main>
-        <Footer />
+        </SiteLayout>
       </body>
     </html>
   );

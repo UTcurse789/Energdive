@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/buttons";
 import { SECTORS } from "@/data/dummy";
+import Image from "next/image";
 
 export function Footer() {
     return (
@@ -11,9 +12,7 @@ export function Footer() {
                     {/* Brand & Newsletter */}
                     <div className="md:col-span-4 space-y-6">
                         <Link href="/" className="inline-block">
-                            <span className="font-serif text-3xl font-black tracking-tight text-white">
-                                EnergDive<span className="text-accent text-4xl">.</span>
-                            </span>
+                            <Image src="/logo2-removebg-preview.png" alt="EnergDive" width={250} height={250} className="font-serif text-3xl font-black tracking-tight text-white" />
                         </Link>
                         <p className="text-background/70 text-sm leading-relaxed max-w-sm">
                             The leading source for energy market intelligence, policy analysis, and technological innovation. Providing the insights decision-makers need.
