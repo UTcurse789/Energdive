@@ -151,8 +151,6 @@ export default function OpinionPage() {
                     </motion.section>
                 </div>
             </main>
-
-            <Footer />
         </div>
     );
 }
