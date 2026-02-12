@@ -45,3 +45,21 @@ export interface MarketQuote {
     changesPercentage: number;
     change: number;
 }
+
+export interface Issue {
+    id: string;
+    title: string;
+    slug: string;
+    description: string;
+    coverImage: string;
+    date: string;
+    pdfUrl?: string;
+    month?: string;
+    year?: string;
+    volume?: string;
+    number?: string;
+    sections?: {
+        title: string;
+        articles: Article[];
+    }[];
+}

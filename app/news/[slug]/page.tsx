@@ -138,7 +138,7 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
                 </article>
             </main>
 
-            <Footer />
+
         </div>
     );
 }
