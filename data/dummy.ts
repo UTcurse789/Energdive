@@ -143,6 +143,8 @@ export const ARTICLES: Article[] = [
         readTime: "5 min read",
         featured: true,
         trending: true,
+        downloadUrl: "https://encis.in/report-on-the-next-frontier-advancing-hse-to-achieve-global-sdgs.html",
+        pdfSize: "4.2 MB",
     },
     {
         id: "2",

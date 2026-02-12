@@ -193,7 +193,7 @@ export default function ArchitectEditorialPage() {
 
             <Footer />
 
-            {/* <style jsx global>{`
+            <style jsx global>{`
                 @keyframes marquee {
                     0% { transform: translateX(0); }
                     100% { transform: translateX(-50%); }
@@ -201,7 +201,7 @@ export default function ArchitectEditorialPage() {
                 .animate-marquee {
                     animation: marquee 40s linear infinite;
                 }
-            `}</style> */}
+            `}</style>
         </div>
     );
 }
