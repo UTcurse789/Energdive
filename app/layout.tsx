@@ -1,3 +1,4 @@
+import { ClerkProvider } from "@clerk/nextjs";
 import type { Metadata } from "next";
 import { Inter, Merriweather } from "next/font/google";
 import "./globals.css";
@@ -31,12 +32,14 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className={`${sans.variable} ${serif.variable}`}>
-      <body className="antialiased font-sans">
-        <SiteLayout>
-          {children}
-        </SiteLayout>
-      </body>
-    </html>
+    <ClerkProvider>
+      <html lang="en" className={`${sans.variable} ${serif.variable}`}>
+        <body className="antialiased font-sans">
+          <SiteLayout>
+            {children}
+          </SiteLayout>
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }
