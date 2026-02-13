@@ -1,8 +1,8 @@
+import { ClerkProvider } from "@clerk/nextjs";
 import type { Metadata } from "next";
 import { Inter, Merriweather } from "next/font/google";
 import "./globals.css";
-import { Header } from "@/components/layout/header";
-import { Footer } from "@/components/layout/footer";
+import SiteLayout from "@/components/layout/site-layout";
 
 const sans = Inter({
   subsets: ["latin"],
@@ -32,14 +32,14 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className={`${sans.variable} ${serif.variable}`}>
-      <body className="antialiased font-sans">
-        <Header />
-        <main className="min-h-screen pt-[120px] md:pt-[140px]">
-          {children}
-        </main>
-        <Footer />
-      </body>
-    </html>
+    <ClerkProvider>
+      <html lang="en" className={`${sans.variable} ${serif.variable}`}>
+        <body className="antialiased font-sans">
+          <SiteLayout>
+            {children}
+          </SiteLayout>
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }

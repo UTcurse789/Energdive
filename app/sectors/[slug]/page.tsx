@@ -4,7 +4,7 @@ import React, { useState, useMemo } from "react";
 import { useParams } from "next/navigation";
 import { ARTICLES, SECTORS } from "@/data/dummy";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, ArrowRight, Clock, User, ChevronRight } from "lucide-react";
+import { Search, ChevronRight } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -121,8 +121,8 @@ export default function SectorIntelligencePage() {
             </section>
 
             {/* SECTION 3 — THE GRID: STANDARDIZED 3-COLUMN LAYOUT */}
-            <section className="container mx-auto px-6 lg:px-16 py-20">
-                <div className="mb-16 border-b border-gray-100 pb-8 flex items-end justify-between">
+            <section className="container mx-auto px-6 lg:px-16 py-20 mb-20">
+                <div className="mb-10 border-b border-gray-100 pb-4 pt-4 flex items-end justify-between">
                     <div>
                         <h2 className="text-4xl font-black uppercase tracking-tighter italic">
                             All <span className="text-[#00C6A7]">Analysis.</span>
@@ -134,7 +134,7 @@ export default function SectorIntelligencePage() {
                     </p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-10 gap-y-16">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                     <AnimatePresence mode="popLayout">
                         {filteredReports.map((report) => (
                             <motion.div
@@ -143,48 +143,35 @@ export default function SectorIntelligencePage() {
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, scale: 0.95 }}
-                                className="group flex flex-col"
+                                className="group flex flex-col bg-white border border-gray-100 rounded-lg overflow-hidden hover:shadow-xl transition-shadow duration-300"
                             >
-                                {/* Image Aspect Ratio Fixed to 16/10 for uniformity */}
-                                <Link href={`/news/${report.slug}`} className="relative aspect-16/10 overflow-hidden rounded-2xl mb-6 bg-gray-50 border border-gray-100">
+                                {/* Image */}
+                                <Link href={`/news/${report.slug}`} className="relative aspect-4/3 overflow-hidden bg-gray-50">
                                     <Image
                                         src={report.image}
                                         alt={report.title}
                                         fill
-                                        className="object-cover transition-transform duration-1000 group-hover:scale-110"
+                                        className="object-cover transition-transform duration-700 group-hover:scale-105"
                                     />
-                                    <div className="absolute top-4 left-4">
-                                        <span className="bg-white/95 backdrop-blur-md px-3 py-1.5 rounded text-[9px] font-black text-[#00C6A7] shadow-sm uppercase tracking-widest border border-gray-100">
-                                            {report.subCategory}
-                                        </span>
-                                    </div>
                                 </Link>
 
-                                <div className="flex flex-col flex-1">
-                                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">
-                                        {report.date || "Feb 12, 2026"}
-                                    </span>
+                                {/* Content */}
+                                <div className="flex flex-col flex-1 p-6">
                                     <Link href={`/news/${report.slug}`}>
-                                        <h3 className="text-xl font-bold leading-[1.3] mb-4 group-hover:text-[#00C6A7] transition-colors line-clamp-2">
+                                        <h3 className="text-lg font-bold leading-tight mb-4 group-hover:text-[#00C6A7] transition-colors line-clamp-3">
                                             {report.title}
                                         </h3>
                                     </Link>
-                                    <p className="text-gray-500 text-sm font-light line-clamp-2 mb-8 leading-relaxed">
-                                        {report.excerpt}
-                                    </p>
 
-                                    {/* Card Metadata Footer */}
-                                    <div className="mt-auto pt-5 border-t border-gray-50 flex items-center justify-between">
-                                        <div className="flex items-center gap-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                                            <span className="flex items-center gap-1.5 hover:text-black transition-colors cursor-default">
-                                                <User size={12} className="text-[#00C6A7]" /> Sarah Chen
-                                            </span>
-                                            <span className="opacity-20 text-lg font-light">|</span>
-                                            <span className="flex items-center gap-1.5">
-                                                <Clock size={12} /> 4 MIN READ
-                                            </span>
-                                        </div>
-                                        <ArrowRight size={18} className="text-[#00C6A7] opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300" />
+                                    {/* Metadata Footer */}
+                                    <div className="mt-auto pt-4 border-t border-gray-100">
+                                        <p className="text-xs text-gray-600">
+                                            <span className="font-semibold">Team ENERGDIVE</span>
+                                            <span className="mx-2">|</span>
+                                            <span>{report.date || "February 12, 2026"}</span>
+                                            <span className="mx-2">|</span>
+                                            <span className="font-semibold">News</span>
+                                        </p>
                                     </div>
                                 </div>
                             </motion.div>

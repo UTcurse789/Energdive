@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { Search, ChevronDown, Facebook, Twitter, Linkedin, Megaphone, ChevronRight, Zap } from "lucide-react";
 import { SECTORS } from "@/data/dummy";
 import { motion, AnimatePresence } from "framer-motion";
+import { SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
 
 export function Header() {
     const [isScrolled, setIsScrolled] = useState(false);
@@ -85,23 +86,30 @@ export function Header() {
                     {/* RIGHT NAV */}
                     <div className="flex items-center justify-center lg:justify-end gap-x-3 md:gap-x-5 xl:gap-x-7 flex-1 order-3">
                         <nav className="flex items-center gap-x-3 md:gap-x-5 xl:gap-x-7">
-                            <Link href="/data-insights" className="text-[10px] md:text-[12px] xl:text-[13px] font-bold uppercase tracking-[1px] hover:opacity-70 whitespace-nowrap">DATA & INSIGHTS</Link>
-                            <Link href="/energclub" className="text-[10px] md:text-[12px] xl:text-[13px] font-bold uppercase tracking-[1px] hover:opacity-70 whitespace-nowrap">ENERGCLUB</Link>
+                            {/* <Link href="/data-insights" className="text-[10px] md:text-[12px] xl:text-[13px] font-bold uppercase tracking-[1px] hover:opacity-70 whitespace-nowrap">DATA & INSIGHTS</Link> */}
+                            <Link href="/energclub" target="_blank" className="text-[10px] md:text-[12px] xl:text-[13px] font-bold uppercase tracking-[1px] hover:opacity-70 whitespace-nowrap">ENERGCLUB</Link>
                             <Link href="/subscribe" style={{ color: brandGreen }} className="text-[10px] md:text-[12px] xl:text-[13px] font-bold uppercase tracking-[1px] hover:opacity-70 whitespace-nowrap">SUBSCRIBE</Link>
                         </nav>
 
-                        <motion.div className="relative" onMouseEnter={() => setIsLoginHovered(true)} onMouseLeave={() => setIsLoginHovered(false)}>
-                            <Link href="/login" className="block border-[1.5px] border-black px-3 py-1 md:px-6 md:py-2 text-[10px] md:text-[12px] font-bold uppercase tracking-wider hover:bg-black hover:text-white transition-all overflow-hidden whitespace-nowrap">
-                                LOGIN
-                                <AnimatePresence>
-                                    {isLoginHovered && (
-                                        <motion.div initial={{ y: 30, opacity: 0 }} animate={{ y: -40, opacity: [0, 1, 0] }} transition={{ repeat: Infinity, duration: 0.8 }} className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                                            <Zap size={14} fill={brandGreen} color={brandGreen} />
-                                        </motion.div>
-                                    )}
-                                </AnimatePresence>
-                            </Link>
-                        </motion.div>
+                        <div className="relative">
+                            <SignedIn>
+                                <UserButton afterSignOutUrl="/" />
+                            </SignedIn>
+                            <SignedOut>
+                                <motion.div className="relative" onMouseEnter={() => setIsLoginHovered(true)} onMouseLeave={() => setIsLoginHovered(false)}>
+                                    <Link href="/sign-in" className="block border-[1.5px] border-black px-3 py-1 md:px-6 md:py-2 text-[10px] md:text-[12px] font-bold uppercase tracking-wider hover:bg-black hover:text-white transition-all overflow-hidden whitespace-nowrap">
+                                        LOGIN
+                                        <AnimatePresence>
+                                            {isLoginHovered && (
+                                                <motion.div initial={{ y: 30, opacity: 0 }} animate={{ y: -40, opacity: [0, 1, 0] }} transition={{ repeat: Infinity, duration: 0.8 }} className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                                    <Zap size={14} fill={brandGreen} color={brandGreen} />
+                                                </motion.div>
+                                            )}
+                                        </AnimatePresence>
+                                    </Link>
+                                </motion.div>
+                            </SignedOut>
+                        </div>
                         <Search className="w-4 h - 4 md:w-5 h-5 cursor-pointer hover:text-[#00A651] shrink-0" />
                     </div>
                 </div>

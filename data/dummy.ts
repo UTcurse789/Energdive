@@ -115,7 +115,7 @@
 // ];
 
 
-import { Article, Sector, Event, Opinion, Issue } from "@/types";
+import { Article, Sector, Event, Opinion, Issue, Video } from "@/types";
 
 
 export const SECTORS: Sector[] = [
@@ -539,5 +539,90 @@ export const OPINIONS: Opinion[] = [
             role: "Energy Strategist"
         },
         date: "January 20, 2026",
+    }
+];
+
+export const ABOUT_DATA = {
+    foreword: {
+        title: "Foreword",
+        content: "We stand at the precipice of the greatest industrial transformation in history. The transition from a hydrocarbon-based economy to a diversified, sustainable energy system is not merely a technical challenge—it is a geopolitical, economic, and social imperative. At Energdive, we believe that navigating this complexity requires more than just news; it demands intelligence, context, and a forward-looking perspective."
+    },
+    theNeed: {
+        title: "The Need",
+        content: "In an era of information overload, decision-makers are drowning in noise. Fragmented data, biased narratives, and short-termism obscure the long-term trends shaping the energy sector. There is a critical vacuum for deep, analytical, and data-driven journalism that bridges the gap between traditional energy sectors and the emerging green economy. We exist to fill that void."
+    },
+    thePublication: {
+        title: "The Publication",
+        content: "Energdive is a premier intelligence platform dedicated to the global energy sector. We provide actionable insights, rigourous analysis, and exclusive reporting on Oil & Gas, Power & Utilities, Renewables, and Climate Policy. Our mission is to empower leaders with the knowledge to make high-stakes decisions with confidence. We are not just observers; we are the chroniclers of the energy transition."
+    }
+};
+export const VIDEOS: Video[] = [
+    {
+        id: "v-1",
+        title: "The Future of Green Hydrogen: Challenges & Opportunities",
+        slug: "future-of-green-hydrogen",
+        description: "An in-depth look at how green hydrogen is poised to revolutionize the energy sector, from transportation to heavy industry.",
+        youtubeId: "dQw4w9WgXcQ", // Placeholder ID
+        thumbnail: "https://images.unsplash.com/photo-1532601224476-15c79f2f7a51?auto=format&fit=crop&q=80&w=1000",
+        date: "Feb 10, 2026",
+        duration: "12:45",
+        author: {
+            name: "Dr. Aris Vlahos",
+            role: "Energy Analyst",
+            avatar: "https://i.pravatar.cc/150?u=aris"
+        },
+        category: "New Energies",
+        views: "1.2K views"
+    },
+    {
+        id: "v-2",
+        title: "Global Energy Transition Summit 2025 Highlights",
+        slug: "energy-transition-summit-2025",
+        description: "Key takeaways and panel discussions from the biggest energy event of the year.",
+        youtubeId: "Rlskemjd79U", // Placeholder ID
+        thumbnail: "https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&q=80&w=1000",
+        date: "Nov 15, 2025",
+        duration: "45:20",
+        author: {
+            name: "EnergDive Team",
+            role: "Editorial",
+            avatar: "https://i.pravatar.cc/150?u=energdive"
+        },
+        category: "Events",
+        views: "5.4K views"
+    },
+    {
+        id: "v-3",
+        title: "Understanding Carbon Markets",
+        slug: "understanding-carbon-markets",
+        description: "A beginner's guide to how carbon credits work and their impact on global emissions.",
+        youtubeId: "dQw4w9WgXcQ", // Placeholder ID
+        thumbnail: "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&q=80&w=1000",
+        date: "Jan 05, 2026",
+        duration: "08:30",
+        author: {
+            name: "Sarah Jenkings",
+            role: "Senior Analyst",
+            avatar: "https://i.pravatar.cc/150?u=sarah"
+        },
+        category: "Sustainability",
+        views: "3.1K views"
+    },
+    {
+        id: "v-4",
+        title: "Offshore Wind: The Next Frontier",
+        slug: "offshore-wind-next-frontier",
+        description: "Exploring the engineering marvels of offshore wind farms in the North Sea.",
+        youtubeId: "dQw4w9WgXcQ", // Placeholder ID
+        thumbnail: "https://images.unsplash.com/photo-1466611653911-95081537e5b7?auto=format&fit=crop&q=80&w=1000",
+        date: "Dec 12, 2025",
+        duration: "15:10",
+        author: {
+            name: "Elena M.",
+            role: "Europe Correspondent",
+            avatar: "https://i.pravatar.cc/150?u=elena"
+        },
+        category: "Power & Utilities",
+        views: "2.8K views"
     }
 ];
