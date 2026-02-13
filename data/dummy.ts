@@ -374,118 +374,27 @@ export const ARTICLES: Article[] = [
 
 export const EVENTS: Event[] = [
     {
-        id: "iew-2026",
-        title: "India Energy Week 2026",
-        date: "27th – 30th January 2026",
-        time: "09:00 AM",
-        location: "Goa, India",
-        venue: "Goa Exhibition Centre",
-        status: "past",
-        image: "/events/india-energy-week.png",
-        url: "https://www.indiaenergyweek.com",
-        mapUrl: "https://maps.google.com/?q=Goa Exhibition Centre",
-        description: "India Energy Week returns as a global platform shaping India’s energy transition, convening policymakers, business leaders, innovators and investors."
+        id: "1",
+        title: "Global Energy Transition Summit 2025",
+        date: "Nov 12-14, 2025",
+        location: "London, UK",
+        image: "https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&q=80&w=1000"
     },
-
     {
-        id: "ipsc-2026",
-        title: "International Process Safety Conference 2026",
-        date: "26th February 2026",
-        time: "10:00 AM",
-        location: "Hyatt Regency, New Delhi",
-        venue: "Hyatt Regency",
-        status: "upcoming",
-        image: "/events/ipsc.png",
-        url: "https://ipscindia.com",
-        mapUrl: "https://maps.google.com/?q=Hyatt Regency New Delhi",
-        description: "A pivotal conference addressing process safety, decarbonisation, digitalisation and resilience across India’s industrial ecosystem."
+        id: "2",
+        title: "Future Power Grid Conference",
+        date: "Dec 05, 2025",
+        location: "Houston, TX",
+        image: "https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&q=80&w=1000"
     },
-
     {
-        id: "bharat-fire-2026",
-        title: "Bharat Fire Safety Congress 2026",
-        date: "14th – 15th May 2026",
-        time: "09:30 AM",
-        location: "Yashobhoomi IICC, Dwarka, New Delhi",
-        venue: "Yashobhoomi IICC",
-        status: "upcoming",
-        image: "/events/bharat-fire.png",
-        url: "https://bharatfiresafety.com",
-        mapUrl: "https://maps.google.com/?q=Yashobhoomi IICC Dwarka",
-        description: "A national platform advancing fire safety, emergency response and infrastructure resilience through policy, innovation and industry collaboration."
-    },
-
-    {
-        id: "grpc-2026",
-        title: "Global Refining & Petrochemicals Congress (GRPC) 2026",
-        date: "18th – 19th June 2026",
-        time: "10:00 AM",
-        location: "Le Méridien, New Delhi",
-        venue: "Le Méridien",
-        status: "upcoming",
-        image: "/events/grpc.png",
-        url: "https://grpcindia.com",
-        mapUrl: "https://maps.google.com/?q=Le Méridien New Delhi",
-        description: "India’s premier downstream energy summit addressing refining, petrochemicals, decarbonisation and competitiveness."
-    },
-
-    {
-        id: "transform-hse-2026",
-        title: "Transform HSE 2026",
-        date: "06th – 07th August 2026",
-        time: "09:00 AM",
-        location: "Hyatt Regency, New Delhi",
-        venue: "Hyatt Regency",
-        status: "upcoming",
-        image: "/events/transform-hse.png",
-        url: "https://transformhse.com",
-        mapUrl: "https://maps.google.com/?q=Hyatt Regency New Delhi",
-        description: "Transform HSE explores how Health, Safety and Environment strategies are evolving to support sustainability, resilience and global SDGs."
-    },
-
-    {
-        id: "bharat-electricity-2026",
-        title: "Bharat Electricity 2026",
-        date: "01st – 03rd September 2026",
-        time: "10:00 AM",
-        location: "Yashobhoomi IICC, Dwarka, New Delhi",
-        venue: "Yashobhoomi IICC",
-        status: "upcoming",
-        image: "/events/bharat-electricity.png",
-        url: "https://bharatelectricity.com",
-        mapUrl: "https://maps.google.com/?q=Yashobhoomi IICC Dwarka",
-        description: "A flagship power sector summit bringing utilities, generators and policymakers together for India’s electricity transformation."
-    },
-
-    {
-        id: "oil-spill-india-2026",
-        title: "Oil Spill India 2026",
-        date: "06th – 07th October 2026",
-        time: "09:30 AM",
-        location: "Hotel JW Marriott, Aerocity, Delhi",
-        venue: "JW Marriott Aerocity",
-        status: "upcoming",
-        image: "/events/oil-spill.png",
-        url: "https://oilspillindia.com",
-        mapUrl: "https://maps.google.com/?q=JW Marriott Aerocity Delhi",
-        description: "India’s leading platform on oil spill prevention, preparedness, response and restoration for maritime and industrial stakeholders."
-    },
-
-    {
-        id: "energniti-2025",
-        title: "EnergNiti Dialogue 2025",
-        date: "15th December 2025",
-        time: "10:00 AM",
-        location: "New Delhi, India",
-        venue: "New Delhi Conference Centre",
-        status: "past",
-        image: "/events/energniti.png",
-        url: "https://energniti.com",
-        mapUrl: "https://maps.google.com/?q=New Delhi Conference Centre",
-        description: "A strategic dialogue shaping India’s energy future through policy, innovation and global collaboration."
+        id: "3",
+        title: "Renewable Finance Forum",
+        date: "Jan 10, 2026",
+        location: "Singapore",
+        image: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&q=80&w=1000"
     }
-]
-
+];
 export const ISSUES: Issue[] = [
     {
         id: "1",
