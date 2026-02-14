@@ -180,3 +180,103 @@ export async function getUserProfile(
         communities: commResult.rows,
     } as UserProfile;
 }
+
+// ─── Update Profile ──────────────────────────────────────────────
+export interface UpdateProfilePayload {
+    clerkId: string;
+    firstName?: string;
+    lastName?: string;
+    phone?: string;
+    country?: string;
+    state?: string;
+    jobTitle?: string;
+    organization?: string;
+    industryId?: number;
+    subIndustryId?: number;
+    communitySelections?: { communityId: number; subCommunityId: number }[];
+}
+
+/**
+ * Partial update — only modifies fields that are provided.
+ * Industry + community changes run in a transaction.
+ */
+export async function updateUserProfile(payload: UpdateProfilePayload): Promise<void> {
+    const client = await getClient();
+
+    try {
+        await client.query("BEGIN");
+
+        // 1. Build dynamic SET clause for user row
+        const setClauses: string[] = [];
+        const values: unknown[] = [];
+        let idx = 1;
+
+        const fields = [
+            { key: "first_name", val: payload.firstName },
+            { key: "last_name", val: payload.lastName },
+            { key: "phone", val: payload.phone },
+            { key: "country", val: payload.country },
+            { key: "state", val: payload.state },
+            { key: "job_title", val: payload.jobTitle },
+            { key: "organization", val: payload.organization },
+        ];
+
+        for (const f of fields) {
+            if (f.val !== undefined) {
+                setClauses.push(`${f.key} = $${idx++}`);
+                values.push(f.val);
+            }
+        }
+
+        let userId: number;
+
+        if (setClauses.length > 0) {
+            values.push(payload.clerkId);
+            const result = await client.query(
+                `UPDATE users SET ${setClauses.join(", ")} WHERE clerk_id = $${idx} RETURNING id`,
+                values
+            );
+            userId = result.rows[0].id;
+        } else {
+            const result = await client.query(
+                `SELECT id FROM users WHERE clerk_id = $1`,
+                [payload.clerkId]
+            );
+            userId = result.rows[0].id;
+        }
+
+        // 2. Replace industry if provided
+        if (payload.industryId && payload.subIndustryId) {
+            await client.query(`DELETE FROM user_industries WHERE user_id = $1`, [userId]);
+            await client.query(
+                `INSERT INTO user_industries (user_id, industry_id, sub_industry_id) VALUES ($1, $2, $3)`,
+                [userId, payload.industryId, payload.subIndustryId]
+            );
+        }
+
+        // 3. Replace communities if provided
+        if (payload.communitySelections && payload.communitySelections.length > 0) {
+            await client.query(`DELETE FROM user_communities WHERE user_id = $1`, [userId]);
+
+            const comValues: unknown[] = [];
+            const comPlaceholders: string[] = [];
+            payload.communitySelections.forEach((sel, i) => {
+                const offset = i * 3;
+                comPlaceholders.push(`($${offset + 1}, $${offset + 2}, $${offset + 3})`);
+                comValues.push(userId, sel.communityId, sel.subCommunityId);
+            });
+
+            await client.query(
+                `INSERT INTO user_communities (user_id, community_id, sub_community_id) VALUES ${comPlaceholders.join(", ")}`,
+                comValues
+            );
+        }
+
+        await client.query("COMMIT");
+    } catch (err) {
+        await client.query("ROLLBACK");
+        throw err;
+    } finally {
+        client.release();
+    }
+}
