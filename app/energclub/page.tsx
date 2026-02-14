@@ -98,7 +98,7 @@ export default function EnergClubPage() {
                         <p className="text-zinc-300 text-lg md:text-xl max-w-3xl mx-auto mb-10 leading-relaxed">
                             Join an exclusive network of industry leaders, policymakers, and innovators shaping the future of energy and sustainability in India.
                         </p>
-                        <Link href="#membership" className="inline-flex items-center gap-2 bg-[#E5B866] text-black px-8 py-4 rounded-full font-bold uppercase tracking-widest hover:bg-white transition-colors duration-300">
+                        <Link href="/dashboard" className="inline-flex items-center gap-2 bg-[#E5B866] text-black px-8 py-4 rounded-full font-bold uppercase tracking-widest hover:bg-white transition-colors duration-300">
                             Explore Now <ArrowRight size={18} />
                         </Link>
                     </motion.div>
