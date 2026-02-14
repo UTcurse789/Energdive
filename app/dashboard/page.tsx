@@ -1,89 +1,184 @@
-import { UserButton } from "@clerk/nextjs";
-import { currentUser } from "@clerk/nextjs/server";
-import { Zap, Activity, Globe, Newspaper } from "lucide-react";
+"use client";
 
-export default async function DashboardPage() {
-    const user = await currentUser();
+import React, { useEffect, useState } from "react";
+import { useUser } from "@clerk/nextjs";
+import { Loader2 } from "lucide-react";
+
+// ── Types (mirrors getUserProfile response) ──────────────────────
+interface CommunitySelection {
+    community_id: number;
+    community_name: string;
+    sub_community_id: number;
+    sub_community_name: string;
+}
+
+interface UserProfile {
+    id: number;
+    first_name: string | null;
+    last_name: string | null;
+    email: string;
+    job_title: string | null;
+    organization: string | null;
+    country: string | null;
+    state: string | null;
+    onboarding_completed: boolean;
+    industry_name: string | null;
+    sub_industry_name: string | null;
+    communities: CommunitySelection[];
+}
+
+export default function DashboardPage() {
+    const { user: clerkUser } = useUser();
+    const [profile, setProfile] = useState<UserProfile | null>(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        async function loadProfile() {
+            try {
+                const res = await fetch("/api/user/profile");
+                if (!res.ok) throw new Error("Failed to load profile");
+                const data = await res.json();
+                if (data.exists) {
+                    setProfile(data.user);
+                }
+            } catch (err) {
+                console.error("Profile load error:", err);
+            } finally {
+                setLoading(false);
+            }
+        }
+        loadProfile();
+    }, []);
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center min-h-screen bg-white">
+                <Loader2 className="w-8 h-8 animate-spin text-[#0AB996]" />
+            </div>
+        );
+    }
+
+    const displayName = profile?.first_name || clerkUser?.firstName || "User";
+    const industryName = profile?.industry_name || "—";
+    const subIndustryName = profile?.sub_industry_name || "—";
+    const communities = profile?.communities || [];
 
     return (
-        <div className="min-h-screen bg-black text-white selection:bg-[#E5B866] selection:text-black">
-            <div className="container mx-auto px-6 lg:px-12 py-12">
+        <div className="p-8 max-w-7xl mx-auto min-h-screen bg-white font-sans">
+            <header className="mb-12">
+                <h1 className="text-3xl font-bold text-zinc-900">
+                    Hey! Welcome, {displayName}
+                </h1>
+                <p className="text-zinc-500 mt-2">
+                    Your personalized feed based on{" "}
+                    <span className="font-medium text-[#0AB996]">{industryName}</span>
+                    {" / "}
+                    <span className="font-medium text-[#0AB996]">{subIndustryName}</span>
+                </p>
+            </header>
 
-                {/* Header Section */}
-                <div className="flex flex-col md:flex-row justify-between items-end border-b border-white/20 pb-8 mb-12">
-                    <div>
-                        <div className="flex items-center gap-3 mb-2 text-[#E5B866]">
-                            <Zap className="fill-current" />
-                            <span className="uppercase tracking-widest text-sm font-bold">EnergDive Dashboard</span>
-                        </div>
-                        <h1 className="text-4xl md:text-6xl font-black uppercase tracking-tighter">
-                            Hello, <span className="text-transparent bg-clip-text bg-linear-to-r from-[#E5B866] to-[#FFE0B2]">
-                                {user?.firstName || "User"}
-                            </span>
-                        </h1>
-                    </div>
+            {/* Interest Chips */}
+            <div className="flex flex-wrap gap-2 mb-8">
+                <span className="px-3 py-1 bg-zinc-100 text-zinc-600 rounded-full text-sm font-medium">
+                    {industryName}
+                </span>
+                <span className="px-3 py-1 bg-zinc-100 text-zinc-600 rounded-full text-sm font-medium">
+                    {subIndustryName}
+                </span>
+                {communities.map((c) => (
+                    <span
+                        key={`${c.community_id}-${c.sub_community_id}`}
+                        className="px-3 py-1 bg-[#0AB996]/10 text-[#0AB996] rounded-full text-sm font-medium"
+                    >
+                        {c.sub_community_name}
+                    </span>
+                ))}
+            </div>
 
-                    {/* User Profile */}
-                    <div className="mt-8 md:mt-0 bg-[#111] border border-white/10 p-6 rounded-2xl flex items-center gap-4">
-                        <div className="bg-white/10 p-1 rounded-full">
-                            <UserButton appearance={{
-                                elements: {
-                                    userButtonAvatarBox: "w-12 h-12"
-                                }
-                            }} />
-                        </div>
-                        <div>
-                            <p className="text-sm font-bold text-white">{user?.fullName}</p>
-                            <p className="text-xs text-gray-400">{user?.primaryEmailAddress?.emailAddress}</p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                {/* Main Feed */}
+                <div className="md:col-span-2 space-y-6">
+                    <div className="bg-white p-6 rounded-xl shadow-sm border border-zinc-100">
+                        <h2 className="text-xl font-bold text-zinc-900 mb-4">
+                            Latest Updates
+                        </h2>
+                        <div className="space-y-4">
+                            {[1, 2, 3].map((i) => (
+                                <div
+                                    key={i}
+                                    className="p-4 rounded-lg bg-zinc-50 hover:bg-zinc-100 transition-colors cursor-pointer group"
+                                >
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <span className="text-[10px] font-bold uppercase tracking-wider text-[#0AB996]">
+                                            {subIndustryName}
+                                        </span>
+                                        <span className="text-zinc-400 text-xs">
+                                            • {i * 2}h ago
+                                        </span>
+                                    </div>
+                                    <h3 className="text-lg font-semibold text-zinc-800 group-hover:text-[#0AB996] transition-colors">
+                                        Market analysis for {industryName} Sector
+                                    </h3>
+                                    <p className="text-zinc-600 text-sm mt-1 line-clamp-2">
+                                        New report indicates a shift in {subIndustryName} trends
+                                        following recent policy changes and infrastructure
+                                        investments in the region.
+                                    </p>
+                                </div>
+                            ))}
                         </div>
                     </div>
                 </div>
 
-                {/* Dashboard Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-
-                    {/* Market Overview Card */}
-                    <div className="bg-[#111] border border-white/10 p-8 hover:border-[#E5B866]/50 transition-colors group cursor-pointer rounded-xl">
-                        <div className="flex justify-between items-start mb-6">
-                            <span className="p-3 bg-white/5 rounded-lg text-[#E5B866]">
-                                <Activity size={24} />
-                            </span>
-                        </div>
-                        <h3 className="text-2xl font-bold mb-2 group-hover:text-[#E5B866] transition-colors">Market Overview</h3>
-                        <p className="text-gray-400 text-sm leading-relaxed mb-6">
-                            Real-time tracking of global energy indices and commodity prices.
-                        </p>
-                        <span className="text-xs font-bold uppercase tracking-widest text-[#E5B866]">View Analytics →</span>
+                {/* Sidebar */}
+                <div className="space-y-6">
+                    {/* Communities Card */}
+                    <div className="bg-[#0AB996]/5 p-6 rounded-xl border border-[#0AB996]/10">
+                        <h3 className="font-bold text-[#0AB996] mb-2">
+                            Your Communities
+                        </h3>
+                        <ul className="space-y-2">
+                            {communities.length > 0 ? (
+                                communities.map((c) => (
+                                    <li
+                                        key={`${c.community_id}-${c.sub_community_id}`}
+                                        className="flex items-center gap-2 text-sm text-zinc-700"
+                                    >
+                                        <div className="w-1.5 h-1.5 rounded-full bg-[#0AB996]" />
+                                        <span>
+                                            {c.community_name} →{" "}
+                                            <span className="font-medium">
+                                                {c.sub_community_name}
+                                            </span>
+                                        </span>
+                                    </li>
+                                ))
+                            ) : (
+                                <li className="text-zinc-400 text-sm italic">
+                                    No communities joined
+                                </li>
+                            )}
+                        </ul>
                     </div>
 
-                    {/* Global News Card */}
-                    <div className="bg-[#111] border border-white/10 p-8 hover:border-[#E5B866]/50 transition-colors group cursor-pointer rounded-xl">
-                        <div className="flex justify-between items-start mb-6">
-                            <span className="p-3 bg-white/5 rounded-lg text-[#E5B866]">
-                                <Globe size={24} />
-                            </span>
+                    {/* Profile Card */}
+                    <div className="bg-white p-6 rounded-xl border border-zinc-100 shadow-sm">
+                        <h3 className="font-bold text-zinc-900 mb-3">Your Profile</h3>
+                        <div className="space-y-2 text-sm text-zinc-600">
+                            <p>
+                                <span className="font-medium text-zinc-800">Role:</span>{" "}
+                                {profile?.job_title || "—"}
+                            </p>
+                            <p>
+                                <span className="font-medium text-zinc-800">Org:</span>{" "}
+                                {profile?.organization || "—"}
+                            </p>
+                            <p>
+                                <span className="font-medium text-zinc-800">Location:</span>{" "}
+                                {profile?.state || "—"}, {profile?.country || "—"}
+                            </p>
                         </div>
-                        <h3 className="text-2xl font-bold mb-2 group-hover:text-[#E5B866] transition-colors">Global News</h3>
-                        <p className="text-gray-400 text-sm leading-relaxed mb-6">
-                            Curated intelligence feed from top energy markets and policy hubs.
-                        </p>
-                        <span className="text-xs font-bold uppercase tracking-widest text-[#E5B866]">Read Latest →</span>
                     </div>
-
-                    {/* Reports Card */}
-                    <div className="bg-[#111] border border-white/10 p-8 hover:border-[#E5B866]/50 transition-colors group cursor-pointer rounded-xl">
-                        <div className="flex justify-between items-start mb-6">
-                            <span className="p-3 bg-white/5 rounded-lg text-[#E5B866]">
-                                <Newspaper size={24} />
-                            </span>
-                        </div>
-                        <h3 className="text-2xl font-bold mb-2 group-hover:text-[#E5B866] transition-colors">My Reports</h3>
-                        <p className="text-gray-400 text-sm leading-relaxed mb-6">
-                            Access your saved research papers and market outlooks.
-                        </p>
-                        <span className="text-xs font-bold uppercase tracking-widest text-[#E5B866]">Go to Library →</span>
-                    </div>
-
                 </div>
             </div>
         </div>
