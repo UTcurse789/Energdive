@@ -4,5 +4,5 @@ export type { Community, SubCommunity } from "./communities";
 export { getIndustriesWithSubs } from "./industries";
 export type { Industry, SubIndustry } from "./industries";
 
-export { saveOnboardingProfile, getUserProfile } from "./users";
-export type { OnboardingPayload, UserProfile } from "./users";
+export { saveOnboardingProfile, getUserProfile, updateUserProfile } from "./users";
+export type { OnboardingPayload, UserProfile, UpdateProfilePayload } from "./users";
