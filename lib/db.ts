@@ -16,17 +16,29 @@ function createPool(): Pool {
     const rawUrl = process.env.DATABASE_URL || "";
     const connectionString = rawUrl.replace(/[?&]sslmode=[^&]*/g, "");
 
-    return new Pool({
+    const pool = new Pool({
         connectionString,
         ssl: {
-            rejectUnauthorized: false,
+            rejectUnauthorized: false, // Required for DigitalOcean / self-signed certs
         },
 
         // Pool tuning — safe defaults for a SaaS workload
         max: 20,                         // max connections in the pool
         idleTimeoutMillis: 30_000,       // close idle clients after 30s
-        connectionTimeoutMillis: 10_000, // fail fast if DB unreachable
+        connectionTimeoutMillis: 5_000,  // fail fast if DB unreachable (reduced from 10s)
     });
+
+    // Error handling to prevent "Error: Connection terminated unexpectedly" crashing the app
+    pool.on('error', (err, client) => {
+        console.error('Unexpected error on idle client', err);
+        // process.exit(-1); // Don't exit in Next.js, just log
+    });
+
+    pool.on('connect', (client) => {
+        // console.log('New client connected to pool');
+    });
+
+    return pool;
 }
 
 const pool: Pool = globalForPg.pool ?? createPool();
