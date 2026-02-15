@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Zap, ArrowLeft, Lock } from "lucide-react";
 import Image from "next/image";
+import { SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
 
 export function EnergClubHeader() {
     return (
@@ -27,10 +28,17 @@ export function EnergClubHeader() {
                         Back to EnergDive
                     </Link>
 
-                    <button className="flex items-center gap-2 bg-linear-to-r from-[#E5B866] to-[#FFE0B2] text-black px-6 py-2.5 rounded-full font-bold uppercase tracking-widest text-xs hover:shadow-[0_0_20px_rgba(229,184,102,0.5)] transition-all transform hover:-translate-y-0.5">
-                        <Lock size={14} />
-                        Member Login
-                    </button>
+                    <SignedIn>
+                        <UserButton afterSignOutUrl="/" />
+                    </SignedIn>
+                    <SignedOut>
+                        <Link href="/sign-in">
+                            <button className="flex items-center gap-2 bg-linear-to-r from-[#E5B866] to-[#FFE0B2] text-black px-6 py-2.5 rounded-full font-bold uppercase tracking-widest text-xs hover:shadow-[0_0_20px_rgba(229,184,102,0.5)] transition-all transform hover:-translate-y-0.5">
+                                <Lock size={14} />
+                                Member Login
+                            </button>
+                        </Link>
+                    </SignedOut>
                 </div>
             </div>
         </header>

@@ -1,0 +1,219 @@
+{
+  "communities": {
+    "columns": [
+      {
+        "column_name": "id",
+        "data_type": "integer",
+        "is_nullable": "NO"
+      },
+      {
+        "column_name": "name",
+        "data_type": "text",
+        "is_nullable": "NO"
+      }
+    ],
+    "sample": [
+      {
+        "id": 1,
+        "name": "Oil & Gas"
+      },
+      {
+        "id": 2,
+        "name": "Power Generation"
+      }
+    ]
+  },
+  "sub_communities": {
+    "columns": [
+      {
+        "column_name": "id",
+        "data_type": "integer",
+        "is_nullable": "NO"
+      },
+      {
+        "column_name": "community_id",
+        "data_type": "integer",
+        "is_nullable": "NO"
+      },
+      {
+        "column_name": "name",
+        "data_type": "text",
+        "is_nullable": "NO"
+      }
+    ],
+    "sample": [
+      {
+        "id": 1,
+        "community_id": 1,
+        "name": "Oil & Gas-Upstream"
+      },
+      {
+        "id": 2,
+        "community_id": 1,
+        "name": "Oil & Gas-Pipelines"
+      }
+    ]
+  },
+  "industries": null,
+  "sub_industries": {
+    "columns": [
+      {
+        "column_name": "id",
+        "data_type": "integer",
+        "is_nullable": "NO"
+      },
+      {
+        "column_name": "industry_id",
+        "data_type": "integer",
+        "is_nullable": "NO"
+      },
+      {
+        "column_name": "name",
+        "data_type": "text",
+        "is_nullable": "NO"
+      }
+    ],
+    "sample": [
+      {
+        "id": 1,
+        "industry_id": 27,
+        "name": "IT - SaaS"
+      },
+      {
+        "id": 2,
+        "industry_id": 27,
+        "name": "IT - Software Development"
+      }
+    ]
+  },
+  "industry": {
+    "columns": [
+      {
+        "column_name": "id",
+        "data_type": "integer",
+        "is_nullable": "NO"
+      },
+      {
+        "column_name": "name",
+        "data_type": "text",
+        "is_nullable": "NO"
+      }
+    ],
+    "sample": [
+      {
+        "id": 1,
+        "name": "Agriculture"
+      },
+      {
+        "id": 2,
+        "name": "Automobile"
+      }
+    ]
+  },
+  "sectors": null,
+  "users": {
+    "columns": [
+      {
+        "column_name": "id",
+        "data_type": "integer",
+        "is_nullable": "NO"
+      },
+      {
+        "column_name": "clerk_id",
+        "data_type": "text",
+        "is_nullable": "NO"
+      },
+      {
+        "column_name": "email",
+        "data_type": "text",
+        "is_nullable": "NO"
+      },
+      {
+        "column_name": "first_name",
+        "data_type": "text",
+        "is_nullable": "YES"
+      },
+      {
+        "column_name": "last_name",
+        "data_type": "text",
+        "is_nullable": "YES"
+      },
+      {
+        "column_name": "phone",
+        "data_type": "text",
+        "is_nullable": "YES"
+      },
+      {
+        "column_name": "country",
+        "data_type": "text",
+        "is_nullable": "YES"
+      },
+      {
+        "column_name": "state",
+        "data_type": "text",
+        "is_nullable": "YES"
+      },
+      {
+        "column_name": "job_title",
+        "data_type": "text",
+        "is_nullable": "YES"
+      },
+      {
+        "column_name": "organization",
+        "data_type": "text",
+        "is_nullable": "YES"
+      },
+      {
+        "column_name": "onboarding_completed",
+        "data_type": "boolean",
+        "is_nullable": "YES"
+      },
+      {
+        "column_name": "created_at",
+        "data_type": "timestamp without time zone",
+        "is_nullable": "YES"
+      }
+    ],
+    "sample": []
+  },
+  "user_communities": {
+    "columns": [
+      {
+        "column_name": "user_id",
+        "data_type": "integer",
+        "is_nullable": "NO"
+      },
+      {
+        "column_name": "community_id",
+        "data_type": "integer",
+        "is_nullable": "NO"
+      },
+      {
+        "column_name": "sub_community_id",
+        "data_type": "integer",
+        "is_nullable": "NO"
+      }
+    ],
+    "sample": []
+  },
+  "user_industries": {
+    "columns": [
+      {
+        "column_name": "user_id",
+        "data_type": "integer",
+        "is_nullable": "NO"
+      },
+      {
+        "column_name": "industry_id",
+        "data_type": "integer",
+        "is_nullable": "NO"
+      },
+      {
+        "column_name": "sub_industry_id",
+        "data_type": "integer",
+        "is_nullable": "NO"
+      }
+    ],
+    "sample": []
+  }
+}

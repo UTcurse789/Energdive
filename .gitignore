@@ -50,3 +50,8 @@ node_modules
 out
 dist
 .DS_Store
+
+/lib/generated/prisma
+
+# clerk configuration (can include secrets)
+/.clerk/

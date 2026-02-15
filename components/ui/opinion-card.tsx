@@ -7,6 +7,7 @@ import { ArrowUpRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Opinion } from "@/types";
 
+
 interface OpinionCardProps {
     opinion: Opinion;
     className?: string;
