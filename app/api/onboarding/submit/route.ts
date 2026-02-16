@@ -60,7 +60,7 @@ export async function POST(req: Request) {
 
         // ── Update Clerk metadata (so middleware can gate) ──────────
         await (await clerkClient()).users.updateUserMetadata(userId, {
-            publicMetadata: { onboardingComplete: true },
+            publicMetadata: { onboarding_completed: true },
         });
 
         return NextResponse.json({ success: true, userId: dbUserId });

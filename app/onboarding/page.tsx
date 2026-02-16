@@ -5,8 +5,9 @@ import { redirect } from "next/navigation";
 export default async function OnboardingPage() {
     const user = await currentUser();
 
-    // Double-check: if already onboarded in metadata, skip.
-    if (user?.publicMetadata?.onboardingComplete) {
+    // If already onboarded, send straight to dashboard.
+    // currentUser() always fetches fresh data from Clerk API — no stale JWT issues.
+    if (user?.publicMetadata?.onboarding_completed) {
         redirect("/dashboard");
     }
 

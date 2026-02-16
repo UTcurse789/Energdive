@@ -1,20 +1,17 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
-import { NextResponse } from "next/server";
 
 const isProtectedRoute = createRouteMatcher(["/energclub/dashboard(.*)", "/dashboard(.*)", "/onboarding(.*)"]);
 
 export default clerkMiddleware(async (auth, req) => {
     const { userId, redirectToSignIn } = await auth();
 
-    // If user is not logged in and trying to access a protected route
+    // Only handle authentication — NOT onboarding status.
+    // Onboarding redirects are handled at the page/layout level using
+    // currentUser() which always returns fresh data from Clerk's API.
+    // The middleware JWT can be stale for up to 60s, causing redirect loops.
     if (!userId && isProtectedRoute(req)) {
         return redirectToSignIn();
     }
-
-    // NOTE: Onboarding ↔ Dashboard redirects are handled at the page/layout
-    // level using currentUser() which always returns fresh data from Clerk.
-    // DO NOT add redirect logic here based on sessionClaims — the JWT can be
-    // stale for up to 60s after metadata updates, causing redirect loops.
 });
 
 export const config = {
