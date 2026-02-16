@@ -31,23 +31,24 @@ export function DashboardHeader() {
         <header className="flex flex-col bg-white border-b sticky top-0 z-50">
             {/* ── Top Row: Brand + Search + User ── */}
             <div className="flex items-center justify-between px-6 py-3 border-b border-gray-100 h-[70px]">
-                {/* Logo */}
-                <div className="flex items-center gap-2">
-                    <div className="bg-[#D4AF37] w-8 h-8 flex items-center justify-center rounded text-white font-serif font-bold text-lg">
-                        E
-                    </div>
-                    <span className="font-bold text-xl tracking-tight text-gray-900">ENERGCLUB</span>
-                </div>
+                <Image
+                    src="/energclub.png"
+                    alt="Energdive Logo"
+                    width={120}
+                    height={40}
+                    className="object-contain"
+                    priority
+                />
 
                 {/* Search Bar */}
                 <div className="flex-1 max-w-2xl mx-12 hidden md:block">
                     <div className="relative group">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-[var(--dash-accent)] transition-colors" size={18} />
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-var(--dash-accent) transition-colors" size={18} />
                         <input
                             type="text"
                             placeholder="Search (Coming Soon)"
                             disabled
-                            className="w-full bg-gray-50 border border-gray-200 rounded-full py-2.5 pl-11 pr-4 text-sm outline-none focus:bg-white focus:border-[var(--dash-accent)] focus:ring-4 focus:ring-[var(--dash-accent-dim)] transition-all"
+                            className="w-full bg-gray-50 border border-gray-200 rounded-full py-2.5 pl-11 pr-4 text-sm outline-none focus:bg-white focus:border-var(--dash-accent) focus:ring-4 focus:ring-var(--dash-accent-dim) transition-all"
                         />
                     </div>
                 </div>
@@ -80,7 +81,7 @@ export function DashboardHeader() {
                             href={item.href}
                             className={`flex items-center gap-2 px-4 h-full border-b-2 text-sm font-medium transition-colors whitespace-nowrap
                                 ${isActive
-                                    ? "border-[var(--dash-accent)] text-[var(--dash-accent)]"
+                                    ? "border-var(--dash-accent) text-var(--dash-accent)"
                                     : "border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-50"
                                 }
                             `}
