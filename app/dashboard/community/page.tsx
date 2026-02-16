@@ -62,14 +62,14 @@ export default function CommunityPage() {
                                 </button>
                             ))}
                         </div>
-                        <button className="bg-[var(--dash-accent)] hover:bg-[var(--dash-accent-hover)] text-white px-5 py-2 rounded-lg text-sm font-bold transition-colors shadow-sm">
+                        <button className="bg-var(--dash-accent) hover:bg-var(--dash-accent-hover) text-white px-5 py-2 rounded-lg text-sm font-bold transition-colors shadow-sm">
                             New Discussion
                         </button>
                     </div>
 
                     {/* Discussion Cards */}
                     {DISCUSSIONS.map((item) => (
-                        <div key={item.id} className="bg-white border border-gray-100 rounded-xl p-6 shadow-sm hover:border-[var(--dash-accent-dim)] transition-colors">
+                        <div key={item.id} className="bg-white border border-gray-100 rounded-xl p-6 shadow-sm hover:border-var(--dash-accent-dim) transition-colors">
                             <div className="flex items-start gap-4 mb-4">
                                 <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-xs font-bold ${item.bg}`}>
                                     {item.initials}
