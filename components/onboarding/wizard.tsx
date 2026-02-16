@@ -58,11 +58,8 @@ export default function OnboardingWizard() {
 
             if (!res.ok) throw new Error("Failed to save profile");
 
-            // Refresh Clerk session so middleware sees updated metadata
-            await user?.reload();
-            await session?.reload();
-
-            // Navigate to dashboard (session now has onboardingComplete=true)
+            // Full page reload to /dashboard ensures the server-side
+            // currentUser() in dashboard layout fetches fresh metadata.
             window.location.href = "/dashboard";
         } catch (error) {
             console.error("Onboarding error:", error);

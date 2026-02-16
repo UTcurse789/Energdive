@@ -15,8 +15,8 @@ export default async function DashboardLayout({
         redirect("/sign-in");
     }
 
-    // Onboarding guard
-    if (!user.publicMetadata?.onboardingComplete) {
+    // Onboarding guard — uses snake_case key to match what /api/onboarding/submit sets
+    if (!user.publicMetadata?.onboarding_completed) {
         redirect("/onboarding");
     }
 

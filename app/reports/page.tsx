@@ -191,4 +191,5 @@ export default function ReportsPage() {
       </main>
     </div>
   );
+}
 };
