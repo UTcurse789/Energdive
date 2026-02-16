@@ -15,12 +15,7 @@ export default async function DashboardLayout({
         redirect("/sign-in");
     }
 
-    // Onboarding guard — uses snake_case key to match what /api/onboarding/submit sets
-    if (!user.publicMetadata?.onboarding_completed) {
-        redirect("/onboarding");
-    }
-
-    // Fetch profile server-side (always fresh)
+    // DB check — the single source of truth for onboarding status
     const profile = await getUserProfile(user.id);
 
     if (!profile) {
