@@ -1,13 +1,18 @@
 import OnboardingWizard from "@/components/onboarding/wizard";
 import { currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
+import { getUserProfile } from "@/lib/queries";
 
 export default async function OnboardingPage() {
     const user = await currentUser();
 
-    // If already onboarded, send straight to dashboard.
-    // currentUser() always fetches fresh data from Clerk API — no stale JWT issues.
-    if (user?.publicMetadata?.onboarding_completed) {
+    if (!user) {
+        redirect("/sign-in");
+    }
+
+    // DB check — if profile already exists, go to dashboard
+    const profile = await getUserProfile(user.id);
+    if (profile) {
         redirect("/dashboard");
     }
 
