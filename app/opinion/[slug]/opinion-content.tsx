@@ -26,6 +26,14 @@ interface OpinionContentProps {
 }
 
 export function OpinionContent({ opinion, recommended }: OpinionContentProps) {
+    // Safe access for main opinion author
+    const author = opinion.author;
+    const authorImage = author && 'image' in author
+        ? (author as any).image
+        : (author as any)?.avatar || "/images/avatars/default.png";
+    const authorName = author?.name || "Unknown Author";
+    const authorRole = author?.role || "Contributor";
+
     return (
         <main className="bg-[#FDFDFD] min-h-screen selection:bg-[#00A651]/20">
             {/* Header / Navigation Spacer */}
@@ -169,13 +177,13 @@ export function OpinionContent({ opinion, recommended }: OpinionContentProps) {
                         {/* Author Spotlight Box */}
                         <div className="mt-24 p-12 rounded-2rem border border-zinc-100 bg-zinc-50/50 flex flex-col md:flex-row gap-8 items-center not-prose">
                             <div className="relative w-24 h-24 rounded-full overflow-hidden shrink-0 grayscale">
-                                <Image src={opinion.author.image} alt={opinion.author.name} fill className="object-cover" />
+                                <Image src={authorImage} alt={authorName} fill className="object-cover" />
                             </div>
                             <div>
                                 <h4 className="text-xs font-black uppercase tracking-widest text-[#00A651] mb-2">About the Author</h4>
-                                <h5 className="text-2xl font-black uppercase tracking-tighter mb-2">{opinion.author.name}</h5>
+                                <h5 className="text-2xl font-black uppercase tracking-tighter mb-2">{authorName}</h5>
                                 <p className="text-zinc-500 font-serif italic text-sm leading-relaxed">
-                                    {opinion.author.role}. With over 15 years in energy forecasting, they provide critical analysis for institutional stakeholders and policy makers globally.
+                                    {authorRole}. With over 15 years in energy forecasting, they provide critical analysis for institutional stakeholders and policy makers globally.
                                 </p>
                             </div>
                         </div>
@@ -216,9 +224,20 @@ export function OpinionContent({ opinion, recommended }: OpinionContentProps) {
                                     <div className="pt-4 border-t border-zinc-100">
                                         <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">{item.author.name}</p>
                                     </div>
-                                </div>
-                            </Link>
-                        ))}
+                                    <div className="space-y-4">
+                                        <span className="text-[10px] font-bold text-[#00A651] uppercase tracking-widest">
+                                            {item.category || "Insight"}
+                                        </span>
+                                        <h4 className="font-serif font-bold text-2xl leading-tight text-zinc-900 group-hover:text-[#00A651] transition-colors line-clamp-2">
+                                            {item.title}
+                                        </h4>
+                                        <div className="pt-4 border-t border-zinc-100">
+                                            <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">{itemAuthor?.name || "Unknown"}</p>
+                                        </div>
+                                    </div>
+                                </Link>
+                            );
+                        })}
                     </div>
                 </footer>
             </article>

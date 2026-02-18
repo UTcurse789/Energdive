@@ -1,53 +1,87 @@
+"use client";
+
 import Link from "next/link";
 import Image from "next/image";
-import { OpinionCard } from "@/components/ui/opinion-card";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { OPINIONS } from "@/data/dummy";
+import { Article, Opinion } from "@/types";
+import { Quote } from "lucide-react";
 
-const featuredOpinion = OPINIONS[0];
-const opinionList = OPINIONS.slice(1, 4);
+interface OpinionSectionProps {
+    items?: (Opinion | Article)[];
+}
 
-export function OpinionSection() {
+export function OpinionSection({ items }: OpinionSectionProps) {
+    const featuredOpinion = items?.[0] || OPINIONS[0];
+
     if (!featuredOpinion) return null;
 
+    // Normalize author data (Opinion has author.image, Article has author.avatar)
+    const author = featuredOpinion.author;
+    const authorImage = author && 'image' in author
+        ? (author as any).image
+        : author?.avatar || "/default-avatar.png"; // Fallback if no image/avatar
+
+    const authorRole = featuredOpinion.author?.role || "Contributor";
+    const authorName = featuredOpinion.author?.name || "Unknown";
+
+
     return (
-        <section className="py-12 bg-white border-b border-border">
-            <SectionHeading title="Opinion & Analysis" linkText="All Opinions" linkHref="/opinion" />
+        <section className="py-24 bg-white border-b border-black overflow-hidden">
+            <div className="container mx-auto px-6 lg:px-12">
+                <SectionHeading
+                    title="Executive Perspective"
+                    linkText="View Archive"
+                    linkHref="/opinion"
+                />
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                {/* Featured Opinion - Large */}
-                <div className="lg:col-span-7 bg-muted p-8 lg:p-12 relative overflow-hidden group">
-                    <div className="relative z-10">
-                        <span className="text-primary font-bold tracking-wider uppercase text-xs mb-4 block">Featured Insight</span>
-                        <Link href={`/opinion/${featuredOpinion.slug}`}>
-                            <h3 className="font-serif text-3xl md:text-5xl font-bold mb-6 leading-tight group-hover:text-primary transition-colors">
-                                {featuredOpinion.title}
-                            </h3>
-                        </Link>
-                        <p className="text-lg text-muted-foreground mb-8 max-w-lg font-serif">
-                            {featuredOpinion.excerpt}
-                        </p>
+                <div className="relative mt-12 group">
+                    {/* Background Branding Mark */}
+                    <div className="absolute -top-10 -left-10 text-zinc-50 select-none pointer-events-none z-0">
+                        <Quote size={240} fill="currentColor" />
+                    </div>
 
-                        <div className="flex items-center gap-4">
-                            <div className="relative w-16 h-16 rounded-full overflow-hidden border-2 border-primary">
-                                <Image src={featuredOpinion.author.image} alt={featuredOpinion.author.name} fill className="object-cover" />
+                    <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+                        {/* Author Image / Avatar Column */}
+                        <div className="lg:col-span-4 flex justify-center lg:justify-start">
+                            <div className="relative w-64 h-64 md:w-80 md:h-80 grayscale group-hover:grayscale-0 transition-all duration-700 border-2 border-black p-2 bg-white">
+                                <div className="relative w-full h-full overflow-hidden">
+                                    <Image
+                                        src={authorImage}
+                                        alt={authorName}
+                                        fill
+                                        className="object-cover"
+                                    />
+                                </div>
                             </div>
-                            <div>
-                                <div className="font-bold text-lg">{featuredOpinion.author.name}</div>
-                                <div className="text-sm text-muted-foreground">{featuredOpinion.author.role}</div>
+                        </div>
+
+                        {/* Content Column */}
+                        <div className="lg:col-span-8">
+                            <span className="bg-[#00A651] text-white text-[10px] font-black uppercase px-3 py-1 tracking-[3px] mb-6 inline-block">
+                                Featured Insight
+                            </span>
+
+                            <Link href={`/opinion/${featuredOpinion.slug}`}>
+                                <h3 className="font-serif text-3xl md:text-5xl lg:text-6xl font-black italic tracking-tighter leading-[0.9] mb-8 group-hover:text-[#00A651] transition-colors">
+                                    "{featuredOpinion.title}"
+                                </h3>
+                            </Link>
+
+                            <p className="text-xl text-zinc-500 font-serif leading-relaxed mb-10 max-w-2xl italic border-l-4 border-zinc-100 pl-8">
+                                {featuredOpinion.excerpt}
+                            </p>
+
+                            <div className="flex flex-col gap-1">
+                                <div className="font-black text-lg uppercase tracking-widest text-zinc-900">
+                                    {authorName}
+                                </div>
+                                <div className="text-[10px] font-bold text-[#00A651] uppercase tracking-[4px]">
+                                    {authorRole}
+                                </div>
                             </div>
                         </div>
                     </div>
-
-                    {/* Decorative background element */}
-                    <div className="absolute top-0 right-0 w-64 h-64 bg-accent/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-                </div>
-
-                {/* Side List */}
-                <div className="lg:col-span-5 flex flex-col gap-4">
-                    {opinionList.map((opinion) => (
-                        <OpinionCard key={opinion.id} opinion={opinion} />
-                    ))}
                 </div>
             </div>
         </section>
