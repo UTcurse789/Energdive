@@ -52,7 +52,7 @@ export default function Home() {
       </div>
 
       {/* Opinion & Analysis */}
-      <OpinionSection />
+      <OpinionSection items={ARTICLES.filter(a => a.category === "Opinion").slice(0, 1)} />
 
       {/* Data & Insights */}
       <DataInsightsSection />

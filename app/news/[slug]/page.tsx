@@ -3,141 +3,195 @@ import Image from "next/image";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { Button } from "@/components/ui/buttons";
-import { ArticleCard } from "@/components/ui/article-card";
-import { ARTICLES } from "@/data/dummy";
-import { Facebook, Linkedin, Twitter, Share2 } from "lucide-react";
+import { notFound } from "next/navigation";
+import { BlocksRenderer } from "@strapi/blocks-react-renderer";
 
-export default async function ArticlePage({ params }: { params: Promise<{ slug: string }> }) {
+const STRAPI_BASE_URL = "http://206.189.132.187:1337";
+
+/* ================= FETCH ARTICLE ================= */
+
+async function getArticle(slug: string) {
+    const url = `${STRAPI_BASE_URL}/api/contents?filters[slug][$eq]=${slug}&populate[author][populate]=avatar&populate[featuredImage]=*&populate[type_of_content]=*&populate[Content]=*`;
+
+    const res = await fetch(url, { cache: "no-store" });
+    if (!res.ok) return null;
+
+    const json = await res.json();
+    return json.data?.[0];
+}
+
+/* ================= FETCH RELATED ================= */
+
+async function getRelated(slug: string) {
+    const res = await fetch(
+        `${STRAPI_BASE_URL}/api/contents?filters[slug][$ne]=${slug}&pagination[limit]=4&populate[featuredImage]=*`,
+        { cache: "no-store" }
+    );
+
+    const json = await res.json();
+    return json.data || [];
+}
+
+/* ================= PAGE ================= */
+
+export default async function ArticlePage({
+    params,
+}: {
+    params: Promise<{ slug: string }>;
+}) {
     const { slug } = await params;
-    const article = ARTICLES[0]; // Mock article
-    const relatedArticles = ARTICLES.slice(1, 4);
+
+    const articleData = await getArticle(slug);
+    if (!articleData) notFound();
+
+    const relatedRaw = await getRelated(slug);
+
+    const attrs = articleData.attributes || articleData;
+    const authorData = attrs.author?.data?.attributes;
+
+    const article = {
+        title: attrs.TITLE || attrs.Title,
+        excerpt: attrs.description || "",
+        content: attrs.Content || [],
+        category:
+            attrs.type_of_content?.data?.attributes?.name ||
+            attrs.type_of_content?.name ||
+            "News",
+        image: attrs.featuredImage?.data?.attributes?.url
+            ? `${STRAPI_BASE_URL}${attrs.featuredImage.data.attributes.url}`
+            : "/magazine-default.jpg",
+        date: attrs.publishedAt
+            ? new Date(attrs.publishedAt).toLocaleDateString("en-GB", {
+                day: "2-digit",
+                month: "short",
+                year: "numeric",
+            })
+            : "",
+        author: authorData
+            ? {
+                name: authorData.name,
+                avatar: authorData.avatar?.data?.attributes?.url,
+            }
+            : null,
+    };
 
     return (
-        <div className="min-h-screen bg-background font-sans">
+        <div className="bg-white">
             <Header />
 
-            <main className="pt-24 pb-16">
-                <article className="container grid grid-cols-1 lg:grid-cols-12 gap-12">
+            <main className="pt-24 pb-24">
+                <div className="container mx-auto px-6 grid grid-cols-1 lg:grid-cols-12 gap-12 max-w-7xl">
 
-                    {/* Main Content (8 cols) */}
-                    <div className="lg:col-span-8">
+                    {/* MAIN */}
+                    <div className="lg:col-span-9">
+
                         {/* Breadcrumb */}
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-6">
-                            <Link href="/" className="hover:text-primary">Home</Link>
-                            <span>/</span>
-                            <Link href="/news" className="hover:text-primary">News</Link>
-                            <span>/</span>
-                            <span className="text-foreground font-medium">{article.category}</span>
+                        <div className="text-xs uppercase tracking-widest text-gray-400 mb-6">
+                            <Link href="/">Home</Link> / <Link href="/news">News</Link> /{" "}
+                            <span className="text-black">{article.category}</span>
                         </div>
 
-                        <h1 className="font-serif text-3xl md:text-5xl font-black leading-tight mb-4">
+                        {/* Title */}
+                        <h1 className="text-5xl md:text-7xl font-serif italic font-bold leading-[1.05] mb-6">
                             {article.title}
                         </h1>
 
-                        <p className="text-xl md:text-2xl text-muted-foreground font-serif leading-relaxed mb-8">
+                        {/* Excerpt */}
+                        <p className="text-xl text-gray-500 font-serif mb-8">
                             {article.excerpt}
                         </p>
 
-                        <div className="flex items-center justify-between border-y border-border py-4 mb-8">
-                            <div className="flex items-center gap-3">
-                                {article.author && (
-                                    <div className="flex items-center gap-3">
-                                        <div className="relative w-10 h-10 rounded-full overflow-hidden">
-                                            <Image src={article.author.avatar} alt={article.author.name} fill className="object-cover" />
-                                        </div>
-                                        <div>
-                                            <div className="font-bold text-sm">{article.author.name}</div>
-                                            <div className="text-xs text-muted-foreground">{article.date} · {article.readTime}</div>
-                                        </div>
-                                    </div>
+                        {/* Author */}
+                        {article.author && (
+                            <div className="flex items-center gap-4 mb-10">
+
+                                {article.author.avatar && (
+                                    <Image
+                                        src={`${STRAPI_BASE_URL}${article.author.avatar}`}
+                                        width={50}
+                                        height={50}
+                                        className="rounded-full"
+                                        alt=""
+                                    />
                                 )}
+
+                                <div>
+                                    <p className="font-bold">{article.author.name}</p>
+                                    <p className="text-sm text-gray-400">{article.date}</p>
+                                </div>
                             </div>
+                        )}
 
-                            <div className="flex items-center gap-2">
-                                <Button variant="ghost" size="sm" className="rounded-full w-8 h-8 p-0"><Twitter className="w-4 h-4" /></Button>
-                                <Button variant="ghost" size="sm" className="rounded-full w-8 h-8 p-0"><Linkedin className="w-4 h-4" /></Button>
-                                <Button variant="ghost" size="sm" className="rounded-full w-8 h-8 p-0"><Share2 className="w-4 h-4" /></Button>
-                            </div>
+                        {/* Hero */}
+                        <div className="relative aspect-video mb-12">
+                            <Image
+                                src={article.image}
+                                alt=""
+                                fill
+                                priority
+                                className="object-cover"
+                            />
                         </div>
 
-                        {/* Hero Image */}
-                        <div className="relative aspect-video w-full mb-8 overflow-hidden">
-                            <Image src={article.image} alt={article.title} fill className="object-cover" priority />
-                        </div>
-
-                        {/* Content */}
-                        <div className="prose prose-lg max-w-none font-serif prose-headings:font-sans prose-headings:font-bold prose-a:text-primary">
-                            <p>
-                                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
-                            </p>
-                            <p>
-                                Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
-                            </p>
-
-                            <h3>The Impact on Global Markets</h3>
-                            <p>
-                                Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo.
-                            </p>
-
-                            <blockquote>
-                                "The shift towards renewable energy is not just a trend, but a fundamental restructuring of the global economy."
-                            </blockquote>
-
-                            <p>
-                                Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt.
-                            </p>
-
-                            <ul>
-                                <li>Clean energy investment reached $1.1 trillion in 2024</li>
-                                <li>Fossil fuel demand expected to peak by 2030</li>
-                                <li>Grid modernization remains the biggest bottleneck</li>
-                            </ul>
-                        </div>
-
-                        {/* Author Bio Box */}
-                        <div className="bg-muted/30 p-8 mt-12 flex items-center gap-6 border border-border">
-                            {article.author && (
-                                <>
-                                    <div className="relative w-20 h-20 rounded-full overflow-hidden shrink-0">
-                                        <Image src={article.author.avatar} alt={article.author.name} fill className="object-cover" />
-                                    </div>
-                                    <div>
-                                        <h4 className="font-bold text-lg mb-1">About {article.author.name}</h4>
-                                        <p className="text-muted-foreground text-sm mb-3">{article.author.bio}</p>
-                                        <Link href="#" className="text-primary text-sm font-bold uppercase tracking-wider">View more articles</Link>
-                                    </div>
-                                </>
-                            )}
+                        {/* Body */}
+                        <div className="prose max-w-none font-serif text-[18px] leading-[1.9]">
+                            <BlocksRenderer content={article.content} />
                         </div>
                     </div>
 
-                    {/* Sidebar (4 cols) */}
-                    <aside className="lg:col-span-4 space-y-8">
-                        {/* Newsletter Widget */}
-                        <div className="bg-primary text-primary-foreground p-6">
-                            <h3 className="font-serif text-xl font-bold mb-2">Daily Briefing</h3>
-                            <p className="text-sm text-accent mb-4">Essential energy news, curated by our editors. Delivered every morning.</p>
-                            <input type="email" placeholder="Your work email" className="w-full p-2 text-foreground text-sm mb-2" />
-                            <Button variant="secondary" fullWidth>Subscribe</Button>
+                    {/* SIDEBAR */}
+                    <aside className="lg:col-span-3 space-y-12">
+
+                        {/* Newsletter */}
+                        <div className="bg-black text-white p-8">
+                            <h3 className="text-lg italic font-bold mb-4">
+                                Daily Briefing
+                            </h3>
+                            <input className="w-full bg-white/10 p-3 mb-4" placeholder="Email" />
+                            <Button className="w-full bg-[#00A651]">Subscribe</Button>
                         </div>
 
-                        {/* Trending / Related */}
+                        {/* Related */}
                         <div>
-                            <h3 className="font-sans text-xs font-bold uppercase tracking-widest border-b border-border pb-2 mb-4">
-                                Related Stories
+                            <h3 className="text-xs uppercase tracking-widest text-gray-400 mb-6">
+                                Related
                             </h3>
-                            <div className="flex flex-col gap-6">
-                                {relatedArticles.map((item) => (
-                                    <ArticleCard key={item.id} article={item} variant="vertical" className="mb-2" />
-                                ))}
+
+                            <div className="space-y-8">
+
+                                {relatedRaw.map((item: any) => {
+                                    const r = item.attributes || item;
+                                    const img =
+                                        r.featuredImage?.data?.attributes?.url;
+
+                                    return (
+                                        <Link href={`/news/${r.slug}`} key={item.id}>
+                                            <div>
+                                                <div className="relative aspect-video mb-2">
+                                                    <Image
+                                                        src={img ? `${STRAPI_BASE_URL}${img}` : "/magazine-default.jpg"}
+                                                        alt=""
+                                                        fill
+                                                        className="object-cover"
+                                                    />
+                                                </div>
+
+                                                <h4 className="font-serif font-bold leading-tight">
+                                                    {r.TITLE || r.Title}
+                                                </h4>
+                                            </div>
+                                        </Link>
+                                    );
+                                })}
+
                             </div>
                         </div>
-                    </aside>
 
-                </article>
+                    </aside>
+                </div>
             </main>
 
-
+            <Footer />
         </div>
     );
 }
