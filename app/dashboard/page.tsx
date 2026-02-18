@@ -14,7 +14,7 @@ export default function DashboardPage() {
             {/* Welcome Section */}
             <div className="mb-8">
                 <h1 className="text-3xl font-bold text-gray-900 mb-1">
-                    Welcome back, {firstName}
+                    Welcome {firstName}
                 </h1>
                 <p className="text-gray-500">
                     Your intelligence hub for energy industry insights

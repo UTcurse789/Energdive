@@ -52,7 +52,7 @@ export function OpinionContent({ opinion, recommended }: OpinionContentProps) {
                                 {opinion.category || "Expert Opinion"}
                             </span>
 
-                            <h1 className="text-5xl md:text-7xl font-black tracking-tighter text-zinc-900 leading-[0.9] uppercase italic">
+                            <h1 className="text-4xl md:text-6xl font-black tracking-tight text-zinc-900 leading-[0.95] uppercase italic">
                                 {opinion.title}
                             </h1>
 
@@ -82,7 +82,7 @@ export function OpinionContent({ opinion, recommended }: OpinionContentProps) {
                                 src={opinion.author.image}
                                 alt={opinion.author.name}
                                 fill
-                                className="object-cover grayscale hover:grayscale-0 transition-all duration-1000"
+                                className="object-cover grayscale hover:grayscale-0 transition-all duration-700"
                                 priority
                             />
                         </motion.div>

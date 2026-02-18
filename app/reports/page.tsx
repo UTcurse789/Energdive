@@ -18,16 +18,16 @@ import { cn } from "@/lib/utils";
 ================================ */
 
 async function fetchReports() {
+  const base = process.env.NEXT_PUBLIC_STRAPI_URL;
+
   const res = await fetch(
-    `${process.env.NEXT_PUBLIC_STRAPI_URL}/api/contents?filters[type_of_content][slug][$eq]=reports&populate=*`,
+    `${base}/api/contents?filters[type_of_content][name][$eq]=Reports&populate=*`,
     { cache: "no-store" }
   );
 
   const json = await res.json();
-
-  return json.data || [];
+  return json?.data ?? [];
 }
-
 
 
 /* ================================
@@ -57,19 +57,18 @@ export default function ReportsPage() {
         title: item.Title,
         slug: item.slug,
         excerpt:
-          item.Excerpt?.[0]?.children?.[0]?.text || "",
-        image: item.FeaturedImage?.url
-          ? `${process.env.NEXT_PUBLIC_STRAPI_URL}${item.FeaturedImage.url}`
-          : null, // ✅ NOT empty string
+          item?.Excerpt?.[0]?.children?.[0]?.text || "",
         category: "Reports",
         date: item.Date,
+        image:
+          item?.FeaturedImage?.url
+            ? `${process.env.NEXT_PUBLIC_STRAPI_URL}${item.FeaturedImage.url}`
+            : null,
       }));
-
 
       setReports(formatted);
     });
   }, []);
-
 
 
 
@@ -202,8 +201,6 @@ export default function ReportsPage() {
           </AnimatePresence>
         </section>
       </main>
-
-      <Footer />
     </div>
   );
 }
