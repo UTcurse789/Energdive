@@ -79,7 +79,7 @@ export function Header() {
                     {/* CENTER LOGO */}
                     <div className="flex-none px-4 order-1 lg:order-2">
                         <Link href="/" className="flex flex-col items-center">
-                            <Image src="/Energdive-Logo.png" alt="EnergDive" width={220} height={45} priority className="object-contain w-[160px] md:w-[220px]" />
+                            <Image src="/Energdive-Logo.png" alt="EnergDive" width={220} height={45} priority className="object-contain w-[160px] md:w-[220px] h-auto" />
                         </Link>
                     </div>
 
