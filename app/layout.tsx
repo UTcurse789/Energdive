@@ -34,7 +34,7 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html lang="en" className={`${sans.variable} ${serif.variable}`}>
-        <body className="antialiased font-sans">
+        <body className="antialiased font-sans" suppressHydrationWarning>
           <SiteLayout>
             {children}
           </SiteLayout>

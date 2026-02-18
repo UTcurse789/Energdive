@@ -5,8 +5,13 @@ import Image from "next/image";
 import Link from "next/link";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
-import { motion } from "framer-motion";
-import { ArrowUpRight } from "lucide-react";
+import {
+  motion,
+  AnimatePresence,
+  useScroll,
+  useTransform,
+} from "framer-motion";
+import { ArrowUpRight, ArrowRight } from "lucide-react";
 
 const STRAPI = process.env.NEXT_PUBLIC_STRAPI_URL;
 
@@ -26,6 +31,10 @@ async function fetchOpinions() {
 
 export default function OpinionPage() {
   const [opinions, setOpinions] = useState<any[]>([]);
+
+  const { scrollY } = useScroll();
+  const y1 = useTransform(scrollY, [0, 500], [0, 200]);
+  const opacity = useTransform(scrollY, [0, 300], [1, 0]);
 
   useEffect(() => {
     fetchOpinions().then((data) => {
@@ -56,18 +65,49 @@ export default function OpinionPage() {
     <div className="min-h-screen bg-[#FDFDFD] font-sans text-zinc-900">
       <Header />
 
-      <main className="relative pt-[80px] pb-32">
-        <div className="container mx-auto px-6 lg:px-12">
+      <main className="relative pb-32">
+        {/* HERO */}
+        <section className="relative w-full min-h-[80vh] flex items-center bg-[#0a0a0a] overflow-hidden">
+          <div className="absolute inset-0 z-0">
+            <motion.div
+              style={{ y: y1 }}
+              className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1473341304170-971dccb5ac1e?q=80&w=2070')] bg-cover bg-center opacity-40 scale-110"
+            />
+            <div className="absolute inset-0 bg-linear-to-b from-black/60 via-black/20 to-[#FDFDFD]" />
+          </div>
 
-          {/* HEADER */}
-          <header className="mb-24 max-w-3xl">
-            <h1 className="text-6xl md:text-8xl font-black uppercase italic">
-              Expert{" "}
-              <span className="text-[#00A651] not-italic">
-                Perspectives
-              </span>
-            </h1>
-          </header>
+          <div className="container mx-auto px-6 lg:px-12 relative z-10 pt-20">
+            <motion.div
+              initial={{ opacity: 0, y: 40 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 1 }}
+              style={{ opacity }}
+              className="max-w-5xl"
+            >
+              <h1 className="text-6xl md:text-8xl lg:text-9xl font-black text-white leading-[0.85] uppercase mb-10">
+                Latest <br />
+                <span className="text-[#00A651] italic">
+                  Opinions
+                </span>
+              </h1>
+
+              <p className="text-xl text-white/70 max-w-2xl mb-12">
+                Expert perspectives and in-depth analysis shaping
+                the future of the energy sector.
+              </p>
+
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                className="flex items-center gap-3 bg-white text-black px-8 py-4 rounded-full font-bold text-sm uppercase"
+              >
+                Browse All Opinions
+                <ArrowRight className="w-4 h-4" />
+              </motion.button>
+            </motion.div>
+          </div>
+        </section>
+
+        <div className="container mx-auto px-6 lg:px-12 pt-20">
 
           {/* GRID */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-y-20 gap-x-12">

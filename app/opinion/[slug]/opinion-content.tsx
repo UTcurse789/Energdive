@@ -9,6 +9,17 @@ import { motion } from "framer-motion";
 import { Opinion } from "@/types";
 import { cn } from "@/lib/utils";
 
+/* ---------- Strapi inline text renderer ---------- */
+function renderInlineChildren(children: any[]) {
+    return children?.map((child: any, idx: number) => {
+        let node: React.ReactNode = child.text;
+        if (child.bold) node = <strong key={idx}>{node}</strong>;
+        if (child.italic) node = <em key={idx}>{node}</em>;
+        if (child.underline) node = <u key={idx}>{node}</u>;
+        return node;
+    });
+}
+
 interface OpinionContentProps {
     opinion: Opinion;
     recommended: Opinion[];
@@ -52,11 +63,11 @@ export function OpinionContent({ opinion, recommended }: OpinionContentProps) {
                                 {opinion.category || "Expert Opinion"}
                             </span>
 
-                            <h1 className="text-4xl md:text-6xl font-black tracking-tight text-zinc-900 leading-[0.95] uppercase italic">
+                            <h1 className="text-2xl md:text-3xl lg:text-4xl font-black tracking-tight text-zinc-900 leading-[1.15]">
                                 {opinion.title}
                             </h1>
 
-                            <p className="text-xl md:text-2xl text-zinc-500 font-serif italic leading-relaxed border-l-4 border-zinc-100 pl-8">
+                            <p className="text-base md:text-lg text-zinc-500 font-serif italic leading-relaxed border-l-4 border-zinc-100 pl-8">
                                 {opinion.excerpt}
                             </p>
 
@@ -65,9 +76,6 @@ export function OpinionContent({ opinion, recommended }: OpinionContentProps) {
                                     Published {opinion.date}
                                 </div>
                                 <div className="h-1 w-1 bg-zinc-200 rounded-full" />
-                                <div className="text-[11px] font-bold text-[#00A651] uppercase tracking-widest">
-                                    8 Min Read
-                                </div>
                             </div>
                         </motion.div>
                     </div>
@@ -79,8 +87,8 @@ export function OpinionContent({ opinion, recommended }: OpinionContentProps) {
                             className="relative aspect-4/5 overflow-hidden rounded-2rem shadow-2xl bg-zinc-100"
                         >
                             <Image
-                                src={opinion.author.image}
-                                alt={opinion.author.name}
+                                src={opinion.featuredImage}
+                                alt={opinion.title}
                                 fill
                                 className="object-cover grayscale hover:grayscale-0 transition-all duration-700"
                                 priority
@@ -106,25 +114,57 @@ export function OpinionContent({ opinion, recommended }: OpinionContentProps) {
 
                     {/* Main Body Text */}
                     <div className="lg:col-span-8 lg:col-offset-1 prose prose-xl max-w-none prose-headings:font-black prose-headings:uppercase prose-headings:italic prose-headings:tracking-tighter prose-p:font-serif prose-p:text-zinc-600 prose-p:leading-[1.8] prose-strong:text-zinc-900 prose-blockquote:border-none prose-blockquote:p-0">
-                        {opinion.content ? <p>{opinion.content}</p> : null}
+                        {opinion.content?.map((block: any, i: number) => {
+                            const text = block.children
+                                ?.map((child: any) => child.text)
+                                .join("") || "";
 
-                        <p>
-                            The transition to a sustainable energy future is not merely a technological challenge; it is a fundamental restructuring of global power dynamics. As we navigate the complexities of 2026, the integration of smart-grid technology and decentralized storage is moving from a luxury to a baseline operational requirement.
-                        </p>
+                            if (!text.trim()) return null;
 
-                        <blockquote className="my-16">
-                            <div className="bg-zinc-50 p-12 rounded-[2.5rem] relative overflow-hidden">
-                                <Quote className="absolute -top-4 -left-4 w-24 h-24 text-zinc-100 z-0" />
-                                <p className="text-3xl md:text-4xl font-black italic text-zinc-900 tracking-tighter leading-tight relative z-10">
-                                    "Decarbonization is no longer a cost-center; it is the primary engine of asset appreciation in the modern industrial landscape."
-                                </p>
-                            </div>
-                        </blockquote>
+                            switch (block.type) {
+                                case "heading": {
+                                    const level = block.level || 2;
+                                    const headingClasses = "font-serif font-black text-zinc-900 mt-12 mb-6 leading-tight";
 
-                        <h3>Strategic Implications</h3>
-                        <p>
-                            Institutional investors are increasingly pivoting toward transitional assets. The shift in capital allocation is creating a feedback loop where the cost of capital for hydrocarbon projects continues to rise, while renewable infrastructure enjoys unprecedented liquidity.
-                        </p>
+                                    if (level === 1) return <h1 key={i} className={cn(headingClasses, "text-3xl md:text-5xl")}>{renderInlineChildren(block.children)}</h1>;
+                                    if (level === 2) return <h2 key={i} className={cn(headingClasses, "text-2xl md:text-4xl")}>{renderInlineChildren(block.children)}</h2>;
+                                    if (level === 3) return <h3 key={i} className={cn(headingClasses, "text-xl md:text-3xl")}>{renderInlineChildren(block.children)}</h3>;
+                                    if (level === 4) return <h4 key={i} className={cn(headingClasses, "text-lg md:text-2xl")}>{renderInlineChildren(block.children)}</h4>;
+                                    return <h5 key={i} className={cn(headingClasses, "text-lg md:text-xl")}>{renderInlineChildren(block.children)}</h5>;
+                                }
+                                case "list":
+                                    return block.format === "ordered" ? (
+                                        <ol key={i} className="list-decimal pl-6 my-8 space-y-3 font-serif text-lg md:text-xl text-zinc-700 leading-relaxed">
+                                            {block.children?.map((li: any, j: number) => (
+                                                <li key={j}>
+                                                    {li.children?.map((c: any) => c.text).join("")}
+                                                </li>
+                                            ))}
+                                        </ol>
+                                    ) : (
+                                        <ul key={i} className="list-disc pl-6 my-8 space-y-3 font-serif text-lg md:text-xl text-zinc-700 leading-relaxed">
+                                            {block.children?.map((li: any, j: number) => (
+                                                <li key={j}>
+                                                    {li.children?.map((c: any) => c.text).join("")}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    );
+                                case "quote":
+                                    return (
+                                        <blockquote key={i} className="my-16 not-prose">
+                                            <div className="bg-zinc-50 p-8 md:p-12 rounded-[2rem] relative overflow-hidden">
+                                                <Quote className="absolute -top-4 -left-4 w-20 h-20 text-zinc-200/50 z-0" />
+                                                <p className="text-2xl md:text-3xl font-black italic text-zinc-900 tracking-tight leading-snug relative z-10">
+                                                    "{renderInlineChildren(block.children)}"
+                                                </p>
+                                            </div>
+                                        </blockquote>
+                                    );
+                                default:
+                                    return <p key={i} className="font-serif text-lg md:text-xl leading-relaxed text-zinc-700 mb-8">{renderInlineChildren(block.children)}</p>;
+                            }
+                        })}
 
                         {/* Author Spotlight Box */}
                         <div className="mt-24 p-12 rounded-2rem border border-zinc-100 bg-zinc-50/50 flex flex-col md:flex-row gap-8 items-center not-prose">
@@ -159,8 +199,8 @@ export function OpinionContent({ opinion, recommended }: OpinionContentProps) {
                             <Link key={item.id} href={`/opinion/${item.slug}`} className="group block">
                                 <div className="relative aspect-3/4 mb-8 overflow-hidden rounded-2xl bg-zinc-100">
                                     <Image
-                                        src={item.author.image}
-                                        alt={item.author.name}
+                                        src={item.featuredImage}
+                                        alt={item.title}
                                         fill
                                         className="object-cover grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105"
                                     />

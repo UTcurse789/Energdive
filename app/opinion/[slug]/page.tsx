@@ -56,13 +56,20 @@ export default async function OpinionDetailPage({
 
   const opinion = {
     id: article.id,
+    slug,
     title: article.Title,
     excerpt:
       article?.Excerpt?.[0]?.children?.[0]?.text || "",
     date: article.Date,
     category: "Opinion",
-    content:
-      article?.Content?.[0]?.children?.[0]?.text || "",
+    content: article?.Content || [],
+    featuredImage:
+      article?.FeaturedImage?.url
+        ? `${STRAPI}${article.FeaturedImage.url}`
+        : article?.FeaturedImage?.data?.attributes?.url
+          ? `${STRAPI}${article.FeaturedImage.data.attributes.url}`
+          : "/placeholder.jpg",
+
     author: {
       name: article?.author?.name,
       role: article?.author?.designation || "Contributor",
@@ -73,6 +80,7 @@ export default async function OpinionDetailPage({
     },
   };
 
+
   /* ---------- FORMAT RECOMMENDED ---------- */
 
   const recommended = recommendedRaw.map((item: any) => ({
@@ -80,6 +88,12 @@ export default async function OpinionDetailPage({
     slug: item.slug,
     title: item.Title,
     category: "Opinion",
+    featuredImage:
+      item?.FeaturedImage?.url
+        ? `${STRAPI}${item.FeaturedImage.url}`
+        : item?.FeaturedImage?.data?.attributes?.url
+          ? `${STRAPI}${item.FeaturedImage.data.attributes.url}`
+          : "/placeholder.jpg",
     author: {
       name: item?.author?.name,
       image:
