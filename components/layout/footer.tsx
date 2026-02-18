@@ -20,13 +20,7 @@ export function Footer() {
                 {/* Logo */}
                 <div className="flex justify-center mb-8">
                     <Link href="/">
-                        <Image
-                            src="/energdive-logo-white-rr.png"
-                            alt="ENERGDIVE"
-                            width={280}
-                            height={60}
-                            className="h-auto w-[280px]"
-                        />
+                        <Image src="/energdive-logo-white-rr.png" alt="EnergDive" width={180} height={40} className="mb-6 object-contain h-auto w-auto" />
                     </Link>
                 </div>
 

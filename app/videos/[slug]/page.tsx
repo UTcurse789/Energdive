@@ -2,212 +2,178 @@ import React from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { VIDEOS } from "@/data/dummy";
-import { ArrowLeft, Share2, Youtube, Clock, Eye, Calendar, Tag } from "lucide-react";
+import { BlocksRenderer, type BlocksContent } from '@strapi/blocks-react-renderer';
+import { ArrowLeft, Share2, Youtube, Clock, Calendar, Tag, User } from "lucide-react";
 
+async function getVideoData(slug: string) {
+    const baseUrl = process.env.NEXT_PUBLIC_STRAPI_URL || "http://localhost:1337";
+
+    try {
+        // CORRECTED: Added ${slug} to the template literal
+        const res = await fetch(
+            `${baseUrl}/api/videos?filters[slug][$eq]=${slug}&populate=*`,
+            { next: { revalidate: 60 } }
+        );
+
+        const json = await res.json();
+        const data = json.data;
+
+        // Fetch recent videos for sidebar
+        const recentRes = await fetch(`${baseUrl}/api/videos?populate=*&pagination[limit]=5`);
+        const recentJson = await recentRes.json();
+        const recentData = recentJson.data;
+
+        if (!data || data.length === 0) {
+            return { video: null, moreVideos: [] };
+        }
+
+        return {
+            video: data[0],
+            moreVideos: recentData ? recentData.filter((v: any) => v.slug !== slug) : []
+        };
+    } catch (error) {
+        console.error("Fetch Error:", error);
+        return { video: null, moreVideos: [] };
+    }
+}
 export default async function VideoDetailPage({ params }: { params: Promise<{ slug: string }> }) {
     const { slug } = await params;
-
-    const video = VIDEOS.find(v => v.slug === slug);
+    const { video, moreVideos } = await getVideoData(slug);
 
     if (!video) {
         notFound();
     }
 
-    // Suggested videos (excluding current)
-    const relatedVideos = VIDEOS
-        .filter(v => v.id !== video.id)
-        .slice(0, 4);
+    const baseUrl = process.env.NEXT_PUBLIC_STRAPI_URL || "http://localhost:1337";
 
-    // Extract potential tags from category
-    const tags = [video.category, "Energy Transition", "Analysis", "Expert Insights"];
+    // Extract metadata
+    const title = video.title;
+    const youtubeId = video.youtubeId;
+    const createdAt = new Date(video.publishedAt).toLocaleDateString('en-US', {
+        day: 'numeric', month: 'long', year: 'numeric'
+    });
+    const description: BlocksContent = video.description;
+    const category = video.sectors?.[0]?.name || "Energy";
+    const authorName = video.author?.name || "Team ENERGDIVE";
+    const authorAvatar = video.author?.avatar?.url
+        ? `${baseUrl}${video.author.avatar.url}`
+        : "/api/placeholder/40/40";
 
     return (
-        <main className="min-h-screen bg-linear-to-b from-gray-50 to-white text-black font-sans pb-20">
-
-            {/* Breadcrumb & Back Navigation */}
-            <div className="border-b border-gray-100 bg-white">
+        <main className="min-h-screen bg-gray-50 text-black font-sans pb-20">
+            {/* Navigation */}
+            <div className="border-b border-gray-100 bg-white sticky top-0 z-10">
                 <div className="mx-auto px-6 max-w-[1400px] py-4">
-                    <Link
-                        href="/videos"
-                        className="inline-flex items-center text-gray-600 hover:text-black transition-colors text-sm font-semibold group"
-                    >
+                    <Link href="/videos" className="inline-flex items-center text-gray-500 hover:text-teal-600 transition-colors text-sm font-bold group">
                         <ArrowLeft size={16} className="mr-2 group-hover:-translate-x-1 transition-transform" />
-                        Back to Videos
+                        BACK TO VIDEO LIBRARY
                     </Link>
                 </div>
             </div>
 
-            {/* Video Player Section - Premium White Background */}
+            {/* Video Player Section */}
             <div className="bg-white border-b border-gray-100">
-                <div className="mx-auto px-6 max-w-[1400px] pt-8 pb-12">
-
-                    {/* Video Player Wrapper with Shadow - YouTube Aspect Ratio */}
-                    <div className="mx-auto max-w-4xl">
-                        <div className="relative aspect-video w-full bg-black rounded-2xl overflow-hidden shadow-2xl border-4 border-gray-900 mb-8">
-                            <iframe
-                                src={`https://www.youtube.com/embed/${video.youtubeId}?autoplay=0&rel=0`}
-                                title={video.title}
-                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                allowFullScreen
-                                className="absolute inset-0 w-full h-full"
-                            />
-                        </div>
+                <div className="mx-auto px-6 max-w-[1200px] pt-8 pb-12">
+                    <div className="relative aspect-video w-full bg-black rounded-3xl overflow-hidden shadow-2xl border-12px border-gray-900">
+                        <iframe
+                            src={`https://www.youtube.com/embed/${youtubeId}?autoplay=0&rel=0`}
+                            title={title}
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowFullScreen
+                            className="absolute inset-0 w-full h-full"
+                        />
                     </div>
 
-                    {/* Video Title & Actions */}
-                    <div className="flex flex-col lg:flex-row gap-6 justify-between items-start mb-8">
-                        <div className="space-y-4 flex-1">
-                            <div className="flex items-center gap-2 text-xs font-black text-teal-700 uppercase tracking-widest">
-                                <Tag size={14} />
-                                <span>{video.category}</span>
-                            </div>
-                            <h1 className="text-4xl md:text-5xl font-serif font-medium leading-tight text-gray-900">
-                                {video.title}
-                            </h1>
-
-                            {/* Metadata Row */}
-                            <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500 font-medium">
-                                <div className="flex items-center gap-1.5">
-                                    <Calendar size={14} />
-                                    <span>{video.date}</span>
-                                </div>
-                                <span className="text-gray-300">•</span>
-                                <div className="flex items-center gap-1.5">
-                                    <Clock size={14} />
-                                    <span>{video.duration}</span>
-                                </div>
-                                {video.views && (
-                                    <>
-                                        <span className="text-gray-300">•</span>
-                                        <div className="flex items-center gap-1.5">
-                                            <Eye size={14} />
-                                            <span>{video.views}</span>
-                                        </div>
-                                    </>
-                                )}
-                            </div>
+                    <div className="mt-10 space-y-4">
+                        <div className="flex items-center gap-2 text-teal-600 font-black text-[10px] uppercase tracking-[0.2em]">
+                            <Tag size={12} />
+                            <span>{category}</span>
                         </div>
+                        <h1 className="text-3xl md:text-5xl font-serif font-bold leading-tight text-gray-900">
+                            {title}
+                        </h1>
 
-                        {/* Action Buttons */}
-                        <div className="flex items-center gap-3">
-                            <a
-                                href={`https://www.youtube.com/watch?v=${video.youtubeId}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center gap-2 bg-[#ff0000] hover:bg-[#cc0000] text-white px-6 py-3 rounded-lg font-bold text-sm transition-all shadow-lg hover:shadow-xl"
-                            >
-                                <Youtube size={18} /> Watch on YouTube
-                            </a>
-                            <button className="p-3 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors border border-gray-200">
-                                <Share2 size={18} />
-                            </button>
+                        <div className="flex flex-wrap items-center gap-6 pt-4 text-sm text-gray-400 font-medium">
+                            <div className="flex items-center gap-2">
+                                <Calendar size={16} />
+                                <span>Published on {createdAt}</span>
+                            </div>
+                            <div className="flex items-center gap-2 text-red-600 font-bold cursor-pointer hover:opacity-80">
+                                <Share2 size={16} />
+                                <span>Share Video</span>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            {/* Content Section */}
-            <div className="mx-auto px-6 max-w-[1400px] pt-12">
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+            {/* Content & Sidebar */}
+            <div className="mx-auto px-6 max-w-[1200px] pt-12">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-16">
 
-                    {/* Main Content - Left 2/3 */}
-                    <div className="lg:col-span-2 space-y-10">
-
-                        {/* Description Card */}
-                        <div className="bg-white rounded-xl border border-gray-100 p-8 shadow-sm">
-                            <h2 className="text-xl font-serif font-bold mb-4 text-gray-900">About this video</h2>
-                            <div className="prose prose-lg text-gray-700 leading-relaxed">
-                                <p>{video.description}</p>
+                    {/* Left Side: Description & Author */}
+                    <div className="lg:col-span-2 space-y-12">
+                        <section>
+                            <h2 className="text-sm font-black uppercase tracking-widest text-gray-400 mb-6 border-b pb-2">Overview</h2>
+                            <div className="prose prose-lg prose-teal max-w-none text-gray-700 leading-relaxed">
+                                <BlocksRenderer content={description} />
                             </div>
-                        </div>
+                        </section>
 
-                        {/* Author/Expert Card */}
-                        <div className="bg-linear-to-br from-teal-50 to-white rounded-xl border border-teal-100 p-8 shadow-sm">
-                            <h3 className="text-sm font-black uppercase tracking-wider text-teal-800 mb-4">Expert Analyst</h3>
-                            <div className="flex items-center gap-5">
-                                <div className="relative w-16 h-16 rounded-full overflow-hidden bg-teal-100 border-2 border-teal-200 flex-shrink:0">
-                                    <Image
-                                        src={video.author.avatar}
-                                        alt={video.author.name}
-                                        fill
-                                        className="object-cover"
-                                    />
-                                </div>
-                                <div>
-                                    <p className="font-bold text-lg text-gray-900">{video.author.name}</p>
-                                    <p className="text-sm text-teal-700 font-medium">{video.author.role}</p>
-                                </div>
+                        <section className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm flex items-start gap-6">
+                            <div className="relative w-20 h-20 rounded-2xl overflow-hidden flex-0 bg-gray-50 border border-gray-100">
+                                <Image src={authorAvatar} sizes="32px" alt={authorName} fill className="object-cover" />
                             </div>
-                        </div>
-
-                        {/* Tags */}
-                        <div className="space-y-4">
-                            <h3 className="text-sm font-black uppercase tracking-wider text-gray-400">Related Topics</h3>
-                            <div className="flex flex-wrap gap-2">
-                                {tags.map((tag, idx) => (
-                                    <span
-                                        key={idx}
-                                        className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-semibold rounded-full transition-colors cursor-pointer border border-gray-200"
-                                    >
-                                        {tag}
-                                    </span>
-                                ))}
+                            <div>
+                                <span className="text-[10px] font-black text-teal-600 uppercase tracking-widest">Contributed By</span>
+                                <h3 className="text-xl font-bold text-gray-900 mb-2">{authorName}</h3>
+                                <p className="text-gray-500 text-sm leading-relaxed">
+                                    The editorial unit of ENERGDIVE, tracking policy and innovation breakthroughs in the energy sector.
+                                </p>
                             </div>
-                        </div>
+                        </section>
                     </div>
 
-                    {/* Sidebar - Right 1/3 */}
-                    <div className="space-y-8">
-
-                        {/* Related Videos */}
-                        <div className="bg-white rounded-xl border border-gray-100 p-6 shadow-sm sticky top-24">
-                            <h3 className="font-serif text-xl font-bold border-b border-gray-100 pb-4 mb-6 text-gray-900">
+                    {/* Right Side: More Videos */}
+                    <aside className="space-y-8">
+                        <div>
+                            <h3 className="text-sm font-black uppercase tracking-widest text-gray-900 mb-6 flex items-center gap-2">
+                                <Youtube size={18} className="text-red-600" />
                                 More Videos
                             </h3>
-                            <div className="space-y-5">
-                                {relatedVideos.map(related => (
-                                    <Link
-                                        key={related.id}
-                                        href={`/videos/${related.slug}`}
-                                        className="group block"
-                                    >
-                                        <div className="flex gap-3">
-                                            <div className="relative w-28 aspect-video bg-gray-100 rounded-lg overflow-hidden flex-shrink:0 border border-gray-200">
-                                                <Image
-                                                    src={related.thumbnail}
-                                                    alt={related.title}
-                                                    fill
-                                                    className="object-cover group-hover:scale-110 transition-transform duration-300"
-                                                />
-                                                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/20">
-                                                    <div className="w-8 h-8 bg-white/90 rounded-full flex items-center justify-center">
-                                                        <Youtube size={14} className="text-red-600" />
+                            <div className="space-y-6">
+                                {moreVideos.map((item: any) => {
+                                    const thumb = `https://img.youtube.com/vi/${item.youtubeId}/mqdefault.jpg`;
+                                    const itemAuthor = item.author?.name || "Team ENERGDIVE";
+                                    const itemAuthorImg = item.author?.avatar?.url
+                                        ? `${baseUrl}${item.author.avatar.url}`
+                                        : "/api/placeholder/30/30";
+
+                                    return (
+                                        <Link key={item.id} href={`/videos/${item.slug}`} className="group block">
+                                            <div className="flex gap-4">
+                                                <div className="relative w-32 aspect-video rounded-xl overflow-hidden flex-0 border border-gray-200">
+                                                    <Image src={thumb} priority sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw" alt={item.title} fill className="object-cover group-hover:scale-110 transition-transform" />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <h4 className="text-sm font-bold leading-snug group-hover:text-teal-600 transition-colors line-clamp-2">
+                                                        {item.title}
+                                                    </h4>
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="relative w-5 h-5 rounded-full overflow-hidden">
+                                                            <Image src={itemAuthorImg} alt={itemAuthor} fill className="object-cover" />
+                                                        </div>
+                                                        <span className="text-[10px] font-bold text-gray-400">{itemAuthor}</span>
                                                     </div>
                                                 </div>
                                             </div>
-                                            <div className="flex-1 min-w-0">
-                                                <h4 className="font-bold text-sm leading-tight group-hover:text-teal-700 transition-colors mb-2 line-clamp-2">
-                                                    {related.title}
-                                                </h4>
-                                                <div className="flex items-center gap-2 text-xs text-gray-400">
-                                                    <Clock size={10} />
-                                                    <span>{related.duration}</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </Link>
-                                ))}
+                                        </Link>
+                                    );
+                                })}
                             </div>
-
-                            <Link
-                                href="/videos"
-                                className="mt-6 block text-center py-3 bg-gray-50 hover:bg-gray-100 text-gray-700 font-bold text-sm rounded-lg transition-colors border border-gray-200"
-                            >
-                                View All Videos
-                            </Link>
                         </div>
-                    </div>
+                    </aside>
+
                 </div>
             </div>
         </main>
