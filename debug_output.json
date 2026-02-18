@@ -1,0 +1,348 @@
+{
+  "keys": [
+    "id",
+    "documentId",
+    "Title",
+    "slug",
+    "Excerpt",
+    "Content",
+    "Date",
+    "createdAt",
+    "updatedAt",
+    "publishedAt",
+    "trending",
+    "featured",
+    "source",
+    "FeaturedImage",
+    "images",
+    "Seo",
+    "sectors",
+    "tags",
+    "industries",
+    "author",
+    "type_of_content",
+    "article_body"
+  ],
+  "full_item": {
+    "id": 131,
+    "documentId": "drmhbf08efddxvnox0m8izwu",
+    "Title": "Odisha Secures ₹67,000 Cr Renewable Energy Investment Commitments",
+    "slug": "odisha-secures-67-000-cr-renewable-energy-investment-commitments",
+    "Excerpt": [
+      {
+        "type": "paragraph",
+        "children": [
+          {
+            "text": "Odisha received renewable energy investment commitments worth ₹67,000 crore to develop 6.8 GW of capacity at the third Odisha Renewable Energy Investor Conclave 2026.",
+            "type": "text"
+          }
+        ]
+      }
+    ],
+    "Content": [
+      {
+        "type": "paragraph",
+        "children": [
+          {
+            "text": "Odisha has reportedly received investment commitments worth ₹67,000 crore for the development of 6.8 GW of renewable energy capacity at the third edition of the Odisha Renewable Energy Investor Conclave 2026.",
+            "type": "text"
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "children": [
+          {
+            "text": "",
+            "type": "text"
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "children": [
+          {
+            "text": "The event, inaugurated by Deputy Chief Minister and Energy Minister KV Singh Deo, saw the signing of multiple Memorandums of Understanding (MoUs) between Grid Corporation of Odisha (Gridco) and public as well as private sector entities for projects spanning solar, wind, hybrid renewable systems with storage, pumped storage hydropower and green hydrogen.",
+            "type": "text"
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "children": [
+          {
+            "text": "",
+            "type": "text"
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "children": [
+          {
+            "text": "Gridco signed MoUs with ABC Cleantech Private Ltd (Evren) and Axis Energy Ventures India Private Ltd for development of 5,000 MW renewable energy projects involving an investment of ₹47,750 crore. The portfolio includes wind, agro-voltaic, solar, hybrid solar with Battery Energy Storage Systems (BESS), and green hydrogen and its derivatives.",
+            "type": "text"
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "children": [
+          {
+            "text": "",
+            "type": "text"
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "children": [
+          {
+            "text": "In addition, Gridco signed agreements with National Hydroelectric Power Corporation (NHPC) Ltd for the 1,000 MW Masintha Pumped Storage Project (PSP) at an estimated investment of ₹6,036 crore and with North Eastern Electric Power Corporation Ltd (NEEPCO) for the 800 MW Dandadhar PSP at an investment of ₹4,000 crore.",
+            "type": "text"
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "children": [
+          {
+            "text": "",
+            "type": "text"
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "children": [
+          {
+            "text": "Bharat Petroleum Corporation Ltd (BPCL) also signed an MoU to develop 500 MW of renewable energy capacity in the state with an estimated investment of ₹3,000 crore.",
+            "type": "text"
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "children": [
+          {
+            "text": "",
+            "type": "text"
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "children": [
+          {
+            "text": "Officials said that on the first day of the two-day conclave, the state also received additional private sector investment intents worth over ₹6,000 crore in the renewable energy sector.",
+            "type": "text"
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "children": [
+          {
+            "text": "",
+            "type": "text"
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "children": [
+          {
+            "text": "Addressing investors, Singh Deo said Odisha is positioning itself as a key contributor to India’s target of achieving 500 GW of non-fossil fuel capacity by 2030. He highlighted the state’s coastline advantage for wind energy development, alongside solar and small hydro potential, and emphasised storage as a key enabler for renewable integration.",
+            "type": "text"
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "children": [
+          {
+            "text": "",
+            "type": "text"
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "children": [
+          {
+            "text": "The Deputy Chief Minister also inaugurated the state’s first wind resource assessment project aimed at evaluating Odisha’s wind energy potential. A city accelerator programme covering six cities under the PM Surya Ghar: Muft Bijli Yojana was also launched.",
+            "type": "text"
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "children": [
+          {
+            "text": "",
+            "type": "text"
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "children": [
+          {
+            "text": "Additional Chief Secretary (Energy) Vishal Kumar Dev said renewable energy currently accounts for about 46 percent of the state’s energy mix, with fossil fuels contributing 54 percent. The state has set a target of achieving around 11 GW of renewable capacity by 2030 and raising the renewable share to 74 percent by 2047.",
+            "type": "text"
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "children": [
+          {
+            "text": "",
+            "type": "text"
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "children": [
+          {
+            "text": "Gridco Managing Director Satyapriya Rath said the Renewable Energy Nodal Agency (RENA) Cell is facilitating project development from conceptualisation to commissioning and ensuring transparent procurement and assured offtake mechanisms.",
+            "type": "text"
+          }
+        ]
+      }
+    ],
+    "Date": "2026-02-13",
+    "createdAt": "2026-02-15T11:21:43.162Z",
+    "updatedAt": "2026-02-15T11:21:43.162Z",
+    "publishedAt": "2026-02-15T11:21:43.257Z",
+    "trending": null,
+    "featured": null,
+    "source": null,
+    "FeaturedImage": {
+      "id": 140,
+      "documentId": "c414chxner912wp53fxf9cyd",
+      "name": "KV-Singh-Deo.jpg",
+      "alternativeText": null,
+      "caption": null,
+      "focalPoint": null,
+      "width": 800,
+      "height": 450,
+      "formats": {
+        "small": {
+          "ext": ".jpg",
+          "url": "/uploads/small_KV_Singh_Deo_ca3b2c73f3.jpg",
+          "hash": "small_KV_Singh_Deo_ca3b2c73f3",
+          "mime": "image/jpeg",
+          "name": "small_KV-Singh-Deo.jpg",
+          "path": null,
+          "size": 20.15,
+          "width": 500,
+          "height": 281,
+          "sizeInBytes": 20146
+        },
+        "medium": {
+          "ext": ".jpg",
+          "url": "/uploads/medium_KV_Singh_Deo_ca3b2c73f3.jpg",
+          "hash": "medium_KV_Singh_Deo_ca3b2c73f3",
+          "mime": "image/jpeg",
+          "name": "medium_KV-Singh-Deo.jpg",
+          "path": null,
+          "size": 35.56,
+          "width": 750,
+          "height": 422,
+          "sizeInBytes": 35563
+        },
+        "thumbnail": {
+          "ext": ".jpg",
+          "url": "/uploads/thumbnail_KV_Singh_Deo_ca3b2c73f3.jpg",
+          "hash": "thumbnail_KV_Singh_Deo_ca3b2c73f3",
+          "mime": "image/jpeg",
+          "name": "thumbnail_KV-Singh-Deo.jpg",
+          "path": null,
+          "size": 7.41,
+          "width": 245,
+          "height": 138,
+          "sizeInBytes": 7412
+        }
+      },
+      "hash": "KV_Singh_Deo_ca3b2c73f3",
+      "ext": ".jpg",
+      "mime": "image/jpeg",
+      "size": 38.85,
+      "url": "/uploads/KV_Singh_Deo_ca3b2c73f3.jpg",
+      "previewUrl": null,
+      "provider": "local",
+      "provider_metadata": null,
+      "createdAt": "2026-02-15T11:20:51.742Z",
+      "updatedAt": "2026-02-15T11:20:51.742Z",
+      "publishedAt": "2026-02-15T11:20:51.743Z"
+    },
+    "images": null,
+    "Seo": null,
+    "sectors": [
+      {
+        "id": 30,
+        "documentId": "mhry6qegi3o3qds1wf66obgz",
+        "createdAt": "2026-02-14T06:44:15.780Z",
+        "updatedAt": "2026-02-14T06:44:15.780Z",
+        "publishedAt": "2026-02-14T06:44:15.819Z",
+        "name": "Renewables",
+        "slug": "renewables",
+        "description": null
+      }
+    ],
+    "tags": [
+      {
+        "id": 46,
+        "documentId": "vakedvpc6tw6wsp0g660830z",
+        "createdAt": "2026-02-14T08:05:49.659Z",
+        "updatedAt": "2026-02-14T08:05:49.659Z",
+        "publishedAt": "2026-02-14T08:05:49.679Z",
+        "name": "Investment",
+        "slug": "investment"
+      },
+      {
+        "id": 62,
+        "documentId": "sphs8vb05hy8zajynom2tcak",
+        "createdAt": "2026-02-14T08:07:01.855Z",
+        "updatedAt": "2026-02-14T08:07:01.855Z",
+        "publishedAt": "2026-02-14T08:07:01.876Z",
+        "name": "Renewables",
+        "slug": "renewables"
+      }
+    ],
+    "industries": [],
+    "author": {
+      "id": 2,
+      "documentId": "vg5bcpdtyke7ynuoo0wv7f3e",
+      "name": "Team ENERGDIVE",
+      "bio": [
+        {
+          "type": "paragraph",
+          "children": [
+            {
+              "text": "Team ENERGDIVE is the editorial unit of ENERGDIVE, India’s premium energy leadership publication by ClariSector Technologies Pvt. Ltd. Positioned at the intersection of policy, enterprise and innovation, the team delivers sharp, data-led reporting and analysis on India’s energy transition covering Oil & Gas, Power & Utilities, Renewables, New Energies, Sustainability and Climate Action tracking the reforms, investments and breakthroughs shaping the decade ahead.",
+              "type": "text"
+            }
+          ]
+        }
+      ],
+      "designation": null,
+      "createdAt": "2026-02-14T16:21:16.834Z",
+      "updatedAt": "2026-02-14T16:21:16.834Z",
+      "publishedAt": "2026-02-14T16:21:16.870Z",
+      "slug": "team-energdive"
+    },
+    "type_of_content": {
+      "id": 4,
+      "documentId": "f2l65hx73g8mwgeyea82916s",
+      "createdAt": "2026-02-14T07:57:06.747Z",
+      "updatedAt": "2026-02-14T07:57:06.747Z",
+      "publishedAt": "2026-02-14T07:57:06.770Z",
+      "name": "News",
+      "slug": "news"
+    },
+    "article_body": []
+  }
+}
