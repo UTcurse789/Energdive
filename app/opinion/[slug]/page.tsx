@@ -1,17 +1,112 @@
-import React from "react";
 import { notFound } from "next/navigation";
-import { OPINIONS } from "@/data/dummy";
 import { OpinionContent } from "./opinion-content";
 
-export default async function OpinionDetailPage({ params }: { params: Promise<{ slug: string }> }) {
-    const { slug } = await params;
-    const opinion = OPINIONS.find((o) => o.slug === slug);
+const STRAPI = process.env.NEXT_PUBLIC_STRAPI_URL;
 
-    if (!opinion) {
-        notFound();
-    }
+/* ================================
+   FETCH SINGLE OPINION
+================================ */
 
-    const recommended = OPINIONS.filter((o) => o.id !== opinion.id).slice(0, 3);
+async function getOpinion(slug: string) {
+  const res = await fetch(
+    `${STRAPI}/api/contents?filters[slug][$eq]=${slug}&populate[author][populate]=avatar&populate=FeaturedImage`,
+    { cache: "no-store" }
+  );
 
-    return <OpinionContent opinion={opinion} recommended={recommended} />;
+  const json = await res.json();
+  return json?.data?.[0] ?? null;
+}
+
+/* ================================
+   FETCH RECOMMENDED
+================================ */
+
+async function getRecommended(currentSlug: string) {
+  const res = await fetch(
+    `${STRAPI}/api/contents?filters[type_of_content][name][$eq]=Opinion&populate[author][populate]=avatar&populate=FeaturedImage`,
+    { cache: "no-store" }
+  );
+
+  const json = await res.json();
+
+  return (
+    json?.data
+      ?.filter((item: any) => item.slug !== currentSlug)
+      ?.slice(0, 3) ?? []
+  );
+}
+
+/* ================================
+   PAGE
+================================ */
+
+export default async function OpinionDetailPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
+
+  const article = await getOpinion(slug);
+  if (!article) notFound();
+
+  const recommendedRaw = await getRecommended(slug);
+
+  /* ---------- FORMAT MAIN ---------- */
+
+  const opinion = {
+    id: article.id,
+    slug,
+    title: article.Title,
+    excerpt:
+      article?.Excerpt?.[0]?.children?.[0]?.text || "",
+    date: article.Date,
+    category: "Opinion",
+    content: article?.Content || [],
+    featuredImage:
+      article?.FeaturedImage?.url
+        ? `${STRAPI}${article.FeaturedImage.url}`
+        : article?.FeaturedImage?.data?.attributes?.url
+          ? `${STRAPI}${article.FeaturedImage.data.attributes.url}`
+          : "/placeholder.jpg",
+
+    author: {
+      name: article?.author?.name,
+      role: article?.author?.designation || "Contributor",
+      image:
+        article?.author?.avatar?.url
+          ? `${STRAPI}${article.author.avatar.url}`
+          : "/placeholder.jpg",
+    },
+  };
+
+
+  /* ---------- FORMAT RECOMMENDED ---------- */
+
+  const recommended = recommendedRaw.map((item: any) => ({
+    id: item.id,
+    slug: item.slug,
+    title: item.Title,
+    category: "Opinion",
+    featuredImage:
+      item?.FeaturedImage?.url
+        ? `${STRAPI}${item.FeaturedImage.url}`
+        : item?.FeaturedImage?.data?.attributes?.url
+          ? `${STRAPI}${item.FeaturedImage.data.attributes.url}`
+          : "/placeholder.jpg",
+    author: {
+      name: item?.author?.name,
+      image:
+        item?.author?.avatar?.url
+          ? `${STRAPI}${item.author.avatar.url}`
+          : "/placeholder.jpg",
+    },
+  }));
+
+  return (
+    <OpinionContent
+      opinion={opinion}
+      recommended={recommended}
+    />
+  );
 }

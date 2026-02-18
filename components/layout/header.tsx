@@ -118,7 +118,7 @@ export function Header() {
             {/* SHARED STATISTA-STYLE MEGA MENU CONTAINER */}
             <div className={cn(
                 "fixed left-0 w-full bg-white shadow-2xl border-t transition-all duration-300 origin-top overflow-hidden z-60",
-                activeMenu ? "opacity-100 visible h-[450px]" : "opacity-0 invisible h-0"
+                activeMenu ? "opacity-100 visible h-[600px]" : "opacity-0 invisible h-0"
             )}>
                 <div className="max-w-[1600px] mx-auto w-full flex h-full">
 
@@ -127,7 +127,7 @@ export function Header() {
                         <>
                             <div className="w-1/4 bg-[#f8f8f8] border-r p-8">
                                 <h3 className="text-[10px] font-black text-gray-400 uppercase mb-6 tracking-widest">Industry Sectors</h3>
-                                <div className="flex flex-col gap-1 overflow-y-auto h-[300px]">
+                                <div className="flex flex-col gap-1">
                                     {SECTORS.map((sector) => (
                                         <Link key={sector.slug} href={`/sectors/${sector.slug}`} className="px-4 py-3 text-[14px] font-bold text-gray-800 hover:bg-[#00A651] hover:text-white flex justify-between items-center transition-colors">
                                             {sector.title} <ChevronRight size={14} />

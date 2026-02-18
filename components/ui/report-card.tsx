@@ -26,12 +26,15 @@ export function ReportCard({ article, className, variant = "default", baseUrl = 
             )}
         >
             <Link href={`${baseUrl}/${article.slug}`} className="block relative aspect-4/3 overflow-hidden">
-                <Image
-                    src={article.image}
-                    alt={article.title}
-                    fill
-                    className="object-cover transition-transform duration-700 group-hover:scale-105"
-                />
+                {article.image && (
+                    <Image
+                        src={article.image}
+                        alt={article.title}
+                        fill
+                        className="object-cover transition-transform duration-700 group-hover:scale-105"
+                    />
+                )}
+
                 <div className="absolute inset-0 bg-linear-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-6">
                     <span className="text-white text-xs font-bold uppercase tracking-widest flex items-center gap-2">
                         View Report <ArrowRight className="w-4 h-4 ml-1" />

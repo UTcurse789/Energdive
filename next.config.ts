@@ -2,12 +2,13 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   images: {
-    // 1. SVG Errors fix karne ke liye ye zaroori hai
+    // SVG support
     dangerouslyAllowSVG: true,
-    contentDispositionType: 'attachment',
-    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
+    contentDispositionType: "attachment",
+    contentSecurityPolicy:
+      "default-src 'self'; script-src 'none'; sandbox;",
 
-    // 2. Saare domains ko ek hi array mein daal do
+    // Allowed external image sources
     remotePatterns: [
       {
         protocol: "https",
@@ -21,6 +22,8 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "placehold.co",
       },
+
+      // ✅ STRAPI IMAGES (IMPORTANT)
       {
         protocol: 'http',
         hostname: '206.189.132.187',
@@ -37,6 +40,7 @@ const nextConfig: NextConfig = {
         protocol: "http",
         hostname: "206.189.132.187",
         port: "1337",
+        pathname: "/uploads/**",
       },
     ],
   },

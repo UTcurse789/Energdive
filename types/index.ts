@@ -83,9 +83,10 @@ export interface Opinion {
     };
     date: string;
     excerpt: string;
-    content: string;
+    content: any[];
     category?: string;
     slug: string;
+    featuredImage: string;
 }
 
 export interface Video {
