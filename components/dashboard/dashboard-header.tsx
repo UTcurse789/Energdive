@@ -28,65 +28,110 @@ export function DashboardHeader() {
     const role = profile.job_title || "Member";
 
     return (
-        <header className="flex flex-col bg-white border-b sticky top-0 z-50">
-            {/* ── Top Row: Brand + Search + User ── */}
-            <div className="flex items-center justify-between px-6 py-3 border-b border-gray-100 h-[70px]">
+        <header
+            className="flex flex-col sticky top-0 z-50"
+            style={{
+                background: "var(--dash-surface)",
+                borderBottom: "1px solid var(--dash-border)",
+                backdropFilter: "blur(12px)",
+            }}
+        >
+            {/* ── Top Row ── */}
+            <div
+                className="flex items-center justify-between px-6 py-3 h-[70px]"
+                style={{ borderBottom: "1px solid var(--dash-border-subtle)" }}
+            >
                 <Image
                     src="/energclub.png"
-                    alt="Energdive Logo"
-                    width={120}
-                    height={40}
+                    alt="ENERGClub"
+                    width={130}
+                    height={42}
                     className="object-contain"
                     priority
                 />
 
-                {/* Search Bar */}
+                {/* Search */}
                 <div className="flex-1 max-w-2xl mx-12 hidden md:block">
                     <div className="relative group">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-var(--dash-accent) transition-colors" size={18} />
+                        <Search
+                            className="absolute left-4 top-1/2 -translate-y-1/2 transition-colors"
+                            style={{ color: "var(--dash-text-dim)" }}
+                            size={17}
+                        />
                         <input
                             type="text"
                             placeholder="Search (Coming Soon)"
                             disabled
-                            className="w-full bg-gray-50 border border-gray-200 rounded-full py-2.5 pl-11 pr-4 text-sm outline-none focus:bg-white focus:border-var(--dash-accent) focus:ring-4 focus:ring-var(--dash-accent-dim) transition-all"
+                            className="w-full rounded-full py-2.5 pl-11 pr-4 text-sm outline-none transition-all"
+                            style={{
+                                background: "var(--dash-surface-2)",
+                                border: "1px solid var(--dash-border)",
+                                color: "var(--dash-text-muted)",
+                            }}
                         />
                     </div>
                 </div>
 
                 {/* Right Actions */}
                 <div className="flex items-center gap-5">
-                    <button className="relative text-gray-500 hover:text-gray-900 transition-colors">
+                    <button
+                        className="relative transition-colors"
+                        style={{ color: "var(--dash-text-dim)" }}
+                    >
                         <Bell size={20} />
-                        <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
+                        <span className="absolute top-0 right-0 w-2 h-2 bg-[var(--dash-accent)] rounded-full border-2"
+                            style={{ borderColor: "var(--dash-surface)" }}
+                        />
                     </button>
 
-                    <div className="flex items-center gap-3 pl-5 border-l border-gray-200">
+                    <div
+                        className="flex items-center gap-3 pl-5"
+                        style={{ borderLeft: "1px solid var(--dash-border)" }}
+                    >
                         <div className="text-right hidden sm:block">
-                            <p className="text-sm font-bold text-gray-900 leading-none">{firstName} {profile.last_name}</p>
-                            <p className="text-xs text-gray-500 mt-1">{role}</p>
+                            <p className="text-sm font-bold leading-none" style={{ color: "var(--dash-text)" }}>
+                                {firstName} {profile.last_name}
+                            </p>
+                            <p className="text-xs mt-1" style={{ color: "var(--dash-text-dim)" }}>
+                                {role}
+                            </p>
                         </div>
                         <UserButton afterSignOutUrl="/" />
                     </div>
                 </div>
             </div>
 
-            {/* ── Bottom Row: Navigation ── */}
-            <div className="flex items-center gap-1 px-6 h-[50px] overflow-x-auto no-scrollbar">
+            {/* ── Navigation ── */}
+            <div
+                className="flex items-center gap-1 px-6 h-[50px] overflow-x-auto"
+                style={{ scrollbarWidth: "none" }}
+            >
                 {NAV_ITEMS.map((item) => {
-                    const isActive = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
+                    const isActive =
+                        item.href === "/"
+                            ? pathname === "/"
+                            : item.href === "/dashboard"
+                                ? pathname === "/dashboard"
+                                : pathname.startsWith(item.href);
                     const Icon = item.icon;
                     return (
                         <Link
                             key={item.label}
                             href={item.href}
-                            className={`flex items-center gap-2 px-4 h-full border-b-2 text-sm font-medium transition-colors whitespace-nowrap
-                                ${isActive
-                                    ? "border-var(--dash-accent) text-var(--dash-accent)"
-                                    : "border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-                                }
-                            `}
+                            className="flex items-center gap-2 px-4 h-full text-sm font-medium transition-all whitespace-nowrap border-b-2"
+                            style={
+                                isActive
+                                    ? {
+                                        color: "var(--dash-accent)",
+                                        borderBottomColor: "var(--dash-accent)",
+                                    }
+                                    : {
+                                        color: "var(--dash-text-muted)",
+                                        borderBottomColor: "transparent",
+                                    }
+                            }
                         >
-                            <Icon size={16} />
+                            <Icon size={15} />
                             {item.label}
                         </Link>
                     );
