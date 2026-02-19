@@ -35,10 +35,15 @@ export async function GET(request: Request) {
         const page = Number(searchParams.get("page")) || 1;
         const pageSize = Number(searchParams.get("pageSize")) || 10;
         const contentType = searchParams.get("type");
+        const earlyAccess = searchParams.get("earlyAccess");
+        const singleSector = searchParams.get("sector"); // filter by one specific sector slug
 
         // Build sector slug filters using $or
         let sectorFilter = "";
-        if (communityNames.length > 0) {
+        if (singleSector) {
+            // Single sector filter (for tab-based pages)
+            sectorFilter = `&filters[sectors][slug][$eq]=${encodeURIComponent(slugify(singleSector))}`;
+        } else if (communityNames.length > 0) {
             const parts = communityNames.map((name, i) => {
                 const slug = slugify(name);
                 return `filters[$or][${i}][sectors][slug][$eq]=${encodeURIComponent(slug)}`;
@@ -50,6 +55,10 @@ export async function GET(request: Request) {
             ? `&filters[type_of_content][name][$eq]=${encodeURIComponent(contentType)}`
             : "";
 
+        const earlyAccessFilter = earlyAccess === "true"
+            ? `&filters[earlyAccess][$eq]=true`
+            : "";
+
         const url =
             `${STRAPI}/api/contents?` +
             `populate=*` +
@@ -57,7 +66,8 @@ export async function GET(request: Request) {
             `&pagination[page]=${page}` +
             `&pagination[pageSize]=${pageSize}` +
             sectorFilter +
-            typeFilter;
+            typeFilter +
+            earlyAccessFilter;
 
         console.log("📡 Dashboard feed URL:", url);
 
