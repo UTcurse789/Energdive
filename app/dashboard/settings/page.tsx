@@ -1,82 +1,89 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useUser } from "@clerk/nextjs";
 import { useDashboard } from "@/components/dashboard/dashboard-shell";
-import { Loader2, Check, AlertCircle, Shield, Bell, Briefcase, Globe, ChevronRight } from "lucide-react";
-import { Button } from "@/components/ui/buttons";
+import {
+    Loader2, Check, AlertCircle, Shield, Briefcase, Globe,
+    Pencil, X, ChevronDown, Users, Layers,
+} from "lucide-react";
 
-// ── Types ─────────────────────────────────────────────────────────────
+/* ── Types ──────────────────────────────────────────────────────── */
 interface Industry { id: number; name: string; }
 interface SubIndustry { id: number; name: string; }
-interface Community { id: number; name: string; }
+interface MasterCommunity { id: number; name: string; sub_communities?: { id: number; name: string }[]; }
+interface UserCommunity {
+    community_id: number;
+    community_name: string;
+    sub_community_id?: number;
+    sub_community_name?: string;
+}
 
+/* ── Page ───────────────────────────────────────────────────────── */
 export default function SettingsPage() {
     const { user } = useUser();
     const { profile, refreshProfile } = useDashboard();
 
-    // ── State: Profile ──
+    /* Profile fields */
     const [firstName, setFirstName] = useState("");
     const [lastName, setLastName] = useState("");
     const [jobTitle, setJobTitle] = useState("");
     const [organization, setOrganization] = useState("");
-    const [isSavingProfile, setIsSavingProfile] = useState(false);
-    const [profileMessage, setProfileMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+    const [isSaving, setIsSaving] = useState(false);
+    const [msg, setMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
-    // ── State: Interests (Nested Logic) ──
+    /* Industry state */
     const [industries, setIndustries] = useState<Industry[]>([]);
     const [subIndustries, setSubIndustries] = useState<SubIndustry[]>([]);
-    const [communities, setCommunities] = useState<Community[]>([]);
-
     const [selectedIndustryId, setSelectedIndustryId] = useState<number>(0);
     const [selectedSubIndustryId, setSelectedSubIndustryId] = useState<number>(0);
-    const [loadingInterests, setLoadingInterests] = useState(true);
-    const [loadingSubs, setLoadingSubs] = useState(false);
+    const [editingIndustry, setEditingIndustry] = useState(false);
 
-    // ── Load Data ──
+    /* Community state */
+    const [masterCommunities, setMasterCommunities] = useState<MasterCommunity[]>([]);
+    const [editingCommunities, setEditingCommunities] = useState(false);
+    const [pendingCommunities, setPendingCommunities] = useState<UserCommunity[]>([]);
+    const [expandedComm, setExpandedComm] = useState<number | null>(null);
+
+    /* ── Load profile into form ──────────────────────────────────── */
     useEffect(() => {
         if (profile) {
             setFirstName(profile.first_name || "");
             setLastName(profile.last_name || "");
             setJobTitle(profile.job_title || "");
             setOrganization(profile.organization || "");
+            setSelectedIndustryId(profile.industry_id || 0);
+            setSelectedSubIndustryId(profile.sub_industry_id || 0);
         }
     }, [profile]);
 
-    // Fetch Master Data
+    /* ── Master data ─────────────────────────────────────────────── */
     useEffect(() => {
-        const fetchMasterData = async () => {
+        (async () => {
             try {
                 const [indRes, commRes] = await Promise.all([
                     fetch("/api/master/industries"),
-                    fetch("/api/master/communities") // Assuming this endpoint exists
+                    fetch("/api/master/communities"),
                 ]);
                 setIndustries(await indRes.json());
-                setCommunities(await commRes.json());
-            } catch (err) {
-                console.error("Master data fetch failed", err);
-            } finally {
-                setLoadingInterests(false);
-            }
-        };
-        fetchMasterData();
+                setMasterCommunities(await commRes.json());
+            } catch (err) { console.error(err); }
+        })();
     }, []);
 
-    // Load Sub-Industries when Industry changes
+    /* Sub-industries when industry changes */
     useEffect(() => {
-        if (selectedIndustryId === 0) return;
-        setLoadingSubs(true);
+        if (!selectedIndustryId) { setSubIndustries([]); return; }
         fetch(`/api/master/sub-industries?industryId=${selectedIndustryId}`)
-            .then(res => res.json())
-            .then(data => {
-                setSubIndustries(data);
-                setLoadingSubs(false);
-            });
+            .then((r) => r.json())
+            .then(setSubIndustries)
+            .catch(console.error);
     }, [selectedIndustryId]);
 
-    const handleProfileSave = async () => {
-        setIsSavingProfile(true);
-        setProfileMessage(null);
+    /* ── Save profile ────────────────────────────────────────────── */
+    const handleSave = async () => {
+        setIsSaving(true);
+        setMsg(null);
         try {
             const res = await fetch("/api/user/update-profile", {
                 method: "POST",
@@ -84,169 +91,424 @@ export default function SettingsPage() {
                 body: JSON.stringify({
                     firstName, lastName, jobTitle, organization,
                     industryId: selectedIndustryId || undefined,
-                    subIndustryId: selectedSubIndustryId || undefined
+                    subIndustryId: selectedSubIndustryId || undefined,
                 }),
             });
             if (!res.ok) throw new Error();
             await refreshProfile();
-            setProfileMessage({ type: 'success', text: "Account settings updated." });
-            setTimeout(() => setProfileMessage(null), 3000);
-        } catch (err) {
-            setProfileMessage({ type: 'error', text: "Failed to save updates." });
-        } finally { setIsSavingProfile(false); }
+            setMsg({ type: "success", text: "Profile updated successfully." });
+            setEditingIndustry(false);
+            setTimeout(() => setMsg(null), 3000);
+        } catch {
+            setMsg({ type: "error", text: "Failed to save." });
+        } finally { setIsSaving(false); }
     };
 
+    /* ── Save communities ────────────────────────────────────────── */
+    const handleSaveCommunities = async () => {
+        setIsSaving(true);
+        try {
+            const res = await fetch("/api/user/update-profile", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ communities: pendingCommunities }),
+            });
+            if (!res.ok) throw new Error();
+            await refreshProfile();
+            setEditingCommunities(false);
+            setMsg({ type: "success", text: "Communities updated." });
+            setTimeout(() => setMsg(null), 3000);
+        } catch {
+            setMsg({ type: "error", text: "Failed to save communities." });
+        } finally { setIsSaving(false); }
+    };
+
+    /* Open community editor */
+    const startEditCommunities = () => {
+        setPendingCommunities(
+            (profile.communities || []).map((c: any) => ({
+                community_id: c.community_id,
+                community_name: c.community_name,
+                sub_community_id: c.sub_community_id,
+                sub_community_name: c.sub_community_name,
+            }))
+        );
+        setEditingCommunities(true);
+    };
+
+    const toggleCommunity = (comm: MasterCommunity) => {
+        const exists = pendingCommunities.find((p) => p.community_id === comm.id);
+        if (exists) {
+            setPendingCommunities((prev) => prev.filter((p) => p.community_id !== comm.id));
+        } else {
+            setPendingCommunities((prev) => [
+                ...prev,
+                { community_id: comm.id, community_name: comm.name },
+            ]);
+        }
+    };
+
+    const setSubCommunity = (commId: number, sub: { id: number; name: string }) => {
+        setPendingCommunities((prev) =>
+            prev.map((p) =>
+                p.community_id === commId
+                    ? { ...p, sub_community_id: sub.id, sub_community_name: sub.name }
+                    : p
+            )
+        );
+    };
+
+    const cardStyle = { background: "var(--dash-card)", border: "1px solid var(--dash-border)" };
+
+    /* ── Derived display data ────────────────────────────────────── */
+    const userCommunities: UserCommunity[] = profile.communities || [];
+    const userIndustryName = industries.find((i) => i.id === (profile.industry_id || selectedIndustryId))?.name || "Not selected";
+    const userSubIndustryName = profile.sub_industry_name || subIndustries.find((s) => s.id === (profile.sub_industry_id || selectedSubIndustryId))?.name || "—";
+
     return (
-        <div className="max-w-5xl mx-auto pb-20 px-4 animate-in fade-in slide-in-from-bottom-4 duration-700">
-            <div className="mb-10">
-                <h1 className="text-4xl font-bold font-serif text-zinc-900 tracking-tight mb-2">Settings</h1>
-                <p className="text-zinc-500 text-lg">Manage your professional identity and platform preferences.</p>
+        <div className="animate-fade-in-up max-w-4xl mx-auto">
+            {/* Header */}
+            <div className="mb-8">
+                <div className="flex items-center gap-3 mb-2">
+                    <div className="p-2 rounded-lg" style={{ background: "rgba(201,168,76,0.15)" }}>
+                        <Briefcase size={22} style={{ color: "var(--dash-accent)" }} />
+                    </div>
+                    <div>
+                        <h1 className="text-2xl font-bold" style={{ color: "var(--dash-text)" }}>Account Settings</h1>
+                        <p className="text-sm" style={{ color: "var(--dash-text-dim)" }}>
+                            Manage your professional identity and platform preferences
+                        </p>
+                    </div>
+                </div>
             </div>
 
-            <div className="grid grid-cols-1 gap-8">
+            {/* Status message */}
+            {msg && (
+                <div
+                    className="flex items-center gap-2 px-4 py-3 rounded-xl mb-6 text-sm font-medium animate-fade-in-up"
+                    style={{
+                        background: msg.type === "success" ? "rgba(76,175,80,0.1)" : "rgba(239,68,68,0.1)",
+                        border: `1px solid ${msg.type === "success" ? "rgba(76,175,80,0.3)" : "rgba(239,68,68,0.3)"}`,
+                        color: msg.type === "success" ? "#4CAF50" : "#EF4444",
+                    }}
+                >
+                    {msg.type === "success" ? <Check size={15} /> : <AlertCircle size={15} />}
+                    {msg.text}
+                </div>
+            )}
 
-                {/* 1. Profile Information */}
-                <section className="bg-white rounded-3xl shadow-sm border border-zinc-100 overflow-hidden">
-                    <div className="p-8">
-                        <div className="flex items-center gap-3 mb-8">
-                            <div className="w-10 h-10 rounded-xl bg-[#0AB996]/10 flex items-center justify-center text-[#0AB996]">
-                                <Briefcase size={20} />
+            <div className="space-y-6">
+                {/* ───────── 1. Profile ─────────────────────────────── */}
+                <section className="rounded-xl overflow-hidden" style={cardStyle}>
+                    <div className="p-6">
+                        <div className="flex items-center gap-3 mb-6">
+                            <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: "rgba(201,168,76,0.15)" }}>
+                                <Briefcase size={18} style={{ color: "var(--dash-accent)" }} />
                             </div>
-                            <h2 className="text-xl font-bold text-zinc-900">Professional Profile</h2>
+                            <h2 className="text-lg font-bold" style={{ color: "var(--dash-text)" }}>Professional Profile</h2>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-                            <InputGroup label="First Name" value={firstName} onChange={setFirstName} placeholder="e.g. Utkarsh" />
-                            <InputGroup label="Last Name" value={lastName} onChange={setLastName} placeholder="e.g. Kumar" />
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            <DarkInput label="First Name" value={firstName} onChange={setFirstName} placeholder="e.g. Sankalp" />
+                            <DarkInput label="Last Name" value={lastName} onChange={setLastName} placeholder="e.g. Gupta" />
                             <div className="md:col-span-2">
-                                <InputGroup label="Work Email" value={user?.primaryEmailAddress?.emailAddress || ""} disabled />
+                                <DarkInput label="Work Email" value={user?.primaryEmailAddress?.emailAddress || ""} disabled />
                             </div>
-                            <InputGroup label="Current Role" value={jobTitle} onChange={setJobTitle} placeholder="e.g. IT Head" />
-                            <InputGroup label="Company" value={organization} onChange={setOrganization} placeholder="e.g. Gijuhan" />
+                            <DarkInput label="Current Role" value={jobTitle} onChange={setJobTitle} placeholder="e.g. Energy Analyst" />
+                            <DarkInput label="Company" value={organization} onChange={setOrganization} placeholder="e.g. ONGC" />
                         </div>
                     </div>
-                    <div className="px-8 py-5 bg-zinc-50/80 border-t border-zinc-100 flex items-center justify-between">
-                        <p className="text-xs text-zinc-400 font-medium">Last updated: {new Date().toLocaleDateString()}</p>
-                        <Button onClick={handleProfileSave} loading={isSavingProfile} variant="primary">
+                    <div className="px-6 py-4 flex items-center justify-end" style={{ borderTop: "1px solid var(--dash-border)" }}>
+                        <button
+                            onClick={handleSave}
+                            disabled={isSaving}
+                            className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-bold transition-all disabled:opacity-50"
+                            style={{ background: "var(--dash-accent)", color: "#0A0A0B" }}
+                        >
+                            {isSaving ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
                             Save Changes
-                        </Button>
+                        </button>
                     </div>
                 </section>
 
-                {/* 2. Interests & Industry (ENHANCED) */}
-                <section className="bg-white rounded-3xl shadow-sm border border-zinc-100 p-8">
-                    <div className="flex items-center gap-3 mb-8">
-                        <div className="w-10 h-10 rounded-xl bg-[#F3EFE0] flex items-center justify-center text-[#8B7355]">
-                            <Globe size={20} />
-                        </div>
-                        <div>
-                            <h2 className="text-xl font-bold text-zinc-900">Intelligence Feed Customization</h2>
-                            <p className="text-sm text-zinc-500">Tailor your dashboard content by selecting your primary sector.</p>
-                        </div>
-                    </div>
-
-                    <div className="space-y-8">
-                        {/* Industry Selection */}
-                        <div>
-                            <label className="text-xs font-bold text-zinc-400 uppercase tracking-widest mb-4 block">Primary Industry</label>
-                            {loadingInterests ? <SkeletonLoader /> : (
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                                    {industries.map(ind => (
-                                        <button
-                                            key={ind.id}
-                                            onClick={() => setSelectedIndustryId(ind.id)}
-                                            className={`p-4 rounded-2xl text-sm font-semibold transition-all border text-left flex justify-between items-center ${selectedIndustryId === ind.id
-                                                ? "bg-[#0AB996] text-white border-[#0AB996] shadow-lg shadow-[#0AB996]/20"
-                                                : "bg-white text-zinc-600 border-zinc-100 hover:border-[#0AB996]/30 hover:bg-zinc-50"
-                                                }`}
-                                        >
-                                            {ind.name}
-                                            {selectedIndustryId === ind.id && <Check size={14} />}
-                                        </button>
-                                    ))}
+                {/* ───────── 2. Selected Communities ────────────────── */}
+                <section className="rounded-xl overflow-hidden" style={cardStyle}>
+                    <div className="p-6">
+                        <div className="flex items-center justify-between mb-6">
+                            <div className="flex items-center gap-3">
+                                <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: "rgba(33,150,243,0.12)" }}>
+                                    <Users size={18} style={{ color: "#2196F3" }} />
                                 </div>
+                                <div>
+                                    <h2 className="text-lg font-bold" style={{ color: "var(--dash-text)" }}>Selected Communities</h2>
+                                    <p className="text-xs" style={{ color: "var(--dash-text-dim)" }}>Your energy sector communities</p>
+                                </div>
+                            </div>
+                            {!editingCommunities && (
+                                <button
+                                    onClick={startEditCommunities}
+                                    className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold transition-all"
+                                    style={{ background: "var(--dash-surface-2)", color: "var(--dash-text-muted)", border: "1px solid var(--dash-border)" }}
+                                >
+                                    <Pencil size={12} /> Edit
+                                </button>
                             )}
                         </div>
 
-                        {/* Sub-Industry Selection */}
-                        {selectedIndustryId > 0 && (
-                            <div className="animate-in slide-in-from-top-2 duration-300">
-                                <label className="text-xs font-bold text-zinc-400 uppercase tracking-widest mb-4 block">Specialization (Sub-Industry)</label>
-                                {loadingSubs ? <SkeletonLoader count={2} /> : (
-                                    <div className="flex flex-wrap gap-2">
-                                        {subIndustries.map(sub => (
-                                            <button
-                                                key={sub.id}
-                                                onClick={() => setSelectedSubIndustryId(sub.id)}
-                                                className={`px-4 py-2 rounded-full text-xs font-bold border transition-all ${selectedSubIndustryId === sub.id
-                                                    ? "bg-zinc-900 text-white border-zinc-900"
-                                                    : "bg-zinc-50 text-zinc-500 border-zinc-200 hover:border-zinc-300"
-                                                    }`}
-                                            >
-                                                {sub.name}
-                                            </button>
-                                        ))}
-                                    </div>
-                                )}
+                        {!editingCommunities ? (
+                            /* Display mode */
+                            userCommunities.length === 0 ? (
+                                <p className="text-sm py-4" style={{ color: "var(--dash-text-dim)" }}>No communities selected yet.</p>
+                            ) : (
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    {userCommunities.map((c) => (
+                                        <div
+                                            key={c.community_id}
+                                            className="flex items-center gap-3 p-4 rounded-xl"
+                                            style={{ background: "var(--dash-surface-2)", border: "1px solid var(--dash-border-subtle)" }}
+                                        >
+                                            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: "rgba(201,168,76,0.15)" }}>
+                                                <Users size={14} style={{ color: "var(--dash-accent)" }} />
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-sm font-bold" style={{ color: "var(--dash-text)" }}>{c.community_name}</p>
+                                                {c.sub_community_name && (
+                                                    <p className="text-[10px] mt-0.5" style={{ color: "var(--dash-text-dim)" }}>
+                                                        ↳ {c.sub_community_name}
+                                                    </p>
+                                                )}
+                                            </div>
+                                            <Check size={14} style={{ color: "#4CAF50" }} />
+                                        </div>
+                                    ))}
+                                </div>
+                            )
+                        ) : (
+                            /* Edit mode */
+                            <div>
+                                <div className="space-y-2 mb-5">
+                                    {masterCommunities.map((mc) => {
+                                        const isSelected = pendingCommunities.some((p) => p.community_id === mc.id);
+                                        const pending = pendingCommunities.find((p) => p.community_id === mc.id);
+                                        const isExpanded = expandedComm === mc.id;
+                                        return (
+                                            <div key={mc.id}>
+                                                <div
+                                                    className="flex items-center gap-3 p-3.5 rounded-xl cursor-pointer transition-all"
+                                                    style={{
+                                                        background: isSelected ? "rgba(201,168,76,0.08)" : "var(--dash-surface-2)",
+                                                        border: isSelected ? "1px solid var(--dash-accent)" : "1px solid var(--dash-border-subtle)",
+                                                    }}
+                                                    onClick={() => toggleCommunity(mc)}
+                                                >
+                                                    <div
+                                                        className="w-5 h-5 rounded flex items-center justify-center flex-shrink-0"
+                                                        style={isSelected
+                                                            ? { background: "var(--dash-accent)", color: "#0A0A0B" }
+                                                            : { border: "2px solid var(--dash-border)", background: "transparent" }}
+                                                    >
+                                                        {isSelected && <Check size={12} />}
+                                                    </div>
+                                                    <span className="text-sm font-semibold flex-1" style={{ color: "var(--dash-text)" }}>{mc.name}</span>
+                                                    {isSelected && mc.sub_communities && mc.sub_communities.length > 0 && (
+                                                        <button
+                                                            onClick={(e) => { e.stopPropagation(); setExpandedComm(isExpanded ? null : mc.id); }}
+                                                            className="text-xs flex items-center gap-1 px-2 py-1 rounded"
+                                                            style={{ color: "var(--dash-accent)" }}
+                                                        >
+                                                            Sub <ChevronDown size={11} className={`transition-transform ${isExpanded ? "rotate-180" : ""}`} />
+                                                        </button>
+                                                    )}
+                                                </div>
+                                                {isSelected && isExpanded && mc.sub_communities && (
+                                                    <div className="pl-10 pt-2 flex flex-wrap gap-2">
+                                                        {mc.sub_communities.map((sc) => (
+                                                            <button
+                                                                key={sc.id}
+                                                                onClick={() => setSubCommunity(mc.id, sc)}
+                                                                className="px-3 py-1.5 rounded-full text-xs font-semibold transition-all"
+                                                                style={
+                                                                    pending?.sub_community_id === sc.id
+                                                                        ? { background: "var(--dash-accent)", color: "#0A0A0B" }
+                                                                        : { background: "var(--dash-surface-2)", color: "var(--dash-text-muted)", border: "1px solid var(--dash-border)" }
+                                                                }
+                                                            >
+                                                                {sc.name}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                                <div className="flex items-center gap-3 justify-end">
+                                    <button
+                                        onClick={() => setEditingCommunities(false)}
+                                        className="px-4 py-2 rounded-lg text-xs font-bold"
+                                        style={{ color: "var(--dash-text-muted)" }}
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        onClick={handleSaveCommunities}
+                                        disabled={isSaving}
+                                        className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-bold transition-all disabled:opacity-50"
+                                        style={{ background: "var(--dash-accent)", color: "#0A0A0B" }}
+                                    >
+                                        {isSaving ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
+                                        Save Communities
+                                    </button>
+                                </div>
                             </div>
                         )}
                     </div>
                 </section>
 
-                {/* 3. Privacy & Security */}
-                <section className="bg-white rounded-3xl shadow-sm border border-zinc-100 p-8">
-                    <div className="flex items-center gap-3 mb-8">
-                        <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600">
-                            <Shield size={20} />
+                {/* ───────── 3. Industry & Sub-Industry ─────────────── */}
+                <section className="rounded-xl overflow-hidden" style={cardStyle}>
+                    <div className="p-6">
+                        <div className="flex items-center justify-between mb-6">
+                            <div className="flex items-center gap-3">
+                                <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: "rgba(156,39,176,0.12)" }}>
+                                    <Layers size={18} style={{ color: "#9C27B0" }} />
+                                </div>
+                                <div>
+                                    <h2 className="text-lg font-bold" style={{ color: "var(--dash-text)" }}>Industry & Specialization</h2>
+                                    <p className="text-xs" style={{ color: "var(--dash-text-dim)" }}>Your primary industry sector</p>
+                                </div>
+                            </div>
+                            {!editingIndustry && (
+                                <button
+                                    onClick={() => setEditingIndustry(true)}
+                                    className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold transition-all"
+                                    style={{ background: "var(--dash-surface-2)", color: "var(--dash-text-muted)", border: "1px solid var(--dash-border)" }}
+                                >
+                                    <Pencil size={12} /> Edit
+                                </button>
+                            )}
                         </div>
-                        <h2 className="text-xl font-bold text-zinc-900">Security</h2>
-                    </div>
-                    <div className="max-w-md space-y-4">
-                        <p className="text-sm text-zinc-500 mb-4">Protect your account with a strong, unique password.</p>
-                        <PasswordInput placeholder="New password" />
-                        <Button variant="outline" onClick={() => { }} className="w-full">Update Security Credentials</Button>
+
+                        {!editingIndustry ? (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                <div className="p-4 rounded-xl" style={{ background: "var(--dash-surface-2)", border: "1px solid var(--dash-border-subtle)" }}>
+                                    <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: "var(--dash-text-dim)" }}>Industry</p>
+                                    <p className="text-sm font-bold" style={{ color: "var(--dash-text)" }}>{userIndustryName}</p>
+                                </div>
+                                <div className="p-4 rounded-xl" style={{ background: "var(--dash-surface-2)", border: "1px solid var(--dash-border-subtle)" }}>
+                                    <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: "var(--dash-text-dim)" }}>Sub-Industry</p>
+                                    <p className="text-sm font-bold" style={{ color: "var(--dash-text)" }}>{userSubIndustryName}</p>
+                                </div>
+                            </div>
+                        ) : (
+                            <div>
+                                {/* Industry */}
+                                <div className="mb-5">
+                                    <p className="text-[10px] font-bold uppercase tracking-wider mb-3" style={{ color: "var(--dash-text-dim)" }}>Primary Industry</p>
+                                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                                        {industries.map((ind) => (
+                                            <button
+                                                key={ind.id}
+                                                onClick={() => { setSelectedIndustryId(ind.id); setSelectedSubIndustryId(0); }}
+                                                className="p-3 rounded-xl text-sm font-semibold transition-all text-left flex items-center justify-between"
+                                                style={selectedIndustryId === ind.id
+                                                    ? { background: "rgba(201,168,76,0.15)", border: "1px solid var(--dash-accent)", color: "var(--dash-text)" }
+                                                    : { background: "var(--dash-surface-2)", border: "1px solid var(--dash-border-subtle)", color: "var(--dash-text-muted)" }}
+                                            >
+                                                {ind.name}
+                                                {selectedIndustryId === ind.id && <Check size={13} style={{ color: "var(--dash-accent)" }} />}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Sub-industry */}
+                                {selectedIndustryId > 0 && subIndustries.length > 0 && (
+                                    <div className="mb-5">
+                                        <p className="text-[10px] font-bold uppercase tracking-wider mb-3" style={{ color: "var(--dash-text-dim)" }}>Specialization</p>
+                                        <div className="flex flex-wrap gap-2">
+                                            {subIndustries.map((sub) => (
+                                                <button
+                                                    key={sub.id}
+                                                    onClick={() => setSelectedSubIndustryId(sub.id)}
+                                                    className="px-4 py-2 rounded-full text-xs font-bold transition-all"
+                                                    style={selectedSubIndustryId === sub.id
+                                                        ? { background: "var(--dash-accent)", color: "#0A0A0B" }
+                                                        : { background: "var(--dash-surface-2)", color: "var(--dash-text-muted)", border: "1px solid var(--dash-border)" }}
+                                                >
+                                                    {sub.name}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                <div className="flex items-center gap-3 justify-end">
+                                    <button
+                                        onClick={() => setEditingIndustry(false)}
+                                        className="px-4 py-2 rounded-lg text-xs font-bold"
+                                        style={{ color: "var(--dash-text-muted)" }}
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        onClick={handleSave}
+                                        disabled={isSaving}
+                                        className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-bold transition-all disabled:opacity-50"
+                                        style={{ background: "var(--dash-accent)", color: "#0A0A0B" }}
+                                    >
+                                        {isSaving ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
+                                        Save Industry
+                                    </button>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </section>
 
+                {/* ───────── 4. Security ────────────────────────────── */}
+                <section className="rounded-xl overflow-hidden" style={cardStyle}>
+                    <div className="p-6">
+                        <div className="flex items-center gap-3 mb-6">
+                            <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: "rgba(33,150,243,0.12)" }}>
+                                <Shield size={18} style={{ color: "#2196F3" }} />
+                            </div>
+                            <h2 className="text-lg font-bold" style={{ color: "var(--dash-text)" }}>Security</h2>
+                        </div>
+                        <p className="text-sm mb-4" style={{ color: "var(--dash-text-dim)" }}>
+                            Your account security is managed by Clerk. Use the profile button in the header to manage password and 2FA settings.
+                        </p>
+                        <div className="flex items-center gap-2 p-3 rounded-lg" style={{ background: "rgba(76,175,80,0.08)", border: "1px solid rgba(76,175,80,0.2)" }}>
+                            <Check size={14} style={{ color: "#4CAF50" }} />
+                            <span className="text-xs font-medium" style={{ color: "#4CAF50" }}>Account secured via Clerk authentication</span>
+                        </div>
+                    </div>
+                </section>
             </div>
         </div>
     );
 }
 
-// ── UI Components ──────────────────────────────────────────────────────────
-
-function SkeletonLoader({ count = 4 }: { count?: number }) {
+/* ── Dark themed input ──────────────────────────────────────────── */
+function DarkInput({ label, value, onChange, disabled, placeholder }: {
+    label: string;
+    value: string;
+    onChange?: (v: string) => void;
+    disabled?: boolean;
+    placeholder?: string;
+}) {
     return (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {Array.from({ length: count }).map((_, i) => (
-                <div key={i} className="h-12 bg-zinc-100 animate-pulse rounded-xl" />
-            ))}
-        </div>
-    );
-}
-
-function InputGroup({ label, value, onChange, disabled, placeholder }: any) {
-    return (
-        <div className="flex flex-col gap-2">
-            <label className="text-[11px] font-extrabold text-zinc-400 uppercase tracking-loose ml-1">{label}</label>
+        <div className="flex flex-col gap-1.5">
+            <label className="text-[10px] font-bold uppercase tracking-wider" style={{ color: "var(--dash-text-dim)" }}>{label}</label>
             <input
                 type="text"
                 value={value}
                 placeholder={placeholder}
                 onChange={(e) => onChange?.(e.target.value)}
                 disabled={disabled}
-                className="w-full bg-zinc-50/50 border border-zinc-200 rounded-2xl px-5 py-3 text-sm focus:ring-4 focus:ring-[#0AB996]/10 focus:border-[#0AB996] transition-all outline-none disabled:opacity-50"
+                className="w-full rounded-lg px-4 py-2.5 text-sm outline-none transition-all disabled:opacity-50"
+                style={{ background: "var(--dash-surface-2)", border: "1px solid var(--dash-border-subtle)", color: "var(--dash-text)" }}
             />
         </div>
-    );
-}
-
-function PasswordInput({ placeholder }: any) {
-    return (
-        <input
-            type="password"
-            placeholder={placeholder}
-            className="w-full bg-zinc-50 border border-zinc-200 rounded-2xl px-5 py-3 text-sm focus:border-[#0AB996] outline-none transition-all"
-        />
     );
 }

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
     Search, Bell, Home, LayoutGrid, BrainCircuit, Users,
-    CreditCard, Calendar, Bookmark, Settings
+    CreditCard, Calendar, Settings
 } from "lucide-react";
 import { UserButton } from "@clerk/nextjs";
 import { useDashboard } from "./dashboard-shell";
@@ -17,7 +17,6 @@ const NAV_ITEMS = [
     { label: "Community", href: "/dashboard/community", icon: Users },
     { label: "Subscriptions", href: "/dashboard/subscriptions", icon: CreditCard },
     { label: "Events", href: "/dashboard/events", icon: Calendar },
-    { label: "Bookmarks", href: "/dashboard/bookmarks", icon: Bookmark },
     { label: "Account Settings", href: "/dashboard/settings", icon: Settings },
 ];
 

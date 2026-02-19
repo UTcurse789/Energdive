@@ -14,7 +14,7 @@ export default function DashboardPage() {
             {/* Welcome */}
             <div className="mb-7">
                 <h1 className="text-3xl font-bold mb-1" style={{ color: "var(--dash-text)" }}>
-                    Welcome back,{" "}
+                    Welcome{" "}
                     <span style={{ color: "var(--dash-accent)" }}>{firstName}</span>
                 </h1>
                 <p className="text-sm" style={{ color: "var(--dash-text-dim)" }}>

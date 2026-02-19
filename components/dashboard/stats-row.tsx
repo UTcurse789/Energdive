@@ -1,91 +1,115 @@
 "use client";
 
-import { FileText, TrendingUp, Users, Zap } from "lucide-react";
-import { useEffect, useState } from "react";
+import { TrendingUp, TrendingDown, Minus, BarChart3, Loader2 } from "lucide-react";
+import { useEffect, useState, useCallback, useRef } from "react";
+import { useDashboard } from "./dashboard-shell";
 
-interface StatItem {
-    label: string;
-    value: string;
-    icon: React.ElementType;
-    accentColor: string;
+/* ── Types ─────────────────────────────────────────────────────── */
+interface SectorIndex {
+    name: string;
+    value: number;
+    change: number;       // percentage change
+    changeDir: "up" | "down" | "flat";
 }
 
-const STAT_CONFIGS = [
-    { label: "Articles Published", apiKey: "articles", icon: FileText, accentColor: "#C9A84C" },
-    { label: "Trending Topics", apiKey: "trending", icon: TrendingUp, accentColor: "#4ade80" },
-    { label: "Active Members", apiKey: "members", icon: Users, accentColor: "#60a5fa" },
-    { label: "Live Updates", apiKey: "updates", icon: Zap, accentColor: "#fb923c" },
-];
+/* ── Simulated real-time index data ────────────────────────────── */
+// In production, replace this with a real API (e.g., /api/dashboard/indices)
+function generateIndices(communities: { community_name: string }[]): SectorIndex[] {
+    if (communities.length === 0) return [];
 
-const STRAPI = process.env.NEXT_PUBLIC_STRAPI_URL || "";
+    return communities.map((c) => {
+        // Seed-based pseudo-random so values are consistent per community name
+        let seed = 0;
+        for (let i = 0; i < c.community_name.length; i++) seed += c.community_name.charCodeAt(i);
 
+        const baseValue = 1000 + (seed % 9000);        // 1000 – 9999
+        const fluctuation = (Math.random() - 0.45) * 40; // slight upward bias
+        const value = Math.round((baseValue + fluctuation) * 100) / 100;
+        const changePct = Math.round(fluctuation / baseValue * 10000) / 100;
+
+        return {
+            name: c.community_name,
+            value,
+            change: Math.abs(changePct),
+            changeDir: changePct > 0.05 ? "up" : changePct < -0.05 ? "down" : "flat",
+        };
+    });
+}
+
+/* ── Component ──────────────────────────────────────────────────── */
 export function StatsRow() {
-    const [stats, setStats] = useState<Record<string, string>>({});
+    const { profile } = useDashboard();
+    const communities = profile.communities || [];
+    const [indices, setIndices] = useState<SectorIndex[]>([]);
+    const intervalRef = useRef<NodeJS.Timeout | null>(null);
+
+    const refresh = useCallback(() => {
+        setIndices(generateIndices(communities));
+    }, [communities]);
 
     useEffect(() => {
-        async function fetchStats() {
-            try {
-                // Fetch total article count from Strapi
-                const res = await fetch(
-                    `${STRAPI}/api/contents?pagination[pageSize]=1&pagination[page]=1`,
-                    { next: { revalidate: 300 } }
-                );
-                const json = await res.json();
-                const total = json?.meta?.pagination?.total || 0;
+        refresh();
+        // Update every 5 seconds for real-time feel
+        intervalRef.current = setInterval(refresh, 5000);
+        return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
+    }, [refresh]);
 
-                setStats({
-                    articles: total > 999 ? `${(total / 1000).toFixed(1)}K` : String(total),
-                    trending: "Live",
-                    members: "2.4K",
-                    updates: "Today",
-                });
-            } catch {
-                setStats({
-                    articles: "—",
-                    trending: "Live",
-                    members: "2.4K",
-                    updates: "Today",
-                });
-            }
-        }
-        fetchStats();
-    }, []);
-
-    const items: StatItem[] = STAT_CONFIGS.map((cfg) => ({
-        ...cfg,
-        value: stats[cfg.apiKey] || "—",
-    }));
+    if (communities.length === 0) return null;
 
     return (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-            {items.map((stat) => {
-                const Icon = stat.icon;
-                return (
-                    <div
-                        key={stat.label}
-                        className="rounded-xl p-5 flex items-center gap-4 transition-all hover:scale-[1.02]"
-                        style={{
-                            background: "var(--dash-card)",
-                            border: "1px solid var(--dash-border)",
-                        }}
-                    >
+        <div className="mb-8">
+            {/* Header */}
+            <div className="flex items-center gap-2 mb-3">
+                <BarChart3 size={15} style={{ color: "var(--dash-accent)" }} />
+                <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: "var(--dash-text-dim)" }}>
+                    Sector Indices
+                </span>
+                <div className="flex items-center gap-1.5 ml-auto">
+                    <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: "#4CAF50" }} />
+                    <span className="text-[10px]" style={{ color: "var(--dash-text-dim)" }}>Live</span>
+                </div>
+            </div>
+
+            {/* Ticker Cards */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                {indices.map((idx) => {
+                    const TrendIcon = idx.changeDir === "up" ? TrendingUp : idx.changeDir === "down" ? TrendingDown : Minus;
+                    const trendColor = idx.changeDir === "up" ? "#4CAF50" : idx.changeDir === "down" ? "#EF4444" : "var(--dash-text-dim)";
+                    const trendBg = idx.changeDir === "up" ? "rgba(76,175,80,0.1)" : idx.changeDir === "down" ? "rgba(239,68,68,0.1)" : "rgba(161,161,170,0.1)";
+
+                    return (
                         <div
-                            className="p-2.5 rounded-lg"
-                            style={{ background: `${stat.accentColor}18` }}
+                            key={idx.name}
+                            className="rounded-xl p-4 transition-all hover:scale-[1.02] group"
+                            style={{
+                                background: "var(--dash-card)",
+                                border: "1px solid var(--dash-border)",
+                            }}
                         >
-                            <Icon size={20} style={{ color: stat.accentColor }} />
-                        </div>
-                        <div>
-                            <p className="text-2xl font-bold leading-none" style={{ color: "var(--dash-text)" }}>
-                                {stat.value}
+                            {/* Sector name */}
+                            <p className="text-[10px] font-bold uppercase tracking-wider mb-2 truncate" style={{ color: "var(--dash-text-dim)" }}>
+                                {idx.name}
                             </p>
-                            <p className="text-xs mt-1.5" style={{ color: "var(--dash-text-dim)" }}>
-                                {stat.label}
-                            </p>
+
+                            {/* Value + change */}
+                            <div className="flex items-end justify-between gap-2">
+                                <div>
+                                    <p className="text-xl font-black leading-none tabular-nums" style={{ color: "var(--dash-text)" }}>
+                                        {idx.value.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                    </p>
+                                </div>
+                                <div
+                                    className="flex items-center gap-1 px-2 py-1 rounded-md text-xs font-bold"
+                                    style={{ background: trendBg, color: trendColor }}
+                                >
+                                    <TrendIcon size={11} />
+                                    {idx.change.toFixed(2)}%
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                );
-            })}
+                    );
+                })}
+            </div>
         </div>
     );
 }
