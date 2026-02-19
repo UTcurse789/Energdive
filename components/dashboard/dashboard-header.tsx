@@ -50,7 +50,7 @@ export function DashboardHeader() {
                 />
 
                 {/* Search */}
-                <div className="flex-1 max-w-2xl mx-12 hidden md:block">
+                {/* <div className="flex-1 max-w-2xl mx-12 hidden md:block">
                     <div className="relative group">
                         <Search
                             className="absolute left-4 top-1/2 -translate-y-1/2 transition-colors"
@@ -69,7 +69,7 @@ export function DashboardHeader() {
                             }}
                         />
                     </div>
-                </div>
+                </div> */}
 
                 {/* Right Actions */}
                 <div className="flex items-center gap-5">
