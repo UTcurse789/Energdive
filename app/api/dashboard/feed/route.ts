@@ -69,7 +69,6 @@ export async function GET(request: Request) {
             typeFilter +
             earlyAccessFilter;
 
-        console.log("📡 Dashboard feed URL:", url);
 
         const res = await fetch(url, {
             headers: { Authorization: `Bearer ${TOKEN}` },
@@ -84,10 +83,6 @@ export async function GET(request: Request) {
         const json = await res.json();
         const items = json?.data || [];
 
-        // Debug: log first author object to find avatar path
-        if (items.length > 0) {
-            console.log("🔍 First item author:", JSON.stringify(items[0]?.author, null, 2));
-        }
 
         // Map Strapi v5 flat items to feed shape
         const feedItems = items.map((item: any) => {
