@@ -29,7 +29,8 @@ export async function GET(request: Request) {
 
         const profile = await getUserProfile(userId);
         const communities = profile?.communities || [];
-        const communityNames = communities.map((c) => c.community_name);
+        // Deduplicate using a Set on trimmed names
+        const communityNames = Array.from(new Set(communities.map((c) => c.community_name.trim())));
 
         const { searchParams } = new URL(request.url);
         const page = Number(searchParams.get("page")) || 1;

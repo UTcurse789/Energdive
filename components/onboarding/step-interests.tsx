@@ -67,9 +67,9 @@ export default function StepInterests({
     const [loading, setLoading] = useState(true);
 
     // Per-community sub-community selections:
-    // Map<communityId, subCommunityId | null>
+    // Map<communityId, Set<number>>
     const [selectedCommunities, setSelectedCommunities] = useState<
-        Map<number, number | null>
+        Map<number, Set<number>>
     >(new Map());
 
     const {
@@ -129,7 +129,7 @@ export default function StepInterests({
             if (next.has(communityId)) {
                 next.delete(communityId);
             } else {
-                next.set(communityId, null); // no sub-community selected yet
+                next.set(communityId, new Set());
             }
             // Sync to form
             syncCommunitySelections(next);
@@ -137,21 +137,30 @@ export default function StepInterests({
         });
     };
 
-    const setSubCommunity = (communityId: number, subCommunityId: number) => {
+    const toggleSubCommunity = (communityId: number, subCommunityId: number) => {
         setSelectedCommunities((prev) => {
             const next = new Map(prev);
-            next.set(communityId, subCommunityId);
+            const currentSet = next.get(communityId) || new Set();
+            const newSet = new Set(currentSet);
+
+            if (newSet.has(subCommunityId)) {
+                newSet.delete(subCommunityId);
+            } else {
+                newSet.add(subCommunityId);
+            }
+
+            next.set(communityId, newSet);
             syncCommunitySelections(next);
             return next;
         });
     };
 
-    const syncCommunitySelections = (map: Map<number, number | null>) => {
+    const syncCommunitySelections = (map: Map<number, Set<number>>) => {
         const selections: { communityId: number; subCommunityId: number }[] = [];
-        map.forEach((subId, commId) => {
-            if (subId !== null) {
+        map.forEach((subSet, commId) => {
+            subSet.forEach((subId) => {
                 selections.push({ communityId: commId, subCommunityId: subId });
-            }
+            });
         });
         setValue("communitySelections", selections);
     };
@@ -261,8 +270,8 @@ export default function StepInterests({
                                     type="button"
                                     onClick={() => toggleCommunity(community.id)}
                                     className={`px-4 py-2 rounded-full text-sm font-medium border transition-all flex items-center gap-2 ${isActive
-                                            ? "bg-[#0AB996]/10 border-[#0AB996] text-[#0AB996]"
-                                            : "bg-white border-zinc-200 text-zinc-600 hover:border-zinc-300"
+                                        ? "bg-[#0AB996]/10 border-[#0AB996] text-[#0AB996]"
+                                        : "bg-white border-zinc-200 text-zinc-600 hover:border-zinc-300"
                                         }`}
                                 >
                                     {isActive && <Check className="w-3.5 h-3.5" />}
@@ -274,7 +283,7 @@ export default function StepInterests({
 
                     {/* Sub-community cascaded selects (shown for each selected community) */}
                     {Array.from(selectedCommunities.entries()).map(
-                        ([communityId, subCommunityId]) => {
+                        ([communityId, subCommunitySet]) => {
                             const community = communities.find(
                                 (c) => c.id === communityId
                             );
@@ -288,29 +297,29 @@ export default function StepInterests({
                                     exit={{ opacity: 0, height: 0 }}
                                     className="pl-4 border-l-2 border-[#0AB996]/30"
                                 >
-                                    <label className="block text-xs font-medium text-zinc-500 mb-1">
-                                        Sub-community for{" "}
-                                        <span className="text-[#0AB996]">{community.name}</span>
+                                    <label className="block text-xs font-medium text-zinc-500 mb-2">
+                                        Sub-communities for{" "}
+                                        <span className="text-[#0AB996]">{community.name}</span> (Select multiple)
                                     </label>
-                                    <div className="relative">
-                                        <select
-                                            value={subCommunityId ?? ""}
-                                            onChange={(e) =>
-                                                setSubCommunity(
-                                                    communityId,
-                                                    Number(e.target.value)
-                                                )
-                                            }
-                                            className="w-full px-3 py-2 border border-zinc-200 rounded-lg focus:ring-2 focus:ring-[#0AB996] focus:border-transparent outline-none transition-all bg-white text-sm appearance-none pr-10"
-                                        >
-                                            <option value="">Pick a sub-community</option>
-                                            {community.sub_communities.map((sc) => (
-                                                <option key={sc.id} value={sc.id}>
+
+                                    <div className="flex flex-wrap gap-2">
+                                        {community.sub_communities.map((sc) => {
+                                            const isSelected = subCommunitySet.has(sc.id);
+                                            return (
+                                                <button
+                                                    key={sc.id}
+                                                    type="button"
+                                                    onClick={() => toggleSubCommunity(communityId, sc.id)}
+                                                    className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all flex items-center gap-1.5 ${isSelected
+                                                            ? "bg-[#0AB996]/10 border-[#0AB996] text-[#0AB996]"
+                                                            : "bg-white border-zinc-200 text-zinc-600 hover:border-zinc-300"
+                                                        }`}
+                                                >
+                                                    {isSelected && <Check className="w-3 h-3" />}
                                                     {sc.name}
-                                                </option>
-                                            ))}
-                                        </select>
-                                        <ChevronDown className="absolute right-3 top-2.5 w-3.5 h-3.5 text-zinc-400 pointer-events-none" />
+                                                </button>
+                                            );
+                                        })}
                                     </div>
                                 </motion.div>
                             );
