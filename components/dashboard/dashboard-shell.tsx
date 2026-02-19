@@ -22,7 +22,9 @@ export interface DashboardProfile {
     job_title: string | null;
     organization: string | null;
     onboarding_completed: boolean;
+    industry_id: number | null;
     industry_name: string | null;
+    sub_industry_id: number | null;
     sub_industry_name: string | null;
     communities: CommunitySelection[];
 }
