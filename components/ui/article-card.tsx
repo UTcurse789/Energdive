@@ -48,7 +48,7 @@ export function ArticleCard({ article, className, variant = "vertical" }: Articl
                     </h3>
 
                     {variant !== "compact" && (
-                        <p className="text-muted-foreground text-sm line-clamp-3 mb-4 flex-1">
+                        <p className="text-muted-foreground text-sm line-clamp-3 mb-4">
                             {article.excerpt}
                         </p>
                     )}
