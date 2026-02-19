@@ -161,6 +161,8 @@ export async function getUserProfile(
             [clerkId]
         );
 
+        console.log(`[getUserProfile] Query for ${clerkId} returned ${userResult.rows.length} rows`);
+
         if (userResult.rows.length === 0) return null;
 
         const user = userResult.rows[0];

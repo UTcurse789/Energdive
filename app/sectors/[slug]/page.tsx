@@ -105,7 +105,7 @@ export default function SectorIntelligencePage() {
                     fill
                     className="object-cover opacity-40 grayscale scale-105"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent" />
+                <div className="absolute inset-0 bg-linear-to-t from-black via-transparent to-transparent" />
 
                 <div className="container mx-auto px-6 lg:px-16 relative z-10">
                     <motion.nav
@@ -188,7 +188,7 @@ export default function SectorIntelligencePage() {
                                     className="group block relative"
                                 >
                                     {/* Card Image Wrapper */}
-                                    <div className="relative aspect-[16/10] rounded-2xl overflow-hidden mb-6 bg-gray-200 shadow-sm transition-transform duration-500 group-hover:-translate-y-2 group-hover:shadow-2xl">
+                                    <div className="relative aspect-16/10 rounded-2xl overflow-hidden mb-6 bg-gray-200 shadow-sm transition-transform duration-500 group-hover:-translate-y-2 group-hover:shadow-2xl">
                                         <Image
                                             src={report.image}
                                             alt={report.title}
@@ -207,7 +207,7 @@ export default function SectorIntelligencePage() {
                                                 <Clock size={10} />
                                                 {formatDate(report.date)}
                                             </span>
-                                            <span className="h-[1px] w-4 bg-gray-200" />
+                                            <span className="h-1px w-4 bg-gray-200" />
                                             <span>Insight Report</span>
                                         </div>
 
