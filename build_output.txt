@@ -1,0 +1,111 @@
+﻿
+> energdive@0.1.0 build
+> next build
+
+Γû▓ Next.js 16.1.6 (Turbopack)
+- Environments: .env
+
+node.exe : ΓÜá The "middleware" file 
+convention is deprecated. Please use 
+"proxy" instead. Learn more: https://nextj
+s.org/docs/messages/middleware-to-proxy
+At line:1 char:1
++ & "C:\Program Files\nodejs/node.exe" 
+"C:\Program Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecifie 
+   d: (ΓÜá The "middle...leware-to-proxy  
+  :String) [], RemoteException
+    + FullyQualifiedErrorId : NativeComma 
+   ndError
+ 
+  Creating an optimized production build ...
+Γ£ô Compiled successfully in 12.6s
+  Running TypeScript ...
+  Collecting page data using 7 workers ...
+  Generating static pages using 7 workers (0/45) ...
+  Generating static pages using 7 workers (11/45) 
+  Generating static pages using 7 workers (22/45) 
+Failed to fetch Strapi content: 
+TypeError: fetch failed
+    at async f (C:\Users\sanka\Energdive\.
+next\server\chunks\ssr\_3b0fbe76._.js:1:41
+327)
+    at async i (C:\Users\sanka\Energdive\.
+next\server\chunks\ssr\_3b0fbe76._.js:1:41
+954) {
+  [cause]: AggregateError: 
+      at ignore-listed frames {
+    code: 'ECONNREFUSED'
+  }
+}
+  Generating static pages using 7 workers (33/45) 
+Γ£ô Generating static pages using 7 workers (45/45) in 1873.6ms
+  Finalizing page optimization ...
+
+Route (app)                             Revalidate  Expire
+Γöî Γùï /                                           1m      1y
+Γö£ Γùï /_not-found
+Γö£ ╞Æ /[category]
+Γö£ Γùï /about
+Γö£ Γùï /accept-invite
+Γö£ ╞Æ /api/auth/generate-invite
+Γö£ ╞Æ /api/auth/invite
+Γö£ ╞Æ /api/community/posts
+Γö£ ╞Æ /api/community/posts/[id]
+Γö£ ╞Æ /api/community/posts/[id]/comments
+Γö£ ╞Æ /api/content
+Γö£ ╞Æ /api/dashboard/events
+Γö£ ╞Æ /api/dashboard/feed
+Γö£ ╞Æ /api/master/communities
+Γö£ ╞Æ /api/master/industries
+Γö£ ╞Æ /api/onboarding/submit
+Γö£ ╞Æ /api/profile/check
+Γö£ ╞Æ /api/test-db
+Γö£ ╞Æ /api/user/profile
+Γö£ ╞Æ /api/user/update-profile
+Γö£ ╞Æ /api/zoho/callback
+Γö£ ╞Æ /articles/[slug]
+Γö£ Γùï /contact
+Γö£ ╞Æ /dashboard
+Γö£ ╞Æ /dashboard/bookmarks
+Γö£ ╞Æ /dashboard/community
+Γö£ ╞Æ /dashboard/content
+Γö£ ╞Æ /dashboard/events
+Γö£ ╞Æ /dashboard/feed
+Γö£ ╞Æ /dashboard/reports
+Γö£ ╞Æ /dashboard/settings
+Γö£ ╞Æ /dashboard/subscriptions
+Γö£ Γùï /energclub
+Γö£ Γùï /energclub-info
+Γö£ ╞Æ /energclub/dashboard
+Γö£ Γùï /events
+Γö£ Γùï /issues
+Γö£ ╞Æ /issues/[slug]
+Γö£ Γùï /login
+Γö£ ╞Æ /market/[symbol]
+Γö£ Γùï /news
+Γö£ ╞Æ /news/[slug]
+Γö£ ╞Æ /onboarding
+Γö£ Γùï /opinion
+Γö£ ╞Æ /opinion/[slug]
+Γö£ Γùï /register
+Γö£ Γùï /reports
+Γö£ ╞Æ /reports/[slug]
+Γö£ Γùï /robots.txt
+Γö£ Γùï /search
+Γö£ ╞Æ /sectors/[slug]
+Γö£ ╞Æ /sign-in/[[...sign-in]]
+Γö£ ╞Æ /sign-up/[[...sign-up]]
+Γö£ Γùï /sitemap.xml
+Γö£ Γùï /subscribe
+Γö£ Γùï /videos
+Γöö ╞Æ /videos/[slug]
+
+
+╞Æ Proxy (Middleware)
+
+Γùï  (Static)   prerendered as static content
+╞Æ  (Dynamic)  server-rendered on demand
+

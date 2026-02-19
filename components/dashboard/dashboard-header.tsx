@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
     Search, Bell, Home, LayoutGrid, BrainCircuit, Users,
-    CreditCard, Calendar, Bookmark, Settings
+    CreditCard, Calendar, Settings
 } from "lucide-react";
 import { UserButton } from "@clerk/nextjs";
 import { useDashboard } from "./dashboard-shell";
@@ -17,7 +17,6 @@ const NAV_ITEMS = [
     { label: "Community", href: "/dashboard/community", icon: Users },
     { label: "Subscriptions", href: "/dashboard/subscriptions", icon: CreditCard },
     { label: "Events", href: "/dashboard/events", icon: Calendar },
-    { label: "Bookmarks", href: "/dashboard/bookmarks", icon: Bookmark },
     { label: "Account Settings", href: "/dashboard/settings", icon: Settings },
 ];
 
@@ -51,7 +50,7 @@ export function DashboardHeader() {
                 />
 
                 {/* Search */}
-                <div className="flex-1 max-w-2xl mx-12 hidden md:block">
+                {/* <div className="flex-1 max-w-2xl mx-12 hidden md:block">
                     <div className="relative group">
                         <Search
                             className="absolute left-4 top-1/2 -translate-y-1/2 transition-colors"
@@ -70,7 +69,7 @@ export function DashboardHeader() {
                             }}
                         />
                     </div>
-                </div>
+                </div> */}
 
                 {/* Right Actions */}
                 <div className="flex items-center gap-5">

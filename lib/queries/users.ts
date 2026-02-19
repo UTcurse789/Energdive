@@ -33,7 +33,9 @@ export interface UserProfile {
     organization: string | null;
     onboarding_completed: boolean;
     created_at: string;
+    industry_id: number | null;
     industry_name: string | null;
+    sub_industry_id: number | null;
     sub_industry_name: string | null;
     communities: {
         community_id: number;
@@ -147,7 +149,9 @@ export async function getUserProfile(
                 u.first_name, u.last_name, u.phone,
                 u.country, u.state, u.job_title, u.organization,
                 u.onboarding_completed, u.created_at,
+                ui.industry_id,
                 ind.name  AS industry_name,
+                ui.sub_industry_id,
                 si.name   AS sub_industry_name
             FROM users u
             LEFT JOIN user_industries ui ON u.id = ui.user_id
@@ -197,7 +201,9 @@ export async function getUserProfile(
             organization: 'Demo Organization',
             onboarding_completed: true,
             created_at: new Date().toISOString(),
+            industry_id: 1,
             industry_name: 'Renewable Energy',
+            sub_industry_id: 1,
             sub_industry_name: 'Solar Energy',
             communities: [
                 {
