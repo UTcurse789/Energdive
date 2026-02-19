@@ -11,36 +11,51 @@ export default function DashboardPage() {
 
     return (
         <div className="animate-fade-in-up">
-            {/* Welcome Section */}
-            <div className="mb-8">
-                <h1 className="text-3xl font-bold text-gray-900 mb-1">
-                    Welcome {firstName}
+            {/* Welcome */}
+            <div className="mb-7">
+                <h1 className="text-3xl font-bold mb-1" style={{ color: "var(--dash-text)" }}>
+                    Welcome back,{" "}
+                    <span style={{ color: "var(--dash-accent)" }}>{firstName}</span>
                 </h1>
-                <p className="text-gray-500">
+                <p className="text-sm" style={{ color: "var(--dash-text-dim)" }}>
                     Your intelligence hub for energy industry insights
                 </p>
             </div>
 
-            {/* Stats Row */}
+            {/* Stats */}
             <StatsRow />
 
             {/* Main Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Left Column: Feed (2/3) */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-7">
+                {/* Left: Feed (2/3) */}
                 <div className="lg:col-span-2">
-                    <div className="bg-white border border-gray-100 rounded-xl p-6 shadow-sm min-h-[600px]">
-                        <div className="flex items-center justify-between mb-6">
-                            <h2 className="text-lg font-bold text-gray-900">Intelligence Feed</h2>
-                            <button className="text-xs font-semibold px-3 py-1.5 rounded bg-gray-50 text-gray-600 hover:bg-gray-100 border border-gray-200 transition-colors">
-                                Latest Updates
-                            </button>
+                    <div
+                        className="rounded-xl p-6 shadow-sm min-h-[600px]"
+                        style={{
+                            background: "var(--dash-card)",
+                            border: "1px solid var(--dash-border)",
+                        }}
+                    >
+                        <div className="flex items-center justify-between mb-5">
+                            <div className="flex items-center gap-2.5">
+                                <div className="w-1 h-5 rounded-full" style={{ background: "var(--dash-accent)" }} />
+                                <h2 className="text-base font-bold" style={{ color: "var(--dash-text)" }}>
+                                    Intelligence Feed
+                                </h2>
+                            </div>
+                            <span
+                                className="text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded"
+                                style={{ background: "var(--dash-accent-dim)", color: "var(--dash-accent)" }}
+                            >
+                                Live
+                            </span>
                         </div>
 
                         <IntelligenceFeed />
                     </div>
                 </div>
 
-                {/* Right Column: Sidebar (1/3) */}
+                {/* Right: Sidebar (1/3) */}
                 <div className="lg:col-span-1">
                     <TrendsSidebar />
                 </div>

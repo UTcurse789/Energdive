@@ -33,6 +33,7 @@ interface DashboardContextType {
     openEditProfile: () => void;
     sidebarOpen: boolean;
     setSidebarOpen: React.Dispatch<React.SetStateAction<boolean>>;
+    feedKey: number;
 }
 
 const DashboardContext = createContext<DashboardContextType | null>(null);
@@ -56,6 +57,7 @@ export default function DashboardShell({
     const [profile, setProfile] = useState<DashboardProfile>(initialProfile);
     const [editOpen, setEditOpen] = useState(false);
     const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [feedKey, setFeedKey] = useState(0);
 
     const refreshProfile = useCallback(async () => {
         try {
@@ -63,6 +65,8 @@ export default function DashboardShell({
             if (!res.ok) return;
             const data = await res.json();
             if (data.exists) setProfile(data.user);
+            // Bump feedKey so feed components auto-refresh
+            setFeedKey((k) => k + 1);
         } catch (err) {
             console.error("Profile refresh error:", err);
         }
@@ -75,10 +79,11 @@ export default function DashboardShell({
                 refreshProfile,
                 openEditProfile: () => setEditOpen(true),
                 sidebarOpen,
-                setSidebarOpen
+                setSidebarOpen,
+                feedKey,
             }}
         >
-            <div className="min-h-screen bg-[var(--dash-bg)] flex flex-col font-sans">
+            <div className="dashboard-theme min-h-screen flex flex-col font-sans" style={{ background: "var(--dash-bg)", color: "var(--dash-text)" }}>
                 {/* Fixed Header */}
                 <DashboardHeader />
 
