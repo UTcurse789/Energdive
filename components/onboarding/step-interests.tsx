@@ -67,9 +67,9 @@ export default function StepInterests({
     const [loading, setLoading] = useState(true);
 
     // Per-community sub-community selections:
-    // Map<communityId, subCommunityId | null>
+    // Map<communityId, Set<subCommunityId>>
     const [selectedCommunities, setSelectedCommunities] = useState<
-        Map<number, number | null>
+        Map<number, Set<number>>
     >(new Map());
 
     const {
@@ -86,6 +86,14 @@ export default function StepInterests({
             communitySelections: defaultValues.communitySelections || [],
         },
     });
+
+    const syncCommunitySelections = (map: Map<number, Set<number>>) => {
+        const selections: { communityId: number; subCommunityId: number }[] = [];
+        map.forEach((subIds, commId) => {
+            subIds.forEach((subId) => selections.push({ communityId: commId, subCommunityId: subId }));
+        });
+        setValue("communitySelections", selections);
+    };
 
     // ── Load master data ──────────────────────────────────────────
     useEffect(() => {
@@ -106,6 +114,17 @@ export default function StepInterests({
         }
         load();
     }, []);
+
+    // Seed selections from defaults (when user navigates back)
+    useEffect(() => {
+        const map = new Map<number, Set<number>>();
+        (defaultValues.communitySelections || []).forEach((sel) => {
+            if (!map.has(sel.communityId)) map.set(sel.communityId, new Set());
+            map.get(sel.communityId)!.add(sel.subCommunityId);
+        });
+        setSelectedCommunities(map);
+        syncCommunitySelections(map);
+    }, [defaultValues.communitySelections]);
 
     // ── Industry cascade ──────────────────────────────────────────
     const selectedIndustryId = watch("industryId");
@@ -129,7 +148,7 @@ export default function StepInterests({
             if (next.has(communityId)) {
                 next.delete(communityId);
             } else {
-                next.set(communityId, null); // no sub-community selected yet
+                next.set(communityId, new Set()); // no sub-community selected yet
             }
             // Sync to form
             syncCommunitySelections(next);
@@ -137,23 +156,19 @@ export default function StepInterests({
         });
     };
 
-    const setSubCommunity = (communityId: number, subCommunityId: number) => {
+    const toggleSubCommunity = (communityId: number, subCommunityId: number) => {
         setSelectedCommunities((prev) => {
             const next = new Map(prev);
-            next.set(communityId, subCommunityId);
+            const set = new Set(next.get(communityId) || []);
+            if (set.has(subCommunityId)) {
+                set.delete(subCommunityId);
+            } else {
+                set.add(subCommunityId);
+            }
+            next.set(communityId, set);
             syncCommunitySelections(next);
             return next;
         });
-    };
-
-    const syncCommunitySelections = (map: Map<number, number | null>) => {
-        const selections: { communityId: number; subCommunityId: number }[] = [];
-        map.forEach((subId, commId) => {
-            if (subId !== null) {
-                selections.push({ communityId: commId, subCommunityId: subId });
-            }
-        });
-        setValue("communitySelections", selections);
     };
 
     // ── Loading / error states ────────────────────────────────────
@@ -272,9 +287,9 @@ export default function StepInterests({
                         })}
                     </div>
 
-                    {/* Sub-community cascaded selects (shown for each selected community) */}
+                    {/* Sub-community multi-select (shown for each selected community) */}
                     {Array.from(selectedCommunities.entries()).map(
-                        ([communityId, subCommunityId]) => {
+                        ([communityId, subCommunityIds]) => {
                             const community = communities.find(
                                 (c) => c.id === communityId
                             );
@@ -292,25 +307,23 @@ export default function StepInterests({
                                         Sub-community for{" "}
                                         <span className="text-[#0AB996]">{community.name}</span>
                                     </label>
-                                    <div className="relative">
-                                        <select
-                                            value={subCommunityId ?? ""}
-                                            onChange={(e) =>
-                                                setSubCommunity(
-                                                    communityId,
-                                                    Number(e.target.value)
-                                                )
-                                            }
-                                            className="w-full px-3 py-2 border border-zinc-200 rounded-lg focus:ring-2 focus:ring-[#0AB996] focus:border-transparent outline-none transition-all bg-white text-sm appearance-none pr-10"
-                                        >
-                                            <option value="">Pick a sub-community</option>
-                                            {community.sub_communities.map((sc) => (
-                                                <option key={sc.id} value={sc.id}>
-                                                    {sc.name}
-                                                </option>
-                                            ))}
-                                        </select>
-                                        <ChevronDown className="absolute right-3 top-2.5 w-3.5 h-3.5 text-zinc-400 pointer-events-none" />
+                                    <div className="flex flex-wrap gap-2">
+                                        {community.sub_communities.map((sc) => {
+                                            const isSelected = subCommunityIds?.has(sc.id);
+                                            return (
+                                                <button
+                                                    key={sc.id}
+                                                    type="button"
+                                                    onClick={() => toggleSubCommunity(communityId, sc.id)}
+                                                    className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${isSelected
+                                                            ? "bg-[#0AB996] text-white border-[#0AB996] shadow-sm"
+                                                            : "bg-white border-zinc-200 text-zinc-600 hover:border-zinc-300"
+                                                        }`}
+                                                >
+                                                    {isSelected ? "✔ " : ""}{sc.name}
+                                                </button>
+                                            );
+                                        })}
                                     </div>
                                 </motion.div>
                             );
