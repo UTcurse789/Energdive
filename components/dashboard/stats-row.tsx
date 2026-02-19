@@ -17,7 +17,15 @@ interface SectorIndex {
 function generateIndices(communities: { community_name: string }[]): SectorIndex[] {
     if (communities.length === 0) return [];
 
-    return communities.map((c) => {
+    // Deduplicate by community_name so we don't show the same sector twice
+    const seen = new Set<string>();
+    const unique = communities.filter((c) => {
+        if (seen.has(c.community_name)) return false;
+        seen.add(c.community_name);
+        return true;
+    });
+
+    return unique.map((c) => {
         // Seed-based pseudo-random so values are consistent per community name
         let seed = 0;
         for (let i = 0; i < c.community_name.length; i++) seed += c.community_name.charCodeAt(i);
@@ -72,14 +80,14 @@ export function StatsRow() {
 
             {/* Ticker Cards */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                {indices.map((idx) => {
+                {indices.map((idx, i) => {
                     const TrendIcon = idx.changeDir === "up" ? TrendingUp : idx.changeDir === "down" ? TrendingDown : Minus;
                     const trendColor = idx.changeDir === "up" ? "#4CAF50" : idx.changeDir === "down" ? "#EF4444" : "var(--dash-text-dim)";
                     const trendBg = idx.changeDir === "up" ? "rgba(76,175,80,0.1)" : idx.changeDir === "down" ? "rgba(239,68,68,0.1)" : "rgba(161,161,170,0.1)";
 
                     return (
                         <div
-                            key={idx.name}
+                            key={`${idx.name}-${i}`}
                             className="rounded-xl p-4 transition-all hover:scale-[1.02] group"
                             style={{
                                 background: "var(--dash-card)",

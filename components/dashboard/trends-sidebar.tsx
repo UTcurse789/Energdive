@@ -275,7 +275,7 @@ function CommunityWidget({
             ) : (
                 <div className="space-y-1.5 mb-4">
                     {currentCommunities.map((c) => (
-                        <div key={c.community_id}>
+                        <div key={`${c.community_id}-${c.sub_community_id}`}>
                             <div className="flex items-center justify-between rounded-lg px-3 py-2.5 group" style={{ background: "var(--dash-surface-2)" }}>
                                 <div className="min-w-0">
                                     <p className="text-sm font-semibold" style={{ color: "var(--dash-text)" }}>{c.community_name}</p>

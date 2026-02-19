@@ -14,7 +14,7 @@ const NAV_ITEMS = [
     { label: "Main Site", href: "/", icon: Home },
     { label: "Dashboard", href: "/dashboard", icon: LayoutGrid },
     { label: "Intelligence", href: "/dashboard/feed", icon: BrainCircuit },
-    { label: "Community", href: "/dashboard/community", icon: Users },
+    // { label: "Community", href: "/dashboard/community", icon: Users },
     { label: "Subscriptions", href: "/dashboard/subscriptions", icon: CreditCard },
     { label: "Events", href: "/dashboard/events", icon: Calendar },
     { label: "Account Settings", href: "/dashboard/settings", icon: Settings },
