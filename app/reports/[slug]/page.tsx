@@ -69,8 +69,7 @@ function RenderBlocks({ blocks }: any) {
         }
 
         if (block.type === "heading") {
-            const Tag =
-                (`h${block.level}` as keyof JSX.IntrinsicElements) || "h3";
+            const Tag = (`h${block.level}` as 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6') || 'h3';
 
             return (
                 <Tag key={i}>
