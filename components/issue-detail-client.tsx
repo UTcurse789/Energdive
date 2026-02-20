@@ -3,8 +3,7 @@
 import React from "react";
 import Image from "next/image";
 import Link from "next/link";
-
-import { Issue, Section } from "@/types";
+import { Issue } from "@/types";
 
 interface IssueDetailClientProps {
     issue: Issue;
@@ -56,7 +55,8 @@ export function IssueDetailClient({ issue }: IssueDetailClientProps) {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-12">
                             {section.articles.map((article) => (
                                 <article key={article.id} className="group">
-                                    <Link href={article.href} className="block">
+                                    {/* FIX 1: Ensure href is never undefined by providing a fallback path */}
+                                    <Link href={article.href ?? "#"} className="block">
                                         {article.image && (
                                             <div className="relative aspect-video mb-4 overflow-hidden bg-gray-100">
                                                 <Image
@@ -73,7 +73,8 @@ export function IssueDetailClient({ issue }: IssueDetailClientProps) {
                                                     {article.contentType}
                                                 </span>
                                             )}
-                                            {article.sectors.map((s, i) => (
+                                            {/* FIX 2: Use optional chaining (?.) and provide empty array fallback */}
+                                            {(article.sectors ?? []).map((s, i) => (
                                                 <span key={i} className="text-[10px] uppercase font-bold tracking-wider text-[#003B5C]">
                                                     {s}
                                                 </span>

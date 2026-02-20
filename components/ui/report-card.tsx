@@ -72,11 +72,11 @@ export function ReportCard({ article, className, variant = "default", baseUrl = 
                                 {article.author.name}
                             </div>
                         )}
-                        {article.pdfSize && (
+                        {/* {article.pdfSize && (
                             <span className="text-[10px] bg-zinc-100 dark:bg-zinc-800 text-zinc-500 px-2 py-0.5 rounded flex items-center gap-1">
                                 <FileText className="w-3 h-3" /> {article.pdfSize}
                             </span>
-                        )}
+                        )} */}
                     </div>
                 </div>
             </div>

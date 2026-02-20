@@ -1,6 +1,7 @@
 export interface Author {
     name: string;
-    avatar: string;
+    avatar?: string;
+    image?: string; // Large portrait image for opinions
     role?: string; // e.g. "Senior Energy Analyst"
     bio?: string;
 }
@@ -26,23 +27,27 @@ export interface Author {
 export interface Article {
     id: number | string;
     slug: string;
-    href: string;           // full route e.g. /opinion/some-slug
+    href?: string;           // full route e.g. /opinion/some-slug
     title: string;
-    excerpt?: string;
-    author?: { name: string } | null;
-    image?: string | null;
+    excerpt: string;
+    author: Author | null;
+    image: string;
     contentType?: string | null;   // "Opinion", "News", etc.
-    sectors: string[];
-    tags: string[];
+    sectors?: string[];
+    tags?: string[];
+    category: string;
+    date: string;
+    readTime: string;
+    content?: any;
 }
 
-// export interface Sector {
-//     title: string;
-//     slug: string;
-//     description?: string;
-//     heroImage?: string;
-//     subSectors?: string[];
-// }
+export interface Sector {
+    title: string;
+    slug: string;
+    description?: string;
+    heroImage?: string;
+    subSectors?: string[];
+}
 export interface Section {
     title: string;
     articles: Article[];
@@ -106,18 +111,15 @@ export interface Issue {
 export interface Opinion {
     id: string;
     title: string;
-    author: {
-        name: string;
-        role: string;
-        image: string; // Large portrait image
-        bio?: string;
-    };
+    author: Author;
     date: string;
     excerpt: string;
     content: any[];
     category?: string;
     slug: string;
     featuredImage: string;
+    image?: string;
+    readTime?: string;
 }
 
 export interface Video {

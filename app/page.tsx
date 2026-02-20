@@ -8,6 +8,7 @@ import { SubscribeCTA } from "@/components/sections/subscribe-cta";
 import { ARTICLES } from "@/data/dummy";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { MarketTicker } from "@/components/features/ticker";
+import { Article, Opinion } from "@/types";
 
 const STRAPI_BASE = "http://206.189.132.187:1337";
 
@@ -39,12 +40,12 @@ function extractExcerpt(article: any): string {
     .trim();
 }
 
-function mapArticle(article: any, sectorName: string) {
+function mapArticle(article: any, sectorName: string): Article {
   return {
     id: String(article.id),
     title: article.Title || "",
     slug: article.slug || "",
-    category: sectorName,
+    category: sectorName || "Energy",
     image: extractImageUrl(article),
     excerpt: extractExcerpt(article),
     date: article.publishedAt
@@ -52,7 +53,11 @@ function mapArticle(article: any, sectorName: string) {
         day: "numeric", month: "short", year: "numeric",
       })
       : "",
-    author: { name: article.author?.name || "Staff Writer" },
+    author: article.author ? {
+      name: article.author.name || "Staff Writer",
+      avatar: article.author.avatar?.url ? `${STRAPI_BASE}${article.author.avatar.url}` : "/default-avatar.png",
+      role: article.author.role || "Contributor"
+    } : { name: "Staff Writer", avatar: "/default-avatar.png", role: "Contributor" },
     readTime: "5 min read",
   };
 }
@@ -72,7 +77,7 @@ async function getAllContents() {
   }
 }
 
-async function getFeaturedOpinion() {
+async function getFeaturedOpinion(): Promise<Opinion | null> {
   try {
     const res = await fetch(
       `${STRAPI_BASE}/api/contents` +
@@ -87,13 +92,17 @@ async function getFeaturedOpinion() {
     const article = json.data?.[0];
     if (!article) return null;
 
+    const imageUrl = extractImageUrl(article);
+
     return {
       id: String(article.id),
       title: article.Title || "",
       slug: article.slug || "",
       excerpt: extractExcerpt(article),
       category: "Opinion",
-      image: extractImageUrl(article),
+      image: imageUrl,
+      featuredImage: imageUrl,
+      content: article.Content || [],
       date: article.publishedAt
         ? new Date(article.publishedAt).toLocaleDateString("en-GB", {
           day: "numeric", month: "short", year: "numeric",
@@ -104,6 +113,9 @@ async function getFeaturedOpinion() {
         name: article.author?.name || "Staff Writer",
         role: article.author?.role || "Contributor",
         avatar: article.author?.avatar?.url
+          ? `${STRAPI_BASE}${article.author.avatar.url}`
+          : "/default-avatar.png",
+        image: article.author?.avatar?.url
           ? `${STRAPI_BASE}${article.author.avatar.url}`
           : "/default-avatar.png",
       },
