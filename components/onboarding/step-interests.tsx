@@ -174,15 +174,7 @@ export default function StepInterests({
         });
     };
 
-    const syncCommunitySelections = (map: Map<number, Set<number>>) => {
-        const selections: { communityId: number; subCommunityId: number }[] = [];
-        map.forEach((subSet, commId) => {
-            subSet.forEach((subId) => {
-                selections.push({ communityId: commId, subCommunityId: subId });
-            });
-        });
-        setValue("communitySelections", selections);
-    };
+
 
     // ── Loading / error states ────────────────────────────────────
     if (loading) {
@@ -330,8 +322,8 @@ export default function StepInterests({
                                                     type="button"
                                                     onClick={() => toggleSubCommunity(communityId, sc.id)}
                                                     className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all flex items-center gap-1.5 ${isSelected
-                                                            ? "bg-[#0AB996]/10 border-[#0AB996] text-[#0AB996]"
-                                                            : "bg-white border-zinc-200 text-zinc-600 hover:border-zinc-300"
+                                                        ? "bg-[#0AB996]/10 border-[#0AB996] text-[#0AB996]"
+                                                        : "bg-white border-zinc-200 text-zinc-600 hover:border-zinc-300"
                                                         }`}
                                                 >
                                                     {isSelected && <Check className="w-3 h-3" />}
