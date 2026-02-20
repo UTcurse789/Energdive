@@ -1,17 +1,19 @@
 import OnboardingWizard from "@/components/onboarding/wizard";
-import { currentUser } from "@clerk/nextjs/server";
+import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { getUserProfile } from "@/lib/queries";
 
 export default async function OnboardingPage() {
-    const user = await currentUser();
+    // auth() reads from the middleware-verified session (no API call).
+    // Middleware already protects /onboarding — userId is guaranteed here.
+    const { userId } = await auth();
 
-    if (!user) {
+    if (!userId) {
         redirect("/sign-in");
     }
 
     // DB check — if profile already exists, go to dashboard
-    const profile = await getUserProfile(user.id);
+    const profile = await getUserProfile(userId);
     if (profile) {
         redirect("/dashboard");
     }

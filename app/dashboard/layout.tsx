@@ -1,4 +1,4 @@
-import { currentUser } from "@clerk/nextjs/server";
+import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { getUserProfile } from "@/lib/queries";
 import DashboardShell from "@/components/dashboard/dashboard-shell";
@@ -8,15 +8,15 @@ export default async function DashboardLayout({
 }: {
     children: React.ReactNode;
 }) {
-    const user = await currentUser();
+    // auth() reads from middleware-verified session — no API call needed.
+    const { userId } = await auth();
 
-    // Auth guard
-    if (!user) {
+    if (!userId) {
         redirect("/sign-in");
     }
 
     // DB check — the single source of truth for onboarding status
-    const profile = await getUserProfile(user.id);
+    const profile = await getUserProfile(userId);
 
     if (!profile) {
         redirect("/onboarding");

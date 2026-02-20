@@ -59,7 +59,7 @@ export default function SignUpPage() {
                             formFieldLabel: "text-zinc-700 font-medium ml-1",
                         }
                     }}
-                    fallbackRedirectUrl="/dashboard"
+                    fallbackRedirectUrl="/onboarding"
                 />
             </motion.div>
 

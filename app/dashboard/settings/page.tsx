@@ -263,7 +263,7 @@ export default function SettingsPage() {
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                     {userCommunities.map((c) => (
                                         <div
-                                            key={c.community_id}
+                                            key={`${c.community_id}-${c.sub_community_id ?? 'none'}`}
                                             className="flex items-center gap-3 p-4 rounded-xl"
                                             style={{ background: "var(--dash-surface-2)", border: "1px solid var(--dash-border-subtle)" }}
                                         >
