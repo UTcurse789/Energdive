@@ -268,14 +268,36 @@ function CommunityWidget({
                     No communities selected.
                 </p>
             ) : (
-                <div className="space-y-2.5 mb-4">
-                    {Array.from(grouped.entries()).map(([communityId, group]) => (
-                        <div key={communityId} className="rounded-lg px-3 py-3" style={{ background: "var(--dash-surface-2)" }}>
-                            <div className="flex items-center justify-between mb-2">
-                                <p className="text-sm font-semibold" style={{ color: "var(--dash-text)" }}>{group.name}</p>
-                                <span className="text-[10px]" style={{ color: "var(--dash-text-dim)" }}>
-                                    {group.subs.length} topic{group.subs.length > 1 ? "s" : ""}
-                                </span>
+                <div className="space-y-1.5 mb-4">
+                    {currentCommunities.map((c) => (
+                        <div key={`${c.community_id}-${c.sub_community_id}`}>
+                            <div className="flex items-center justify-between rounded-lg px-3 py-2.5 group" style={{ background: "var(--dash-surface-2)" }}>
+                                <div className="min-w-0">
+                                    <p className="text-sm font-semibold" style={{ color: "var(--dash-text)" }}>{c.community_name}</p>
+                                    <p className="text-[10px]" style={{ color: "var(--dash-text-dim)" }}>{c.sub_community_name}</p>
+                                </div>
+                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    {/* Edit button */}
+                                    <button
+                                        onClick={() => startEdit(c)}
+                                        disabled={saving}
+                                        className="p-1 rounded transition-colors hover:bg-[var(--dash-accent-dim)]"
+                                        style={{ color: "var(--dash-accent)" }}
+                                        title="Edit sub-community"
+                                    >
+                                        <Pencil size={12} />
+                                    </button>
+                                    {/* Remove button */}
+                                    <button
+                                        onClick={() => handleRemove(c.community_id)}
+                                        disabled={saving}
+                                        className="p-1 rounded transition-colors hover:bg-red-500/10"
+                                        style={{ color: "var(--dash-text-dim)" }}
+                                        title="Remove community"
+                                    >
+                                        <X size={13} />
+                                    </button>
+                                </div>
                             </div>
                             <div className="flex flex-wrap gap-2">
                                 {group.subs.map((sub) => (

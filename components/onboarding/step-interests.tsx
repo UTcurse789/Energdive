@@ -67,7 +67,7 @@ export default function StepInterests({
     const [loading, setLoading] = useState(true);
 
     // Per-community sub-community selections:
-    // Map<communityId, Set<subCommunityId>>
+    // Map<communityId, Set<number>>
     const [selectedCommunities, setSelectedCommunities] = useState<
         Map<number, Set<number>>
     >(new Map());
@@ -148,7 +148,7 @@ export default function StepInterests({
             if (next.has(communityId)) {
                 next.delete(communityId);
             } else {
-                next.set(communityId, new Set()); // no sub-community selected yet
+                next.set(communityId, new Set());
             }
             // Sync to form
             syncCommunitySelections(next);
@@ -159,16 +159,29 @@ export default function StepInterests({
     const toggleSubCommunity = (communityId: number, subCommunityId: number) => {
         setSelectedCommunities((prev) => {
             const next = new Map(prev);
-            const set = new Set(next.get(communityId) || []);
-            if (set.has(subCommunityId)) {
-                set.delete(subCommunityId);
+            const currentSet = next.get(communityId) || new Set();
+            const newSet = new Set(currentSet);
+
+            if (newSet.has(subCommunityId)) {
+                newSet.delete(subCommunityId);
             } else {
-                set.add(subCommunityId);
+                newSet.add(subCommunityId);
             }
-            next.set(communityId, set);
+
+            next.set(communityId, newSet);
             syncCommunitySelections(next);
             return next;
         });
+    };
+
+    const syncCommunitySelections = (map: Map<number, Set<number>>) => {
+        const selections: { communityId: number; subCommunityId: number }[] = [];
+        map.forEach((subSet, commId) => {
+            subSet.forEach((subId) => {
+                selections.push({ communityId: commId, subCommunityId: subId });
+            });
+        });
+        setValue("communitySelections", selections);
     };
 
     // ── Loading / error states ────────────────────────────────────
@@ -276,8 +289,8 @@ export default function StepInterests({
                                     type="button"
                                     onClick={() => toggleCommunity(community.id)}
                                     className={`px-4 py-2 rounded-full text-sm font-medium border transition-all flex items-center gap-2 ${isActive
-                                            ? "bg-[#0AB996]/10 border-[#0AB996] text-[#0AB996]"
-                                            : "bg-white border-zinc-200 text-zinc-600 hover:border-zinc-300"
+                                        ? "bg-[#0AB996]/10 border-[#0AB996] text-[#0AB996]"
+                                        : "bg-white border-zinc-200 text-zinc-600 hover:border-zinc-300"
                                         }`}
                                 >
                                     {isActive && <Check className="w-3.5 h-3.5" />}
@@ -289,7 +302,7 @@ export default function StepInterests({
 
                     {/* Sub-community multi-select (shown for each selected community) */}
                     {Array.from(selectedCommunities.entries()).map(
-                        ([communityId, subCommunityIds]) => {
+                        ([communityId, subCommunitySet]) => {
                             const community = communities.find(
                                 (c) => c.id === communityId
                             );
@@ -303,24 +316,26 @@ export default function StepInterests({
                                     exit={{ opacity: 0, height: 0 }}
                                     className="pl-4 border-l-2 border-[#0AB996]/30"
                                 >
-                                    <label className="block text-xs font-medium text-zinc-500 mb-1">
-                                        Sub-community for{" "}
-                                        <span className="text-[#0AB996]">{community.name}</span>
+                                    <label className="block text-xs font-medium text-zinc-500 mb-2">
+                                        Sub-communities for{" "}
+                                        <span className="text-[#0AB996]">{community.name}</span> (Select multiple)
                                     </label>
+
                                     <div className="flex flex-wrap gap-2">
                                         {community.sub_communities.map((sc) => {
-                                            const isSelected = subCommunityIds?.has(sc.id);
+                                            const isSelected = subCommunitySet.has(sc.id);
                                             return (
                                                 <button
                                                     key={sc.id}
                                                     type="button"
                                                     onClick={() => toggleSubCommunity(communityId, sc.id)}
-                                                    className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${isSelected
-                                                            ? "bg-[#0AB996] text-white border-[#0AB996] shadow-sm"
+                                                    className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all flex items-center gap-1.5 ${isSelected
+                                                            ? "bg-[#0AB996]/10 border-[#0AB996] text-[#0AB996]"
                                                             : "bg-white border-zinc-200 text-zinc-600 hover:border-zinc-300"
                                                         }`}
                                                 >
-                                                    {isSelected ? "✔ " : ""}{sc.name}
+                                                    {isSelected && <Check className="w-3 h-3" />}
+                                                    {sc.name}
                                                 </button>
                                             );
                                         })}

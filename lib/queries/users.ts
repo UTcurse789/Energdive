@@ -163,7 +163,9 @@ export async function getUserProfile(
 
         console.log(`[getUserProfile] Query for ${clerkId} returned ${userResult.rows.length} rows`);
 
-        if (userResult.rows.length === 0) return null;
+        if (userResult.rows.length === 0) {
+            return null;
+        }
 
         const user = userResult.rows[0];
 
@@ -187,41 +189,8 @@ export async function getUserProfile(
             communities: commResult.rows,
         } as UserProfile;
     } catch (error) {
-        console.error('Database connection failed in getUserProfile, using mock data:', error);
-
-        // Fallback to mock user profile
-        return {
-            id: 1,
-            clerk_id: clerkId,
-            email: 'demo@energdive.com',
-            first_name: 'Demo',
-            last_name: 'User',
-            phone: '+1234567890',
-            country: 'United States',
-            state: 'California',
-            job_title: 'Energy Analyst',
-            organization: 'Demo Organization',
-            onboarding_completed: true,
-            created_at: new Date().toISOString(),
-            industry_id: 1,
-            industry_name: 'Renewable Energy',
-            sub_industry_id: 1,
-            sub_industry_name: 'Solar Energy',
-            communities: [
-                {
-                    community_id: 1,
-                    community_name: 'Clean Energy',
-                    sub_community_id: 1,
-                    sub_community_name: 'Solar Technology'
-                },
-                {
-                    community_id: 2,
-                    community_name: 'Sustainability',
-                    sub_community_id: 3,
-                    sub_community_name: 'Green Building'
-                }
-            ]
-        };
+        console.error('getUserProfile failed:', error);
+        return null;
     }
 }
 

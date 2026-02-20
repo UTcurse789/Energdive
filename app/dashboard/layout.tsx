@@ -16,12 +16,9 @@ export default async function DashboardLayout({
     }
 
     // DB check — the single source of truth for onboarding status
-    console.log(`[DashboardLayout] Checking profile for Clerk ID: ${user.id}`);
     const profile = await getUserProfile(user.id);
-    console.log(`[DashboardLayout] Profile found: ${!!profile}`);
 
     if (!profile) {
-        console.log(`[DashboardLayout] No profile found, redirecting to /onboarding`);
         redirect("/onboarding");
     }
 

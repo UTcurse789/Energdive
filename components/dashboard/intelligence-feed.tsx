@@ -76,7 +76,7 @@ export function IntelligenceFeed() {
     }
 
     const items = data?.items || [];
-    const sectors = data?.sectors || [];
+    const sectors = Array.from(new Set(data?.sectors || []));
 
     if (items.length === 0) {
         return (
