@@ -108,10 +108,13 @@ export default function SettingsPage() {
     const handleSaveCommunities = async () => {
         setIsSaving(true);
         try {
+            const selections = pendingCommunities
+                .filter((p) => p.sub_community_id)
+                .map((p) => ({ communityId: p.community_id, subCommunityId: p.sub_community_id as number }));
             const res = await fetch("/api/user/update-profile", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ communities: pendingCommunities }),
+                body: JSON.stringify({ communitySelections: selections }),
             });
             if (!res.ok) throw new Error();
             await refreshProfile();
@@ -137,25 +140,31 @@ export default function SettingsPage() {
     };
 
     const toggleCommunity = (comm: MasterCommunity) => {
-        const exists = pendingCommunities.find((p) => p.community_id === comm.id);
-        if (exists) {
+        const hasAny = pendingCommunities.some((p) => p.community_id === comm.id);
+        if (hasAny) {
             setPendingCommunities((prev) => prev.filter((p) => p.community_id !== comm.id));
+            if (expandedComm === comm.id) setExpandedComm(null);
         } else {
-            setPendingCommunities((prev) => [
-                ...prev,
-                { community_id: comm.id, community_name: comm.name },
-            ]);
+            setExpandedComm(comm.id);
         }
     };
 
-    const setSubCommunity = (commId: number, sub: { id: number; name: string }) => {
-        setPendingCommunities((prev) =>
-            prev.map((p) =>
-                p.community_id === commId
-                    ? { ...p, sub_community_id: sub.id, sub_community_name: sub.name }
-                    : p
-            )
-        );
+    const toggleSubCommunity = (comm: MasterCommunity, sub: { id: number; name: string }) => {
+        setPendingCommunities((prev) => {
+            const exists = prev.some((p) => p.community_id === comm.id && p.sub_community_id === sub.id);
+            if (exists) {
+                return prev.filter((p) => !(p.community_id === comm.id && p.sub_community_id === sub.id));
+            }
+            return [
+                ...prev,
+                {
+                    community_id: comm.id,
+                    community_name: comm.name,
+                    sub_community_id: sub.id,
+                    sub_community_name: sub.name,
+                },
+            ];
+        });
     };
 
     const cardStyle = { background: "var(--dash-card)", border: "1px solid var(--dash-border)" };
@@ -288,8 +297,8 @@ export default function SettingsPage() {
                             <div>
                                 <div className="space-y-2 mb-5">
                                     {masterCommunities.map((mc) => {
-                                        const isSelected = pendingCommunities.some((p) => p.community_id === mc.id);
-                                        const pending = pendingCommunities.find((p) => p.community_id === mc.id);
+                                        const subsForComm = pendingCommunities.filter((p) => p.community_id === mc.id);
+                                        const isSelected = subsForComm.length > 0;
                                         const isExpanded = expandedComm === mc.id;
                                         return (
                                             <div key={mc.id}>
@@ -310,32 +319,34 @@ export default function SettingsPage() {
                                                         {isSelected && <Check size={12} />}
                                                     </div>
                                                     <span className="text-sm font-semibold flex-1" style={{ color: "var(--dash-text)" }}>{mc.name}</span>
-                                                    {isSelected && mc.sub_communities && mc.sub_communities.length > 0 && (
+                                                    {mc.sub_communities && mc.sub_communities.length > 0 && (
                                                         <button
                                                             onClick={(e) => { e.stopPropagation(); setExpandedComm(isExpanded ? null : mc.id); }}
                                                             className="text-xs flex items-center gap-1 px-2 py-1 rounded"
                                                             style={{ color: "var(--dash-accent)" }}
                                                         >
-                                                            Sub <ChevronDown size={11} className={`transition-transform ${isExpanded ? "rotate-180" : ""}`} />
-                                                        </button>
-                                                    )}
-                                                </div>
-                                                {isSelected && isExpanded && mc.sub_communities && (
+                                                        Sub <ChevronDown size={11} className={`transition-transform ${isExpanded ? "rotate-180" : ""}`} />
+                                                    </button>
+                                                )}
+                                            </div>
+                                                {mc.sub_communities && isExpanded && (
                                                     <div className="pl-10 pt-2 flex flex-wrap gap-2">
-                                                        {mc.sub_communities.map((sc) => (
-                                                            <button
-                                                                key={sc.id}
-                                                                onClick={() => setSubCommunity(mc.id, sc)}
-                                                                className="px-3 py-1.5 rounded-full text-xs font-semibold transition-all"
-                                                                style={
-                                                                    pending?.sub_community_id === sc.id
+                                                        {mc.sub_communities.map((sc) => {
+                                                            const selected = subsForComm.some((p) => p.sub_community_id === sc.id);
+                                                            return (
+                                                                <button
+                                                                    key={sc.id}
+                                                                    onClick={() => toggleSubCommunity(mc, sc)}
+                                                                    className="px-3 py-1.5 rounded-full text-xs font-semibold transition-all"
+                                                                    style={selected
                                                                         ? { background: "var(--dash-accent)", color: "#0A0A0B" }
                                                                         : { background: "var(--dash-surface-2)", color: "var(--dash-text-muted)", border: "1px solid var(--dash-border)" }
-                                                                }
-                                                            >
-                                                                {sc.name}
-                                                            </button>
-                                                        ))}
+                                                                    }
+                                                                >
+                                                                    {selected ? "✔ " : ""}{sc.name}
+                                                                </button>
+                                                            );
+                                                        })}
                                                     </div>
                                                 )}
                                             </div>

@@ -1,7 +1,6 @@
 "use client";
 
 import { useDashboard } from "@/components/dashboard/dashboard-shell";
-import { StatsRow } from "@/components/dashboard/stats-row";
 import { TrendsSidebar } from "@/components/dashboard/trends-sidebar";
 import { IntelligenceFeed } from "@/components/dashboard/intelligence-feed";
 
@@ -21,9 +20,6 @@ export default function DashboardPage() {
                     Your intelligence hub for energy industry insights
                 </p>
             </div>
-
-            {/* Stats */}
-            <StatsRow />
 
             {/* Main Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-7">
