@@ -99,28 +99,40 @@ export function LeftSidebar() {
                         >
                             Your Communities
                         </p>
-                        <ul className="space-y-1">
-                            {profile.communities.length > 0 ? (
-                                profile.communities.map((c) => (
-                                    <li
-                                        key={`${c.community_id}-${c.sub_community_id}`}
-                                        className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm hover:bg-white/5 transition-colors cursor-pointer"
-                                        style={{ color: "var(--dash-text-muted)" }}
-                                    >
-                                        <div
-                                            className="w-2 h-2 rounded-full shrink-0"
-                                            style={{ background: "var(--dash-teal)" }}
-                                        />
-                                        <span className="truncate">
-                                            {c.community_name}
-                                            <span className="mx-1" style={{ color: "var(--dash-text-dim)" }}>→</span>
-                                            <span className="font-medium" style={{ color: "var(--dash-text)" }}>
-                                                {c.sub_community_name}
+                        <ul className="space-y-4">
+                            {profile.communities.length > 0 ? (() => {
+                                const grouped = new Map<string, typeof profile.communities>();
+                                profile.communities.forEach((c) => {
+                                    const list = grouped.get(c.community_name) || [];
+                                    list.push(c);
+                                    grouped.set(c.community_name, list);
+                                });
+
+                                return Array.from(grouped.entries()).map(([name, children]) => (
+                                    <li key={name}>
+                                        <div className="flex items-center gap-2.5 mb-1.5 px-3">
+                                            <div
+                                                className="w-2 h-2 rounded-full shrink-0"
+                                                style={{ background: "var(--dash-teal)" }}
+                                            />
+                                            <span className="text-sm font-semibold truncate" style={{ color: "var(--dash-text)" }}>
+                                                {name}
                                             </span>
-                                        </span>
+                                        </div>
+                                        <ul className="space-y-0.5 ml-[19px] border-l pl-3" style={{ borderColor: "var(--dash-border-subtle)" }}>
+                                            {children.map((c) => (
+                                                <li
+                                                    key={`${c.community_id}-${c.sub_community_id}`}
+                                                    className="px-2 py-1 rounded text-xs transition-colors hover:bg-white/5 cursor-pointer truncate"
+                                                    style={{ color: "var(--dash-text-dim)" }}
+                                                >
+                                                    {c.sub_community_name || "General"}
+                                                </li>
+                                            ))}
+                                        </ul>
                                     </li>
-                                ))
-                            ) : (
+                                ));
+                            })() : (
                                 <li
                                     className="px-3 py-2 text-sm italic"
                                     style={{ color: "var(--dash-text-dim)" }}

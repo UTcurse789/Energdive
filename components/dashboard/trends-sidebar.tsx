@@ -268,59 +268,97 @@ function CommunityWidget({
                     No communities selected.
                 </p>
             ) : (
-                <div className="space-y-1.5 mb-4">
-                    {currentCommunities.map((c) => (
-                        <div key={`${c.community_id}-${c.sub_community_id}`}>
-                            <div className="flex items-center justify-between rounded-lg px-3 py-2.5 group" style={{ background: "var(--dash-surface-2)" }}>
-                                <div className="min-w-0">
-                                    <p className="text-sm font-semibold" style={{ color: "var(--dash-text)" }}>{c.community_name}</p>
-                                    <p className="text-[10px]" style={{ color: "var(--dash-text-dim)" }}>{c.sub_community_name}</p>
+                <div className="space-y-3 mb-4">
+                    {(() => {
+                        const grouped = new Map<string, typeof currentCommunities>();
+                        currentCommunities.forEach((c) => {
+                            const list = grouped.get(c.community_name) || [];
+                            list.push(c);
+                            grouped.set(c.community_name, list);
+                        });
+
+                        return Array.from(grouped.entries()).map(([name, children]) => (
+                            <div key={name} className="rounded-lg overflow-hidden" style={{ background: "var(--dash-surface-2)" }}>
+                                {/* Group Header */}
+                                <div className="px-3 py-2 border-b" style={{ borderColor: "var(--dash-border-subtle)" }}>
+                                    <p className="text-sm font-semibold" style={{ color: "var(--dash-text)" }}>{name}</p>
                                 </div>
-                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    {/* Edit button */}
-                                    <button
-                                        onClick={() => startEdit(c)}
-                                        disabled={saving}
-                                        className="p-1 rounded transition-colors hover:bg-[var(--dash-accent-dim)]"
-                                        style={{ color: "var(--dash-accent)" }}
-                                        title="Edit sub-community"
-                                    >
-                                        <Pencil size={12} />
-                                    </button>
-                                    {/* Remove button */}
-                                    <button
-                                        onClick={() => handleRemove(c.community_id)}
-                                        disabled={saving}
-                                        className="p-1 rounded transition-colors hover:bg-red-500/10"
-                                        style={{ color: "var(--dash-text-dim)" }}
-                                        title="Remove community"
-                                    >
-                                        <X size={13} />
-                                    </button>
+                                {/* Children */}
+                                <div>
+                                    {children.map((c) => (
+                                        <div key={`${c.community_id}-${c.sub_community_id}`} className="border-b last:border-0" style={{ borderColor: "var(--dash-border-subtle)" }}>
+                                            <div className="flex items-center justify-between px-3 py-2 group hover:bg-black/5 transition-colors">
+                                                <div className="min-w-0">
+                                                    <p className="text-xs" style={{ color: "var(--dash-text-dim)" }}>
+                                                        {c.sub_community_name || "General"}
+                                                    </p>
+                                                </div>
+                                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    {/* Edit button */}
+                                                    <button
+                                                        onClick={() => startEdit(c)}
+                                                        disabled={saving}
+                                                        className="p-1 rounded transition-colors hover:bg-[var(--dash-accent-dim)]"
+                                                        style={{ color: "var(--dash-accent)" }}
+                                                        title="Edit sub-community"
+                                                    >
+                                                        <Pencil size={12} />
+                                                    </button>
+                                                    {/* Remove button */}
+                                                    <button
+                                                        onClick={() => handleRemove(c.community_id)}
+                                                        disabled={saving}
+                                                        className="p-1 rounded transition-colors hover:bg-red-500/10"
+                                                        style={{ color: "var(--dash-text-dim)" }}
+                                                        title="Remove community"
+                                                    >
+                                                        <X size={13} />
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            {/* Inline edit: change sub-community */}
+                                            {editingId === c.community_id && (
+                                                <div className="flex items-center gap-2 p-2 bg-black/20">
+                                                    <div className="relative flex-1">
+                                                        <select
+                                                            value={editSubId ?? ""}
+                                                            onChange={(e) => setEditSubId(Number(e.target.value) || null)}
+                                                            className="w-full appearance-none rounded-lg px-3 py-2 text-xs outline-none pr-7"
+                                                            style={{ background: "var(--dash-surface)", border: "1px solid var(--dash-border)", color: "var(--dash-text)" }}
+                                                        >
+                                                            <option value="">Select sub-community...</option>
+                                                            {editingCommObj?.sub_communities.map((sc) => (
+                                                                <option key={sc.id} value={sc.id}>{sc.name}</option>
+                                                            ))}
+                                                        </select>
+                                                        <ChevronDown size={11} className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: "var(--dash-text-dim)" }} />
+                                                    </div>
+                                                    <button
+                                                        onClick={() => handleEditSave(c.community_id)}
+                                                        disabled={!editSubId || saving}
+                                                        className="p-2 rounded-lg transition-colors disabled:opacity-40"
+                                                        style={{ background: "var(--dash-accent)", color: "#0A0A0B" }}
+                                                        title="Save"
+                                                    >
+                                                        <Check size={13} />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => { setEditingId(null); setEditSubId(null); }}
+                                                        className="p-2 rounded-lg transition-colors"
+                                                        style={{ background: "var(--dash-surface)", color: "var(--dash-text-dim)", border: "1px solid var(--dash-border)" }}
+                                                        title="Cancel"
+                                                    >
+                                                        <X size={13} />
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
                                 </div>
                             </div>
-                            <div className="flex flex-wrap gap-2">
-                                {group.subs.map((sub) => (
-                                    <span
-                                        key={sub.id}
-                                        className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold"
-                                        style={{ background: "var(--dash-surface)", border: "1px solid var(--dash-border)", color: "var(--dash-text)" }}
-                                    >
-                                        {sub.name}
-                                        <button
-                                            onClick={() => handleRemove(communityId, sub.id)}
-                                            disabled={saving}
-                                            className="p-0.5 rounded hover:bg-red-500/10"
-                                            style={{ color: "var(--dash-text-dim)" }}
-                                            title="Remove sub-community"
-                                        >
-                                            <X size={11} />
-                                        </button>
-                                    </span>
-                                ))}
-                            </div>
-                        </div>
-                    ))}
+                        ));
+                    })()}
                 </div>
             )}
 

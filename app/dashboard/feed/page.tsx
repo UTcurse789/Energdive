@@ -29,16 +29,12 @@ export default function IntelligencePage() {
     const { profile, feedKey } = useDashboard();
     const communities = profile.communities || [];
 
-    // Deduplicate communities (user may have multiple sub-communities under same community)
-    const uniqueCommunities = Array.from(
-        new Map(communities.map((c) => [c.community_id, c])).values()
-    );
-
-    // Dynamic tabs from unique community names
-    const tabs = uniqueCommunities.length > 0
+    // Dynamic tabs from user's communities (deduplicated by name)
+    const uniqueCommunityNames = [...new Set(communities.map((c) => c.community_name))];
+    const tabs = uniqueCommunityNames.length > 0
         ? [
             { id: "__all__", label: "All Sectors" },
-            ...uniqueCommunities.map((c) => ({ id: c.community_name, label: c.community_name })),
+            ...uniqueCommunityNames.map((name) => ({ id: name, label: name })),
         ]
         : [{ id: "__all__", label: "All Sectors" }];
 
@@ -199,9 +195,9 @@ export default function IntelligencePage() {
                                                 >
                                                     <Lock size={8} /> Early Access
                                                 </span>
-                                                {item.allSectors.slice(0, 2).map((s) => (
+                                                {item.allSectors.slice(0, 2).map((s, idx) => (
                                                     <span
-                                                        key={s}
+                                                        key={`${s}-${idx}`}
                                                         className="text-[9px] font-semibold px-2 py-0.5 rounded-full"
                                                         style={{ background: "rgba(161,161,170,0.1)", color: "var(--dash-text-dim)" }}
                                                     >
