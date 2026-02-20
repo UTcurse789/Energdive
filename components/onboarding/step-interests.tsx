@@ -87,6 +87,14 @@ export default function StepInterests({
         },
     });
 
+    const syncCommunitySelections = (map: Map<number, Set<number>>) => {
+        const selections: { communityId: number; subCommunityId: number }[] = [];
+        map.forEach((subIds, commId) => {
+            subIds.forEach((subId) => selections.push({ communityId: commId, subCommunityId: subId }));
+        });
+        setValue("communitySelections", selections);
+    };
+
     // ── Load master data ──────────────────────────────────────────
     useEffect(() => {
         async function load() {
@@ -106,6 +114,17 @@ export default function StepInterests({
         }
         load();
     }, []);
+
+    // Seed selections from defaults (when user navigates back)
+    useEffect(() => {
+        const map = new Map<number, Set<number>>();
+        (defaultValues.communitySelections || []).forEach((sel) => {
+            if (!map.has(sel.communityId)) map.set(sel.communityId, new Set());
+            map.get(sel.communityId)!.add(sel.subCommunityId);
+        });
+        setSelectedCommunities(map);
+        syncCommunitySelections(map);
+    }, [defaultValues.communitySelections]);
 
     // ── Industry cascade ──────────────────────────────────────────
     const selectedIndustryId = watch("industryId");
@@ -281,7 +300,7 @@ export default function StepInterests({
                         })}
                     </div>
 
-                    {/* Sub-community cascaded selects (shown for each selected community) */}
+                    {/* Sub-community multi-select (shown for each selected community) */}
                     {Array.from(selectedCommunities.entries()).map(
                         ([communityId, subCommunitySet]) => {
                             const community = communities.find(

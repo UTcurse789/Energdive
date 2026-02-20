@@ -29,11 +29,16 @@ export default function IntelligencePage() {
     const { profile, feedKey } = useDashboard();
     const communities = profile.communities || [];
 
-    // Dynamic tabs from user's communities
-    const tabs = communities.length > 0
+    // Deduplicate communities (user may have multiple sub-communities under same community)
+    const uniqueCommunities = Array.from(
+        new Map(communities.map((c) => [c.community_id, c])).values()
+    );
+
+    // Dynamic tabs from unique community names
+    const tabs = uniqueCommunities.length > 0
         ? [
             { id: "__all__", label: "All Sectors" },
-            ...communities.map((c) => ({ id: c.community_name, label: c.community_name })),
+            ...uniqueCommunities.map((c) => ({ id: c.community_name, label: c.community_name })),
         ]
         : [{ id: "__all__", label: "All Sectors" }];
 
