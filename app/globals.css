@@ -57,36 +57,39 @@
 /* Black + Gold palette inspired by ENERGClub logo              */
 .dashboard-theme {
   /* Backgrounds */
-  --dash-bg:            #0A0A0B;
-  --dash-surface:       #121215;
-  --dash-surface-2:     #1A1A1F;
+  --dash-bg: #0A0A0B;
+  --dash-surface: #121215;
+  --dash-surface-2: #1A1A1F;
   --dash-surface-hover: #1E1E24;
-  --dash-card:          #16161B;
-  --dash-card-hover:    #1C1C23;
+  --dash-card: #16161B;
+  --dash-card-hover: #1C1C23;
 
   /* Gold accent (from logo) */
-  --dash-accent:        #C9A84C;
-  --dash-accent-hover:  #D4B568;
-  --dash-accent-dim:    rgba(201,168,76,0.12);
-  --dash-accent-glow:   rgba(201,168,76,0.25);
+  --dash-accent: #C9A84C;
+  --dash-accent-hover: #D4B568;
+  --dash-accent-dim: rgba(201, 168, 76, 0.12);
+  --dash-accent-glow: rgba(201, 168, 76, 0.25);
 
   /* Text */
-  --dash-text:          #F0EDE8;
-  --dash-text-muted:    #A8A29E;
-  --dash-text-dim:      #6B6660;
+  --dash-text: #F0EDE8;
+  --dash-text-muted: #A8A29E;
+  --dash-text-dim: #6B6660;
 
   /* Borders */
-  --dash-border:        #2A2A32;
+  --dash-border: #2A2A32;
   --dash-border-subtle: #1F1F26;
-  --dash-border-gold:   rgba(201,168,76,0.3);
+  --dash-border-gold: rgba(201, 168, 76, 0.3);
 
   /* Legacy teal kept for backward compat */
-  --dash-teal:          #C9A84C;
+  --dash-teal: #C9A84C;
 
   /* Layout */
-  --dash-header-h:      120px;
-  --dash-sidebar-w:     240px;
+  --dash-header-h: 120px;
+  --dash-sidebar-w: 240px;
 }
+
+
+
 
 @keyframes ticker {
   0% {
@@ -101,6 +104,8 @@
 .animate-ticker {
   animation: ticker 30s linear infinite;
 }
+
+
 
 @theme inline {
   --color-primary: var(--primary);

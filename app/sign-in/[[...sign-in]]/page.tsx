@@ -57,19 +57,14 @@ export default function SignInPage() {
                             socialButtonsBlockButtonText: "font-semibold text-zinc-600",
                             dividerLine: "bg-zinc-100",
                             formFieldInput: "border-zinc-200 focus:ring-2 focus:ring-[#E7BB6D]/20 focus:border-[#E7BB6D] transition-all",
+                            footer: "hidden",
+                            footerAction: "hidden",
+                            internal: "hidden"
                         }
                     }}
                     fallbackRedirectUrl="/dashboard"
                 />
             </motion.div>
-
-            {/* Subtle System Badge */}
-            <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-2">
-                <div className="w-1.5 h-1.5 bg-[#E7BB6D] rounded-full animate-pulse shadow-[0_0_8px_#E7BB6D]" />
-                <span className="text-[10px] uppercase tracking-[0.5em] text-zinc-400 font-bold">
-                    Secure Entry
-                </span>
-            </div>
         </div>
     );
 }
