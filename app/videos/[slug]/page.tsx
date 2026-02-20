@@ -5,13 +5,17 @@ import { notFound } from "next/navigation";
 import { BlocksRenderer, type BlocksContent } from '@strapi/blocks-react-renderer';
 import { ArrowLeft, Share2, Youtube, Clock, Calendar, Tag, User } from "lucide-react";
 
+function slugify(text: string): string {
+    return text.toLowerCase().trim().replace(/[^\w\s-]/g, "").replace(/[\s_]+/g, "-").replace(/-+/g, "-").replace(/^-+|-+$/g, "");
+}
+
 async function getVideoData(slug: string) {
     const baseUrl = process.env.NEXT_PUBLIC_STRAPI_URL || "http://localhost:1337";
 
     try {
         // CORRECTED: Added ${slug} to the template literal
         const res = await fetch(
-            `${baseUrl}/api/videos?filters[slug][$eq]=${slug}&populate=*`,
+            `${baseUrl}/api/videos?filters[slug][$eq]=${slug}&populate[0]=thumbnail&populate[1]=author.avatar&populate[2]=sectors`,
             { next: { revalidate: 60 } }
         );
 
@@ -19,7 +23,7 @@ async function getVideoData(slug: string) {
         const data = json.data;
 
         // Fetch recent videos for sidebar
-        const recentRes = await fetch(`${baseUrl}/api/videos?populate=*&pagination[limit]=5`);
+        const recentRes = await fetch(`${baseUrl}/api/videos?populate[0]=thumbnail&populate[1]=author.avatar&populate[2]=sectors&pagination[limit]=5`);
         const recentJson = await recentRes.json();
         const recentData = recentJson.data;
 
@@ -126,7 +130,9 @@ export default async function VideoDetailPage({ params }: { params: Promise<{ sl
                             </div>
                             <div>
                                 <span className="text-[10px] font-black text-teal-600 uppercase tracking-widest">Contributed By</span>
-                                <h3 className="text-xl font-bold text-gray-900 mb-2">{authorName}</h3>
+                                <Link href={`/author/${slugify(authorName)}`} className="block hover:opacity-80 transition-opacity">
+                                    <h3 className="text-xl font-bold text-gray-900 mb-2 hover:text-teal-600 transition-colors">{authorName}</h3>
+                                </Link>
                                 <p className="text-gray-500 text-sm leading-relaxed">
                                     The editorial unit of ENERGDIVE, tracking policy and innovation breakthroughs in the energy sector.
                                 </p>
@@ -150,24 +156,28 @@ export default async function VideoDetailPage({ params }: { params: Promise<{ sl
                                         : "/api/placeholder/30/30";
 
                                     return (
-                                        <Link key={item.id} href={`/videos/${item.slug}`} className="group block">
+                                        <div key={item.id} className="group">
                                             <div className="flex gap-4">
-                                                <div className="relative w-32 aspect-video rounded-xl overflow-hidden flex-0 border border-gray-200">
-                                                    <Image src={thumb} priority sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw" alt={item.title} fill className="object-cover group-hover:scale-110 transition-transform" />
-                                                </div>
+                                                <Link href={`/videos/${item.slug}`} className="block">
+                                                    <div className="relative w-32 aspect-video rounded-xl overflow-hidden flex-0 border border-gray-200">
+                                                        <Image src={thumb} priority sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw" alt={item.title} fill className="object-cover group-hover:scale-110 transition-transform" />
+                                                    </div>
+                                                </Link>
                                                 <div className="space-y-2">
-                                                    <h4 className="text-sm font-bold leading-snug group-hover:text-teal-600 transition-colors line-clamp-2">
-                                                        {item.title}
-                                                    </h4>
+                                                    <Link href={`/videos/${item.slug}`}>
+                                                        <h4 className="text-sm font-bold leading-snug group-hover:text-teal-600 transition-colors line-clamp-2">
+                                                            {item.title}
+                                                        </h4>
+                                                    </Link>
                                                     <div className="flex items-center gap-2">
                                                         <div className="relative w-5 h-5 rounded-full overflow-hidden">
                                                             <Image src={itemAuthorImg} alt={itemAuthor} fill className="object-cover" />
                                                         </div>
-                                                        <span className="text-[10px] font-bold text-gray-400">{itemAuthor}</span>
+                                                        <Link href={`/author/${slugify(itemAuthor)}`} className="text-[10px] font-bold text-gray-400 hover:text-teal-600 transition-colors">{itemAuthor}</Link>
                                                     </div>
                                                 </div>
                                             </div>
-                                        </Link>
+                                        </div>
                                     );
                                 })}
                             </div>

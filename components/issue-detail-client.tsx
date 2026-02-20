@@ -4,6 +4,7 @@ import React from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Issue } from "@/types";
+import { slugify } from "@/lib/utils";
 
 interface IssueDetailClientProps {
     issue: Issue;

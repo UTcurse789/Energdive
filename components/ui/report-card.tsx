@@ -5,7 +5,7 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 import { ArrowRight, FileText, Download } from "lucide-react";
 import { Article } from "@/types";
-import { cn } from "@/lib/utils";
+import { cn, slugify } from "@/lib/utils";
 
 export interface ReportCardProps {
     article: Article;
@@ -68,9 +68,9 @@ export function ReportCard({ article, className, variant = "default", baseUrl = 
                 <div className="pt-4 border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-between mt-auto">
                     <div className="flex items-center gap-3">
                         {article.author && (
-                            <div className="text-xs font-bold text-zinc-600 dark:text-zinc-400">
+                            <Link href={`/author/${slugify(article.author.name)}`} onClick={(e) => e.stopPropagation()} className="text-xs font-bold text-zinc-600 dark:text-zinc-400 hover:text-[#09B697] transition-colors">
                                 {article.author.name}
-                            </div>
+                            </Link>
                         )}
                         {/* {article.pdfSize && (
                             <span className="text-[10px] bg-zinc-100 dark:bg-zinc-800 text-zinc-500 px-2 py-0.5 rounded flex items-center gap-1">

@@ -7,6 +7,10 @@ import Link from "next/link";
 import { useEffect, useState, useCallback, useRef } from "react";
 import { ChevronLeft, ChevronRight, Clock, ArrowRight } from "lucide-react";
 
+function slugify(text: string): string {
+    return text.toLowerCase().trim().replace(/[^\w\s-]/g, "").replace(/[\s_]+/g, "-").replace(/-+/g, "-").replace(/^-+|-+$/g, "");
+}
+
 const STRAPI_BASE = "http://206.189.132.187:1337";
 
 function getImageUrl(article: any): string {
@@ -171,9 +175,9 @@ export function Hero() {
                                         <div className="w-12 h-12 rounded-full bg-[#1a4731] flex items-center justify-center text-white font-bold text-lg">
                                             {featured.author?.name?.charAt(0) || "T"}
                                         </div>
-                                        <span className="font-bold text-sm text-[#1a1a1a] leading-tight">
+                                        <Link href={`/author/${slugify(featured.author?.name || "team-energdive")}`} className="font-bold text-sm text-[#1a1a1a] leading-tight hover:text-[#09B697] transition-colors">
                                             {featured.author?.name || "Team EnergyDive"}
-                                        </span>
+                                        </Link>
                                     </div>
                                 </div>
                                 <div className="space-y-3">

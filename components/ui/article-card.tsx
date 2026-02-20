@@ -1,7 +1,10 @@
+"use client";
+
 import Link from "next/link";
 import Image from "next/image";
-import { cn } from "@/lib/utils";
+import { cn, slugify } from "@/lib/utils";
 import { Clock } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 import { Article } from "@/types";
 
@@ -12,8 +15,13 @@ interface ArticleCardProps {
 }
 
 export function ArticleCard({ article, className, variant = "vertical" }: ArticleCardProps) {
+    const router = useRouter();
+
     return (
-        <Link href={`/news/${article.slug}`} className={cn("group block h-full", className)}>
+        <div
+            onClick={() => router.push(`/news/${article.slug}`)}
+            className={cn("group block h-full cursor-pointer", className)}
+        >
             <article className={cn("flex flex-col h-full gap-4", variant === "horizontal" && "md:flex-row md:items-center")}>
                 {/* Image Container */}
                 <div className={cn(
@@ -57,9 +65,13 @@ export function ArticleCard({ article, className, variant = "vertical" }: Articl
                         <div className="mt-auto flex items-center justify-between text-xs text-muted-foreground">
                             <div className="flex items-center gap-2">
                                 {article.author && (
-                                    <>
-                                        <span>{article.author.name}</span>
-                                    </>
+                                    <Link
+                                        href={`/author/${slugify(article.author.name)}`}
+                                        onClick={(e) => e.stopPropagation()}
+                                        className="hover:text-[#09B697] transition-colors font-semibold relative z-10"
+                                    >
+                                        {article.author.name}
+                                    </Link>
                                 )}
                             </div>
                             <div className="flex items-center gap-1">
@@ -70,6 +82,6 @@ export function ArticleCard({ article, className, variant = "vertical" }: Articl
                     )}
                 </div>
             </article>
-        </Link>
+        </div>
     );
 }
