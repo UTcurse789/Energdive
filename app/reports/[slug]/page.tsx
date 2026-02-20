@@ -131,15 +131,15 @@ export default async function ArticlePage(props: PageProps) {
         article?.Excerpt?.[0]?.children?.[0]?.text || "";
 
     return (
-        <div className="min-h-screen bg-[#FDFDFD] font-sans text-zinc-900">
+        <div className="min-h-screen bg-[#FDFDFD] font-sans text-zinc-900 overflow-x-hidden">
 
             <Header />
 
-            <main className="pt-[60px] pb-32">
-                <article className="container mx-auto px-6 lg:px-12 max-w-6xl">
+            <main className="pt-[40px] sm:pt-[60px] pb-16 sm:pb-32">
+                <article className="container mx-auto px-4 sm:px-6 lg:px-12 max-w-6xl">
 
                     {/* TOP BAR */}
-                    <div className="flex justify-between mb-8">
+                    <div className="flex flex-wrap justify-between items-center gap-4 mb-6 sm:mb-8">
                         <Link
                             href="/reports"
                             className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 hover:text-[#00A651]"
@@ -159,28 +159,28 @@ export default async function ArticlePage(props: PageProps) {
                     </div>
 
                     {/* HEADER */}
-                    <header className="text-center mb-16">
-                        <span className="inline-block px-4 py-1.5 border border-[#00A651] text-[#00A651] text-[10px] font-black uppercase rounded-full mb-6">
+                    <header className="text-center mb-10 sm:mb-16">
+                        <span className="inline-block px-3 sm:px-4 py-1 sm:py-1.5 border border-[#00A651] text-[#00A651] text-[9px] sm:text-[10px] font-black uppercase rounded-full mb-4 sm:mb-6">
                             HSE & Sustainability Analysis
                         </span>
 
-                        <h1 className="text-4xl md:text-6xl lg:text-7xl font-black uppercase italic leading-[1.05] mb-10">
+                        <h1 className="text-2xl sm:text-4xl md:text-6xl lg:text-7xl font-black uppercase italic leading-[1.05] mb-6 sm:mb-10 px-2 sm:px-0">
                             {article.Title}
                         </h1>
 
-                        <div className="flex justify-center gap-8 text-[11px] font-bold text-zinc-400 uppercase">
-                            <span className="flex items-center gap-2">
-                                <Calendar className="w-4 h-4 text-[#00A651]" />
+                        <div className="flex flex-wrap justify-center gap-4 sm:gap-8 text-[10px] sm:text-[11px] font-bold text-zinc-400 uppercase">
+                            <span className="flex items-center gap-1.5 sm:gap-2">
+                                <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#00A651]" />
                                 {article.Date}
                             </span>
 
-                            <span className="flex items-center gap-2">
-                                <Clock className="w-4 h-4 text-[#00A651]" />
+                            <span className="flex items-center gap-1.5 sm:gap-2">
+                                <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#00A651]" />
                                 8 min read
                             </span>
 
-                            <span className="flex items-center gap-2 text-[#00A651]">
-                                <ShieldCheck className="w-4 h-4" />
+                            <span className="flex items-center gap-1.5 sm:gap-2 text-[#00A651]">
+                                <ShieldCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                                 ENCIS Verified
                             </span>
                         </div>
@@ -188,7 +188,7 @@ export default async function ArticlePage(props: PageProps) {
 
                     {/* HERO IMAGE */}
                     {imageUrl && (
-                        <div className="relative h-[400px] md:h-[600px] w-full rounded-2rem overflow-hidden shadow-2xl mb-24">
+                        <div className="relative h-[250px] sm:h-[400px] md:h-[600px] w-full rounded-xl sm:rounded-2xl overflow-hidden shadow-2xl mb-12 sm:mb-24">
                             <Image
                                 src={imageUrl}
                                 alt={article.Title}
@@ -200,10 +200,10 @@ export default async function ArticlePage(props: PageProps) {
                     )}
 
                     {/* CONTENT GRID */}
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-16">
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 sm:gap-16">
 
                         {/* SIDEBAR */}
-                        <aside className="lg:col-span-3 space-y-10">
+                        <aside className="lg:col-span-3 space-y-8 sm:space-y-10 order-2 lg:order-1">
 
                             {/* AUTHOR CARD */}
                             {author && (
@@ -248,7 +248,7 @@ export default async function ArticlePage(props: PageProps) {
                             )}
 
                             {/* DOWNLOAD CARD */}
-                            <div className="p-6 rounded-3xl bg-zinc-900 text-white">
+                            <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-zinc-900 text-white">
                                 <h4 className="text-[10px] font-black uppercase text-[#00A651] mb-4">
                                     Official Publication
                                 </h4>
@@ -268,11 +268,11 @@ export default async function ArticlePage(props: PageProps) {
                         </aside>
 
                         {/* MAIN CONTENT */}
-                        <div className="lg:col-span-9">
+                        <div className="lg:col-span-9 order-1 lg:order-2">
                             <div className="max-w-3xl">
 
                                 {excerpt && (
-                                    <div className="mb-16 p-10 bg-white border-l-4 border-[#00A651] rounded-r-3xl">
+                                    <div className="mb-10 sm:mb-16 p-5 sm:p-10 bg-white border-l-4 border-[#00A651] rounded-r-xl sm:rounded-r-3xl">
                                         <div className="flex items-center gap-2 text-[#00A651] mb-4">
                                             <BarChart3 className="w-5 h-5" />
                                             <span className="text-xs font-black uppercase">
@@ -280,7 +280,7 @@ export default async function ArticlePage(props: PageProps) {
                                             </span>
                                         </div>
 
-                                        <p className="text-2xl font-serif italic text-zinc-700">
+                                        <p className="text-lg sm:text-2xl font-serif italic text-zinc-700">
                                             {excerpt}
                                         </p>
                                     </div>

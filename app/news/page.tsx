@@ -76,14 +76,14 @@ export default function ArchitectEditorialPage() {
             <main className="pt-[80px]">
                 {/* 1. HERO BANNER */}
                 <section className="w-full py-12 md:py-20 bg-white border-b border-black">
-                    <div className="container mx-auto px-6 lg:px-12">
+                    <div className="container mx-auto px-4 sm:px-6 lg:px-12">
                         <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8">
                             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex-1">
                                 <div className="flex items-center gap-4 mb-6">
                                     <span className="w-12 h-[2px] bg-[#00A651]"></span>
                                     <span className="text-[10px] md:text-[12px] font-black uppercase tracking-[4px] text-gray-400 leading-none">Intelligence Portal 2026</span>
                                 </div>
-                                <h1 className="text-5xl md:text-7xl lg:text-[8vw] font-black tracking-tighter leading-[0.85] uppercase italic">
+                                <h1 className="text-3xl sm:text-5xl md:text-7xl lg:text-[8vw] font-black tracking-tighter leading-[0.85] uppercase italic">
                                     ENERGY <br />
                                     <span className="text-[#00A651] not-italic">DISCOURSE.</span>
                                 </h1>
@@ -98,7 +98,7 @@ export default function ArchitectEditorialPage() {
                 </section>
 
                 {/* 2. TICKER BAR */}
-                <div className="border-b border-gray-200 py-4 overflow-hidden sticky top-[80px] z-40 backdrop-blur-md bg-white/90">
+                <div className="border-b border-gray-200 py-4 overflow-hidden sticky top-[80px] z-40 backdrop-blur-md bg-white/90 hidden sm:block">
                     <div className="container mx-auto px-6 lg:px-12 flex items-center">
                         <div className="flex gap-16 items-center animate-marquee whitespace-nowrap text-[11px] font-bold text-gray-400 uppercase">
                             {articles.slice(0, 10).map((a, i) => (
@@ -110,7 +110,7 @@ export default function ArchitectEditorialPage() {
                     </div>
                 </div>
 
-                <div className="container mx-auto px-6 lg:px-12 py-16">
+                <div className="container mx-auto px-4 sm:px-6 lg:px-12 py-10 sm:py-16">
                     {/* 3. EDITORIAL GRID (8:4) */}
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 mb-24">
                         <div className="lg:col-span-8 group">

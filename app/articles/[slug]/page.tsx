@@ -89,7 +89,7 @@ export default async function ArticlePage(props: any) {
 
             <main className="pt-20 pb-24">
                 {/* ─── Breadcrumb ─── */}
-                <div className="container mx-auto max-w-7xl px-6 mb-8">
+                <div className="container mx-auto max-w-7xl px-4 sm:px-6 mb-6 sm:mb-8">
                     <nav className="flex items-center gap-1.5 text-xs text-gray-400 font-sans">
                         <Link href="/" className="hover:text-teal-600 transition-colors">Home</Link>
                         <ChevronRight className="h-3 w-3" />
@@ -99,7 +99,7 @@ export default async function ArticlePage(props: any) {
                     </nav>
                 </div>
 
-                <div className="container mx-auto px-6 grid grid-cols-1 lg:grid-cols-12 gap-12 max-w-7xl">
+                <div className="container mx-auto px-4 sm:px-6 grid grid-cols-1 lg:grid-cols-12 gap-8 sm:gap-12 max-w-7xl">
 
                     {/* ═══════════════ MAIN COLUMN ═══════════════ */}
                     <div className="lg:col-span-8">
@@ -116,12 +116,12 @@ export default async function ArticlePage(props: any) {
                         </div>
 
                         {/* Title */}
-                        <h1 className="text-4xl md:text-5xl lg:text-6xl font-serif font-bold leading-[1.08] tracking-tight text-gray-900 mb-6">
+                        <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-serif font-bold leading-[1.08] tracking-tight text-gray-900 mb-4 sm:mb-6">
                             {article.title}
                         </h1>
 
                         {/* Excerpt */}
-                        <p className="text-xl text-gray-500 font-serif leading-relaxed mb-8 border-l-4 border-teal-500 pl-5">
+                        <p className="text-base sm:text-xl text-gray-500 font-serif leading-relaxed mb-6 sm:mb-8 border-l-4 border-teal-500 pl-4 sm:pl-5">
                             {article.excerpt}
                         </p>
 

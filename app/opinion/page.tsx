@@ -63,7 +63,7 @@ export default function OpinionPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#FDFDFD] font-sans text-zinc-900">
+    <div className="min-h-screen bg-[#FDFDFD] font-sans text-zinc-900 overflow-x-hidden">
       <Header />
 
       <main className="relative pb-32">
@@ -85,7 +85,7 @@ export default function OpinionPage() {
               style={{ opacity }}
               className="max-w-5xl"
             >
-              <h1 className="text-6xl md:text-8xl lg:text-9xl font-black text-white leading-[0.85] uppercase mb-10">
+              <h1 className="text-4xl sm:text-6xl md:text-8xl lg:text-9xl font-black text-white leading-[0.85] uppercase mb-6 sm:mb-10">
                 Latest <br />
                 <span className="text-[#00A651] italic">
                   Opinions
@@ -108,10 +108,10 @@ export default function OpinionPage() {
           </div>
         </section>
 
-        <div className="container mx-auto px-6 lg:px-12 pt-20">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-12 pt-12 sm:pt-20">
 
           {/* GRID */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-y-20 gap-x-12">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-y-12 sm:gap-y-20 gap-x-8 sm:gap-x-12">
             {opinions.map((opinion) => (
               <motion.div
                 key={opinion.id}

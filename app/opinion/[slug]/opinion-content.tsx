@@ -31,9 +31,9 @@ export function OpinionContent({ opinion, recommended }: OpinionContentProps) {
             {/* Header / Navigation Spacer */}
             <div className="h-20" />
 
-            <article className="container mx-auto px-6 lg:px-12 py-12">
+            <article className="container mx-auto px-4 sm:px-6 lg:px-12 py-8 sm:py-12">
                 {/* 1. BREADCRUMBS & TOP ACTIONS */}
-                <div className="flex items-center justify-between mb-12 border-b border-zinc-100 pb-6">
+                <div className="flex items-center justify-between mb-8 sm:mb-12 border-b border-zinc-100 pb-4 sm:pb-6">
                     <Link
                         href="/opinion"
                         className="group flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 hover:text-[#00A651] transition-all"
@@ -52,7 +52,7 @@ export function OpinionContent({ opinion, recommended }: OpinionContentProps) {
                 </div>
 
                 {/* 2. HERO SECTION: Split Layout */}
-                <header className="grid grid-cols-1 lg:grid-cols-12 gap-16 mb-24 items-center">
+                <header className="grid grid-cols-1 lg:grid-cols-12 gap-8 sm:gap-16 mb-16 sm:mb-24 items-center">
                     <div className="lg:col-span-7 order-2 lg:order-1">
                         <motion.div
                             initial={{ opacity: 0, y: 20 }}
@@ -63,11 +63,11 @@ export function OpinionContent({ opinion, recommended }: OpinionContentProps) {
                                 {opinion.category || "Expert Opinion"}
                             </span>
 
-                            <h1 className="text-2xl md:text-3xl lg:text-4xl font-black tracking-tight text-zinc-900 leading-[1.15]">
+                            <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-black tracking-tight text-zinc-900 leading-[1.15]">
                                 {opinion.title}
                             </h1>
 
-                            <p className="text-base md:text-lg text-zinc-500 font-serif italic leading-relaxed border-l-4 border-zinc-100 pl-8">
+                            <p className="text-sm sm:text-base md:text-lg text-zinc-500 font-serif italic leading-relaxed border-l-4 border-zinc-100 pl-4 sm:pl-8">
                                 {opinion.excerpt}
                             </p>
 
@@ -84,7 +84,7 @@ export function OpinionContent({ opinion, recommended }: OpinionContentProps) {
                         <motion.div
                             initial={{ opacity: 0, scale: 0.95 }}
                             animate={{ opacity: 1, scale: 1 }}
-                            className="relative aspect-4/5 overflow-hidden rounded-2rem shadow-2xl bg-zinc-100"
+                            className="relative aspect-[4/5] overflow-hidden rounded-2xl shadow-2xl bg-zinc-100"
                         >
                             <Image
                                 src={opinion.featuredImage}
@@ -167,7 +167,7 @@ export function OpinionContent({ opinion, recommended }: OpinionContentProps) {
                         })}
 
                         {/* Author Spotlight Box */}
-                        <div className="mt-24 p-12 rounded-2rem border border-zinc-100 bg-zinc-50/50 flex flex-col md:flex-row gap-8 items-center not-prose">
+                        <div className="mt-16 sm:mt-24 p-6 sm:p-12 rounded-2xl border border-zinc-100 bg-zinc-50/50 flex flex-col sm:flex-row gap-6 sm:gap-8 items-center not-prose">
                             <div className="relative w-24 h-24 rounded-full overflow-hidden shrink-0 grayscale">
                                 <Image src={opinion.author.image || opinion.author.avatar || "/placeholder.jpg"} alt={opinion.author.name} fill className="object-cover" />
                             </div>
@@ -185,18 +185,18 @@ export function OpinionContent({ opinion, recommended }: OpinionContentProps) {
                 </div>
 
                 {/* 4. RECOMMENDED SECTION */}
-                <footer className="mt-40 pt-20 border-t border-zinc-100">
-                    <div className="flex items-end justify-between mb-16">
+                <footer className="mt-20 sm:mt-40 pt-12 sm:pt-20 border-t border-zinc-100">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-6 sm:gap-0 mb-10 sm:mb-16">
                         <div>
                             <span className="text-[10px] font-black uppercase tracking-[0.3em] text-[#00A651] mb-4 block">Continue Reading</span>
-                            <h3 className="text-4xl md:text-5xl font-black uppercase tracking-tighter italic">Related <br />Perspectives.</h3>
+                            <h3 className="text-3xl sm:text-4xl md:text-5xl font-black uppercase tracking-tighter italic">Related <br />Perspectives.</h3>
                         </div>
                         <Link href="/opinion" className="bg-black text-white px-8 py-4 rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-[#00A651] transition-all">
                             View All Opinions
                         </Link>
                     </div>
 
-                    <div className="grid grid-cols-1 p-10 md:grid-cols-3 gap-12">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 sm:gap-12 p-4 sm:p-10">
                         {recommended.map((item) => (
                             <Link key={item.id} href={`/opinion/${item.slug}`} className="group block">
                                 <div className="relative aspect-3/4 mb-8 overflow-hidden rounded-2xl bg-zinc-100">
@@ -216,7 +216,7 @@ export function OpinionContent({ opinion, recommended }: OpinionContentProps) {
                                         {item.title}
                                     </h4>
                                     <div className="pt-4 border-t border-zinc-100">
-                                        <Link href={`/author/${slugify(item.author.name)}`} onClick={(e) => e.stopPropagation()} className="text-[10px] font-black uppercase tracking-widest text-zinc-400 hover:text-[#00A651] transition-colors">{item.author.name}</Link>
+                                        <span role="link" tabIndex={0} onClick={(e) => { e.preventDefault(); e.stopPropagation(); window.location.href = `/author/${slugify(item.author.name)}`; }} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); window.location.href = `/author/${slugify(item.author.name)}`; } }} className="text-[10px] font-black uppercase tracking-widest text-zinc-400 hover:text-[#00A651] transition-colors cursor-pointer">{item.author.name}</span>
                                     </div>
                                 </div>
                             </Link>
