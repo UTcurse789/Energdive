@@ -57,6 +57,9 @@ export default function SignUpPage() {
                             dividerLine: "bg-zinc-100",
                             formFieldInput: "border-zinc-200 focus:ring-2 focus:ring-[#E7BB6D]/20 focus:border-[#E7BB6D] h-12 transition-all",
                             formFieldLabel: "text-zinc-700 font-medium ml-1",
+                            footer: "hidden",
+                            footerAction: "hidden",
+                            internal: "hidden"
                         }
                     }}
                     fallbackRedirectUrl="/onboarding"
