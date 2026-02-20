@@ -208,7 +208,7 @@ export default function IntelligencePage() {
 
                                             {/* Title */}
                                             <h3 className="text-base font-bold leading-snug mb-2" style={{ color: "var(--dash-text)" }}>
-                                                <span className="group-hover:text-[var(--dash-accent)] transition-colors">
+                                                <span className="group-hover:text-var(--dash-accent) transition-colors">
                                                     {item.title}
                                                 </span>
                                             </h3>
@@ -221,11 +221,11 @@ export default function IntelligencePage() {
                                             {/* Author */}
                                             <div className="flex items-center gap-2">
                                                 {item.authorAvatar ? (
-                                                    <div className="relative w-5 h-5 rounded-full overflow-hidden flex-shrink-0">
+                                                    <div className="relative w-5 h-5 rounded-full overflow-hidden flex-0">
                                                         <Image src={item.authorAvatar} alt={item.author} fill className="object-cover" />
                                                     </div>
                                                 ) : (
-                                                    <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: "var(--dash-surface-2)" }}>
+                                                    <div className="w-5 h-5 rounded-full flex items-center justify-center flex-0" style={{ background: "var(--dash-surface-2)" }}>
                                                         <User size={11} style={{ color: "var(--dash-text-dim)" }} />
                                                     </div>
                                                 )}
@@ -238,7 +238,7 @@ export default function IntelligencePage() {
 
                                         {/* Thumbnail */}
                                         {item.image && (
-                                            <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-lg overflow-hidden flex-shrink-0 self-start">
+                                            <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-lg overflow-hidden flex-0 self-start">
                                                 <Image
                                                     src={item.image}
                                                     alt={item.title}

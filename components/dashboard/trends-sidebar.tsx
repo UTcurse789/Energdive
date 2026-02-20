@@ -92,20 +92,20 @@ export function TrendsSidebar() {
                             <Link key={item.id} href={getLink(item)} className="block group">
                                 <div className="flex gap-2.5">
                                     <span
-                                        className="text-2xl font-black leading-none flex-shrink-0 w-6 mt-0.5"
+                                        className="text-2xl font-black leading-none shrink-0 w-6 mt-0.5"
                                         style={{ color: i === 0 ? "var(--dash-accent)" : "var(--dash-border)" }}
                                     >
                                         {i + 1}
                                     </span>
                                     <div className="min-w-0">
                                         <h4 className="text-sm font-semibold leading-snug line-clamp-2 mb-1.5 transition-colors" style={{ color: "var(--dash-text)" }}>
-                                            <span className="group-hover:text-[var(--dash-accent)] transition-colors">
+                                            <span className="group-hover:text-var(--dash-accent) transition-colors">
                                                 {item.title}
                                             </span>
                                         </h4>
                                         <div className="flex items-center gap-2">
                                             {item.authorAvatar ? (
-                                                <div className="relative w-4 h-4 rounded-full overflow-hidden flex-shrink-0">
+                                                <div className="relative w-4 h-4 rounded-full overflow-hidden shrink-0">
                                                     <Image src={item.authorAvatar} alt={item.author} fill className="object-cover" />
                                                 </div>
                                             ) : (
@@ -303,7 +303,7 @@ function CommunityWidget({
                                                     <button
                                                         onClick={() => startEdit(c)}
                                                         disabled={saving}
-                                                        className="p-1 rounded transition-colors hover:bg-[var(--dash-accent-dim)]"
+                                                        className="p-1 rounded transition-colors hover:bg-var(--dash-accent-dim)"
                                                         style={{ color: "var(--dash-accent)" }}
                                                         title="Edit sub-community"
                                                     >

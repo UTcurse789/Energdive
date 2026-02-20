@@ -78,7 +78,7 @@ export function DashboardHeader() {
                         style={{ color: "var(--dash-text-dim)" }}
                     >
                         <Bell size={20} />
-                        <span className="absolute top-0 right-0 w-2 h-2 bg-[var(--dash-accent)] rounded-full border-2"
+                        <span className="absolute top-0 right-0 w-2 h-2 bg-var(--dash-accent) rounded-full border-2"
                             style={{ borderColor: "var(--dash-surface)" }}
                         />
                     </button>
