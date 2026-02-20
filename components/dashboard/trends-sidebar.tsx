@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { FileBarChart2, Loader2, Plus, X, ChevronDown, User, Calendar, Pencil, Check } from "lucide-react";
+import { FileBarChart2, Loader2, Plus, X, ChevronDown, User, Calendar } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { useDashboard } from "@/components/dashboard/dashboard-shell";
@@ -164,51 +164,75 @@ function CommunityWidget({
     const [allCommunities, setAllCommunities] = useState<AvailableCommunity[]>([]);
     const [showAdd, setShowAdd] = useState(false);
     const [selectedComm, setSelectedComm] = useState<number | null>(null);
-    const [selectedSub, setSelectedSub] = useState<number | null>(null);
+    const [selectedSubs, setSelectedSubs] = useState<Set<number>>(new Set());
     const [saving, setSaving] = useState(false);
     const [loaded, setLoaded] = useState(false);
-    // Edit state: which community_id is being edited
-    const [editingId, setEditingId] = useState<number | null>(null);
-    const [editSubId, setEditSubId] = useState<number | null>(null);
 
     // Fetch all communities when we need them (add or edit)
     useEffect(() => {
-        if ((showAdd || editingId !== null) && !loaded) {
+        if (showAdd && !loaded) {
             fetch("/api/master/communities")
                 .then((r) => r.json())
                 .then((data) => { setAllCommunities(data); setLoaded(true); })
                 .catch(console.error);
         }
-    }, [showAdd, editingId, loaded]);
+    }, [showAdd, loaded]);
 
-    const alreadySelected = new Set(currentCommunities.map((c) => c.community_id));
-    const availableToAdd = allCommunities.filter((c) => !alreadySelected.has(c.id));
     const selectedCommObj = allCommunities.find((c) => c.id === selectedComm);
+    const existingPairs = new Set(currentCommunities.map((c) => `${c.community_id}-${c.sub_community_id}`));
+
+    const grouped = currentCommunities.reduce((acc, c) => {
+        if (!acc.has(c.community_id)) {
+            acc.set(c.community_id, { name: c.community_name, subs: [] as { id: number; name: string }[] });
+        }
+        acc.get(c.community_id)!.subs.push({ id: c.sub_community_id, name: c.sub_community_name });
+        return acc;
+    }, new Map<number, { name: string; subs: { id: number; name: string }[] }>());
+
+    const toggleSelectedSub = (subId: number) => {
+        setSelectedSubs((prev) => {
+            const next = new Set(prev);
+            if (next.has(subId)) next.delete(subId);
+            else next.add(subId);
+            return next;
+        });
+    };
 
     async function handleAdd() {
-        if (!selectedComm || !selectedSub) return;
+        if (!selectedComm || selectedSubs.size === 0) return;
         setSaving(true);
         try {
             const newSelections = [
                 ...currentCommunities.map((c) => ({ communityId: c.community_id, subCommunityId: c.sub_community_id })),
-                { communityId: selectedComm, subCommunityId: selectedSub },
+                ...Array.from(selectedSubs)
+                    .filter((subId) => !existingPairs.has(`${selectedComm}-${subId}`))
+                    .map((subId) => ({ communityId: selectedComm, subCommunityId: subId })),
             ];
+            if (newSelections.length === currentCommunities.length) {
+                setSaving(false);
+                setShowAdd(false);
+                setSelectedComm(null);
+                setSelectedSubs(new Set());
+                return;
+            }
             await fetch("/api/user/update-profile", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ communitySelections: newSelections }),
             });
             await onUpdate();
-            setShowAdd(false); setSelectedComm(null); setSelectedSub(null);
+            setShowAdd(false);
+            setSelectedComm(null);
+            setSelectedSubs(new Set());
         } catch (err) { console.error(err); }
         finally { setSaving(false); }
     }
 
-    async function handleRemove(communityId: number) {
+    async function handleRemove(communityId: number, subCommunityId: number) {
         setSaving(true);
         try {
             const newSelections = currentCommunities
-                .filter((c) => c.community_id !== communityId)
+                .filter((c) => !(c.community_id === communityId && c.sub_community_id === subCommunityId))
                 .map((c) => ({ communityId: c.community_id, subCommunityId: c.sub_community_id }));
             await fetch("/api/user/update-profile", {
                 method: "POST",
@@ -219,35 +243,6 @@ function CommunityWidget({
         } catch (err) { console.error(err); }
         finally { setSaving(false); }
     }
-
-    async function handleEditSave(communityId: number) {
-        if (!editSubId) return;
-        setSaving(true);
-        try {
-            // Replace the sub-community for this community, keep the rest unchanged
-            const newSelections = currentCommunities.map((c) => ({
-                communityId: c.community_id,
-                subCommunityId: c.community_id === communityId ? editSubId : c.sub_community_id,
-            }));
-            await fetch("/api/user/update-profile", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ communitySelections: newSelections }),
-            });
-            await onUpdate();
-            setEditingId(null);
-            setEditSubId(null);
-        } catch (err) { console.error(err); }
-        finally { setSaving(false); }
-    }
-
-    function startEdit(c: { community_id: number; sub_community_id: number }) {
-        setEditingId(c.community_id);
-        setEditSubId(c.sub_community_id);
-    }
-
-    // Get sub-communities for the community being edited
-    const editingCommObj = allCommunities.find((c) => c.id === editingId);
 
     return (
         <div className="rounded-xl p-5 shadow-sm" style={cardStyle}>
@@ -375,42 +370,51 @@ function CommunityWidget({
                     <div className="relative">
                         <select
                             value={selectedComm ?? ""}
-                            onChange={(e) => { setSelectedComm(Number(e.target.value) || null); setSelectedSub(null); }}
+                            onChange={(e) => {
+                                const nextVal = Number(e.target.value) || null;
+                                setSelectedComm(nextVal);
+                                setSelectedSubs(new Set());
+                            }}
                             className="w-full appearance-none rounded-lg px-3 py-2.5 text-sm outline-none pr-8"
                             style={{ background: "var(--dash-surface-2)", border: "1px solid var(--dash-border)", color: "var(--dash-text)" }}
                         >
                             <option value="">Select community...</option>
-                            {availableToAdd.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                            {allCommunities.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
                         </select>
                         <ChevronDown size={13} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: "var(--dash-text-dim)" }} />
                     </div>
 
                     {selectedCommObj && (
-                        <div className="relative">
-                            <select
-                                value={selectedSub ?? ""}
-                                onChange={(e) => setSelectedSub(Number(e.target.value) || null)}
-                                className="w-full appearance-none rounded-lg px-3 py-2.5 text-sm outline-none pr-8"
-                                style={{ background: "var(--dash-surface-2)", border: "1px solid var(--dash-border)", color: "var(--dash-text)" }}
-                            >
-                                <option value="">Select sub-community...</option>
-                                {selectedCommObj.sub_communities.map((sc) => <option key={sc.id} value={sc.id}>{sc.name}</option>)}
-                            </select>
-                            <ChevronDown size={13} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: "var(--dash-text-dim)" }} />
+                        <div className="flex flex-wrap gap-2">
+                            {selectedCommObj.sub_communities.map((sc) => {
+                                const isSelected = selectedSubs.has(sc.id);
+                                return (
+                                    <button
+                                        key={sc.id}
+                                        onClick={() => toggleSelectedSub(sc.id)}
+                                        className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${isSelected
+                                                ? "bg-[var(--dash-accent)] text-black border-[var(--dash-accent)]"
+                                                : "bg-[var(--dash-surface)] text-[var(--dash-text-muted)] border-[var(--dash-border)]"
+                                            }`}
+                                    >
+                                        {isSelected ? "✔ " : ""}{sc.name}
+                                    </button>
+                                );
+                            })}
                         </div>
                     )}
 
                     <div className="flex gap-2">
                         <button
                             onClick={handleAdd}
-                            disabled={!selectedComm || !selectedSub || saving}
+                            disabled={!selectedComm || selectedSubs.size === 0 || saving}
                             className="flex-1 py-2.5 rounded-lg text-sm font-bold transition-all disabled:opacity-40"
                             style={{ background: "var(--dash-accent)", color: "#0A0A0B" }}
                         >
                             {saving ? "Saving..." : "Add"}
                         </button>
                         <button
-                            onClick={() => { setShowAdd(false); setSelectedComm(null); setSelectedSub(null); }}
+                            onClick={() => { setShowAdd(false); setSelectedComm(null); setSelectedSubs(new Set()); }}
                             className="px-4 py-2.5 rounded-lg text-sm transition-colors"
                             style={{ background: "var(--dash-surface-2)", color: "var(--dash-text-muted)", border: "1px solid var(--dash-border)" }}
                         >
