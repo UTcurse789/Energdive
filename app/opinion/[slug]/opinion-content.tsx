@@ -169,7 +169,7 @@ export function OpinionContent({ opinion, recommended }: OpinionContentProps) {
                         {/* Author Spotlight Box */}
                         <div className="mt-24 p-12 rounded-2rem border border-zinc-100 bg-zinc-50/50 flex flex-col md:flex-row gap-8 items-center not-prose">
                             <div className="relative w-24 h-24 rounded-full overflow-hidden shrink-0 grayscale">
-                                <Image src={opinion.author.image} alt={opinion.author.name} fill className="object-cover" />
+                                <Image src={opinion.author.image || opinion.author.avatar || "/placeholder.jpg"} alt={opinion.author.name} fill className="object-cover" />
                             </div>
                             <div>
                                 <h4 className="text-xs font-black uppercase tracking-widest text-[#00A651] mb-2">About the Author</h4>

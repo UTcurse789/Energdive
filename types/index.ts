@@ -1,26 +1,44 @@
 export interface Author {
     name: string;
-    avatar: string;
+    avatar?: string;
+    image?: string; // Large portrait image for opinions
     role?: string; // e.g. "Senior Energy Analyst"
     bio?: string;
 }
 
+// export interface Article {
+//     id: string;
+//     title: string;
+//     slug: string;
+//     excerpt: string;
+//     content?: string;
+//     author?: Author;
+//     category: string;
+//     subCategory?: string;
+//     image: string;
+//     date: string;
+//     readTime: string;
+//     featured?: boolean;
+//     trending?: boolean;
+//     downloadUrl?: string; // New field for report download
+//     pdfSize?: string;     // New field for report size
+// }
+
 export interface Article {
-    id: string;
-    title: string;
+    id: number | string;
     slug: string;
+    href?: string;           // full route e.g. /opinion/some-slug
+    title: string;
     excerpt: string;
-    content?: string;
-    author?: Author;
-    category: string;
-    subCategory?: string;
+    author: Author | null;
     image: string;
+    contentType?: string | null;   // "Opinion", "News", etc.
+    sectors?: string[];
+    tags?: string[];
+    category: string;
     date: string;
     readTime: string;
-    featured?: boolean;
-    trending?: boolean;
-    downloadUrl?: string; // New field for report download
-    pdfSize?: string;     // New field for report size
+    content?: any;
 }
 
 export interface Sector {
@@ -29,6 +47,10 @@ export interface Sector {
     description?: string;
     heroImage?: string;
     subSectors?: string[];
+}
+export interface Section {
+    title: string;
+    articles: Article[];
 }
 
 export interface Event {
@@ -54,39 +76,50 @@ export interface MarketQuote {
     change: number;
 }
 
+// export interface Issue {
+//     id: string;
+//     title: string;
+//     slug: string;
+//     description: string;
+//     coverImage: string;
+//     date: string;
+//     pdfUrl?: string;
+//     month?: string;
+//     year?: string;
+//     volume?: string;
+//     number?: string;
+//     sections?: {
+//         title: string;
+//         articles: Article[];
+//     }[];
+// }
+
 export interface Issue {
-    id: string;
-    title: string;
+    id: number | string;
     slug: string;
+    title: string;
     description: string;
-    coverImage: string;
     date: string;
-    pdfUrl?: string;
-    month?: string;
-    year?: string;
+    month: string;
+    year: string;
     volume?: string;
     number?: string;
-    sections?: {
-        title: string;
-        articles: Article[];
-    }[];
+    coverImage: string;
+    sections: Section[];
 }
 
 export interface Opinion {
     id: string;
     title: string;
-    author: {
-        name: string;
-        role: string;
-        image: string; // Large portrait image
-        bio?: string;
-    };
+    author: Author;
     date: string;
     excerpt: string;
     content: any[];
     category?: string;
     slug: string;
     featuredImage: string;
+    image?: string;
+    readTime?: string;
 }
 
 export interface Video {

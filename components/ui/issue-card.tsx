@@ -46,7 +46,7 @@ export function IssueCard({ issue }: IssueCardProps) {
                         Read Now
                     </Link>
 
-                    {issue.pdfUrl && (
+                    {/* {issue.pdfUrl && (
                         <a
                             href={issue.pdfUrl}
                             className="p-2 bg-slate-50 hover:bg-teal-50 text-slate-400 hover:text-teal-600 rounded-full transition-colors group/btn border border-slate-200 hover:border-teal-200"
@@ -54,7 +54,7 @@ export function IssueCard({ issue }: IssueCardProps) {
                         >
                             <Download className="w-4 h-4" />
                         </a>
-                    )}
+                    )} */}
                 </div>
             </div>
         </div>

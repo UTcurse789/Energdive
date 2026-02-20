@@ -33,7 +33,7 @@ export function OpinionCard({ opinion, className, isLarge }: OpinionCardProps) {
                     isLarge ? "aspect-16/10" : "aspect-4/5"
                 )}>
                     <Image
-                        src={opinion.author.image}
+                        src={opinion.author.image || opinion.author.avatar || "/placeholder.jpg"}
                         alt={opinion.author.name}
                         fill
                         className="object-cover grayscale transition-all duration-1000 ease-in-out group-hover:grayscale-0 group-hover:scale-105"
@@ -69,7 +69,7 @@ export function OpinionCard({ opinion, className, isLarge }: OpinionCardProps) {
                 <div className="mt-auto pt-6 border-t border-zinc-100 flex items-center gap-3">
                     <div className="relative w-10 h-10 rounded-full overflow-hidden grayscale group-hover:grayscale-0 transition-all duration-700 border border-zinc-200">
                         <Image
-                            src={opinion.author.image}
+                            src={opinion.author.image || opinion.author.avatar || "/placeholder.jpg"}
                             alt={opinion.author.name}
                             fill
                             className="object-cover"
