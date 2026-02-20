@@ -69,10 +69,18 @@ export default async function OpinionDetailPage({
         : article?.FeaturedImage?.data?.attributes?.url
           ? `${STRAPI}${article.FeaturedImage.data.attributes.url}`
           : "/placeholder.jpg",
-
+    image:
+      article?.FeaturedImage?.url
+        ? `${STRAPI}${article.FeaturedImage.url}`
+        : "/placeholder.jpg",
+    readTime: "5 min read",
     author: {
       name: article?.author?.name,
       role: article?.author?.designation || "Contributor",
+      avatar:
+        article?.author?.avatar?.url
+          ? `${STRAPI}${article.author.avatar.url}`
+          : "/placeholder.jpg",
       image:
         article?.author?.avatar?.url
           ? `${STRAPI}${article.author.avatar.url}`
@@ -84,22 +92,32 @@ export default async function OpinionDetailPage({
   /* ---------- FORMAT RECOMMENDED ---------- */
 
   const recommended = recommendedRaw.map((item: any) => ({
-    id: item.id,
+    id: item.id.toString(),
     slug: item.slug,
     title: item.Title,
     category: "Opinion",
+    date: item.Date || "",
+    excerpt: item.Excerpt?.[0]?.children?.[0]?.text || "",
+    content: item.Content || [],
     featuredImage:
       item?.FeaturedImage?.url
         ? `${STRAPI}${item.FeaturedImage.url}`
         : item?.FeaturedImage?.data?.attributes?.url
           ? `${STRAPI}${item.FeaturedImage.data.attributes.url}`
           : "/placeholder.jpg",
+    image: item?.FeaturedImage?.url ? `${STRAPI}${item.FeaturedImage.url}` : "/placeholder.jpg",
+    readTime: "5 min read",
     author: {
       name: item?.author?.name,
+      avatar:
+        item?.author?.avatar?.url
+          ? `${STRAPI}${item.author.avatar.url}`
+          : "/placeholder.jpg",
       image:
         item?.author?.avatar?.url
           ? `${STRAPI}${item.author.avatar.url}`
           : "/placeholder.jpg",
+      role: item?.author?.designation || "Contributing Analyst",
     },
   }));
 

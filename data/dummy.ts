@@ -1,7 +1,7 @@
 
 
 
-import { Article, Sector, Event, Opinion, Issue, Video } from "@/types";
+import { Article, Event, Opinion, Issue, Video, Sector } from "@/types";
 
 
 export const SECTORS: Sector[] = [
@@ -80,14 +80,9 @@ export const ARTICLES: Article[] = [
         content: "Full article content here...",
         author: { name: "Sarah Jenkings", avatar: "https://i.pravatar.cc/150?u=sarah", bio: "Senior Energy Analyst covering APAC markets." },
         category: "Oil & Gas",
-        subCategory: "Upstream",
         image: "https://images.unsplash.com/photo-1473341304170-971dccb5ac1e?auto=format&fit=crop&q=80&w=1000",
         date: "Feb 10, 2026",
         readTime: "5 min read",
-        featured: true,
-        trending: true,
-        downloadUrl: "https://encis.in/report-on-the-next-frontier-advancing-hse-to-achieve-global-sdgs.html",
-        pdfSize: "4.2 MB",
     },
     {
         id: "6",
@@ -96,7 +91,6 @@ export const ARTICLES: Article[] = [
         excerpt: "The cartel agrees to maintain current production ceilings amid softening global demand signals.",
         author: { name: "Ahmed Khalil", avatar: "https://i.pravatar.cc/150?u=ahmed", bio: "MENA energy correspondent." },
         category: "Oil & Gas",
-        subCategory: "Upstream",
         image: "https://images.unsplash.com/photo-1513828583688-c52646db42da?auto=format&fit=crop&q=80&w=1000",
         date: "Feb 8, 2026",
         readTime: "4 min read",
@@ -108,7 +102,6 @@ export const ARTICLES: Article[] = [
         excerpt: "Federal regulators pause approvals for three Gulf Coast facilities pending updated climate impact assessments.",
         author: { name: "Sarah Jenkings", avatar: "https://i.pravatar.cc/150?u=sarah", bio: "Senior Energy Analyst." },
         category: "Oil & Gas",
-        subCategory: "LNG",
         image: "https://images.unsplash.com/photo-1581092160562-40aa08e78837?auto=format&fit=crop&q=80&w=1000",
         date: "Feb 6, 2026",
         readTime: "6 min read",
@@ -120,7 +113,6 @@ export const ARTICLES: Article[] = [
         excerpt: "IoT sensors and AI-driven leak detection are transforming how crude and gas are transported across continents.",
         author: { name: "David Ross", avatar: "https://i.pravatar.cc/150?u=david", bio: "Tech editor." },
         category: "Oil & Gas",
-        subCategory: "Midstream",
         image: "https://images.unsplash.com/photo-1586953208448-b95a79798f07?auto=format&fit=crop&q=80&w=1000",
         date: "Feb 4, 2026",
         readTime: "5 min read",
@@ -132,7 +124,6 @@ export const ARTICLES: Article[] = [
         excerpt: "Crack spreads hit multi-year highs as seasonal demand and reduced Russian supply tighten the market.",
         author: { name: "Elena M.", avatar: "https://i.pravatar.cc/150?u=elena", bio: "Asia markets correspondent." },
         category: "Oil & Gas",
-        subCategory: "Downstream",
         image: "https://images.unsplash.com/photo-1611273426858-450d8e3c9fce?auto=format&fit=crop&q=80&w=1000",
         date: "Feb 2, 2026",
         readTime: "4 min read",
@@ -146,7 +137,6 @@ export const ARTICLES: Article[] = [
         excerpt: "Supply chain bottlenecks and rising interest rates are cooling investor sentiment in the North Sea.",
         author: { name: "Elena M.", avatar: "https://i.pravatar.cc/150?u=elena", bio: "Europe correspondent." },
         category: "Transmission",
-        subCategory: "Grid Infrastructure",
         image: "https://images.unsplash.com/photo-1466611653911-95081537e5b7?auto=format&fit=crop&q=80&w=1000",
         date: "Feb 9, 2026",
         readTime: "4 min read",
@@ -158,7 +148,6 @@ export const ARTICLES: Article[] = [
         excerpt: "Advanced metering infrastructure now covers the majority of American homes, enabling real-time demand response.",
         author: { name: "Michael Chen", avatar: "https://i.pravatar.cc/150?u=michael", bio: "Infrastructure analyst." },
         category: "Distribution",
-        subCategory: "Smart Grid",
         image: "https://images.unsplash.com/photo-1558346490-a72e53ae2d4f?auto=format&fit=crop&q=80&w=1000",
         date: "Feb 7, 2026",
         readTime: "5 min read",
@@ -170,11 +159,9 @@ export const ARTICLES: Article[] = [
         excerpt: "Small modular reactors gain momentum as governments seek reliable baseload power for decarbonisation goals.",
         author: { name: "David Ross", avatar: "https://i.pravatar.cc/150?u=david", bio: "Tech editor." },
         category: "Power Generation",
-        subCategory: "Nuclear",
         image: "https://images.unsplash.com/photo-1591768793355-74d04bb6608f?auto=format&fit=crop&q=80&w=1000",
         date: "Feb 5, 2026",
         readTime: "7 min read",
-        trending: true,
     },
     {
         id: "12",
@@ -183,7 +170,6 @@ export const ARTICLES: Article[] = [
         excerpt: "Automated fault isolation and self-healing grid technology drastically improve reliability for rural communities.",
         author: { name: "Elena M.", avatar: "https://i.pravatar.cc/150?u=elena", bio: "Europe correspondent." },
         category: "Distribution",
-        subCategory: "Smart Grid",
         image: "https://images.unsplash.com/photo-1548337138-e87d889cc369?auto=format&fit=crop&q=80&w=1000",
         date: "Feb 3, 2026",
         readTime: "4 min read",
@@ -197,11 +183,9 @@ export const ARTICLES: Article[] = [
         excerpt: "Green hydrogen projects are stalling due to cost overruns. Is the dream of a hydrogen economy fading?",
         author: { name: "David Ross", avatar: "https://i.pravatar.cc/150?u=david", bio: "Tech editor specializing in clean energy innovations." },
         category: "New Energies",
-        subCategory: "Green Hydrogen",
         image: "https://images.unsplash.com/photo-1532601224476-15c79f2f7a51?auto=format&fit=crop&q=80&w=1000",
         date: "Feb 10, 2026",
         readTime: "8 min read",
-        trending: true,
     },
     {
         id: "5",
@@ -210,7 +194,6 @@ export const ARTICLES: Article[] = [
         excerpt: "Oversupply from Chinese manufacturers is driving down costs but squeezing margins for Western competitors.",
         author: { name: "Sarah Jenkings", avatar: "https://i.pravatar.cc/150?u=sarah", bio: "Senior Energy Analyst." },
         category: "Renewables",
-        subCategory: "Solar",
         image: "https://images.unsplash.com/photo-1509391366360-2e959784a276?auto=format&fit=crop&q=80&w=1000",
         date: "Feb 8, 2026",
         readTime: "3 min read",
@@ -222,7 +205,6 @@ export const ARTICLES: Article[] = [
         excerpt: "China, South Korea, and Japan lead an unprecedented build-out of floating and fixed-bottom turbines.",
         author: { name: "Ahmed Khalil", avatar: "https://i.pravatar.cc/150?u=ahmed" },
         category: "Renewables",
-        subCategory: "Wind",
         image: "https://images.unsplash.com/photo-1532601224476-15c79f2f7a51?auto=format&fit=crop&q=80&w=1000",
         date: "Feb 6, 2026",
         readTime: "5 min read",
@@ -234,11 +216,9 @@ export const ARTICLES: Article[] = [
         excerpt: "Lithium-iron-phosphate chemistry breakthroughs are making grid-scale storage economically viable worldwide.",
         author: { name: "Michael Chen", avatar: "https://i.pravatar.cc/150?u=michael", bio: "Climate researcher." },
         category: "Energy Storage",
-        subCategory: "BESS",
         image: "https://images.unsplash.com/photo-1620714223084-8fcacc6dfd8d?auto=format&fit=crop&q=80&w=1000",
         date: "Feb 4, 2026",
         readTime: "6 min read",
-        trending: true,
     },
 
     // ── Sustainability ───────────────────────────────────
@@ -249,7 +229,6 @@ export const ARTICLES: Article[] = [
         excerpt: "New report suggests CCS is critical for net-zero scenarios, but environmental groups remain skeptical.",
         author: { name: "Michael Chen", avatar: "https://i.pravatar.cc/150?u=michael", bio: "Climate policy researcher." },
         category: "Sustainability & Safety",
-        subCategory: "Carbon Markets",
         image: "https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&q=80&w=1000",
         date: "Feb 9, 2026",
         readTime: "6 min read",
@@ -261,11 +240,9 @@ export const ARTICLES: Article[] = [
         excerpt: "CBAM begins full implementation, forcing exporters to account for embedded emissions in steel, cement, and aluminium.",
         author: { name: "Elena M.", avatar: "https://i.pravatar.cc/150?u=elena", bio: "Europe correspondent." },
         category: "Sustainability & Safety",
-        subCategory: "Climate Policy",
         image: "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&q=80&w=1000",
         date: "Feb 7, 2026",
         readTime: "5 min read",
-        trending: true,
     },
     {
         id: "16",
@@ -274,7 +251,6 @@ export const ARTICLES: Article[] = [
         excerpt: "The International Sustainability Standards Board achieves near-universal adoption across 40+ jurisdictions.",
         author: { name: "Sarah Jenkings", avatar: "https://i.pravatar.cc/150?u=sarah", bio: "Senior Analyst." },
         category: "Sustainability & Safety",
-        subCategory: "ESG",
         image: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&q=80&w=1000",
         date: "Feb 5, 2026",
         readTime: "4 min read",
@@ -286,7 +262,6 @@ export const ARTICLES: Article[] = [
         excerpt: "A new analysis reveals that the vast majority of corporate climate commitments lack credible transition plans.",
         author: { name: "Michael Chen", avatar: "https://i.pravatar.cc/150?u=michael", bio: "Climate researcher." },
         category: "Sustainability & Safety",
-        subCategory: "Net Zero",
         image: "https://images.unsplash.com/photo-1497436072909-60f360e1d4b1?auto=format&fit=crop&q=80&w=1000",
         date: "Feb 3, 2026",
         readTime: "7 min read",
@@ -344,7 +319,6 @@ export const ISSUES: Issue[] = [
         date: "Jan 2026",
         month: "January",
         year: "2026",
-        pdfUrl: "#",
         volume: "105",
         number: "1",
         sections: [
@@ -408,19 +382,6 @@ export const ISSUES: Issue[] = [
                 ]
             }
         ]
-    },
-    {
-        id: "2",
-        title: "December 2025",
-        slug: "december-2025",
-        description: "Is nuclear energy making a comeback? We dive deep into SMRs and the future of baseload power.",
-        coverImage: "/current-magazine.jpg",
-        date: "Dec 2025",
-        month: "December",
-        year: "2025",
-        pdfUrl: "#",
-        volume: "104",
-        number: "12",
     },
 ];
 
