@@ -12,6 +12,7 @@ import {
   useTransform,
 } from "framer-motion";
 import { ArrowUpRight, ArrowRight } from "lucide-react";
+import { slugify } from "@/lib/utils";
 
 const STRAPI = process.env.NEXT_PUBLIC_STRAPI_URL;
 
@@ -170,9 +171,9 @@ export default function OpinionPage() {
                       )}
                     </div>
 
-                    <div className="text-[11px] font-black uppercase">
+                    <Link href={`/author/${slugify(opinion.authorName)}`} className="text-[11px] font-black uppercase hover:text-[#00A651] transition-colors">
                       {opinion.authorName}
-                    </div>
+                    </Link>
                   </div>
                 </div>
               </motion.div>

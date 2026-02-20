@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowUpRight } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, slugify } from "@/lib/utils";
 import { Opinion } from "@/types";
 
 
@@ -76,9 +76,9 @@ export function OpinionCard({ opinion, className, isLarge }: OpinionCardProps) {
                         />
                     </div>
                     <div>
-                        <div className="text-[11px] font-black uppercase tracking-wider text-zinc-900 leading-none mb-1">
+                        <Link href={`/author/${slugify(opinion.author.name)}`} onClick={(e) => e.stopPropagation()} className="text-[11px] font-black uppercase tracking-wider text-zinc-900 leading-none mb-1 hover:text-[#00A651] transition-colors">
                             {opinion.author.name}
-                        </div>
+                        </Link>
                         <div className="text-[10px] font-medium text-zinc-400 uppercase tracking-tighter">
                             {opinion.author.role || "Contributing Analyst"}
                         </div>

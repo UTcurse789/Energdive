@@ -14,6 +14,10 @@ import {
     BookmarkPlus,
 } from "lucide-react";
 
+function slugify(text: string): string {
+    return text.toLowerCase().trim().replace(/[^\w\s-]/g, "").replace(/[\s_]+/g, "-").replace(/-+/g, "-").replace(/^-+|-+$/g, "");
+}
+
 /* =========================
    TYPES
 ========================= */
@@ -227,9 +231,9 @@ export default async function ArticlePage(props: PageProps) {
                                             </div>
 
                                             <div>
-                                                <div className="font-bold">
+                                                <Link href={`/author/${slugify(author.name)}`} className="font-bold hover:text-[#00A651] transition-colors">
                                                     {author.name}
-                                                </div>
+                                                </Link>
                                                 <div className="text-xs text-zinc-500">
                                                     Editorial Author
                                                 </div>

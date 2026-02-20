@@ -4,6 +4,7 @@ import { StrapiData, ContentItem, getStrapiMedia } from "@/lib/strapi";
 import { Calendar, User, Tag as TagIcon } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { slugify } from "@/lib/utils";
 
 interface ContentCardProps {
     item: StrapiData<ContentItem>;
@@ -82,7 +83,7 @@ export function ContentCard({ item }: ContentCardProps) {
                                 <User size={14} className="text-gray-400" />
                             </div>
                         )}
-                        <span className="text-xs font-medium text-gray-700">{authorName}</span>
+                        <Link href={`/author/${slugify(authorName)}`} className="text-xs font-medium text-gray-700 hover:text-[#09B697] transition-colors relative z-10">{authorName}</Link>
                     </div>
 
                     {tags?.data && tags.data.length > 0 && (

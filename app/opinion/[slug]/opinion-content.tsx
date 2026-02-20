@@ -7,7 +7,7 @@ import { Linkedin, Twitter, Share2, ChevronLeft, Bookmark, Quote, ArrowUpRight }
 import { Button } from "@/components/ui/buttons";
 import { motion } from "framer-motion";
 import { Opinion } from "@/types";
-import { cn } from "@/lib/utils";
+import { cn, slugify } from "@/lib/utils";
 
 /* ---------- Strapi inline text renderer ---------- */
 function renderInlineChildren(children: any[]) {
@@ -173,7 +173,9 @@ export function OpinionContent({ opinion, recommended }: OpinionContentProps) {
                             </div>
                             <div>
                                 <h4 className="text-xs font-black uppercase tracking-widest text-[#00A651] mb-2">About the Author</h4>
-                                <h5 className="text-2xl font-black uppercase tracking-tighter mb-2">{opinion.author.name}</h5>
+                                <Link href={`/author/${slugify(opinion.author.name)}`} className="block hover:opacity-80 transition-opacity">
+                                    <h5 className="text-2xl font-black uppercase tracking-tighter mb-2 hover:text-[#00A651] transition-colors">{opinion.author.name}</h5>
+                                </Link>
                                 <p className="text-zinc-500 font-serif italic text-sm leading-relaxed">
                                     {opinion.author.role}. With over 15 years in energy forecasting, they provide critical analysis for institutional stakeholders and policy makers globally.
                                 </p>
@@ -214,7 +216,7 @@ export function OpinionContent({ opinion, recommended }: OpinionContentProps) {
                                         {item.title}
                                     </h4>
                                     <div className="pt-4 border-t border-zinc-100">
-                                        <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">{item.author.name}</p>
+                                        <Link href={`/author/${slugify(item.author.name)}`} onClick={(e) => e.stopPropagation()} className="text-[10px] font-black uppercase tracking-widest text-zinc-400 hover:text-[#00A651] transition-colors">{item.author.name}</Link>
                                     </div>
                                 </div>
                             </Link>

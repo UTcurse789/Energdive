@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { Issue } from "@/types";
+import { slugify } from "@/lib/utils";
 
 export function IssueDetailClient({ issue }: { issue: Issue }) {
     // Deep Brand Green for subtle anchors
@@ -53,7 +54,11 @@ export function IssueDetailClient({ issue }: { issue: Issue }) {
                                                         </p>
                                                     </Link>
                                                     <div className="font-sans text-[9px] uppercase tracking-widest font-bold text-gray-400 mt-2">
-                                                        {article.author?.name}
+                                                        {article.author?.name && (
+                                                            <Link href={`/author/${slugify(article.author.name)}`} className="hover:text-[#09B697] transition-colors">
+                                                                {article.author.name}
+                                                            </Link>
+                                                        )}
                                                     </div>
                                                 </div>
 

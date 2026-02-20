@@ -3,7 +3,9 @@
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Play, Eye, Calendar, Filter, Loader2 } from "lucide-react";
+import { slugify } from "@/lib/utils";
 
 // --- Types for our mapped data ---
 interface Video {
@@ -22,6 +24,7 @@ interface Video {
 }
 
 export default function VideosPage() {
+    const router = useRouter();
     const [videos, setVideos] = useState<Video[]>([]);
     const [loading, setLoading] = useState(true);
     const [activeCategory, setActiveCategory] = useState("All");
@@ -31,7 +34,7 @@ export default function VideosPage() {
             try {
                 // We populate author and sectors to get names and images
                 const baseUrl = process.env.NEXT_PUBLIC_STRAPI_URL || "http://localhost:1337";
-                const response = await fetch(`${baseUrl}/api/videos?populate=*`);
+                const response = await fetch(`${baseUrl}/api/videos?populate[0]=thumbnail&populate[1]=author.avatar&populate[2]=sectors`);
                 const { data } = await response.json();
 
                 const mappedData: Video[] = data.map((item: any) => {
@@ -110,7 +113,7 @@ export default function VideosPage() {
                 {/* Featured Video (Large Card) */}
                 {activeCategory === "All" && featuredVideo && (
                     <div className="py-8">
-                        <Link href={`/videos/${featuredVideo.slug}`} className="group block">
+                        <div onClick={() => router.push(`/videos/${featuredVideo.slug}`)} className="group block cursor-pointer">
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-0 bg-white rounded-3xl overflow-hidden shadow-xl border border-gray-100 hover:shadow-2xl transition-all duration-500">
                                 <div className="relative aspect-video lg:aspect-auto min-h-[400px]">
                                     <Image
@@ -141,13 +144,13 @@ export default function VideosPage() {
                                             <Image src={featuredVideo.author.avatar} alt={featuredVideo.author.name} fill className="object-cover" />
                                         </div>
                                         <div>
-                                            <p className="font-bold text-gray-900">{featuredVideo.author.name}</p>
+                                            <p className="font-bold text-gray-900"><Link href={`/author/${slugify(featuredVideo.author.name)}`} onClick={(e) => e.stopPropagation()} className="hover:text-teal-600 transition-colors">{featuredVideo.author.name}</Link></p>
                                             <p className="text-xs text-gray-400 uppercase tracking-tighter">{featuredVideo.date}</p>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                        </Link>
+                        </div>
                     </div>
                 )}
 
@@ -176,7 +179,7 @@ export default function VideosPage() {
                 {/* Video Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
                     {gridVideos.map((video) => (
-                        <Link key={video.id} href={`/videos/${video.slug}`} className="group block">
+                        <div key={video.id} onClick={() => router.push(`/videos/${video.slug}`)} className="group block cursor-pointer">
                             <div className="flex flex-col h-full bg-white rounded-2xl overflow-hidden border border-gray-100 hover:border-teal-100 transition-all">
                                 <div className="relative aspect-video overflow-hidden">
                                     <Image
@@ -206,11 +209,11 @@ export default function VideosPage() {
                                         <div className="relative w-8 h-8 rounded-full overflow-hidden bg-gray-100">
                                             <Image src={video.author.avatar} alt={video.author.name} fill className="object-cover" />
                                         </div>
-                                        <span className="text-xs font-bold text-gray-700">{video.author.name}</span>
+                                        <Link href={`/author/${slugify(video.author.name)}`} onClick={(e) => e.stopPropagation()} className="text-xs font-bold text-gray-700 hover:text-teal-600 transition-colors relative z-10">{video.author.name}</Link>
                                     </div>
                                 </div>
                             </div>
-                        </Link>
+                        </div>
                     ))}
                 </div>
 

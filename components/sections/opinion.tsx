@@ -5,6 +5,7 @@ import Image from "next/image";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { OPINIONS } from "@/data/dummy";
 import { Article, Opinion } from "@/types";
+import { slugify } from "@/lib/utils";
 
 interface OpinionSectionProps {
     items?: (Opinion | Article)[];
@@ -80,14 +81,14 @@ export function OpinionSection({ items }: OpinionSectionProps) {
                                 </p>
                             </div>
 
-                            <div className="flex flex-col">
+                            <Link href={`/author/${slugify(authorName)}`} className="flex flex-col hover:opacity-80 transition-opacity">
                                 <span className="font-black text-lg uppercase tracking-widest text-zinc-900">
                                     {authorName}
                                 </span>
                                 <span className="text-[10px] font-bold text-[#00A651] uppercase tracking-[3px] mt-1">
                                     {authorRole}
                                 </span>
-                            </div>
+                            </Link>
                         </div>
                     </div>
                 </div>
