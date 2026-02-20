@@ -123,7 +123,7 @@ export default function ReportsPage() {
               style={{ opacity }}
               className="max-w-5xl"
             >
-              <h1 className="text-6xl md:text-8xl lg:text-9xl font-black text-white leading-[0.85] uppercase mb-10">
+              <h1 className="text-4xl sm:text-6xl md:text-8xl lg:text-9xl font-black text-white leading-[0.85] uppercase mb-6 sm:mb-10">
                 Strategic <br />
                 <span className="text-[#00A651] italic">
                   Reports
@@ -148,7 +148,7 @@ export default function ReportsPage() {
 
         {/* FILTER BAR */}
         <section className="sticky top-[64px] z-40 bg-white border-b py-4">
-          <div className="container mx-auto px-6 lg:px-12 flex justify-between gap-6">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-12 flex flex-col sm:flex-row justify-between gap-4 sm:gap-6">
             <div className="flex gap-2">
               {categories.map((cat) => (
                 <button
@@ -182,7 +182,7 @@ export default function ReportsPage() {
         </section>
 
         {/* GRID */}
-        <section className="container mx-auto px-6 lg:px-12 py-20">
+        <section className="container mx-auto px-4 sm:px-6 lg:px-12 py-12 sm:py-20">
           <AnimatePresence mode="popLayout">
             <motion.div
               layout

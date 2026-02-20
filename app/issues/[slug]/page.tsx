@@ -40,6 +40,10 @@ function getContentRoute(typeOfContent: any): string {
         "editorial": "opinion",
         "analysis": "news",
         "feature": "news",
+        "articles": "articles",
+        "cover story": "articles",
+        "interview": "opinion",
+        "case study": "articles",
     };
 
     return routeMap[name] ?? "news";
@@ -51,7 +55,7 @@ async function getIssue(slug: string) {
     const { month, year } = parsed;
 
     // First fetch: list
-    const res = await fetch(`${STRAPI_URL}/api/issues?populate=*`, {
+    const res = await fetch(`${STRAPI_URL}/api/issues?populate[0]=CoverImage&populate[1]=contents&populate[2]=contents.type_of_content&populate[3]=contents.sectors&populate[4]=contents.author&populate[5]=contents.FeaturedImage`, {
         cache: "no-store",
     });
 
@@ -68,7 +72,7 @@ async function getIssue(slug: string) {
 
     // Second fetch: detail (USE ID, NOT documentId)
     const detailRes = await fetch(
-        `${STRAPI_URL}/api/issues/${item.id}?populate=*`,
+        `${STRAPI_URL}/api/issues/${item.id}?populate[0]=CoverImage&populate[1]=contents&populate[2]=contents.type_of_content&populate[3]=contents.sectors&populate[4]=contents.author&populate[5]=contents.FeaturedImage`,
         { cache: "no-store" }
     );
 
@@ -106,7 +110,9 @@ function mapIssue(item: any, slug: string): Issue {
                 articles: (item.contents ?? []).map((c: any) => {
                     const rawImage =
                         c.FeaturedImage?.[0]?.url ??
+                        c.FeaturedImage?.url ??
                         c.featuredImage?.[0]?.url ??
+                        c.featuredImage?.url ??
                         null;
                     const image = rawImage
                         ? rawImage.startsWith("http") ? rawImage : STRAPI_URL + rawImage
