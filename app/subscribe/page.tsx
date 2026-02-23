@@ -1,116 +1,156 @@
 "use client";
 
-import { Header } from "@/components/layout/header";
-import { Footer } from "@/components/layout/footer";
+import { useEffect } from "react";
+import Image from "next/image";
+import { ArrowUpRight, Globe, Users, Award } from "lucide-react";
+
+const STATS = [
+    { label: "Active Readers", value: "50K+", icon: Users },
+    { label: "Global Reach", value: "12+ Countries", icon: Globe },
+    { label: "Industry Awards", value: "08", icon: Award },
+];
+
+const WHY_SUBSCRIBE = [
+    { title: "Strategic Intelligence", desc: "Hard-hitting policy analysis and executive-level sector insights." },
+    { title: "Clean Tech Roadmap", desc: "Exclusive coverage of India's multi-gigawatt energy transformation." },
+    { title: "Executive Profiles", desc: "Conversations with the CEOs and Ministers driving the narrative." },
+    { title: "Quarterly Trends", desc: "Deep-dive data reports on solar, wind, and green hydrogen." },
+];
 
 export default function SubscribePage() {
-    // Zoho Form URL yahan replace karein
-    const ZOHO_FORM_URL = "https://forms.zohopublic.com/your_account/form/Subscription/formperma/YOUR_FORM_PERMALINK";
+
+    useEffect(() => {
+        try {
+            const containerId = "zf_div_CX7ORe1WkKQKOFusFv-6rEvYHtqmvqW9P4pP5XHOIGo";
+            const container = document.getElementById(containerId);
+
+            if (container && !container.querySelector("iframe")) {
+                const f = document.createElement("iframe");
+                let ifrmSrc = 'https://forms.zohopublic.in/itenmedia1/form/ENERGDIVEMagazineSubscriptionForm/formperma/CX7ORe1WkKQKOFusFv-6rEvYHtqmvqW9P4pP5XHOIGo?zf_rszfm=1';
+
+                f.src = ifrmSrc;
+                f.style.border = "none";
+                f.style.height = "1100px";
+                f.style.width = "100%";
+                f.style.transition = "all 0.5s ease";
+                f.setAttribute("aria-label", 'ENERGDIVE Magazine Subscription Form');
+
+                container.appendChild(f);
+
+                window.addEventListener('message', (event) => {
+                    const evntData = event.data;
+                    if (evntData && typeof evntData === "string") {
+                        const zf_ifrm_data = evntData.split("|");
+                        if (zf_ifrm_data.length >= 2) {
+                            const zf_perma = zf_ifrm_data[0];
+                            const zf_ifrm_ht_nw = (parseInt(zf_ifrm_data[1], 10) + 15) + "px";
+                            const iframe = container.querySelector("iframe");
+                            if (iframe && iframe.src.includes(zf_perma)) {
+                                iframe.style.height = zf_ifrm_ht_nw;
+                            }
+                        }
+                    }
+                }, false);
+            }
+        } catch (e) { console.error(e); }
+    }, []);
 
     return (
-        <div className="min-h-screen bg-white font-sans selection:bg-teal-50">
-            <Header />
+        <div className="min-h-screen bg-[#F1F3F6] text-slate-900 selection:bg-[#00A651]/20 font-sans">
 
-            {/* 1. HERO BANNER (Matches image_1b195d.jpg top section) */}
-            <div className="w-full h-[300px] bg-black relative flex items-center justify-center overflow-hidden">
-                {/* Background Image */}
-                <div
-                    className="absolute inset-0 bg-cover bg-center opacity-90"
-                    style={{ backgroundImage: "url('/advertise-breadrumb.jpg')" }}
-                />
-                {/* Dark overlay for better text visibility */}
-                <div className="absolute inset-0 bg-black/30" />
-                {/* Visual spot light effect */}
-                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[600px] h-[100px] bg-teal-500/20 blur-[100px]" />
+            {/* Header Section */}
+            <header className="relative bg-slate-950 pt-32 pb-48 px-6 overflow-hidden">
+                <div className="absolute inset-0 opacity-40">
+                    <Image src="/advertise-breadrumb.jpg" alt="Background" fill className="object-cover grayscale" />
+                </div>
+                <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:40px_40px]" />
+
+                <div className="relative z-10 max-w-7xl mx-auto">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded border border-[#00A651]/40 bg-[#00A651]/10 text-[#00D9B1] text-xs font-bold tracking-widest uppercase mb-6">
+                        Corporate Access
+                    </div>
+                    <h1 className="text-5xl md:text-8xl font-black text-white tracking-tighter leading-none mb-6">
+                        ENERGY <br /> <span className="text-[#00A651]">INTELLIGENCE.</span>
+                    </h1>
+                    <p className="max-w-2xl text-slate-400 text-lg md:text-xl font-light leading-relaxed">
+                        Join the ecosystem of decision-makers. ENERGDIVE delivers actionable intelligence
+                        to the leaders steering India's energy transformation.
+                    </p>
+                </div>
+            </header>
+
+            {/* Stats Bar */}
+            <div className="relative z-20 -mt-20 max-w-7xl mx-auto px-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-1 bg-white border border-slate-200 shadow-2xl rounded-xl overflow-hidden">
+                    {STATS.map((stat) => (
+                        <div key={stat.label} className="flex items-center gap-5 p-8 bg-white hover:bg-slate-50 transition-colors">
+                            <stat.icon size={28} className="text-[#00A651]" />
+                            <div>
+                                <div className="text-2xl font-bold text-slate-900">{stat.value}</div>
+                                <div className="text-xs font-bold text-slate-500 uppercase tracking-widest">{stat.label}</div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
             </div>
 
-            <main className="max-w-[1200px] mx-auto px-6 py-16">
-                <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_1fr] gap-16 items-start">
+            <main className="max-w-7xl mx-auto px-6 py-20">
+                <div className="grid grid-cols-1 xl:grid-cols-12 gap-16">
 
-                    {/* LEFT COLUMN: Content (Matches image_1b195d.jpg text) */}
-                    <div className="space-y-12">
-                        <section>
-                            <h2 className="text-4xl font-bold tracking-tight mb-4">Subscription</h2>
-                            <p className="text-xl text-teal-800 italic font-serif mb-6">
-                                Access insight that shapes India's energy future
-                            </p>
-                            <p className="text-gray-600 leading-relaxed text-lg">
-                                ENERGDIVE is more than a magazine—it is India's most trusted voice on energy transition,
-                                policy, technology, and sustainability. Every issue brings sharp analysis,
-                                real industry perspectives, and actionable intelligence for leaders shaping tomorrow.
-                            </p>
-                        </section>
+                    {/* Left Side: Restored Bold Styling */}
+                    <div className="xl:col-span-5">
+                        <h2 className="text-sm font-black uppercase tracking-[0.3em] text-[#00A651] mb-4">Subscription Benefits</h2>
+                        <h3 className="text-4xl font-bold text-slate-900 mb-10 tracking-tight">Stay Ahead of the Curve.</h3>
 
-                        <section>
-                            <h3 className="text-2xl font-bold mb-6">Why Subscribe?</h3>
-                            <ul className="space-y-4">
-                                {[
-                                    { title: "Credible Knowledge", desc: "Expert opinions, policy insights & sector intelligence." },
-                                    { title: "Future-Focused Content", desc: "Coverage decoding India's clean energy transformation." },
-                                    { title: "Leadership & Innovation", desc: "Stories of change-makers and pioneers." },
-                                    { title: "Monthly Engagement", desc: "Delivered to your doorstep and available digitally." },
-                                    { title: "Community Access", desc: "Connect with decision-makers across government and industry." }
-                                ].map((item, idx) => (
-                                    <li key={idx} className="flex items-start gap-3">
-                                        <span className="text-black mt-1.5">•</span>
-                                        <p className="text-gray-700">
-                                            <strong className="text-black">{item.title}:</strong> {item.desc}
-                                        </p>
-                                    </li>
-                                ))}
-                            </ul>
-                        </section>
+                        <div className="space-y-10">
+                            {WHY_SUBSCRIBE.map((item, idx) => (
+                                <div key={idx} className="relative pl-12">
+                                    <div className="absolute left-0 top-0 text-5xl font-black text-slate-100 -z-10 tracking-tighter">0{idx + 1}</div>
+                                    <h4 className="text-lg font-bold text-slate-900 mb-1">{item.title}</h4>
+                                    <p className="text-slate-600 leading-relaxed text-sm md:text-base">{item.desc}</p>
+                                </div>
+                            ))}
+                        </div>
 
-                        <section className="pt-8 border-t border-gray-100">
-                            <h3 className="text-2xl font-bold mb-4">The ENERGDIVE Advantage</h3>
-                            <p className="text-gray-600 leading-relaxed italic">
-                                A platform built on credibility, relevance, and influence—trusted by governments,
-                                corporates, investors, and innovators committed to a sustainable energy future.
-                            </p>
-                            <p className="mt-4 font-bold text-black uppercase tracking-widest text-xs">
-                                Join the movement shaping India's energy narrative.
-                            </p>
-                        </section>
+                        {/* Bulk Box Restored */}
+                        <div className="mt-16 p-8 rounded-2xl bg-slate-900 text-white relative overflow-hidden group">
+                            <h4 className="text-xl font-bold mb-2">Bulk & Institutional Access</h4>
+                            <p className="text-slate-400 text-sm mb-6">Equip your entire team with premium energy intelligence and regional reports.</p>
+                            <button className="flex items-center gap-2 text-[#00D9B1] text-xs font-black uppercase tracking-widest group-hover:gap-4 transition-all">
+                                Corporate Enquiry <ArrowUpRight size={16} />
+                            </button>
+                        </div>
                     </div>
 
-                    {/* RIGHT COLUMN: Zoho Form Box (Matches image_1b199f.jpg) */}
-                    <aside className="sticky top-28">
-                        <div className="bg-white border border-gray-100 shadow-[0_20px_50px_rgba(0,0,0,0.05)] p-3 rounded-sm">
-                            <h3 className="text-2xl font-bold mb-2">Online Subscription & Payment</h3>
-                            <p className="text-gray-500 text-sm mb-8">
-                                Subscribe to ENERGDIVE magazine instantly using our secure online subscription and payment form.
-                            </p>
+                    {/* Right Side: Advantage Block + Form with NO extra footer */}
+                    <div className="xl:col-span-7">
+                        <div className="space-y-8">
 
-                            {/* ZOHO FORM IFRAME CONTAINER */}
-                            <div className="min-h-[600px] w-full bg-gray-50 rounded-md flex flex-col items-center justify-center">
-                                {/* Option 1: Live Iframe */}
-                                <iframe
-                                    src="https://forms.zohopublic.in/itenmedia1/form/ENERGDIVEMagazineSubscriptionForm/formperma/CX7ORe1WkKQKOFusFv-6rEvYHtqmvqW9P4pP5XHOIGo"
-                                    className="w-full h-[600px] border-none"
-                                    title="Zoho Subscription Form"
-                                />
+                            {/* New Advantage Block as requested */}
+                            <div className="bg-white border-l-4 border-[#00A651] p-8 rounded-r-2xl shadow-sm">
+                                <h3 className="text-2xl font-bold text-slate-900 mb-3">The ENERGDIVE Advantage</h3>
+                                <p className="text-slate-600 leading-relaxed mb-4">
+                                    A platform built on credibility, relevance, and influence—trusted by governments,
+                                    corporates, investors, and innovators committed to a sustainable energy future.
+                                </p>
+                                <p className="font-bold text-[#00A651] text-sm tracking-tight uppercase">
+                                    Join the movement shaping India’s energy narrative.
+                                </p>
+                            </div>
 
-                                {/* Option 2: Fallback button agar iframe blocks ho */}
-                                <div className="mt-8 text-center border-t border-gray-100 pt-8 w-full">
-                                    <p className="text-[10px] uppercase tracking-widest text-gray-400 mb-4 font-bold">
-                                        For specific or bulk subscription enquiries
-                                    </p>
-                                    <a
-                                        href="https://forms.zohopublic.in/itenmedia1/form/ENERGDIVEMagazineSubscriptionForm/formperma/CX7ORe1WkKQKOFusFv-6rEvYHtqmvqW9P4pP5XHOIGo"
-                                        target="_blank"
-                                        className="inline-block bg-[#7D9446] hover:bg-[#6a7e3b] text-white px-10 py-3 rounded-md font-bold transition-colors"
-                                    >
-                                        Open Enquiry Form
-                                    </a>
+                            {/* Clean Form Card - No Footer, No Extra Space */}
+                            <div className="bg-white rounded-2xl border border-slate-200 shadow-xl overflow-hidden mb-0">
+                                <div className="p-2 md:p-6 pb-0"> {/* Bottom padding removed to avoid extra space */}
+                                    <div id="zf_div_CX7ORe1WkKQKOFusFv-6rEvYHtqmvqW9P4pP5XHOIGo">
+                                        {/* Zoho Form Injected Here */}
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </aside>
+                    </div>
 
                 </div>
             </main>
-
-            <Footer />
         </div>
     );
 }

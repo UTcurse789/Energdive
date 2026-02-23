@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Clock, Tag } from "lucide-react";
+import { Clock, Tag, Play, ArrowUpRight } from "lucide-react";
 import { TagBadge } from "@/components/ui/tag-badge";
 import { slugify } from "@/lib/utils";
 
@@ -169,9 +169,10 @@ export default async function TagPage({ params }: { params: Promise<{ slug: stri
     ]);
 
     return (
-        <div className="min-h-screen bg-[#fafafa]">
-            <section className="bg-zinc-950 text-white py-24 border-b border-zinc-800">
-                <div className="container mx-auto px-6 lg:px-16 max-w-[1400px]">
+        <div className="min-h-screen bg-[#f5f7fa] text-zinc-900">
+            <section className="relative overflow-hidden border-b border-zinc-800 bg-zinc-950 text-white py-20 md:py-24">
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_20%,rgba(0,166,81,0.3),transparent_40%),radial-gradient(circle_at_82%_0%,rgba(9,182,151,0.18),transparent_40%)]" />
+                <div className="container relative z-10 mx-auto px-6 lg:px-16 max-w-[1400px]">
                     <div className="flex items-center gap-3 mb-4">
                         <Tag size={14} className="text-[#00A651]" />
                         <span className="text-[10px] font-black text-[#00A651] uppercase tracking-[0.2em]">Tag</span>
@@ -180,44 +181,61 @@ export default async function TagPage({ params }: { params: Promise<{ slug: stri
                     <p className="text-zinc-400 mt-4 text-lg">
                         All content tagged with &ldquo;{tagName}&rdquo; - {articles.length + videos.length} items
                     </p>
+                    <div className="mt-8 flex flex-wrap gap-3">
+                        <span className="inline-flex items-center rounded-full border border-white/20 bg-white/5 px-4 py-2 text-[11px] font-bold uppercase tracking-wider">
+                            {articles.length} Articles
+                        </span>
+                        <span className="inline-flex items-center rounded-full border border-white/20 bg-white/5 px-4 py-2 text-[11px] font-bold uppercase tracking-wider">
+                            {videos.length} Videos
+                        </span>
+                    </div>
                 </div>
             </section>
 
             {articles.length > 0 && (
                 <section className="container mx-auto px-6 lg:px-16 max-w-[1400px] py-16">
-                    <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 mb-8 pb-4 border-b">
+                    <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 mb-8 pb-4 border-b border-zinc-200">
                         Articles & Content ({articles.length})
                     </h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-8">
                         {articles.map((item: any) => (
-                            <article key={item.id} className="group">
+                            <article
+                                key={item.id}
+                                className="group rounded-3xl border border-zinc-200/80 bg-white overflow-hidden shadow-[0_12px_34px_rgba(15,23,42,0.06)] hover:shadow-[0_20px_50px_rgba(15,23,42,0.12)] transition-all duration-300"
+                            >
                                 <Link href={getContentRoute(item)} className="block">
-                                    <div className="relative aspect-[16/10] rounded-xl overflow-hidden mb-4 bg-zinc-200">
+                                    <div className="relative aspect-[16/10] overflow-hidden bg-zinc-200">
                                         <Image
                                             src={item.image}
                                             alt={item.title}
                                             fill
                                             className="object-cover group-hover:scale-110 transition-transform duration-500"
                                         />
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-transparent" />
+                                        <div className="absolute top-4 right-4 rounded-full bg-white/90 p-2 opacity-0 translate-y-1 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300">
+                                            <ArrowUpRight className="w-4 h-4 text-zinc-900" />
+                                        </div>
                                     </div>
-                                    <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-[#00A651] mb-2">
-                                        <Clock size={10} />
-                                        <span>{item.date}</span>
-                                        {item.sector && (
-                                            <>
-                                                <span className="text-zinc-300">-</span>
-                                                <span className="text-zinc-400">{item.sector}</span>
-                                            </>
-                                        )}
+                                    <div className="p-5">
+                                        <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-[#00A651] mb-3">
+                                            <Clock size={10} />
+                                            <span>{item.date}</span>
+                                            {item.sector && (
+                                                <>
+                                                    <span className="text-zinc-300">-</span>
+                                                    <span className="text-zinc-500">{item.sector}</span>
+                                                </>
+                                            )}
+                                        </div>
+                                        <h3 className="text-xl font-serif font-bold leading-snug group-hover:text-[#00A651] transition-colors line-clamp-2">
+                                            {item.title}
+                                        </h3>
+                                        <p className="text-sm text-zinc-500 mt-3 line-clamp-3">{item.excerpt}</p>
                                     </div>
-                                    <h3 className="text-lg font-bold leading-snug group-hover:text-[#00A651] transition-colors line-clamp-2">
-                                        {item.title}
-                                    </h3>
-                                    <p className="text-sm text-zinc-500 mt-2 line-clamp-2">{item.excerpt}</p>
                                 </Link>
 
                                 {item.tags?.length > 0 && (
-                                    <div className="flex flex-wrap gap-1.5 mt-3">
+                                    <div className="flex flex-wrap gap-1.5 px-5 pb-5">
                                         {item.tags.slice(0, 3).map((tag: any) => (
                                             <TagBadge key={tag.slug} name={tag.name} slug={tag.slug} />
                                         ))}
@@ -230,29 +248,36 @@ export default async function TagPage({ params }: { params: Promise<{ slug: stri
             )}
 
             {videos.length > 0 && (
-                <section className="container mx-auto px-6 lg:px-16 max-w-[1400px] py-16 border-t border-zinc-100">
-                    <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 mb-8 pb-4 border-b">
+                <section className="container mx-auto px-6 lg:px-16 max-w-[1400px] py-16 border-t border-zinc-200">
+                    <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 mb-8 pb-4 border-b border-zinc-200">
                         Videos ({videos.length})
                     </h2>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-8">
                         {videos.map((video: any) => (
-                            <Link key={video.id} href={`/videos/${video.slug}`} className="group block">
-                                <div className="relative aspect-video rounded-xl overflow-hidden mb-3 bg-zinc-200">
-                                    <Image
-                                        src={video.thumbnail}
-                                        alt={video.title}
-                                        fill
-                                        className="object-cover group-hover:scale-110 transition-transform duration-500"
-                                    />
-                                    <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
-                                        <div className="w-12 h-12 bg-white/90 rounded-full flex items-center justify-center pl-1">
-                                            <div className="w-0 h-0 border-t-[6px] border-t-transparent border-l-[10px] border-l-red-600 border-b-[6px] border-b-transparent"></div>
+                            <article
+                                key={video.id}
+                                className="group rounded-3xl border border-zinc-200/80 bg-white overflow-hidden shadow-[0_12px_34px_rgba(15,23,42,0.06)] hover:shadow-[0_20px_50px_rgba(15,23,42,0.12)] transition-all duration-300"
+                            >
+                                <Link href={`/videos/${video.slug}`} className="block">
+                                    <div className="relative aspect-video overflow-hidden bg-zinc-200">
+                                        <Image
+                                            src={video.thumbnail}
+                                            alt={video.title}
+                                            fill
+                                            className="object-cover group-hover:scale-110 transition-transform duration-500"
+                                        />
+                                        <div className="absolute inset-0 bg-black/25 flex items-center justify-center">
+                                            <div className="w-12 h-12 bg-white/90 rounded-full flex items-center justify-center">
+                                                <Play className="w-5 h-5 fill-red-600 text-red-600 ml-0.5" />
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                                <h3 className="text-sm font-bold group-hover:text-[#00A651] transition-colors line-clamp-2">{video.title}</h3>
-                                <span className="text-[10px] text-zinc-400 mt-1 block">{video.date}</span>
-                            </Link>
+                                    <div className="p-5">
+                                        <h3 className="text-base font-bold group-hover:text-[#00A651] transition-colors line-clamp-2">{video.title}</h3>
+                                        <span className="text-[10px] text-zinc-400 mt-2 block uppercase tracking-widest">{video.date}</span>
+                                    </div>
+                                </Link>
+                            </article>
                         ))}
                     </div>
                 </section>

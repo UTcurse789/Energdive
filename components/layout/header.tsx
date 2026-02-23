@@ -10,11 +10,155 @@ import { SECTORS } from "@/data/dummy";
 import { motion, AnimatePresence } from "framer-motion";
 import { SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
 
+type MagazineIssue = {
+    id: number | string;
+    slug: string;
+    title: string;
+    description: string;
+    month: string;
+    year: string;
+    volume?: string;
+    number?: string;
+    coverImage: string;
+    sortDate: number;
+};
+
+type StrapiMedia = {
+    url?: string | null;
+    formats?: {
+        medium?: { url?: string | null };
+        small?: { url?: string | null };
+    };
+};
+
+type StrapiIssueResponseItem = {
+    id?: number | string;
+    slug?: string;
+    Month?: string;
+    Year?: number | string;
+    Title?: string;
+    Description?: unknown;
+    description?: unknown;
+    Volume?: number | string;
+    IssueNumber?: number | string;
+    Date?: string;
+    publishedAt?: string;
+    createdAt?: string;
+    CoverImage?: StrapiMedia[] | StrapiMedia | null;
+};
+
+const MONTH_TO_INDEX: Record<string, number> = {
+    january: 0,
+    jan: 0,
+    february: 1,
+    feb: 1,
+    march: 2,
+    mar: 2,
+    april: 3,
+    apr: 3,
+    may: 4,
+    june: 5,
+    jun: 5,
+    july: 6,
+    jul: 6,
+    august: 7,
+    aug: 7,
+    september: 8,
+    sept: 8,
+    sep: 8,
+    october: 9,
+    oct: 9,
+    november: 10,
+    nov: 10,
+    december: 11,
+    dec: 11,
+};
+
+function getMonthIndex(month: unknown): number {
+    if (typeof month !== "string") return -1;
+    const normalized = month.trim().toLowerCase();
+    return MONTH_TO_INDEX[normalized] ?? -1;
+}
+
+function getIssueDescriptionText(value: unknown): string {
+    if (typeof value === "string") return value.trim();
+    if (!Array.isArray(value)) return "";
+
+    return value
+        .map((block) => {
+            const children = (block as { children?: Array<{ text?: unknown }> })?.children;
+            if (!Array.isArray(children)) return "";
+            return children
+                .map((child) => (typeof child?.text === "string" ? child.text : ""))
+                .join(" ");
+        })
+        .join(" ")
+        .replace(/\s+/g, " ")
+        .trim();
+}
+
+function toIssueSlug(month: string, year: string, fallbackId: unknown): string {
+    if (!month || !year) return String(fallbackId ?? "").trim();
+    const monthPart = month
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "");
+    return `${monthPart}-${year}`;
+}
+
+function normalizeIssue(item: StrapiIssueResponseItem, baseUrl: string): MagazineIssue | null {
+    const month = String(item?.Month ?? "").trim();
+    const year = String(item?.Year ?? "").trim();
+
+    const slugFromApi = typeof item?.slug === "string" ? item.slug.trim() : "";
+    const slug = slugFromApi || toIssueSlug(month, year, item?.id);
+    if (!slug) return null;
+
+    const coverImageField = Array.isArray(item?.CoverImage)
+        ? item.CoverImage[0]
+        : item?.CoverImage;
+    const rawCover =
+        coverImageField?.formats?.medium?.url ||
+        coverImageField?.formats?.small?.url ||
+        coverImageField?.url ||
+        null;
+
+    const coverImage = rawCover
+        ? rawCover.startsWith("http") ? rawCover : `${baseUrl}${rawCover}`
+        : "/magazine-default.jpg";
+
+    const titleFromApi = typeof item?.Title === "string" ? item.Title.trim() : "";
+    const title = titleFromApi || [month, year].filter(Boolean).join(" ").trim() || "Latest Issue";
+    const description = getIssueDescriptionText(item?.Description ?? item?.description);
+
+    const monthIndex = getMonthIndex(month);
+    const yearNumber = Number.parseInt(year, 10);
+    const fallbackDate = Date.parse(item?.Date ?? item?.publishedAt ?? item?.createdAt ?? "");
+    const fallbackSortDate = Number.isNaN(fallbackDate) ? 0 : fallbackDate;
+    const sortDate = Number.isFinite(yearNumber) && monthIndex >= 0
+        ? new Date(yearNumber, monthIndex, 1).getTime()
+        : fallbackSortDate;
+
+    return {
+        id: item?.id ?? slug,
+        slug,
+        title,
+        description,
+        month,
+        year,
+        volume: item?.Volume ? String(item.Volume) : undefined,
+        number: item?.IssueNumber ? String(item.IssueNumber) : undefined,
+        coverImage,
+        sortDate,
+    };
+}
+
 export function Header() {
     const pathname = usePathname();
     const [isScrolled, setIsScrolled] = useState(false);
     const [activeMenu, setActiveMenu] = useState<string | null>(null); // 'sectors' | 'magazine' | 'more' | null
-    const [magazinePreview, setMagazinePreview] = useState("/magazine-default.jpg");
+    const [magazineIssues, setMagazineIssues] = useState<MagazineIssue[]>([]);
+    const [activeMagazineSection, setActiveMagazineSection] = useState<"latest" | "past">("latest");
     const [isLoginHovered, setIsLoginHovered] = useState(false);
     const [hoveredSector, setHoveredSector] = useState<string | null>(null);
     const [hoveredMoreItem, setHoveredMoreItem] = useState<string | null>(null);
@@ -36,9 +180,10 @@ export function Header() {
     useEffect(() => {
         async function fetchMenuData() {
             try {
-                const [videosRes, eventsRes] = await Promise.all([
+                const [videosRes, eventsRes, issuesRes] = await Promise.all([
                     fetch(`${baseUrl}/api/videos?populate[0]=thumbnail&populate[1]=author.avatar&pagination[limit]=3&sort=createdAt:desc`),
                     fetch(`${baseUrl}/api/events?populate=*&pagination[limit]=3&sort=createdAt:desc`),
+                    fetch(`${baseUrl}/api/issues?populate=CoverImage&pagination[limit]=12`),
                 ]);
                 if (videosRes.ok) {
                     const vData = await videosRes.json();
@@ -47,6 +192,17 @@ export function Header() {
                 if (eventsRes.ok) {
                     const eData = await eventsRes.json();
                     setRealEvents(eData.data || []);
+                }
+                if (issuesRes.ok) {
+                    const iData = (await issuesRes.json()) as { data?: StrapiIssueResponseItem[] };
+                    const normalizedIssues: MagazineIssue[] = Array.isArray(iData?.data)
+                        ? iData.data
+                            .map((item) => normalizeIssue(item, baseUrl))
+                            .filter((issue: MagazineIssue | null): issue is MagazineIssue => issue !== null)
+                        : [];
+
+                    normalizedIssues.sort((a, b) => b.sortDate - a.sortDate);
+                    setMagazineIssues(normalizedIssues);
                 }
             } catch (e) {
                 console.error("Failed to fetch menu data", e);
@@ -75,6 +231,11 @@ export function Header() {
 
     // Get the currently hovered sector data
     const activeSector = SECTORS.find(s => s.slug === hoveredSector);
+    const latestIssue = magazineIssues[0] ?? null;
+    const pastIssues = magazineIssues.slice(1, 5);
+    const latestIssueHref = latestIssue ? `/issues/${latestIssue.slug}` : "/issues";
+    const defaultMagazineDescription = "Get deep-dive insights into the global energy transition, policy updates, and exclusive interviews with industry leaders.";
+    const latestIssueDescription = latestIssue?.description || defaultMagazineDescription;
 
     return (
         <header className="fixed top-0 inset-x-0 z-50 transition-all duration-300 font-sans bg-white" onMouseLeave={closeMenus}>
@@ -127,7 +288,7 @@ export function Header() {
                         <Link href="/opinion" className="text-[12px] xl:text-[13px] font-bold uppercase tracking-[1px] hover:opacity-70 whitespace-nowrap" onClick={closeMenus}>OPINION</Link>
 
                         {/* MAGAZINE MEGA MENU */}
-                        <div className="relative group cursor-pointer" onMouseEnter={() => { setActiveMenu('magazine'); setMagazinePreview("/magazine-default.jpg"); setHoveredMoreItem(null); }}>
+                        <div className="relative group cursor-pointer" onMouseEnter={() => { setActiveMenu('magazine'); setActiveMagazineSection("latest"); setHoveredMoreItem(null); }}>
                             <button className="flex items-center gap-1 text-[12px] xl:text-[13px] font-bold uppercase tracking-[1px] hover:opacity-70 whitespace-nowrap">
                                 MAGAZINE <ChevronDown className={cn("w-3 h-3 transition-transform", activeMenu === 'magazine' && "rotate-180")} />
                             </button>
@@ -271,32 +432,108 @@ export function Header() {
                                 <h3 className="text-[10px] font-black text-gray-400 uppercase mb-6 tracking-widest">EnergDive Magazine</h3>
                                 <div className="flex flex-col gap-2">
                                     <Link
-                                        href="/issues/january-2026"
+                                        href={latestIssueHref}
                                         onClick={closeMenus}
-                                        onMouseEnter={() => setMagazinePreview("/magazine-default.jpg")}
-                                        className="px-4 py-4 text-[14px] font-bold text-gray-800 hover:bg-[#00A651] hover:text-white flex justify-between items-center transition-colors"
+                                        onMouseEnter={() => setActiveMagazineSection("latest")}
+                                        onFocus={() => setActiveMagazineSection("latest")}
+                                        className={cn(
+                                            "px-4 py-4 text-[14px] font-bold flex justify-between items-center transition-colors",
+                                            activeMagazineSection === "latest"
+                                                ? "bg-[#00A651] text-white"
+                                                : "text-gray-800 hover:bg-[#00A651] hover:text-white"
+                                        )}
                                     >
-                                        CURRENT ISSUE <ChevronRight size={14} />
+                                        LATEST ISSUE <ChevronRight size={14} />
                                     </Link>
                                     <Link
-                                        href="/issues/december-2025"
+                                        href="/issues"
                                         onClick={closeMenus}
-                                        onMouseEnter={() => setMagazinePreview("/current-magazine.jpg")}
-                                        className="px-4 py-4 text-[14px] font-bold text-gray-800 hover:bg-[#00A651] hover:text-white flex justify-between items-center transition-colors"
+                                        onMouseEnter={() => setActiveMagazineSection("past")}
+                                        onFocus={() => setActiveMagazineSection("past")}
+                                        className={cn(
+                                            "px-4 py-4 text-[14px] font-bold flex justify-between items-center transition-colors",
+                                            activeMagazineSection === "past"
+                                                ? "bg-[#00A651] text-white"
+                                                : "text-gray-800 hover:bg-[#00A651] hover:text-white"
+                                        )}
                                     >
                                         PAST ISSUES <ChevronRight size={14} />
                                     </Link>
                                 </div>
                             </div>
-                            <div className="flex-1 p-12 flex items-center justify-center gap-12">
-                                <div className="max-w-md">
-                                    <h4 className="text-[12px] font-bold uppercase text-gray-400 mb-4 tracking-widest">Monthly Publication</h4>
-                                    <p className="text-gray-600 text-[14px] leading-relaxed">Get deep-dive insights into the global energy transition, policy updates, and exclusive interviews with industry leaders.</p>
+                            {activeMagazineSection === "latest" ? (
+                                <div className="flex-1 p-12 flex items-center justify-center gap-12">
+                                    <div className="max-w-md">
+                                        <h4 className="text-[12px] font-bold uppercase text-gray-400 mb-4 tracking-widest">Latest Issue</h4>
+                                        <h5 className="text-2xl font-bold text-zinc-900 mb-3 leading-tight">
+                                            {latestIssue?.title ?? "Issue archive will appear here"}
+                                        </h5>
+                                        <p className="text-gray-600 text-[14px] leading-relaxed">
+                                            {latestIssueDescription}
+                                        </p>
+                                        <Link
+                                            href={latestIssueHref}
+                                            onClick={closeMenus}
+                                            className="mt-6 inline-flex items-center gap-1.5 text-[11px] font-bold text-[#00A651] uppercase tracking-widest hover:underline"
+                                        >
+                                            Read Latest Issue <ArrowRight size={13} />
+                                        </Link>
+                                    </div>
+                                    <Link href={latestIssueHref} onClick={closeMenus} className="block">
+                                        <div className="relative w-64 h-80 bg-gray-100 shadow-2xl overflow-hidden border">
+                                            <Image
+                                                src={latestIssue?.coverImage ?? "/magazine-default.jpg"}
+                                                alt={latestIssue?.title ?? "Latest issue"}
+                                                fill
+                                                className="object-cover transition-all duration-500"
+                                            />
+                                        </div>
+                                    </Link>
                                 </div>
-                                <div className="relative w-64 h-80 bg-gray-100 shadow-2xl overflow-hidden border">
-                                    <Image src={magazinePreview} alt="Preview" fill className="object-cover transition-all duration-500" />
+                            ) : (
+                                <div className="flex-1 p-12">
+                                    <div className="flex items-center justify-between mb-6">
+                                        <h4 className="text-[12px] font-bold uppercase text-gray-400 tracking-widest">Past 4 Issues</h4>
+                                    </div>
+                                    {pastIssues.length > 0 ? (
+                                        <>
+                                            <div className="grid grid-cols-4 gap-5">
+                                                {pastIssues.map((issue) => (
+                                                    <Link
+                                                        key={issue.id}
+                                                        href={`/issues/${issue.slug}`}
+                                                        onClick={closeMenus}
+                                                        className="group"
+                                                    >
+                                                        <div className="relative aspect-[3/4] bg-gray-100 border shadow-sm overflow-hidden">
+                                                            <Image
+                                                                src={issue.coverImage}
+                                                                alt={issue.title}
+                                                                fill
+                                                                className="object-cover transition-transform duration-500 group-hover:scale-105"
+                                                            />
+                                                        </div>
+                                                        <p className="mt-3 text-[13px] font-bold text-gray-800 group-hover:text-[#00A651] transition-colors line-clamp-2">
+                                                            {issue.title}
+                                                        </p>
+                                                    </Link>
+                                                ))}
+                                            </div>
+                                            <Link
+                                                href="/issues"
+                                                onClick={closeMenus}
+                                                className="mt-8 inline-flex items-center gap-1.5 text-[11px] font-bold text-[#00A651] uppercase tracking-widest hover:underline"
+                                            >
+                                                View All Archive <ArrowRight size={13} />
+                                            </Link>
+                                        </>
+                                    ) : (
+                                        <div className="h-full flex items-center justify-center">
+                                            <p className="text-sm text-gray-400 italic">No past issues found yet.</p>
+                                        </div>
+                                    )}
                                 </div>
-                            </div>
+                            )}
                         </>
                     )}
 
@@ -634,11 +871,11 @@ export function Header() {
                                             transition={{ duration: 0.2 }}
                                             className="overflow-hidden bg-gray-50"
                                         >
-                                            <Link href="/issues/january-2026" onClick={closeAll} className="block px-10 py-3 text-[13px] font-medium text-gray-700 hover:text-[#00A651] hover:bg-white transition-colors border-b border-gray-100">
-                                                Current Issue
+                                            <Link href={latestIssueHref} onClick={closeAll} className="block px-10 py-3 text-[13px] font-medium text-gray-700 hover:text-[#00A651] hover:bg-white transition-colors border-b border-gray-100">
+                                                Latest Issue
                                             </Link>
-                                            <Link href="/issues/december-2025" onClick={closeAll} className="block px-10 py-3 text-[13px] font-medium text-gray-700 hover:text-[#00A651] hover:bg-white transition-colors border-b border-gray-100">
-                                                Past Issues
+                                            <Link href="/issues" onClick={closeAll} className="block px-10 py-3 text-[13px] font-medium text-gray-700 hover:text-[#00A651] hover:bg-white transition-colors border-b border-gray-100">
+                                                View Archive
                                             </Link>
                                         </motion.div>
                                     )}

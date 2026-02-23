@@ -27,7 +27,7 @@ const SECTORS = [
     { name: "Distribution", href: "/sectors/distribution" },
     { name: "Electricity Markets", href: "/sectors/electricity-markets" },
     { name: "Energy Storage", href: "/sectors/energy-storage" },
-    { name: "Sustainability & Safety", href: "/sectors/sustainability-safety" },
+    { name: "Sustainability", href: "/sectors/sustainability" },
 ];
 
 const QUICK_LINKS = [
@@ -190,7 +190,7 @@ export function Footer() {
                         <ul className="space-y-3">
                             <li className="flex items-start gap-2.5">
                                 <MapPin size={13} className="text-gray-600 mt-0.5 shrink-0" />
-                                <span className="text-[13px] text-gray-500 leading-relaxed">Mumbai, Maharashtra, India</span>
+                                <span className="text-[13px] text-gray-500 leading-relaxed">Sector 12A, Dwarka, New Delhi 110075</span>
                             </li>
                             <li>
                                 <a href="mailto:contact@energdive.com" className="flex items-center gap-2.5 text-[13px] text-gray-500 hover:text-white transition-colors">
@@ -201,7 +201,7 @@ export function Footer() {
                             <li>
                                 <a href="tel:+911234567890" className="flex items-center gap-2.5 text-[13px] text-gray-500 hover:text-white transition-colors">
                                     <Phone size={13} className="text-gray-600 shrink-0" />
-                                    +91 123 456 7890
+                                    +91 11 4544 4425
                                 </a>
                             </li>
                         </ul>

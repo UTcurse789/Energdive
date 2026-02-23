@@ -1,9 +1,7 @@
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { Header } from "@/components/layout/header";
-import { Footer } from "@/components/layout/footer";
-import { Calendar, ArrowRight, User, Briefcase } from "lucide-react";
+import { Calendar, ArrowRight, Briefcase, FileText, Tag } from "lucide-react";
 
 const STRAPI_BASE = process.env.NEXT_PUBLIC_STRAPI_URL || "http://206.189.132.187:1337";
 
@@ -21,7 +19,9 @@ function slugify(text: string): string {
 
 function getImageUrl(img: any): string {
     if (!img) return "/magazine-default.jpg";
-    const url = img.formats?.large?.url || img.formats?.medium?.url || img.url;
+    const source = img?.data || img;
+    const attrs = source?.attributes || source;
+    const url = attrs?.formats?.large?.url || attrs?.formats?.medium?.url || attrs?.formats?.small?.url || attrs?.url;
     if (!url) return "/magazine-default.jpg";
     return url.startsWith("http") ? url : `${STRAPI_BASE}${url}`;
 }
@@ -101,6 +101,22 @@ async function getContentByAuthor(authorName: string) {
     return json.data || [];
 }
 
+function getContentRoute(item: any) {
+    const type = String(item.category || "").toLowerCase();
+    if (type.includes("opinion")) return `/opinion/${item.slug}`;
+    if (type.includes("news")) return `/news/${item.slug}`;
+    if (type.includes("report")) return `/reports/${item.slug}`;
+    return `/articles/${item.slug}`;
+}
+
+function getCategoryBadgeTone(type: string) {
+    const key = String(type || "").toLowerCase();
+    if (key.includes("opinion")) return "bg-amber-50 text-amber-700 border-amber-200";
+    if (key.includes("report")) return "bg-sky-50 text-sky-700 border-sky-200";
+    if (key.includes("news")) return "bg-emerald-50 text-emerald-700 border-emerald-200";
+    return "bg-zinc-50 text-zinc-600 border-zinc-200";
+}
+
 /* ==================== PAGE ==================== */
 
 export default async function AuthorPage({
@@ -128,6 +144,8 @@ export default async function AuthorPage({
     // Format content items
     const articles = contents.map((item: any) => {
         const a = item.attributes || item;
+        const sectorSource = Array.isArray(a.sectors?.data) ? a.sectors.data[0] : a.sectors?.[0];
+        const sectorAttrs = sectorSource?.attributes || sectorSource || {};
         return {
             id: item.id,
             title: a.Title || a.title || "",
@@ -136,20 +154,18 @@ export default async function AuthorPage({
             image: getImageUrl(a.FeaturedImage),
             date: formatDate(a.Date || a.createdAt),
             category: a.type_of_content?.name || a.type_of_content?.data?.attributes?.name || "Article",
-            sector: a.sectors?.[0]?.name || a.sectors?.data?.[0]?.attributes?.name || "",
+            sector: sectorAttrs?.name || "",
         };
-    });
+    }).filter((item: any) => item.slug);
 
     return (
-        <div className="bg-white min-h-screen">
-            <Header />
-
+        <div className="min-h-screen bg-[#f5f7fa] text-zinc-900">
             {/* Author Profile Hero */}
-            <section className="pt-28 pb-16 bg-gradient-to-b from-zinc-50 to-white">
-                <div className="container mx-auto px-6 max-w-5xl">
-                    <div className="flex flex-col md:flex-row items-center md:items-start gap-10">
-                        {/* Avatar */}
-                        <div className="relative w-36 h-36 md:w-44 md:h-44 rounded-full overflow-hidden border-4 border-white shadow-xl shrink-0 bg-zinc-100">
+            <section className="relative overflow-hidden border-b border-zinc-200 bg-zinc-950 text-white">
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_15%_20%,rgba(0,166,81,0.3),transparent_45%),radial-gradient(circle_at_80%_0%,rgba(9,182,151,0.18),transparent_40%)]" />
+                <div className="container relative z-10 mx-auto px-6 lg:px-16 max-w-[1400px] py-16 md:py-20">
+                    <div className="grid grid-cols-1 lg:grid-cols-[220px_minmax(0,1fr)] gap-10 items-center">
+                        <div className="relative w-40 h-40 md:w-52 md:h-52 rounded-3xl overflow-hidden border border-white/25 shadow-[0_25px_70px_rgba(0,0,0,0.35)] shrink-0 bg-zinc-900">
                             {avatarUrl ? (
                                 <Image
                                     src={avatarUrl}
@@ -167,30 +183,39 @@ export default async function AuthorPage({
                             )}
                         </div>
 
-                        {/* Info */}
-                        <div className="text-center md:text-left flex-1">
-                            <h1 className="text-4xl md:text-5xl font-serif font-bold tracking-tight text-zinc-900 mb-3">
+                        <div className="min-w-0">
+                            <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/5 px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-emerald-300 mb-6 mt-6">
+                                <Tag size={12} />
+                                Author Intelligence Desk
+                            </div>
+                            <h1 className="text-4xl md:text-6xl font-serif font-bold tracking-tight text-white mb-3">
                                 {authorName}
                             </h1>
 
-                            <div className="flex items-center justify-center md:justify-start gap-2 mb-6">
-                                <Briefcase className="w-4 h-4 text-[#09B697]" />
-                                <span className="text-sm font-semibold text-[#09B697] uppercase tracking-widest">
+                            <div className="flex items-center gap-2 mb-6 text-emerald-300">
+                                <Briefcase className="w-4 h-4" />
+                                <span className="text-xs font-semibold uppercase tracking-[0.16em]">
                                     {authorDesignation}
                                 </span>
                             </div>
 
                             {authorBio && (
-                                <p className="text-zinc-500 font-serif text-lg leading-relaxed max-w-2xl">
+                                <p className="text-zinc-300 font-serif text-lg leading-relaxed max-w-3xl">
                                     {authorBio}
                                 </p>
                             )}
 
-                            <div className="mt-6 flex items-center justify-center md:justify-start gap-6 text-sm text-zinc-400">
-                                <div className="flex items-center gap-2">
-                                    <User className="w-4 h-4" />
-                                    <span>{articles.length} {articles.length === 1 ? "Article" : "Articles"} Published</span>
+                            <div className="mt-8 mb-8 flex flex-wrap items-center gap-3">
+                                <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/5 px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-white">
+                                    <FileText size={12} />
+                                    {articles.length} {articles.length === 1 ? "Article" : "Articles"}
                                 </div>
+                                {articles[0]?.date && (
+                                    <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/5 px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-zinc-200">
+                                        <Calendar size={12} />
+                                        Latest: {articles[0].date}
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -198,80 +223,74 @@ export default async function AuthorPage({
             </section>
 
             {/* Content by Author */}
-            <section className="py-16">
-                <div className="container mx-auto px-6 max-w-5xl">
-                    <div className="flex items-center justify-between mb-12 border-b border-zinc-100 pb-6">
-                        <h2 className="text-2xl font-serif font-bold text-zinc-900">
+            <section className="py-14 md:py-20">
+                <div className="container mx-auto px-6 lg:px-16 max-w-[1400px]">
+                    <div className="flex flex-wrap items-end justify-between gap-4 mb-10 border-b border-zinc-200 pb-5">
+                        <h2 className="text-2xl md:text-3xl font-serif font-bold text-zinc-900">
                             All Articles by {authorName}
                         </h2>
-                        <span className="text-xs font-bold text-zinc-400 uppercase tracking-widest">
+                        <span className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.18em]">
                             {articles.length} {articles.length === 1 ? "Post" : "Posts"}
                         </span>
                     </div>
 
                     {articles.length === 0 ? (
-                        <div className="text-center py-20">
-                            <p className="text-zinc-400 font-serif text-lg">No articles published yet.</p>
+                        <div className="rounded-3xl border border-dashed border-zinc-300 bg-white py-20 text-center">
+                            <p className="text-zinc-500 font-serif text-lg">No articles published yet.</p>
                         </div>
                     ) : (
-                        <div className="space-y-8">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-7">
                             {articles.map((article: any) => (
-                                <Link
+                                <article
                                     key={article.id}
-                                    href={
-                                        article.category === "Opinion"
-                                            ? `/opinion/${article.slug}`
-                                            : `/news/${article.slug}`
-                                    }
-                                    className="group flex flex-col md:flex-row gap-6 border-b border-zinc-50 pb-8 last:border-0"
+                                    className="group h-full rounded-3xl border border-zinc-200/80 bg-white overflow-hidden shadow-[0_12px_34px_rgba(15,23,42,0.06)] hover:shadow-[0_20px_50px_rgba(15,23,42,0.12)] transition-all duration-300"
                                 >
-                                    {/* Thumbnail */}
-                                    <div className="relative w-full md:w-64 aspect-video md:aspect-[4/3] overflow-hidden rounded-xl bg-zinc-100 shrink-0">
-                                        <Image
-                                            src={article.image}
-                                            alt={article.title}
-                                            fill
-                                            className="object-cover transition-transform duration-500 group-hover:scale-105"
-                                        />
-                                    </div>
-
-                                    {/* Content */}
-                                    <div className="flex flex-col justify-center flex-1 min-w-0">
-                                        <div className="flex items-center gap-3 mb-3">
-                                            {article.sector && (
-                                                <span className="text-[10px] font-black uppercase tracking-widest text-[#09B697]">
-                                                    {article.sector}
-                                                </span>
-                                            )}
-                                            <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-300 bg-zinc-50 px-2 py-0.5 rounded">
+                                    <Link href={getContentRoute(article)} className="block h-full">
+                                        <div className="relative aspect-[16/10] overflow-hidden bg-zinc-100">
+                                            <Image
+                                                src={article.image}
+                                                alt={article.title}
+                                                fill
+                                                className="object-cover transition-transform duration-500 group-hover:scale-105"
+                                            />
+                                            <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-transparent" />
+                                            <span className={`absolute left-4 top-4 rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] ${getCategoryBadgeTone(article.category)}`}>
                                                 {article.category}
                                             </span>
                                         </div>
 
-                                        <h3 className="text-xl md:text-2xl font-serif font-bold leading-tight text-zinc-900 group-hover:text-[#09B697] transition-colors mb-2 line-clamp-2">
-                                            {article.title}
-                                        </h3>
+                                        <div className="p-6 flex flex-col h-[calc(100%-0px)]">
+                                            <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-zinc-400 mb-3">
+                                                <Calendar className="w-3.5 h-3.5 text-[#09B697]" />
+                                                <span>{article.date || "Recent"}</span>
+                                                {article.sector && (
+                                                    <>
+                                                        <span className="text-zinc-300">|</span>
+                                                        <span className="text-zinc-500">{article.sector}</span>
+                                                    </>
+                                                )}
+                                            </div>
 
-                                        {article.excerpt && (
-                                            <p className="text-sm text-zinc-500 font-serif line-clamp-2 mb-3">
-                                                {article.excerpt}
+                                            <h3 className="text-2xl font-serif font-bold leading-tight text-zinc-900 group-hover:text-[#00A651] transition-colors line-clamp-2 mb-3">
+                                                {article.title}
+                                            </h3>
+
+                                            <p className="text-[15px] text-zinc-500 leading-relaxed line-clamp-3 mb-6">
+                                                {article.excerpt || "Read the full intelligence brief for deeper context and market signals."}
                                             </p>
-                                        )}
 
-                                        <div className="flex items-center gap-2 text-xs text-zinc-400">
-                                            <Calendar className="w-3.5 h-3.5" />
-                                            <span>{article.date}</span>
-                                            <ArrowRight className="w-3 h-3 ml-auto opacity-0 group-hover:opacity-100 transition-opacity text-[#09B697]" />
+                                            <div className="mt-auto inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.16em] text-[#00A651]">
+                                                Read Intelligence
+                                                <ArrowRight className="w-3.5 h-3.5 transition-transform duration-300 group-hover:translate-x-1" />
+                                            </div>
                                         </div>
-                                    </div>
-                                </Link>
+                                    </Link>
+                                </article>
                             ))}
                         </div>
                     )}
                 </div>
             </section>
-
-            <Footer />
         </div>
     );
 }
