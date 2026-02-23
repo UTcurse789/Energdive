@@ -162,14 +162,14 @@ export function Header() {
                                         <UserButton.Link label="Dashboard" labelIcon={<Zap size={14} />} href="/dashboard" />
                                     </UserButton.MenuItems>
                                 </UserButton>
-                                <UserButton
+                                {/* <UserButton
                                     afterSignOutUrl="/"
                                     appearance={{
                                         elements: {
                                             userPreviewSecondaryIdentifier: { display: "none" },
                                         },
                                     }}
-                                />
+                                /> */}
                             </SignedIn>
                             <SignedOut>
                                 <motion.div className="relative" onMouseEnter={() => setIsLoginHovered(true)} onMouseLeave={() => setIsLoginHovered(false)}>
