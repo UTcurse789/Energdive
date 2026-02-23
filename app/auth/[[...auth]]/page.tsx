@@ -1,20 +1,36 @@
 "use client";
 
-import { useSignIn, useSignUp, useAuth } from "@clerk/nextjs";
+import { useSignIn, useSignUp, useAuth, useClerk } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import DotGrid from "@/components/DotGrid";
 
-type AuthStep = "identifier" | "otp-signin" | "otp-signup" | "complete";
+type AuthStep = "identifier" | "otp-signin" | "otp-signup" | "otp-phone" | "complete";
+type InputMode = "email" | "phone";
+
+// ── Helpers ──
+const isPhoneInput = (value: string): boolean => {
+    const cleaned = value.replace(/[\s\-()]/g, "");
+    return /^\+?\d{7,15}$/.test(cleaned);
+};
+
+const formatPhoneForAPI = (phone: string): string => {
+    const cleaned = phone.replace(/[\s\-()]/g, "");
+    // Default to +91 (India) if no country code
+    if (cleaned.startsWith("+")) return cleaned;
+    if (cleaned.startsWith("91") && cleaned.length >= 12) return `+${cleaned}`;
+    return `+91${cleaned}`;
+};
 
 export default function UnifiedAuthPage() {
-    const { signIn, isLoaded: signInLoaded } = useSignIn();
+    const { signIn, isLoaded: signInLoaded, setActive } = useSignIn();
     const { signUp, isLoaded: signUpLoaded } = useSignUp();
     const { isSignedIn } = useAuth();
+    const clerk = useClerk();
     const router = useRouter();
 
-    const [email, setEmail] = useState("");
+    const [identifier, setIdentifier] = useState("");
     const [code, setCode] = useState("");
     const [step, setStep] = useState<AuthStep>("identifier");
     const [isNewUser, setIsNewUser] = useState(false);
@@ -22,105 +38,143 @@ export default function UnifiedAuthPage() {
     const [error, setError] = useState("");
     const [info, setInfo] = useState("");
 
-    // If already signed in, redirect
-    if (isSignedIn) {
-        router.replace("/dashboard");
-        return null;
-    }
+    // Auto-detect input type
+    const inputMode: InputMode = useMemo(() => {
+        const trimmed = identifier.trim();
+        if (!trimmed) return "email";
+        const cleaned = trimmed.replace(/[\s\-()]/g, "");
+        if (/^\+?\d+$/.test(cleaned) && cleaned.length >= 4) return "phone";
+        return "email";
+    }, [identifier]);
 
-    // ── Step 1: Submit email → try sign-in, fallback to sign-up ──
-    const handleEmailSubmit = useCallback(async () => {
-        if (!signInLoaded || !signUpLoaded || !email.trim()) return;
+    // If already signed in, redirect
+    useEffect(() => {
+        if (isSignedIn) {
+            router.replace("/dashboard");
+        }
+    }, [isSignedIn, router]);
+
+    // ── Step 1: Submit identifier ──
+    const handleSubmit = useCallback(async () => {
+        if (!signInLoaded || !signUpLoaded || !identifier.trim()) return;
         setLoading(true);
         setError("");
         setInfo("");
 
-        try {
-            // Try sign-in first
-            const result = await signIn!.create({
-                identifier: email.trim(),
-            });
+        const isPhone = isPhoneInput(identifier.trim());
 
-            // If sign-in needs first factor (OTP)
-            if (result.status === "needs_first_factor") {
-                // Prepare email OTP
-                await signIn!.prepareFirstFactor({
-                    strategy: "email_code",
-                    emailAddressId: (result.supportedFirstFactors as any[])?.find(
-                        (f) => f.strategy === "email_code"
-                    )?.emailAddressId,
+        if (isPhone) {
+            // ── PHONE PATH: Use MSG91 ──
+            const phone = formatPhoneForAPI(identifier.trim());
+            try {
+                const res = await fetch("/api/otp/send", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ phone }),
                 });
-                setIsNewUser(false);
-                setStep("otp-signin");
-                setInfo("We sent a verification code to your email.");
-            } else if (result.status === "complete") {
-                setStep("complete");
-                router.replace("/dashboard");
+                const data = await res.json();
+
+                if (data.success) {
+                    setStep("otp-phone");
+                    setInfo(`We sent a verification code to ${phone}`);
+                } else {
+                    setError(data.error || "Failed to send OTP. Please try again.");
+                }
+            } catch {
+                setError("Network error. Please try again.");
             }
-        } catch (err: any) {
-            const clerkError = err?.errors?.[0];
-            const code = clerkError?.code;
+        } else {
+            // ── EMAIL PATH: Use Clerk ──
+            const emailValue = identifier.trim();
+            try {
+                const result = await signIn!.create({
+                    identifier: emailValue,
+                });
 
-            // User not found → auto sign-up
-            if (
-                code === "form_identifier_not_found" ||
-                code === "identifier_not_found"
-            ) {
-                try {
-                    const signUpResult = await signUp!.create({
-                        emailAddress: email.trim(),
-                    });
-
-                    // Prepare email verification
-                    await signUp!.prepareEmailAddressVerification({
-                        strategy: "email_code",
-                    });
-
-                    setIsNewUser(true);
-                    setStep("otp-signup");
-                    setInfo(
-                        "No account found — we're creating one for you! Check your email for the verification code."
+                if (result.status === "needs_first_factor") {
+                    const emailFactor = (result.supportedFirstFactors as any[])?.find(
+                        (f) => f.strategy === "email_code"
                     );
-                } catch (signUpErr: any) {
+                    if (emailFactor) {
+                        await signIn!.prepareFirstFactor({
+                            strategy: "email_code",
+                            emailAddressId: emailFactor.emailAddressId,
+                        });
+                        setInfo("We sent a verification code to your email.");
+                    }
+                    setIsNewUser(false);
+                    setStep("otp-signin");
+                } else if (result.status === "complete") {
+                    if (result.createdSessionId) {
+                        await setActive!({ session: result.createdSessionId });
+                    }
+                    setStep("complete");
+                    router.replace("/dashboard");
+                }
+            } catch (err: any) {
+                const clerkError = err?.errors?.[0];
+                const errCode = clerkError?.code;
+
+                // User not found → auto sign-up via Clerk
+                if (
+                    errCode === "form_identifier_not_found" ||
+                    errCode === "identifier_not_found"
+                ) {
+                    try {
+                        await signUp!.create({ emailAddress: emailValue });
+                        await signUp!.prepareEmailAddressVerification({
+                            strategy: "email_code",
+                        });
+                        setIsNewUser(true);
+                        setStep("otp-signup");
+                        setInfo(
+                            "No account found — creating one for you! Check your email for the verification code."
+                        );
+                    } catch (signUpErr: any) {
+                        setError(
+                            signUpErr?.errors?.[0]?.longMessage ||
+                            "Could not create account. Please try again."
+                        );
+                    }
+                } else {
                     setError(
-                        signUpErr?.errors?.[0]?.longMessage ||
-                        "Could not create account. Please try again."
+                        clerkError?.longMessage ||
+                        "Something went wrong. Please try again."
                     );
                 }
-            } else {
-                setError(
-                    clerkError?.longMessage ||
-                    "Something went wrong. Please try again."
-                );
             }
-        } finally {
-            setLoading(false);
         }
-    }, [email, signIn, signUp, signInLoaded, signUpLoaded, router]);
 
-    // ── Step 2: Verify OTP code ──
-    const handleOTPSubmit = useCallback(async () => {
+        setLoading(false);
+    }, [identifier, signIn, signUp, signInLoaded, signUpLoaded, setActive, router]);
+
+    // ── Step 2a: Verify OTP (Email - Clerk) ──
+    const handleEmailOTPSubmit = useCallback(async () => {
         if (!signInLoaded || !signUpLoaded || !code.trim()) return;
         setLoading(true);
         setError("");
 
         try {
             if (isNewUser) {
-                // Sign-up verification
                 const result = await signUp!.attemptEmailAddressVerification({
                     code: code.trim(),
                 });
                 if (result.status === "complete") {
+                    if (result.createdSessionId) {
+                        await setActive!({ session: result.createdSessionId });
+                    }
                     setStep("complete");
                     router.replace("/dashboard");
                 }
             } else {
-                // Sign-in verification
                 const result = await signIn!.attemptFirstFactor({
                     strategy: "email_code",
                     code: code.trim(),
                 });
                 if (result.status === "complete") {
+                    if (result.createdSessionId) {
+                        await setActive!({ session: result.createdSessionId });
+                    }
                     setStep("complete");
                     router.replace("/dashboard");
                 }
@@ -133,7 +187,49 @@ export default function UnifiedAuthPage() {
         } finally {
             setLoading(false);
         }
-    }, [code, isNewUser, signIn, signUp, signInLoaded, signUpLoaded, router]);
+    }, [code, isNewUser, signIn, signUp, signInLoaded, signUpLoaded, setActive, router]);
+
+    // ── Step 2b: Verify OTP (Phone - MSG91 → Clerk sign-in token) ──
+    const handlePhoneOTPSubmit = useCallback(async () => {
+        if (!code.trim()) return;
+        setLoading(true);
+        setError("");
+
+        const phone = formatPhoneForAPI(identifier.trim());
+
+        try {
+            // Call our backend that verifies MSG91 OTP + creates/finds Clerk user + returns sign-in token
+            const res = await fetch("/api/auth/phone-verify", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ phone, otp: code.trim() }),
+            });
+            const data = await res.json();
+
+            if (data.success && data.token) {
+                // Use the sign-in token to complete Clerk session
+                const result = await signIn!.create({
+                    strategy: "ticket",
+                    ticket: data.token,
+                });
+
+                if (result.status === "complete") {
+                    if (result.createdSessionId) {
+                        await setActive!({ session: result.createdSessionId });
+                    }
+                    setIsNewUser(data.isNewUser);
+                    setStep("complete");
+                    router.replace("/dashboard");
+                }
+            } else {
+                setError(data.error || "Verification failed. Please try again.");
+            }
+        } catch (err: any) {
+            setError("Verification failed. Please try again.");
+        } finally {
+            setLoading(false);
+        }
+    }, [code, identifier, signIn, setActive, router]);
 
     // ── Google OAuth ──
     const handleGoogleAuth = useCallback(async () => {
@@ -144,7 +240,7 @@ export default function UnifiedAuthPage() {
                 redirectUrl: "/auth/sso-callback",
                 redirectUrlComplete: "/dashboard",
             });
-        } catch (err: any) {
+        } catch {
             setError("Google sign-in failed. Please try again.");
         }
     }, [signIn, signInLoaded]);
@@ -158,7 +254,7 @@ export default function UnifiedAuthPage() {
                 redirectUrl: "/auth/sso-callback",
                 redirectUrlComplete: "/dashboard",
             });
-        } catch (err: any) {
+        } catch {
             setError("LinkedIn sign-in failed. Please try again.");
         }
     }, [signIn, signInLoaded]);
@@ -167,24 +263,47 @@ export default function UnifiedAuthPage() {
     const handleResend = useCallback(async () => {
         setError("");
         setInfo("");
-        try {
-            if (isNewUser) {
-                await signUp!.prepareEmailAddressVerification({
-                    strategy: "email_code",
+
+        if (step === "otp-phone") {
+            // Resend via MSG91
+            const phone = formatPhoneForAPI(identifier.trim());
+            try {
+                const res = await fetch("/api/otp/send", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ phone }),
                 });
-            } else {
-                await signIn!.prepareFirstFactor({
-                    strategy: "email_code",
-                    emailAddressId: (signIn!.supportedFirstFactors as any[])?.find(
-                        (f) => f.strategy === "email_code"
-                    )?.emailAddressId,
-                });
+                const data = await res.json();
+                if (data.success) {
+                    setInfo("A new code has been sent.");
+                } else {
+                    setError("Failed to resend code.");
+                }
+            } catch {
+                setError("Failed to resend code.");
             }
-            setInfo("A new code has been sent to your email.");
-        } catch {
-            setError("Failed to resend code.");
+        } else {
+            // Resend via Clerk
+            try {
+                if (isNewUser) {
+                    await signUp!.prepareEmailAddressVerification({
+                        strategy: "email_code",
+                    });
+                } else {
+                    const emailFactor = (signIn!.supportedFirstFactors as any[])?.find(
+                        (f) => f.strategy === "email_code"
+                    );
+                    await signIn!.prepareFirstFactor({
+                        strategy: "email_code",
+                        emailAddressId: emailFactor?.emailAddressId,
+                    });
+                }
+                setInfo("A new code has been sent.");
+            } catch {
+                setError("Failed to resend code.");
+            }
         }
-    }, [isNewUser, signIn, signUp]);
+    }, [step, identifier, isNewUser, signIn, signUp]);
 
     // ── Go back ──
     const handleBack = () => {
@@ -194,6 +313,11 @@ export default function UnifiedAuthPage() {
         setInfo("");
         setIsNewUser(false);
     };
+
+    const isOTPStep = step === "otp-signin" || step === "otp-signup" || step === "otp-phone";
+
+    // Early return if signed in (must be after all hooks)
+    if (isSignedIn) return null;
 
     if (!signInLoaded || !signUpLoaded) {
         return (
@@ -229,8 +353,8 @@ export default function UnifiedAuthPage() {
                 transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
                 className="relative z-10 w-full max-w-[420px] mx-4"
             >
-                <div className="bg-white/95 backdrop-blur-xl rounded-2xl shadow-xl shadow-black/[0.06] border border-zinc-200/60 p-8">
-                    {/* Clerk CAPTCHA container for bot protection */}
+                <div className="bg-white/95 backdrop-blur-xl rounded-2xl shadow-xl shadow-black/6 border border-zinc-200/60 p-8">
+                    {/* Clerk CAPTCHA container */}
                     <div id="clerk-captcha" className="mb-2" />
 
                     {/* Header */}
@@ -246,7 +370,7 @@ export default function UnifiedAuthPage() {
                     </div>
 
                     <AnimatePresence mode="wait">
-                        {/* ── STEP: Email Input ── */}
+                        {/* ── STEP: Identifier Input ── */}
                         {step === "identifier" && (
                             <motion.div
                                 key="identifier"
@@ -289,25 +413,40 @@ export default function UnifiedAuthPage() {
                                     <div className="flex-1 h-px bg-zinc-200/80" />
                                 </div>
 
-                                {/* Email Input */}
+                                {/* Email / Phone Input */}
                                 <div className="space-y-1.5 mb-4">
                                     <label className="text-[13px] font-medium text-zinc-600">
-                                        Email address
+                                        Email or phone number
                                     </label>
-                                    <input
-                                        type="email"
-                                        value={email}
-                                        onChange={(e) => {
-                                            setEmail(e.target.value);
-                                            setError("");
-                                        }}
-                                        onKeyDown={(e) =>
-                                            e.key === "Enter" && handleEmailSubmit()
-                                        }
-                                        placeholder="you@company.com"
-                                        className="w-full h-11 px-4 rounded-xl border border-zinc-200 bg-zinc-50/50 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all duration-200"
-                                        autoFocus
-                                    />
+                                    <div className="relative">
+                                        <input
+                                            type="text"
+                                            value={identifier}
+                                            onChange={(e) => {
+                                                setIdentifier(e.target.value);
+                                                setError("");
+                                            }}
+                                            onKeyDown={(e) =>
+                                                e.key === "Enter" && handleSubmit()
+                                            }
+                                            placeholder="you@company.com or +91 98765 43210"
+                                            className="w-full h-11 px-4 pr-10 rounded-xl border border-zinc-200 bg-zinc-50/50 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all duration-200"
+                                            autoFocus
+                                        />
+                                        {/* Input type indicator */}
+                                        <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                                            {inputMode === "phone" ? (
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                    <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z" />
+                                                </svg>
+                                            ) : identifier.trim() ? (
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                    <rect x="2" y="4" width="20" height="16" rx="2" />
+                                                    <path d="m22 7-8.97 5.7a1.94 1.94 0 01-2.06 0L2 7" />
+                                                </svg>
+                                            ) : null}
+                                        </div>
+                                    </div>
                                 </div>
 
                                 {/* Error */}
@@ -323,8 +462,8 @@ export default function UnifiedAuthPage() {
 
                                 {/* Submit */}
                                 <button
-                                    onClick={handleEmailSubmit}
-                                    disabled={loading || !email.trim()}
+                                    onClick={handleSubmit}
+                                    disabled={loading || !identifier.trim()}
                                     className="w-full h-11 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold shadow-md shadow-emerald-600/20 transition-all duration-200 hover:shadow-lg hover:shadow-emerald-600/25 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                                 >
                                     {loading ? (
@@ -337,7 +476,7 @@ export default function UnifiedAuthPage() {
                         )}
 
                         {/* ── STEP: OTP Verification ── */}
-                        {(step === "otp-signin" || step === "otp-signup") && (
+                        {isOTPStep && (
                             <motion.div
                                 key="otp"
                                 initial={{ opacity: 0, x: 10 }}
@@ -350,7 +489,7 @@ export default function UnifiedAuthPage() {
                                     <motion.div
                                         initial={{ opacity: 0, y: -4 }}
                                         animate={{ opacity: 1, y: 0 }}
-                                        className={`p-3 rounded-xl text-sm mb-4 ${isNewUser
+                                        className={`p-3 rounded-xl text-sm mb-4 ${isNewUser || step === "otp-phone"
                                             ? "bg-emerald-50 text-emerald-700 border border-emerald-100"
                                             : "bg-zinc-50 text-zinc-600 border border-zinc-100"
                                             }`}
@@ -359,12 +498,14 @@ export default function UnifiedAuthPage() {
                                     </motion.div>
                                 )}
 
-                                {/* Email display */}
+                                {/* Identifier display */}
                                 <div className="flex items-center justify-between mb-4 px-1">
                                     <span className="text-sm text-zinc-500">
                                         Sending to{" "}
                                         <span className="font-medium text-zinc-700">
-                                            {email}
+                                            {step === "otp-phone"
+                                                ? formatPhoneForAPI(identifier.trim())
+                                                : identifier}
                                         </span>
                                     </span>
                                     <button
@@ -390,12 +531,15 @@ export default function UnifiedAuthPage() {
                                             setError("");
                                         }}
                                         onKeyDown={(e) =>
-                                            e.key === "Enter" && handleOTPSubmit()
+                                            e.key === "Enter" &&
+                                            (step === "otp-phone"
+                                                ? handlePhoneOTPSubmit()
+                                                : handleEmailOTPSubmit())
                                         }
-                                        placeholder="Enter 6-digit code"
+                                        placeholder={step === "otp-phone" ? "Enter 4-digit code" : "Enter 6-digit code"}
                                         className="w-full h-11 px-4 rounded-xl border border-zinc-200 bg-zinc-50/50 text-sm text-zinc-900 text-center tracking-[0.5em] font-mono placeholder:tracking-normal placeholder:font-sans placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all duration-200"
                                         autoFocus
-                                        maxLength={6}
+                                        maxLength={step === "otp-phone" ? 4 : 6}
                                         inputMode="numeric"
                                     />
                                 </div>
@@ -413,8 +557,15 @@ export default function UnifiedAuthPage() {
 
                                 {/* Verify Button */}
                                 <button
-                                    onClick={handleOTPSubmit}
-                                    disabled={loading || code.length < 6}
+                                    onClick={
+                                        step === "otp-phone"
+                                            ? handlePhoneOTPSubmit
+                                            : handleEmailOTPSubmit
+                                    }
+                                    disabled={
+                                        loading ||
+                                        code.length < (step === "otp-phone" ? 4 : 6)
+                                    }
                                     className="w-full h-11 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold shadow-md shadow-emerald-600/20 transition-all duration-200 hover:shadow-lg active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                                 >
                                     {loading ? (
