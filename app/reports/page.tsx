@@ -85,8 +85,8 @@ export default function ReportsPage() {
               </h1>
 
               <p className="text-xl text-white/70 max-w-2xl mb-12">
-                Proprietary data and deep-sector expertise mapping the
-                future of energy infrastructure.
+                Explore in-depth reports featuring data-driven analysis, sector insights, policy reviews,
+                and market intelligence shaping India’s evolving energy landscape.
               </p>
 
               <motion.button

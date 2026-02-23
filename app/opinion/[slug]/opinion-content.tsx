@@ -39,7 +39,7 @@ export function OpinionContent({ opinion, recommended }: OpinionContentProps) {
                         className="group flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 hover:text-[#00A651] transition-all"
                     >
                         <ChevronLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-                        Back to Perspectives
+                        Back to Opinions
                     </Link>
                     <div className="flex items-center gap-4">
                         <Button variant="ghost" size="sm" className="rounded-full hover:bg-zinc-50">
@@ -189,7 +189,7 @@ export function OpinionContent({ opinion, recommended }: OpinionContentProps) {
                     <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-6 sm:gap-0 mb-10 sm:mb-16">
                         <div>
                             <span className="text-[10px] font-black uppercase tracking-[0.3em] text-[#00A651] mb-4 block">Continue Reading</span>
-                            <h3 className="text-3xl sm:text-4xl md:text-5xl font-black uppercase tracking-tighter italic">Related <br />Perspectives.</h3>
+                            <h3 className="text-3xl sm:text-4xl md:text-5xl font-black uppercase tracking-tighter italic">Related <br />Opinions.</h3>
                         </div>
                         <Link href="/opinion" className="bg-black text-white px-8 py-4 rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-[#00A651] transition-all">
                             View All Opinions

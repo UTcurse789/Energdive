@@ -78,7 +78,7 @@ const tabs = [
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#00A651]/10 text-[#00A651] text-xs font-bold uppercase tracking-widest w-fit mb-6">
                     Headquarters
                 </div>
-                <h3 className="text-3xl font-serif font-bold text-zinc-900 mb-2">ENERGDIVE Insights</h3>
+                <h3 className="text-3xl font-serif font-bold text-zinc-900 mb-2">ENERGDIVE Insights & Market Intelligence</h3>
                 <p className="text-zinc-500 font-medium mb-8">A unit of ClariSector Technologies Pvt. Ltd.</p>
 
                 <div className="p-8 rounded-3xl bg-zinc-50 border border-zinc-100 space-y-4">
@@ -277,7 +277,8 @@ export default function ContactPage() {
                         transition={{ delay: 0.2 }}
                         className="text-zinc-500 text-lg md:text-xl leading-relaxed max-w-2xl mx-auto"
                     >
-                        Whether you wish to partner, advertise, or contribute, we are ready to engage. Select a department below to connect with the right team.
+                        We believe great ideas grow through collaboration. If you wish to partner, advertise, contribute editorially, or require subscription assistance, connect with us—we’re always ready to engage. Together, let’s build an intelligent, sustainable energy future for India.
+
                     </motion.p>
                 </div>
 

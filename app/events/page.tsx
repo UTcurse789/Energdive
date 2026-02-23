@@ -35,7 +35,7 @@ export default function EventsPage() {
     const tabs = [
         { id: "ongoing", label: "Ongoing" },
         { id: "upcoming", label: "Upcoming" },
-        { id: "past", label: "Past Summits" },
+        { id: "past", label: "Past Events" },
     ];
 
     const filteredEvents = useMemo(() => {
@@ -61,8 +61,11 @@ export default function EventsPage() {
                         animate={{ opacity: 1, y: 0 }}
                         className="text-5xl md:text-7xl font-black tracking-tighter text-zinc-900 leading-none uppercase italic"
                     >
-                        Global <span className="text-[#00A651] not-italic">Summits.</span>
+                        Events <span className="text-[#00A651] not-italic">.</span>
                     </motion.h1>
+                    <p className="text-gray-600 max-w-3xl text-lg leading-relaxed mt-6 mb-8">
+                        Watch conversations that matter with ENERGDIVE Videos, where domain experts and sector leaders share quick insights and viewpoints on India’s evolving energy landscape.
+                    </p>
                 </section>
 
                 {/* TAB NAVIGATION */}

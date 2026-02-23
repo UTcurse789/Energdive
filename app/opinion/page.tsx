@@ -77,7 +77,7 @@ export default function OpinionPage() {
             <div className="absolute inset-0 bg-linear-to-b from-black/60 via-black/20 to-[#FDFDFD]" />
           </div>
 
-          <div className="container mx-auto px-6 lg:px-12 relative z-10 pt-20">
+          <div className="container mx-auto px-4 lg:px-8 relative z-10 pt-20">
             <motion.div
               initial={{ opacity: 0, y: 40 }}
               animate={{ opacity: 1, y: 0 }}
@@ -85,16 +85,14 @@ export default function OpinionPage() {
               style={{ opacity }}
               className="max-w-5xl"
             >
-              <h1 className="text-4xl sm:text-6xl md:text-8xl lg:text-9xl font-black text-white leading-[0.85] uppercase mb-6 sm:mb-10">
-                Latest <br />
-                <span className="text-[#00A651] italic">
-                  Opinions
+              <h1 className="text-4xl sm:text-6xl md:text-8xl lg:text-[8rem] font-black leading-[0.85] tracking-tight uppercase mb-6 sm:mb-10">
+                <span className="text-[#00A651]">
+                  Opinion
                 </span>
               </h1>
 
               <p className="text-xl text-white/70 max-w-2xl mb-12">
-                Expert perspectives and in-depth analysis shaping
-                the future of the energy sector.
+                Discover perspectives that matter with ENERGDIVE Opinion, where thought leaders share analysis, commentary, and forward-looking views on key energy and sustainability issues.
               </p>
 
               <motion.button
