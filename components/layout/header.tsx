@@ -162,10 +162,18 @@ export function Header() {
                                         <UserButton.Link label="Dashboard" labelIcon={<Zap size={14} />} href="/dashboard" />
                                     </UserButton.MenuItems>
                                 </UserButton>
+                                <UserButton
+                                    afterSignOutUrl="/"
+                                    appearance={{
+                                        elements: {
+                                            userPreviewSecondaryIdentifier: { display: "none" },
+                                        },
+                                    }}
+                                />
                             </SignedIn>
                             <SignedOut>
                                 <motion.div className="relative" onMouseEnter={() => setIsLoginHovered(true)} onMouseLeave={() => setIsLoginHovered(false)}>
-                                    <Link href="/sign-in" className="block border-[1.5px] border-black px-3 py-1 md:px-6 md:py-2 text-[10px] md:text-[12px] font-bold uppercase tracking-wider hover:bg-black hover:text-white transition-all overflow-hidden whitespace-nowrap" onClick={closeAll}>
+                                    <Link href="/auth" className="block border-[1.5px] border-black px-3 py-1 md:px-6 md:py-2 text-[10px] md:text-[12px] font-bold uppercase tracking-wider hover:bg-black hover:text-white transition-all overflow-hidden whitespace-nowrap" onClick={closeAll}>
                                         LOGIN
                                         <AnimatePresence>
                                             {isLoginHovered && (
@@ -686,7 +694,7 @@ export function Header() {
                             <div className="px-6 py-4 border-t border-gray-100">
                                 <SignedOut>
                                     <Link
-                                        href="/sign-in"
+                                        href="/auth"
                                         onClick={closeAll}
                                         className="block w-full text-center border-[1.5px] border-black px-6 py-3 text-[12px] font-bold uppercase tracking-wider hover:bg-black hover:text-white transition-all"
                                     >

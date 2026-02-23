@@ -1,5 +1,6 @@
 /**
  * In-memory OTP store with automatic expiry.
+ * Uses globalThis to survive Next.js dev hot reloads.
  * For production, swap this out for Redis or similar.
  */
 
@@ -8,7 +9,12 @@ interface OtpEntry {
     expiresAt: number;
 }
 
-const store = new Map<string, OtpEntry>();
+// Persist across hot reloads in dev
+const globalForOtp = globalThis as unknown as { _otpStore?: Map<string, OtpEntry> };
+if (!globalForOtp._otpStore) {
+    globalForOtp._otpStore = new Map<string, OtpEntry>();
+}
+const store = globalForOtp._otpStore;
 
 const OTP_EXPIRY_MS = 5 * 60 * 1000; // 5 minutes
 

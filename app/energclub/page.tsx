@@ -47,7 +47,7 @@ const TierCard = ({ title, price, features, recommended = false }: { title: stri
                 </li>
             ))}
         </ul>
-        <Link href="/sign-up" className={`w-full py-3 rounded-lg font-bold text-sm uppercase tracking-widest transition-all block text-center ${recommended
+        <Link href="/auth" className={`w-full py-3 rounded-lg font-bold text-sm uppercase tracking-widest transition-all block text-center ${recommended
             ? 'bg-[#E5B866] text-black hover:bg-[#d4a855]'
             : 'bg-zinc-800 text-white hover:bg-zinc-700'
             }`}>
@@ -203,7 +203,7 @@ export default function EnergClubPage() {
                     <p className="text-zinc-400 text-lg mb-10 leading-relaxed">
                         An integrated digital platform for India's energy professionals. All figures, power, generation, markets, storage, policy, and one goal: To Access Insights, Fuel Innovation, and Sustain Power for a better ecosystem.
                     </p>
-                    <Link href="/sign-up" className="bg-[#E5B866] text-black px-10 py-4 rounded-full font-bold uppercase tracking-widest hover:bg-white transition-colors duration-300 shadow-[0_0_20px_rgba(229,184,102,0.3)] inline-block">
+                    <Link href="/auth" className="bg-[#E5B866] text-black px-10 py-4 rounded-full font-bold uppercase tracking-widest hover:bg-white transition-colors duration-300 shadow-[0_0_20px_rgba(229,184,102,0.3)] inline-block">
                         Join Now
                     </Link>
                 </div>
@@ -330,7 +330,7 @@ export default function EnergClubPage() {
                     <p className="text-zinc-400 mb-10 leading-relaxed">
                         Your access to India's most influential energy community is just one step away. Join now and start engaging with policymakers, industry giants, and opportunities that matter to your journey.
                     </p>
-                    <Link href="/sign-up" className="bg-[#E5B866] text-black px-12 py-4 rounded-full font-bold uppercase tracking-widest hover:bg-white transition-colors duration-300 shadow-[0_0_30px_rgba(229,184,102,0.4)] inline-block">
+                    <Link href="/auth" className="bg-[#E5B866] text-black px-12 py-4 rounded-full font-bold uppercase tracking-widest hover:bg-white transition-colors duration-300 shadow-[0_0_30px_rgba(229,184,102,0.4)] inline-block">
                         Join Now
                     </Link>
 

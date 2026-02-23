@@ -95,7 +95,14 @@ export function DashboardHeader() {
                                 {role}
                             </p>
                         </div>
-                        <UserButton afterSignOutUrl="/" />
+                        <UserButton
+                            afterSignOutUrl="/"
+                            appearance={{
+                                elements: {
+                                    userPreviewSecondaryIdentifier: { display: "none" },
+                                },
+                            }}
+                        />
                     </div>
                 </div>
             </div>
