@@ -23,12 +23,12 @@ export function EventCard({ event }: EventCardProps) {
             <div className="bg-white border border-slate-100 overflow-hidden hover:border-[#09B697] hover:shadow-lg hover:shadow-[rgba(9,182,151,0.08)] transition-all duration-300 relative">
 
                 {/* Image */}
-                <div className="relative h-44 w-full overflow-hidden ">
+                <div className="relative h-44 w-full overflow-hidden bg-gray-50">
                     <Image
                         src={event.image || "/magazine-default.jpg"}
                         alt={event.title}
                         fill
-                        className="object-cover p-0 transition-transform duration-700 group-hover:scale-105"
+                        className="object-contain transition-transform duration-700 group-hover:scale-105"
                     />
                     <div className="absolute inset-0 bg-linear-to-t from-black/70 via-black/10 to-transparent" />
 

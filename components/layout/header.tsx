@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
-import { Search, ChevronDown, Facebook, Twitter, Linkedin, Megaphone, ChevronRight, Zap, Menu, X } from "lucide-react";
+import { Search, ChevronDown, Facebook, Twitter, Linkedin, Megaphone, ChevronRight, Zap, Menu, X, MapPin, Mail, Phone, Play, Calendar, Globe, ArrowRight } from "lucide-react";
 import { SECTORS } from "@/data/dummy";
 import { motion, AnimatePresence } from "framer-motion";
 import { SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
@@ -85,11 +85,11 @@ export function Header() {
                     <Twitter className="w-3.5 h-3.5 hover:opacity-70 cursor-pointer" />
                     <Linkedin className="w-3.5 h-3.5 hover:opacity-70 cursor-pointer" />
                 </div>
-                <div className="flex items-center gap-2 uppercase cursor-pointer hover:text-gray-300 transition-colors">
+                <Link href="/advertise" className="flex items-center gap-2 uppercase cursor-pointer hover:text-gray-300 transition-colors">
                     <Megaphone className="w-3.5 h-3.5" />
                     <span className="whitespace-nowrap uppercase hidden sm:inline">ADVERTISE WITH US</span>
                     <span className="whitespace-nowrap uppercase sm:hidden">ADVERTISE</span>
-                </div>
+                </Link>
             </div>
 
             {/* 2. MAIN NAVIGATION */}
@@ -157,7 +157,11 @@ export function Header() {
 
                         <div className="relative">
                             <SignedIn>
-                                <UserButton afterSignOutUrl="/" />
+                                <UserButton afterSignOutUrl="/">
+                                    <UserButton.MenuItems>
+                                        <UserButton.Link label="Dashboard" labelIcon={<Zap size={14} />} href="/dashboard" />
+                                    </UserButton.MenuItems>
+                                </UserButton>
                             </SignedIn>
                             <SignedOut>
                                 <motion.div className="relative" onMouseEnter={() => setIsLoginHovered(true)} onMouseLeave={() => setIsLoginHovered(false)}>
@@ -181,7 +185,7 @@ export function Header() {
 
             {/* ══════════════════════════ DESKTOP MEGA MENU ══════════════════════════ */}
             <div className={cn(
-                "fixed left-0 w-full bg-white shadow-2xl border-t transition-all duration-300 origin-top overflow-hidden z-60 hidden lg:block",
+                "fixed left-0 w-full bg-white shadow-2xl border-t transition-all duration-300 origin-top overflow-hidden z-[60] hidden lg:block",
                 activeMenu ? "opacity-100 visible h-[600px]" : "opacity-0 invisible h-0"
             )}>
                 <div className="max-w-[1600px] mx-auto w-full flex h-full">
@@ -311,107 +315,234 @@ export function Header() {
                                     <Link
                                         href="/events"
                                         onClick={closeMenus}
-                                        className="px-4 py-3 text-[14px] font-bold text-gray-800 hover:bg-[#00A651] hover:text-white transition-colors"
-                                        onMouseEnter={() => setHoveredMoreItem(null)}
+                                        className={cn(
+                                            "px-4 py-3 text-[14px] font-bold text-gray-800 flex justify-between items-center transition-colors",
+                                            hoveredMoreItem === "events"
+                                                ? "bg-[#00A651] text-white"
+                                                : "hover:bg-[#00A651] hover:text-white"
+                                        )}
+                                        onMouseEnter={() => setHoveredMoreItem("events")}
                                     >
-                                        Events
+                                        Events <ChevronRight size={14} />
                                     </Link>
 
                                     <Link
                                         href="/about"
                                         onClick={closeMenus}
-                                        className="px-4 py-3 text-[14px] font-bold text-gray-800 hover:bg-[#00A651] hover:text-white transition-colors"
-                                        onMouseEnter={() => setHoveredMoreItem(null)}
+                                        className={cn(
+                                            "px-4 py-3 text-[14px] font-bold text-gray-800 flex justify-between items-center transition-colors",
+                                            hoveredMoreItem === "about"
+                                                ? "bg-[#00A651] text-white"
+                                                : "hover:bg-[#00A651] hover:text-white"
+                                        )}
+                                        onMouseEnter={() => setHoveredMoreItem("about")}
                                     >
-                                        About
+                                        About <ChevronRight size={14} />
                                     </Link>
 
                                     <Link
                                         href="/contact"
                                         onClick={closeMenus}
-                                        className="px-4 py-3 text-[14px] font-bold text-gray-800 hover:bg-[#00A651] hover:text-white transition-colors"
-                                        onMouseEnter={() => setHoveredMoreItem(null)}
+                                        className={cn(
+                                            "px-4 py-3 text-[14px] font-bold text-gray-800 flex justify-between items-center transition-colors",
+                                            hoveredMoreItem === "contact"
+                                                ? "bg-[#00A651] text-white"
+                                                : "hover:bg-[#00A651] hover:text-white"
+                                        )}
+                                        onMouseEnter={() => setHoveredMoreItem("contact")}
                                     >
-                                        Contact
+                                        Contact <ChevronRight size={14} />
                                     </Link>
                                 </div>
                             </div>
 
-                            <div className="flex-1 p-12">
-                                {/* Videos hover content */}
+                            <div className="flex-1 p-12 overflow-y-auto">
+                                {/* Videos hover content — GRID VIEW */}
                                 {hoveredMoreItem === "videos" && (
                                     <div>
                                         <h4 className="text-[12px] font-bold uppercase text-gray-400 border-b pb-3 mb-6 tracking-widest">Latest Videos</h4>
-                                        <div className="space-y-5">
+                                        <div className="grid grid-cols-3 gap-5">
                                             {realVideos.length > 0 ? realVideos.map((video: any) => {
                                                 const thumbUrl = video.thumbnail?.url
                                                     ? `${baseUrl}${video.thumbnail.url}`
                                                     : `https://img.youtube.com/vi/${video.youtubeId}/mqdefault.jpg`;
                                                 return (
-                                                    <Link key={video.id} href={`/videos/${video.slug}`} onClick={closeMenus} className="flex gap-4 group cursor-pointer">
-                                                        <div className="relative w-28 h-16 bg-gray-200 shrink-0 rounded overflow-hidden">
-                                                            <Image src={thumbUrl} alt={video.title} fill className="object-cover group-hover:scale-105 transition-transform" />
-                                                            <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
-                                                                <div className="w-6 h-6 bg-white/90 rounded-full flex items-center justify-center">
-                                                                    <div className="w-0 h-0 border-t-[5px] border-t-transparent border-l-[8px] border-l-gray-900 border-b-[5px] border-b-transparent ml-0.5"></div>
+                                                    <Link key={video.id} href={`/videos/${video.slug}`} onClick={closeMenus} className="group cursor-pointer block">
+                                                        <div className="relative w-full aspect-video bg-gray-100 rounded-xl overflow-hidden mb-3">
+                                                            <Image src={thumbUrl} alt={video.title} fill className="object-cover group-hover:scale-105 transition-transform duration-500" />
+                                                            <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-colors flex items-center justify-center">
+                                                                <div className="w-10 h-10 bg-white/90 rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                                                                    <Play size={16} className="text-gray-900 ml-0.5" fill="currentColor" />
                                                                 </div>
                                                             </div>
                                                         </div>
-                                                        <div>
-                                                            <p className="text-[13px] font-bold group-hover:text-[#00A651] transition-colors line-clamp-2">{video.title}</p>
-                                                            <p className="text-[11px] text-gray-400 mt-1">{video.date ? new Date(video.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : ''}</p>
-                                                        </div>
+                                                        <p className="text-[13px] font-bold text-gray-800 group-hover:text-[#00A651] transition-colors line-clamp-2 leading-snug">{video.title}</p>
+                                                        <p className="text-[11px] text-gray-400 mt-1.5">{video.date ? new Date(video.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : ''}</p>
                                                     </Link>
                                                 );
                                             }) : (
-                                                <p className="text-gray-400 text-sm italic">Loading videos...</p>
+                                                <p className="text-gray-400 text-sm italic col-span-3">Loading videos...</p>
                                             )}
                                         </div>
-                                        <Link href="/videos" onClick={closeMenus} className="mt-6 inline-flex items-center gap-1 text-[11px] font-bold text-[#00A651] uppercase tracking-widest hover:underline">
-                                            View All Videos <ChevronRight size={12} />
+                                        <Link href="/videos" onClick={closeMenus} className="mt-8 inline-flex items-center gap-1.5 text-[11px] font-bold text-[#00A651] uppercase tracking-widest hover:underline">
+                                            View All Videos <ArrowRight size={13} />
                                         </Link>
                                     </div>
                                 )}
 
-                                {/* Events hover content */}
+                                {/* Events hover content — GRID VIEW */}
                                 {hoveredMoreItem === "events" && (
                                     <div>
                                         <h4 className="text-[12px] font-bold uppercase text-gray-400 border-b pb-3 mb-6 tracking-widest">Upcoming Events</h4>
-                                        <div className="space-y-5">
+                                        <div className="grid grid-cols-3 gap-5">
                                             {realEvents.length > 0 ? realEvents.map((event: any) => {
-                                                const eventImage = event.image?.url
-                                                    ? `${baseUrl}${event.image.url}`
-                                                    : event.coverImage?.url
-                                                        ? `${baseUrl}${event.coverImage.url}`
-                                                        : "/api/placeholder/200/120";
+                                                const imageField = Array.isArray(event.image) ? event.image[0] : event.image;
+                                                const img = imageField || null;
+                                                let eventImage = "/magazine-default.jpg";
+                                                if (typeof img === "string") {
+                                                    eventImage = img.startsWith("http") ? img : `${baseUrl}${img}`;
+                                                } else if (img) {
+                                                    const rawUrl =
+                                                        img.formats?.medium?.url ||
+                                                        img.formats?.small?.url ||
+                                                        img.formats?.thumbnail?.url ||
+                                                        img.url ||
+                                                        null;
+                                                    if (rawUrl) {
+                                                        eventImage = rawUrl.startsWith("http") ? rawUrl : `${baseUrl}${rawUrl}`;
+                                                    }
+                                                }
+                                                const eventDate = event.date ? new Date(event.date) : null;
+                                                const isValidDate = eventDate && !isNaN(eventDate.getTime());
+                                                const eventLocation = event.venue || event.location || "";
+                                                const eventHref = event.url && /^https?:\/\//.test(event.url)
+                                                    ? event.url
+                                                    : `/events/${event.slug || event.id}`;
+                                                const openInNewTab = !!event.url && /^https?:\/\//.test(event.url);
                                                 return (
-                                                    <Link key={event.id} href={`/events/${event.slug || event.id}`} onClick={closeMenus} className="flex gap-4 group cursor-pointer">
-                                                        <div className="relative w-28 h-16 bg-gray-200 shrink-0 rounded overflow-hidden">
-                                                            <Image src={eventImage} alt={event.title} fill className="object-cover group-hover:scale-105 transition-transform" />
-                                                        </div>
-                                                        <div>
-                                                            <p className="text-[13px] font-bold group-hover:text-[#00A651] transition-colors line-clamp-2">{event.title}</p>
-                                                            <p className="text-[11px] text-gray-400 mt-1">{event.date ? new Date(event.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : ''}{event.location ? ` · ${event.location}` : ''}</p>
-                                                        </div>
+                                                    <Link
+                                                        key={event.id}
+                                                        href={eventHref}
+                                                        onClick={closeMenus}
+                                                        target={openInNewTab ? "_blank" : undefined}
+                                                        rel={openInNewTab ? "noopener noreferrer" : undefined}
+                                                        className="group cursor-pointer block"
+                                                    >
+                                                        <article className="h-full rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:border-[#00A651]/40 hover:shadow-xl">
+                                                            <div className="relative h-40 w-full bg-gradient-to-b from-gray-50 to-gray-100 border-b border-gray-200 overflow-hidden">
+                                                                <Image src={eventImage} alt={event.title || "Event"} fill className="object-contain p-4 group-hover:scale-105 transition-transform duration-500" />
+                                                                <div className="absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent pointer-events-none" />
+                                                                {isValidDate && (
+                                                                    <div className="absolute top-3 left-3">
+                                                                        <div className="bg-white/95 backdrop-blur-sm rounded-lg px-2.5 py-1.5 text-center shadow-sm border border-gray-100">
+                                                                            <p className="text-[10px] font-bold uppercase leading-none" style={{ color: '#00A651' }}>{eventDate.toLocaleDateString('en-US', { month: 'short' })}</p>
+                                                                            <p className="text-[18px] font-bold text-gray-900 leading-none mt-0.5">{eventDate.getDate()}</p>
+                                                                        </div>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                            <div className="p-4">
+                                                                <p className="text-[13px] font-bold text-gray-800 group-hover:text-[#00A651] transition-colors line-clamp-2 leading-snug min-h-[38px]">
+                                                                    {event.title}
+                                                                </p>
+                                                                {eventLocation && (
+                                                                    <p className="text-[11px] text-gray-500 mt-2 flex items-center gap-1.5">
+                                                                        <MapPin size={10} className="shrink-0" />
+                                                                        <span className="line-clamp-1">{eventLocation}</span>
+                                                                    </p>
+                                                                )}
+                                                            </div>
+                                                        </article>
                                                     </Link>
                                                 );
                                             }) : (
-                                                <p className="text-gray-400 text-sm italic">Loading events...</p>
+                                                <p className="text-gray-400 text-sm italic col-span-3">Loading events...</p>
                                             )}
                                         </div>
-                                        <Link href="/events" onClick={closeMenus} className="mt-6 inline-flex items-center gap-1 text-[11px] font-bold text-[#00A651] uppercase tracking-widest hover:underline">
-                                            View All Events <ChevronRight size={12} />
+                                        <Link href="/events" onClick={closeMenus} className="mt-8 inline-flex items-center gap-1.5 text-[11px] font-bold text-[#00A651] uppercase tracking-widest hover:underline">
+                                            View All Events <ArrowRight size={13} />
                                         </Link>
+                                    </div>
+                                )}
+
+                                {/* About hover content — BRIEF OVERVIEW */}
+                                {hoveredMoreItem === "about" && (
+                                    <div className="flex items-start gap-12 h-full">
+                                        <div className="flex-1">
+                                            <h4 className="text-[12px] font-bold uppercase text-gray-400 border-b pb-3 mb-6 tracking-widest">About EnergDive</h4>
+                                            <h3 className="text-2xl font-serif font-bold text-zinc-900 mb-4 leading-tight">A Strategic Intelligence Platform</h3>
+                                            <p className="text-[14px] text-gray-500 leading-relaxed mb-4">India is entering a defining decade—one that will shape not only its energy security but also its global influence in the age of sustainability.</p>
+                                            <p className="text-[14px] text-gray-500 leading-relaxed mb-6">ENERGDIVE is designed to fill a critical void — conceived as India&apos;s foremost Strategic Intelligence Platform, unifying diverse stakeholders on one credible and data-driven platform.</p>
+                                            <div className="bg-[#00A651]/5 border-l-4 border-[#00A651] p-4 rounded-r-xl mb-6">
+                                                <p className="text-[13px] font-bold italic text-zinc-700 leading-relaxed">&quot;ENERGDIVE emerges at this pivotal juncture as the definitive voice of India&apos;s energy transformation.&quot;</p>
+                                            </div>
+                                            <Link href="/about" onClick={closeMenus} className="inline-flex items-center gap-1.5 text-[11px] font-bold text-[#00A651] uppercase tracking-widest hover:underline">
+                                                Learn More About Us <ArrowRight size={13} />
+                                            </Link>
+                                        </div>
+                                        <div className="hidden xl:block w-56 shrink-0">
+                                            <div className="relative aspect-[3/4] rounded-2xl overflow-hidden shadow-xl">
+                                                <Image src="/energdive.jpg" alt="ENERGDIVE" fill className="object-cover" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Contact hover content — BRIEF OVERVIEW */}
+                                {hoveredMoreItem === "contact" && (
+                                    <div className="flex items-start gap-12 h-full">
+                                        <div className="flex-1">
+                                            <h4 className="text-[12px] font-bold uppercase text-gray-400 border-b pb-3 mb-6 tracking-widest">Get In Touch</h4>
+                                            <h3 className="text-2xl font-serif font-bold text-zinc-900 mb-4 leading-tight">We&apos;d Love to Hear From You</h3>
+                                            <p className="text-[14px] text-gray-500 leading-relaxed mb-8">Whether you have a story tip, editorial inquiry, advertising question, or just want to connect — our team is ready to help.</p>
+                                            <div className="grid grid-cols-1 gap-4">
+                                                <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl border border-gray-100 hover:border-[#00A651]/30 transition-colors">
+                                                    <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: '#00A65112' }}>
+                                                        <MapPin size={18} style={{ color: '#00A651' }} />
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-[12px] font-bold text-gray-400 uppercase tracking-wider">Office</p>
+                                                        <p className="text-[14px] text-gray-700 font-medium">Sector 12A, Dwarka, New Delhi 110075</p>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl border border-gray-100 hover:border-[#00A651]/30 transition-colors">
+                                                    <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: '#00A65112' }}>
+                                                        <Mail size={18} style={{ color: '#00A651' }} />
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-[12px] font-bold text-gray-400 uppercase tracking-wider">Email</p>
+                                                        <p className="text-[14px] text-gray-700 font-medium">contact@energdive.com</p>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl border border-gray-100 hover:border-[#00A651]/30 transition-colors">
+                                                    <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: '#00A65112' }}>
+                                                        <Phone size={18} style={{ color: '#00A651' }} />
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-[12px] font-bold text-gray-400 uppercase tracking-wider">Phone</p>
+                                                        <p className="text-[14px] text-gray-700 font-medium">+91 11 4544 4425</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <Link href="/contact" onClick={closeMenus} className="mt-8 inline-flex items-center gap-1.5 text-[11px] font-bold text-[#00A651] uppercase tracking-widest hover:underline">
+                                                Visit Contact Page <ArrowRight size={13} />
+                                            </Link>
+                                        </div>
                                     </div>
                                 )}
 
                                 {/* Default content when nothing hovered */}
                                 {!hoveredMoreItem && (
                                     <div className="flex items-center justify-center h-full">
-                                        <div className="bg-gray-900 text-white p-8 rounded-xl max-w-md w-full">
-                                            <h5 className="text-[#00A651] font-bold text-[11px] uppercase tracking-widest mb-2">EnergClub</h5>
-                                            <p className="text-[14px] font-medium mb-4">Join our exclusive community of energy professionals.</p>
-                                            <Link href="/energclub" onClick={closeMenus} className="border border-white/30 py-2 px-6 text-[10px] font-bold uppercase hover:bg-white hover:text-black transition-all inline-block">Learn More</Link>
+                                        <div className="text-center max-w-md">
+                                            <div className="w-16 h-16 rounded-2xl mx-auto mb-6 flex items-center justify-center" style={{ background: '#00A65115' }}>
+                                                <Zap size={28} style={{ color: '#00A651' }} />
+                                            </div>
+                                            <h4 className="text-xl font-bold text-zinc-900 mb-2">Explore EnergDive</h4>
+                                            <p className="text-gray-500 text-[14px] leading-relaxed mb-6">Hover over any item to preview. Discover videos, events, learn about us, or get in touch.</p>
+                                            <Link href="/energclub" onClick={closeMenus} className="inline-flex items-center gap-2 px-6 py-3 bg-zinc-900 text-white text-[11px] font-bold uppercase tracking-wider rounded-lg hover:bg-zinc-800 transition-colors">
+                                                <Zap size={14} style={{ color: '#00A651' }} /> Join EnergClub
+                                            </Link>
                                         </div>
                                     </div>
                                 )}

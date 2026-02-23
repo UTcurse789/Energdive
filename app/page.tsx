@@ -1,14 +1,15 @@
 import { Hero } from "@/components/sections/hero";
+// import { SpotlightSection } from "@/components/sections/spotlight-section";
 import { BentoGrid } from "@/components/ui/bento-grid";
 import { SectorBlock } from "@/components/ui/sector-block";
 import { OpinionSection } from "@/components/sections/opinion";
-import { DataInsightsSection } from "@/components/sections/data-insights";
 import { EventsSection } from "@/components/sections/events";
-import { SubscribeCTA } from "@/components/sections/subscribe-cta";
+import { HomepageVideos } from "@/components/sections/homepage-videos";
+import { PublicationShowcase } from "@/components/sections/PublicationShowcase";
 import { ARTICLES } from "@/data/dummy";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { MarketTicker } from "@/components/features/ticker";
-import { Article, Opinion } from "@/types";
+import { Article } from "@/types";
 
 const STRAPI_BASE = "http://206.189.132.187:1337";
 
@@ -56,8 +57,8 @@ function mapArticle(article: any, sectorName: string): Article {
     author: article.author ? {
       name: article.author.name || "Staff Writer",
       avatar: article.author.avatar?.url ? `${STRAPI_BASE}${article.author.avatar.url}` : "/default-avatar.png",
-      role: article.author.role || "Contributor"
-    } : { name: "Staff Writer", avatar: "/default-avatar.png", role: "Contributor" },
+      role: article.author.role || "Author"
+    } : { name: "Staff Writer", avatar: "/default-avatar.png", role: "Author" },
     readTime: "5 min read",
   };
 }
@@ -77,60 +78,8 @@ async function getAllContents() {
   }
 }
 
-async function getFeaturedOpinion(): Promise<Opinion | null> {
-  try {
-    const res = await fetch(
-      `${STRAPI_BASE}/api/contents` +
-      `?filters[type_of_content][name][$eq]=Opinion` +
-      `&pagination[pageSize]=1` +
-      `&populate=*` +
-      `&sort=publishedAt:desc`,
-      { cache: "no-store" }
-    );
-    if (!res.ok) return null;
-    const json = await res.json();
-    const article = json.data?.[0];
-    if (!article) return null;
-
-    const imageUrl = extractImageUrl(article);
-
-    return {
-      id: String(article.id),
-      title: article.Title || "",
-      slug: article.slug || "",
-      excerpt: extractExcerpt(article),
-      category: "Opinion",
-      image: imageUrl,
-      featuredImage: imageUrl,
-      content: article.Content || [],
-      date: article.publishedAt
-        ? new Date(article.publishedAt).toLocaleDateString("en-GB", {
-          day: "numeric", month: "short", year: "numeric",
-        })
-        : "",
-      readTime: "5 min read",
-      author: {
-        name: article.author?.name || "Staff Writer",
-        role: article.author?.role || "Contributor",
-        avatar: article.author?.avatar?.url
-          ? `${STRAPI_BASE}${article.author.avatar.url}`
-          : "/default-avatar.png",
-        image: article.author?.avatar?.url
-          ? `${STRAPI_BASE}${article.author.avatar.url}`
-          : "/default-avatar.png",
-      },
-    };
-  } catch (err) {
-    console.error("Opinion fetch error:", err);
-    return null;
-  }
-}
-
 export default async function Home() {
-  const [allContents, featuredOpinion] = await Promise.all([
-    getAllContents(),
-    getFeaturedOpinion(),
-  ]);
+  const allContents = await getAllContents();
 
   // ── Bento: random 6 from all news ──
   const finalBentoItems = allContents
@@ -155,13 +104,13 @@ export default async function Home() {
       excerpt: a.excerpt,
     }));
 
-  // ── Sectors: group by allowed sectors ──
+  // ── Sectors: group by allowed sectors — ONLY Articles ──
   const sectorsWithArticles = allContents
     ? ALLOWED_SECTORS.map((sectorName) => {
       const articles = allContents
         .filter((article: any) =>
           article.sectors?.some((s: any) => s.name === sectorName) &&
-          article.type_of_content?.name === "News"
+          article.type_of_content?.name === "Articles"
         )
         .slice(0, 4)
         .map((article: any) => mapArticle(article, sectorName));
@@ -176,10 +125,10 @@ export default async function Home() {
 
   return (
     <>
+      {/* Cover Story (left) + Trending (right) — the original Hero */}
       <Hero />
-      <MarketTicker />
 
-      {/* Trending Bento */}
+      {/* News Bento */}
       <section className="py-24 bg-white relative overflow-hidden">
         <div
           className="absolute inset-0 pointer-events-none opacity-[0.03]"
@@ -188,9 +137,9 @@ export default async function Home() {
             backgroundSize: "40px 40px",
           }}
         />
-        <div className="container px-4 mx-auto relative z-10">
+        <div className="container px-4 mx-auto relative z-10 max-w-[1400px]">
           <SectionHeading
-            title="Trending Now"
+            title="News"
             linkText="Explore All News"
             linkHref="/news"
           />
@@ -202,7 +151,7 @@ export default async function Home() {
 
       {/* Sector Blocks */}
       <div className="border-b border-border">
-        <div className="container">
+        <div className="container max-w-[1400px] mx-auto">
           {sectorsWithArticles.map((sector) => (
             <SectorBlock
               key={sector.slug}
@@ -214,8 +163,9 @@ export default async function Home() {
         </div>
       </div>
 
-      <OpinionSection items={featuredOpinion ? [featuredOpinion] : []} />
-      <DataInsightsSection />
+      <OpinionSection />
+      <HomepageVideos />
+      <PublicationShowcase variant="compact" />
       <EventsSection />
     </>
   );

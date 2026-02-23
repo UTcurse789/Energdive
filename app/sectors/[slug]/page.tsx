@@ -3,9 +3,11 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, ChevronRight, Clock, ArrowUpRight } from "lucide-react";
+import { Search, ChevronRight, Clock, ArrowUpRight, Play } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { TagBadge } from "@/components/ui/tag-badge";
+import { SECTORS } from "@/data/dummy";
 
 /* ================================
    STRAPI CONFIG & HELPERS
@@ -18,7 +20,7 @@ async function fetchSectorWithChildren(slug: string) {
         const res = await fetch(url, { cache: "no-store" });
         const json = await res.json();
         return json?.data?.[0] || null;
-    } catch (err) {
+    } catch {
         return null;
     }
 }
@@ -29,19 +31,149 @@ async function fetchSectorArticles(slug: string) {
         const res = await fetch(url, { cache: "no-store" });
         const json = await res.json();
         return json?.data || [];
-    } catch (err) {
+    } catch {
+        return [];
+    }
+}
+
+async function fetchSectorVideos(slug: string) {
+    try {
+        const url = `${STRAPI}/api/videos?filters[sectors][slug][$eq]=${slug}&populate=*&sort=createdAt:desc`;
+        const res = await fetch(url, { cache: "no-store" });
+        const json = await res.json();
+        return json?.data || [];
+    } catch {
         return [];
     }
 }
 
 function formatDate(dateStr: string) {
     if (!dateStr) return "Recent";
-    return new Date(dateStr).toLocaleDateString("en-US", {
-        month: "short",
+    return new Date(dateStr).toLocaleDateString("en-GB", {
         day: "numeric",
+        month: "short",
         year: "numeric",
     });
 }
+
+function normalizeText(value: string) {
+    return value
+        .toLowerCase()
+        .trim()
+        .replace(/&/g, "and")
+        .replace(/[^a-z0-9]+/g, " ")
+        .replace(/\s+/g, " ");
+}
+
+function matchesActiveTab(values: string[] = [], activeTab: string) {
+    if (activeTab === "ALL") return true;
+    const normalizedTab = normalizeText(activeTab);
+    if (!normalizedTab) return true;
+
+    return values.some((value) => {
+        const normalizedValue = normalizeText(value || "");
+        if (!normalizedValue) return false;
+        return (
+            normalizedValue === normalizedTab ||
+            normalizedValue.includes(normalizedTab) ||
+            normalizedTab.includes(normalizedValue)
+        );
+    });
+}
+
+function extractNames(raw: any): string[] {
+    const list = Array.isArray(raw?.data) ? raw.data : Array.isArray(raw) ? raw : [];
+    return list
+        .map((item: any) => item?.name || item?.attributes?.name)
+        .filter(Boolean);
+}
+
+function extractTagObjects(raw: any): { name: string; slug: string }[] {
+    const list = Array.isArray(raw?.data) ? raw.data : Array.isArray(raw) ? raw : [];
+    return list
+        .map((item: any) => {
+            const source = item?.attributes || item;
+            if (!source?.name) return null;
+            return { name: source.name, slug: source.slug || source.name.toLowerCase().replace(/\s+/g, "-") };
+        })
+        .filter(Boolean);
+}
+
+const DEFAULT_SECTOR_META = {
+    title: "Sector Intelligence",
+    description:
+        "Deep-dive proprietary market data and critical infrastructure insights mapping the global energy transition.",
+    breadcrumbLabel: "Strategic Monitoring Desk",
+    heroImage: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2072",
+    spotlight:
+        "Track capital flows, policy turns, and infrastructure moves through one high-signal sector lens.",
+    quickSignals: ["Policy Momentum", "Investment Outlook", "Technology Shift"],
+};
+
+const SECTOR_HERO_MAP: Record<
+    string,
+    {
+        breadcrumbLabel: string;
+        spotlight: string;
+        quickSignals: [string, string, string];
+        heroImage: string;
+    }
+> = {
+    "oil-gas": {
+        breadcrumbLabel: "Oil & Gas",
+        spotlight: "From upstream risk to downstream margins, monitor every link in the oil and gas value chain.",
+        quickSignals: ["Upstream Activity", "Refining Margins", "Trade & Logistics"],
+        heroImage: "https://images.unsplash.com/photo-1473341304170-971dccb5ac1e?auto=format&fit=crop&q=80&w=2200",
+    },
+    "power-generation": {
+        breadcrumbLabel: "Generation Performance Grid",
+        spotlight: "Follow thermal, hydro, nuclear, and gas portfolios through demand shifts and cost pressure.",
+        quickSignals: ["Fuel Mix", "Plant Reliability", "Capacity Additions"],
+        heroImage: "https://images.unsplash.com/photo-1466611653911-95081537e5b7?auto=format&fit=crop&q=80&w=2200",
+    },
+    renewables: {
+        breadcrumbLabel: "Clean Energy Growth Radar",
+        spotlight: "Capture deployment velocity across solar, wind, and emerging renewable infrastructure.",
+        quickSignals: ["Solar Buildout", "Wind Pipeline", "Storage Pairing"],
+        heroImage: "https://images.unsplash.com/photo-1509391366360-2e959784a276?auto=format&fit=crop&q=80&w=2200",
+    },
+    transmission: {
+        breadcrumbLabel: "Grid Backbone Intelligence",
+        spotlight: "Track interconnectors, high-voltage expansion, and bottlenecks shaping regional stability.",
+        quickSignals: ["HVDC Projects", "Grid Bottlenecks", "Cross-Border Links"],
+        heroImage: "https://images.unsplash.com/photo-1617195737496-caf2cfeb4b7f?auto=format&fit=crop&q=80&w=2200",
+    },
+    distribution: {
+        breadcrumbLabel: "Last-Mile Operations Desk",
+        spotlight: "Observe urban and rural network modernization through smart-grid and metering progress.",
+        quickSignals: ["Loss Reduction", "Smart Metering", "Network Reliability"],
+        heroImage: "https://images.unsplash.com/photo-1548337138-e87d889cc369?auto=format&fit=crop&q=80&w=2200",
+    },
+    "electricity-markets": {
+        breadcrumbLabel: "Power Market Signals",
+        spotlight: "Decode spot price movement, contract behavior, and policy intervention across power markets.",
+        quickSignals: ["Spot Volatility", "Demand Curves", "Market Reform"],
+        heroImage: "https://images.unsplash.com/photo-1559526324-4b87b5e36e44?auto=format&fit=crop&q=80&w=2200",
+    },
+    "new-energies": {
+        breadcrumbLabel: "Next-Fuel Innovation Desk",
+        spotlight: "Track hydrogen, ammonia, and biofuel value chains as industrial decarbonization scales.",
+        quickSignals: ["Hydrogen Projects", "Fuel Pathways", "Industrial Adoption"],
+        heroImage: "https://images.unsplash.com/photo-1532601224476-15c79f2f7a51?auto=format&fit=crop&q=80&w=2200",
+    },
+    "energy-storage": {
+        breadcrumbLabel: "Flexibility & Storage Monitor",
+        spotlight: "Follow grid-scale batteries, long-duration storage, and balancing strategies in real time.",
+        quickSignals: ["BESS Pipeline", "Duration Economics", "Grid Integration"],
+        heroImage: "https://images.unsplash.com/photo-1620714223084-8fcacc6dfd8d?auto=format&fit=crop&q=80&w=2200",
+    },
+    "sustainability-safety": {
+        breadcrumbLabel: "ESG & Risk Assurance Hub",
+        spotlight: "Monitor HSE standards, ESG disclosure, and transition-risk governance across critical assets.",
+        quickSignals: ["ESG Disclosure", "HSE Compliance", "Net-Zero Execution"],
+        heroImage: "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&q=80&w=2200",
+    },
+};
 
 /* ================================
    MAIN PAGE COMPONENT
@@ -51,6 +183,7 @@ export default function SectorIntelligencePage() {
     const slug = params?.slug as string;
 
     const [articles, setArticles] = useState<any[]>([]);
+    const [videos, setVideos] = useState<any[]>([]);
     const [childSectors, setChildSectors] = useState<any[]>([]);
     const [searchQuery, setSearchQuery] = useState("");
     const [activeTab, setActiveTab] = useState("ALL");
@@ -63,65 +196,124 @@ export default function SectorIntelligencePage() {
                 id: item.id,
                 title: item.Title,
                 slug: item.slug,
-                date: item.Date,
-                sectors: item.sectors || [],
+                date: item.publishedAt || item.Date,
+                sectors: extractNames(item.sectors),
+                tags: extractTagObjects(item.tags),
                 image: item?.FeaturedImage?.url ? `${STRAPI}${item.FeaturedImage.url}` : "/placeholder.jpg",
                 excerpt: item.Excerpt?.[0]?.children?.[0]?.text || "",
             }));
             setArticles(formatted);
         });
+        fetchSectorVideos(slug).then((data) => {
+            const formatted = data.map((item: any) => ({
+                id: item.id,
+                title: item.title,
+                slug: item.slug,
+                thumbnail: item.thumbnail?.url
+                    ? `${STRAPI}${item.thumbnail.url}`
+                    : `https://img.youtube.com/vi/${item.youtubeId}/mqdefault.jpg`,
+                date: item.date || item.createdAt,
+                sectors: extractNames(item.sectors),
+                tags: extractNames(item.tags),
+            }));
+            setVideos(formatted);
+        });
     }, [slug]);
 
     const sectorMeta = useMemo(() => {
-        const title = slug?.replaceAll("-", " ").replace(/\b\w/g, (c) => c.toUpperCase());
+        const fallbackTitle = slug?.replaceAll("-", " ").replace(/\b\w/g, (c) => c.toUpperCase());
+        const fromDummy = SECTORS.find((sector) => sector.slug === slug);
+        const customMeta = (slug && SECTOR_HERO_MAP[slug]) || null;
+
         return {
-            title: title || "Sector Intelligence",
-            description: "Deep-dive proprietary market data and critical infrastructure insights mapping the global energy transition.",
-            heroImage: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2072",
+            title: fromDummy?.title || fallbackTitle || DEFAULT_SECTOR_META.title,
+            description: fromDummy?.description || DEFAULT_SECTOR_META.description,
+            breadcrumbLabel: customMeta?.breadcrumbLabel || DEFAULT_SECTOR_META.breadcrumbLabel,
+            heroImage: customMeta?.heroImage || fromDummy?.heroImage || DEFAULT_SECTOR_META.heroImage,
+            spotlight: customMeta?.spotlight || DEFAULT_SECTOR_META.spotlight,
+            quickSignals: customMeta?.quickSignals || DEFAULT_SECTOR_META.quickSignals,
         };
     }, [slug]);
 
     const subCategories = useMemo(() => {
-        const children = childSectors.map((c: any) => c.name?.toUpperCase());
-        return ["ALL", ...children];
+        const children = childSectors
+            .map((c: any) => c?.name?.trim())
+            .filter(Boolean)
+            .map((name: string) => name.toUpperCase());
+
+        return ["ALL", ...Array.from(new Set(children))];
     }, [childSectors]);
 
     const filteredReports = useMemo(() => {
         return articles.filter((report) => {
-            const matchesTab = activeTab === "ALL" || report.sectors?.some((s: any) => s?.name?.toUpperCase() === activeTab);
-            const matchesSearch = report.title?.toLowerCase().includes(searchQuery.toLowerCase());
+            const search = searchQuery.toLowerCase().trim();
+            const matchesTab = matchesActiveTab(report.sectors || [], activeTab);
+            const matchesSearch =
+                !search ||
+                report.title?.toLowerCase().includes(search) ||
+                report.excerpt?.toLowerCase().includes(search) ||
+                report.tags?.some((tag: any) => tag.name?.toLowerCase().includes(search)) ||
+                report.sectors?.some((name: string) => name.toLowerCase().includes(search));
             return matchesTab && matchesSearch;
         });
     }, [activeTab, searchQuery, articles]);
+
+    const filteredVideos = useMemo(() => {
+        return videos.filter((video) => {
+            const search = searchQuery.toLowerCase().trim();
+            const tabPools = [
+                ...(video.sectors || []),
+                ...(video.tags || []),
+            ];
+            const matchesTab = matchesActiveTab(tabPools, activeTab);
+            const matchesSearch =
+                !search ||
+                video.title?.toLowerCase().includes(search) ||
+                video.sectors?.some((name: string) => name.toLowerCase().includes(search)) ||
+                video.tags?.some((name: string) => name.toLowerCase().includes(search));
+            return matchesTab && matchesSearch;
+        });
+    }, [videos, activeTab, searchQuery]);
 
     return (
         <div className="min-h-screen bg-[#fafafa] text-[#121212] selection:bg-[#00C6A7]/30">
 
             {/* HERO SECTION */}
-            <section className="relative h-[65vh] flex items-center overflow-hidden bg-black">
+            <section className="relative min-h-[62vh] md:min-h-[68vh] flex items-center overflow-hidden bg-black">
                 <Image
                     src={sectorMeta.heroImage}
                     alt={sectorMeta.title}
                     fill
-                    className="object-cover opacity-40 grayscale scale-105"
+                    className="object-cover opacity-45 scale-[1.06]"
                 />
-                <div className="absolute inset-0 bg-linear-to-t from-black via-transparent to-transparent" />
+                <div className="absolute inset-0 bg-linear-to-r from-black/88 via-black/62 to-black/35" />
+                <div className="absolute inset-0 bg-linear-to-t from-black/90 via-transparent to-transparent" />
+                <div
+                    className="absolute inset-0 opacity-20"
+                    style={{
+                        backgroundImage:
+                            "linear-gradient(to right, rgba(255,255,255,0.08) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.08) 1px, transparent 1px)",
+                        backgroundSize: "44px 44px",
+                    }}
+                />
 
-                <div className="container mx-auto px-6 lg:px-16 relative z-10">
+                <div className="container mx-auto px-6 lg:px-16 max-w-[1400px] relative z-10">
                     <motion.nav
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="flex items-center gap-2 text-[10px] font-black text-[#00C6A7] uppercase tracking-[0.2em] mb-12"
+                        className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/5 px-4 py-2 text-[10px] font-black text-[#00C6A7] uppercase tracking-[0.2em] mb-10 backdrop-blur-sm"
                     >
                         <Link href="/" className="hover:text-white transition">EnergDive</Link>
-                        <ChevronRight size={10} className="text-gray-600" />
-                        <span className="text-white/50">Intelligence</span>
+                        <ChevronRight size={10} className="text-white/40" />
+                        <span className="text-white/60">Intelligence</span>
+                        <ChevronRight size={10} className="text-white/40" />
+                        <span className="text-white">{sectorMeta.breadcrumbLabel}</span>
                     </motion.nav>
 
                     <motion.h1
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
-                        className="text-6xl md:text-[120px] font-black uppercase leading-[0.85] tracking-tighter text-white mb-8"
+                        className="text-5xl md:text-[108px] font-black uppercase leading-[0.86] tracking-tighter text-white mb-7"
                     >
                         {sectorMeta.title}
                     </motion.h1>
@@ -130,18 +322,62 @@ export default function SectorIntelligencePage() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         transition={{ delay: 0.2 }}
-                        className="text-lg md:text-xl text-gray-400 max-w-xl border-l-2 border-[#00C6A7] pl-8 font-light leading-relaxed"
+                        className="text-lg md:text-xl text-gray-300 max-w-xl border-l-2 border-[#00C6A7] pl-6 md:pl-8 font-light leading-relaxed"
                     >
                         {sectorMeta.description}
                     </motion.p>
+
+                    <motion.p
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 0.32 }}
+                        className="mt-6 text-sm md:text-base text-white/80 max-w-2xl"
+                    >
+                        {sectorMeta.spotlight}
+                    </motion.p>
+
+                    <motion.div
+                        initial={{ opacity: 0, y: 12 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.4 }}
+                        className="mt-8 flex flex-wrap gap-3"
+                    >
+                        <div className="rounded-full border border-white/20 bg-white/5 px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-white backdrop-blur-sm">
+                            {filteredReports.length} Articles
+                        </div>
+                        <div className="rounded-full border border-white/20 bg-white/5 px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-white backdrop-blur-sm">
+                            {videos.length} Videos
+                        </div>
+                        <div className="rounded-full border border-white/20 bg-white/5 px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-white backdrop-blur-sm">
+                            {childSectors.length} Focus Tracks
+                        </div>
+                    </motion.div>
+
+                    <motion.div
+                        initial={{ opacity: 0, y: 16 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.48 }}
+                        className="mt-6 flex flex-wrap gap-2"
+                    >
+                        {sectorMeta.quickSignals.map((signal: string) => (
+                            <span
+                                key={signal}
+                                className="inline-flex items-center rounded-full bg-[#00C6A7]/18 text-[#7ff1de] px-3 py-1 text-[10px] font-black uppercase tracking-widest border border-[#00C6A7]/30"
+                            >
+                                {signal}
+                            </span>
+                        ))}
+                    </motion.div>
                 </div>
+
+                <div className="absolute left-0 right-0 bottom-0 h-16 bg-linear-to-t from-[#fafafa] to-transparent" />
             </section>
 
             {/* STICKY NAVIGATION & FILTER */}
-            <section className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-gray-100 py-6">
-                <div className="container mx-auto px-6 lg:px-16 flex flex-col lg:flex-row gap-8 justify-between items-center">
+            <section className="sticky top-[74px] z-10 bg-white/95 backdrop-blur-xl border-y border-gray-100 py-5 shadow-[0_6px_20px_rgba(15,23,42,0.06)]">
+                <div className="container mx-auto px-6 lg:px-16 max-w-[1400px] flex flex-col lg:flex-row gap-8 justify-between items-center">
 
-                    {/* Horizontal Scroller for Tabs */}
+                    {/* Tabs */}
                     <div className="flex gap-3 overflow-x-auto no-scrollbar w-full lg:w-auto pb-2 lg:pb-0 pr-6 scroll-px-6 snap-x">
                         {subCategories.map((cat) => (
                             <button
@@ -157,7 +393,7 @@ export default function SectorIntelligencePage() {
                         ))}
                     </div>
 
-                    {/* Sophisticated Search Bar */}
+                    {/* Search */}
                     <div className="relative w-full lg:w-96 group">
                         <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300 group-focus-within:text-[#00C6A7] transition-colors" />
                         <input
@@ -170,9 +406,9 @@ export default function SectorIntelligencePage() {
                 </div>
             </section>
 
-            {/* MAIN CONTENT GRID */}
-            <section className="container mx-auto px-6 lg:px-16 py-24 min-h-[60vh]">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-10 gap-y-16">
+            {/* ARTICLES GRID */}
+            <section className="container mx-auto px-6 lg:px-16 max-w-[1400px] py-24 min-h-[40vh] mb-10">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-10 gap-y-16 mt-15 mb-15">
                     <AnimatePresence mode="popLayout">
                         {filteredReports.map((report, idx) => (
                             <motion.div
@@ -183,49 +419,57 @@ export default function SectorIntelligencePage() {
                                 exit={{ opacity: 0, scale: 0.95 }}
                                 transition={{ delay: idx * 0.05 }}
                             >
-                                <Link
-                                    href={`/articles/${report.slug}`}
-                                    className="group block relative"
-                                >
-                                    {/* Card Image Wrapper */}
-                                    <div className="relative aspect-16/10 rounded-2xl overflow-hidden mb-6 bg-gray-200 shadow-sm transition-transform duration-500 group-hover:-translate-y-2 group-hover:shadow-2xl">
-                                        <Image
-                                            src={report.image}
-                                            alt={report.title}
-                                            fill
-                                            className="object-cover transition-all duration-700 group-hover:scale-110 group-hover:rotate-1"
-                                        />
-                                        <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-md p-2 rounded-full opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300">
-                                            <ArrowUpRight size={18} className="text-black" />
-                                        </div>
-                                    </div>
-
-                                    {/* Card Metadata */}
-                                    <div className="space-y-3 px-1">
-                                        <div className="flex items-center gap-3 text-[9px] font-black uppercase tracking-widest text-[#00C6A7]">
-                                            <span className="flex items-center gap-1">
-                                                <Clock size={10} />
-                                                {formatDate(report.date)}
-                                            </span>
-                                            <span className="h-1px w-4 bg-gray-200" />
-                                            <span>Insight Report</span>
+                                <article className="group relative">
+                                    <Link
+                                        href={`/articles/${report.slug}`}
+                                        className="block"
+                                    >
+                                        {/* Card Image */}
+                                        <div className="relative aspect-16/10 rounded-2xl overflow-hidden mb-6 bg-gray-200 shadow-sm transition-shadow duration-300 group-hover:shadow-lg">
+                                            <Image
+                                                src={report.image}
+                                                alt={report.title}
+                                                fill
+                                                className="object-cover"
+                                            />
+                                            <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-md p-2 rounded-full opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300">
+                                                <ArrowUpRight size={18} className="text-black" />
+                                            </div>
                                         </div>
 
-                                        <h3 className="text-2xl font-bold leading-tight tracking-tight text-[#1a1a1a] group-hover:text-[#00C6A7] transition-colors duration-300">
-                                            {report.title}
-                                        </h3>
+                                        {/* Card Meta */}
+                                        <div className="space-y-3 px-1">
+                                            <div className="flex items-center gap-3 text-[9px] font-black uppercase tracking-widest text-[#00C6A7]">
+                                                <span className="flex items-center gap-1">
+                                                    <Clock size={10} />
+                                                    {formatDate(report.date)}
+                                                </span>
+                                            </div>
 
-                                        <p className="text-sm text-gray-500 line-clamp-2 font-light leading-relaxed">
-                                            {report.excerpt}
-                                        </p>
-                                    </div>
-                                </Link>
+                                            <h3 className="text-2xl font-bold leading-tight tracking-tight text-[#1a1a1a] group-hover:text-[#00C6A7] transition-colors duration-300">
+                                                {report.title}
+                                            </h3>
+
+                                            <p className="text-sm text-gray-500 line-clamp-2 font-light leading-relaxed">
+                                                {report.excerpt}
+                                            </p>
+                                        </div>
+                                    </Link>
+
+                                    {report.tags?.length > 0 && (
+                                        <div className="flex flex-wrap gap-1.5 mt-3 px-1">
+                                            {report.tags.slice(0, 3).map((tag: any) => (
+                                                <TagBadge key={tag.slug} name={tag.name} slug={tag.slug} />
+                                            ))}
+                                        </div>
+                                    )}
+                                </article>
                             </motion.div>
                         ))}
                     </AnimatePresence>
                 </div>
 
-                {/* EMPTY STATE */}
+                {/* Empty State */}
                 {filteredReports.length === 0 && (
                     <motion.div
                         initial={{ opacity: 0 }}
@@ -241,8 +485,44 @@ export default function SectorIntelligencePage() {
                 )}
             </section>
 
-            {/* SPACING COMPONENT FOR FOOTER GAP */}
-            <div className="h-32 lg:h-48" aria-hidden="true" />
+            {/* VIDEOS SECTION */}
+            {videos.length > 0 && (
+                <section className="border-t border-gray-200 bg-white">
+                    <div className="container mx-auto px-6 lg:px-16 max-w-[1400px] py-20">
+                        {filteredVideos.length > 0 ? (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mt-15 mb-15">
+                                {filteredVideos.map((video) => (
+                                    <Link key={video.id} href={`/videos/${video.slug}`} className="group block">
+                                        <div className="relative aspect-video rounded-xl overflow-hidden mb-3 bg-gray-200">
+                                            <Image
+                                                src={video.thumbnail}
+                                                alt={video.title}
+                                                fill
+                                                className="object-cover"
+                                            />
+                                            <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
+                                                <div className="w-12 h-12 bg-white/90 rounded-full flex items-center justify-center pl-1 opacity-80 group-hover:opacity-100 transition-all">
+                                                    <Play size={18} className="text-red-600 fill-red-600" />
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <h3 className="text-sm font-bold group-hover:text-[#00A651] transition-colors line-clamp-2">{video.title}</h3>
+                                        <span className="text-[10px] text-gray-400 mt-1 block">{formatDate(video.date)}</span>
+                                    </Link>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 px-6 py-10 text-center">
+                                <p className="text-sm text-zinc-500">
+                                    Is filter/search ke saath koi video match nahi hua.
+                                </p>
+                            </div>
+                        )}
+                    </div>
+                </section>
+            )}
+
+
         </div>
     );
 }

@@ -4,6 +4,7 @@ import { Header } from "@/components/layout/header";
 import { notFound } from "next/navigation";
 import { BlocksRenderer } from "@strapi/blocks-react-renderer";
 import { SidebarSubscribe } from "@/components/sidebar-subscribe";
+import { TagBadge } from "@/components/ui/tag-badge";
 import { ISSUES } from "@/data/dummy";
 import { ArrowRight, Clock, Calendar, ChevronRight } from "lucide-react";
 
@@ -11,6 +12,14 @@ const STRAPI = "http://206.189.132.187:1337";
 
 function slugify(text: string): string {
     return text.toLowerCase().trim().replace(/[^\w\s-]/g, "").replace(/[\s_]+/g, "-").replace(/-+/g, "-").replace(/^-+|-+$/g, "");
+}
+
+function normalizeTag(tag: any) {
+    const source = tag?.attributes || tag;
+    const name = source?.name || "";
+    const slug = source?.slug || (name ? slugify(name) : "");
+    if (!name) return null;
+    return { name, slug };
 }
 
 /* ================= FETCH ARTICLE ================= */
@@ -52,9 +61,14 @@ export default async function ArticlePage(props: any) {
     const latestIssue = ISSUES[0];
 
     // Tags
-    const tagsData = articleData.tags?.data || articleData.tags || [];
+    const tagsData =
+        articleData.tags?.data ||
+        articleData.tags ||
+        articleData.attributes?.tags?.data ||
+        articleData.attributes?.tags ||
+        [];
     const tags = Array.isArray(tagsData)
-        ? tagsData.map((t: any) => t.name || t.attributes?.name).filter(Boolean)
+        ? tagsData.map((t: any) => normalizeTag(t)).filter(Boolean)
         : [];
 
     const article = {
@@ -196,13 +210,13 @@ export default async function ArticlePage(props: any) {
                                     Tags
                                 </h4>
                                 <div className="flex flex-wrap gap-2">
-                                    {tags.map((tag: string, i: number) => (
-                                        <span
-                                            key={i}
-                                            className="bg-teal-50 text-teal-700 px-3 py-1.5 text-xs font-medium uppercase tracking-wider rounded-full border border-teal-100 hover:bg-teal-100 transition-colors cursor-default"
-                                        >
-                                            {tag}
-                                        </span>
+                                    {tags.map((tag: any) => (
+                                        <TagBadge
+                                            key={tag.slug}
+                                            name={tag.name}
+                                            slug={tag.slug}
+                                            className="bg-teal-50 text-teal-700 px-3 py-1.5 text-xs font-medium uppercase tracking-wider rounded-full border border-teal-100 hover:bg-teal-600 hover:text-white hover:border-teal-600"
+                                        />
                                     ))}
                                 </div>
                             </div>

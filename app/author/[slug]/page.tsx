@@ -115,7 +115,7 @@ export default async function AuthorPage({
 
     const attrs = authorData.attributes || authorData;
     const authorName = extractText(attrs.name) || "Unknown Author";
-    const authorDesignation = extractText(attrs.designation) || "Contributor";
+    const authorDesignation = extractText(attrs.designation) || "Author";
     const authorBio = extractText(attrs.bio);
 
     const avatarData = attrs.avatar?.data?.attributes || attrs.avatar;

@@ -1,60 +1,114 @@
 "use client";
 
+import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { SectionHeading } from "@/components/ui/section-heading";
-import { OPINIONS } from "@/data/dummy";
-import { Article, Opinion } from "@/types";
+import { ChevronLeft, ChevronRight, ArrowUpRight } from "lucide-react";
 import { slugify } from "@/lib/utils";
 
-interface OpinionSectionProps {
-    items?: (Opinion | Article)[];
+const STRAPI_BASE = process.env.NEXT_PUBLIC_STRAPI_URL || "http://206.189.132.187:1337";
+
+interface OpinionItem {
+    id: number;
+    title: string;
+    slug: string;
+    excerpt: string;
+    image: string;
+    authorName: string;
+    authorAvatar: string;
+    authorRole: string;
+    date: string;
 }
 
-export function OpinionSection({ items }: OpinionSectionProps) {
-    const featuredOpinion = items?.[0] || OPINIONS[0];
-    if (!featuredOpinion) return null;
+export function OpinionSection() {
+    const [opinions, setOpinions] = useState<OpinionItem[]>([]);
+    const [currentIndex, setCurrentIndex] = useState(0);
 
-    const author = featuredOpinion.author;
-    let authorImage = author && 'image' in author ? (author as any).image : null;
+    useEffect(() => {
+        async function fetchOpinions() {
+            try {
+                const res = await fetch(
+                    `${STRAPI_BASE}/api/contents` +
+                    `?filters[type_of_content][name][$eq]=Opinion` +
+                    `&pagination[pageSize]=5` +
+                    `&populate[author][populate]=avatar` +
+                    `&populate=FeaturedImage` +
+                    `&sort=publishedAt:desc`,
+                    { cache: "no-store" }
+                );
+                if (!res.ok) return;
+                const json = await res.json();
+                const data = json.data || [];
 
-    if (!authorImage && author && 'avatar' in author) {
-        const avatar = (author as any).avatar;
-        if (avatar && !avatar.includes("default-avatar")) {
-            authorImage = avatar;
+                const mapped = data.map((item: any) => {
+                    const img = item.FeaturedImage;
+                    let imageUrl = "/magazine-default.jpg";
+                    if (img) {
+                        const url = img.formats?.large?.url || img.formats?.medium?.url || img.url;
+                        if (url) imageUrl = url.startsWith("http") ? url : `${STRAPI_BASE}${url}`;
+                    }
+
+                    return {
+                        id: item.id,
+                        title: item.Title || "",
+                        slug: item.slug || "",
+                        excerpt: item.Excerpt
+                            ? item.Excerpt.map((block: any) =>
+                                (block.children || []).map((c: any) => c.text || "").join("")
+                            ).filter(Boolean).join(" ").trim()
+                            : "",
+                        image: imageUrl,
+                        authorName: item.author?.name || "Staff Writer",
+                        authorAvatar: item.author?.avatar?.url
+                            ? `${STRAPI_BASE}${item.author.avatar.url}`
+                            : "/default-avatar.png",
+                        authorRole: item.author?.role || "Author",
+                        date: item.publishedAt
+                            ? new Date(item.publishedAt).toLocaleDateString("en-GB", {
+                                day: "numeric", month: "short", year: "numeric",
+                            })
+                            : "",
+                    };
+                });
+                setOpinions(mapped);
+            } catch (err) {
+                console.error("Opinion fetch error:", err);
+            }
         }
-    }
+        fetchOpinions();
+    }, []);
 
-    if (!authorImage) {
-        if ('image' in featuredOpinion) {
-            const img = (featuredOpinion as any).image;
-            if (img && !img.includes("magazine-default")) authorImage = img;
-        } else if ('featuredImage' in featuredOpinion) {
-            authorImage = (featuredOpinion as any).featuredImage;
-        }
-    }
+    const goNext = useCallback(() => {
+        setCurrentIndex((i) => (i + 1) % Math.max(opinions.length, 1));
+    }, [opinions.length]);
 
-    authorImage = authorImage || "/default-avatar.png";
-    const authorRole = featuredOpinion.author?.role || "Contributor";
-    const authorName = featuredOpinion.author?.name || "Unknown";
+    const goPrev = useCallback(() => {
+        setCurrentIndex((i) => (i - 1 + opinions.length) % Math.max(opinions.length, 1));
+    }, [opinions.length]);
+
+    if (opinions.length === 0) return null;
+
+    const current = opinions[currentIndex];
 
     return (
         <section className="py-20 bg-white border-b border-zinc-100">
-            <div className="container mx-auto px-4 md:px-8">
+            <div className="container mx-auto px-4 md:px-8 max-w-[1400px]">
                 <SectionHeading
-                    title="Executive Perspective"
+                    title="Opinion"
                     linkText="View Archive"
                     linkHref="/opinion"
                 />
 
+                {/* Carousel */}
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-20 items-center mt-12 group">
-                    {/* Image Column - Minimalist Frame */}
+                    {/* Image Column */}
                     <div className="lg:col-span-4 flex justify-center lg:justify-start">
                         <div className="relative w-full aspect-square max-w-[400px] border border-zinc-800 p-2 bg-white transition-transform duration-500 group-hover:scale-[1.02]">
                             <div className="relative w-full h-full overflow-hidden border border-zinc-200">
                                 <Image
-                                    src={authorImage}
-                                    alt={authorName}
+                                    src={current.image}
+                                    alt={current.authorName}
                                     fill
                                     className="object-cover grayscale group-hover:grayscale-0 transition-all duration-1000"
                                 />
@@ -69,29 +123,65 @@ export function OpinionSection({ items }: OpinionSectionProps) {
                                 Featured Insight
                             </span>
 
-                            <Link href={`/opinion/${featuredOpinion.slug}`} className="block mb-8">
-                                <h3 className="font-serif text-3xl md:text-5xl lg:text-[54px] font-bold leading-[1.1] tracking-tight text-zinc-900 group-hover:text-[#00A651] transition-colors duration-300">
-                                    "{featuredOpinion.title}"
+                            <Link href={`/opinion/${current.slug}`} className="block mb-8">
+                                <h3 className="font-serif text-2xl md:text-3xl lg:text-4xl font-bold leading-[1.15] tracking-tight text-zinc-900 group-hover:text-[#00A651] transition-colors duration-300">
+                                    &ldquo;{current.title}&rdquo;
                                 </h3>
                             </Link>
 
                             <div className="relative pl-8 mb-10 border-l border-zinc-200">
-                                <p className="text-lg md:text-xl text-zinc-500 font-serif leading-relaxed italic">
-                                    {featuredOpinion.excerpt}
+                                <p className="text-sm md:text-base text-zinc-500 font-serif leading-relaxed italic line-clamp-3">
+                                    {current.excerpt}
                                 </p>
                             </div>
 
-                            <Link href={`/author/${slugify(authorName)}`} className="flex flex-col hover:opacity-80 transition-opacity">
-                                <span className="font-black text-lg uppercase tracking-widest text-zinc-900">
-                                    {authorName}
-                                </span>
-                                <span className="text-[10px] font-bold text-[#00A651] uppercase tracking-[3px] mt-1">
-                                    {authorRole}
-                                </span>
-                            </Link>
+                            <div className="flex items-center justify-between w-full">
+                                <Link href={`/author/${slugify(current.authorName)}`} className="flex flex-col hover:opacity-80 transition-opacity">
+                                    <span className="font-black text-lg uppercase tracking-widest text-zinc-900">
+                                        {current.authorName}
+                                    </span>
+                                    <span className="text-[10px] font-bold text-[#00A651] uppercase tracking-[3px] mt-1">
+                                        {current.authorRole}
+                                    </span>
+                                </Link>
+
+                                {/* Navigation */}
+                                {opinions.length > 1 && (
+                                    <div className="flex items-center gap-3">
+                                        <span className="text-xs font-bold text-zinc-400">
+                                            {currentIndex + 1} / {opinions.length}
+                                        </span>
+                                        <button
+                                            onClick={goPrev}
+                                            className="w-10 h-10 border border-zinc-200 flex items-center justify-center hover:bg-zinc-100 transition-colors"
+                                        >
+                                            <ChevronLeft size={16} />
+                                        </button>
+                                        <button
+                                            onClick={goNext}
+                                            className="w-10 h-10 border border-zinc-200 flex items-center justify-center hover:bg-zinc-100 transition-colors"
+                                        >
+                                            <ChevronRight size={16} />
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>
+
+                {/* Dots indicator */}
+                {opinions.length > 1 && (
+                    <div className="flex justify-center gap-2 mt-10">
+                        {opinions.map((_, i) => (
+                            <button
+                                key={i}
+                                onClick={() => setCurrentIndex(i)}
+                                className={`h-1 rounded-full transition-all duration-300 ${i === currentIndex ? "w-8 bg-[#00A651]" : "w-4 bg-zinc-200 hover:bg-zinc-400"}`}
+                            />
+                        ))}
+                    </div>
+                )}
             </div>
         </section>
     );

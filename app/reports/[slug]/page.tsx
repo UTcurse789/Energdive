@@ -205,47 +205,7 @@ export default async function ArticlePage(props: PageProps) {
                         {/* SIDEBAR */}
                         <aside className="lg:col-span-3 space-y-8 sm:space-y-10 order-2 lg:order-1">
 
-                            {/* AUTHOR CARD */}
-                            {author && (
-                                <div>
-                                    <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 mb-6">
-                                        Council Insights
-                                    </h4>
 
-                                    <div className="p-5 rounded-2xl bg-zinc-50 border">
-                                        <div className="flex gap-4 items-center mb-3">
-
-                                            <div className="relative w-12 h-12 rounded-full overflow-hidden bg-[#00A651]/10">
-                                                {authorAvatar ? (
-                                                    <Image
-                                                        src={authorAvatar}
-                                                        alt={author.name}
-                                                        fill
-                                                        className="object-cover"
-                                                    />
-                                                ) : (
-                                                    <div className="flex items-center justify-center w-full h-full">
-                                                        <ShieldCheck className="w-6 h-6 text-[#00A651]" />
-                                                    </div>
-                                                )}
-                                            </div>
-
-                                            <div>
-                                                <Link href={`/author/${slugify(author.name)}`} className="font-bold hover:text-[#00A651] transition-colors">
-                                                    {author.name}
-                                                </Link>
-                                                <div className="text-xs text-zinc-500">
-                                                    Editorial Author
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <p className="text-xs text-zinc-600 leading-relaxed">
-                                            {authorBio}
-                                        </p>
-                                    </div>
-                                </div>
-                            )}
 
                             {/* DOWNLOAD CARD */}
                             <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-zinc-900 text-white">

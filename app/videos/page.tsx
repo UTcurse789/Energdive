@@ -139,14 +139,8 @@ export default function VideosPage() {
                                     <p className="text-gray-600 text-lg mb-8 line-clamp-3 italic">
                                         {featuredVideo.excerpt}
                                     </p>
-                                    <div className="flex items-center gap-4 pt-6 border-t border-gray-100">
-                                        <div className="relative w-12 h-12 rounded-full overflow-hidden bg-gray-100">
-                                            <Image src={featuredVideo.author.avatar} alt={featuredVideo.author.name} fill className="object-cover" />
-                                        </div>
-                                        <div>
-                                            <p className="font-bold text-gray-900"><Link href={`/author/${slugify(featuredVideo.author.name)}`} onClick={(e) => e.stopPropagation()} className="hover:text-teal-600 transition-colors">{featuredVideo.author.name}</Link></p>
-                                            <p className="text-xs text-gray-400 uppercase tracking-tighter">{featuredVideo.date}</p>
-                                        </div>
+                                    <div className="pt-6 border-t border-gray-100">
+                                        <p className="text-xs text-gray-400 uppercase tracking-widest font-bold">{featuredVideo.date}</p>
                                     </div>
                                 </div>
                             </div>
@@ -205,11 +199,8 @@ export default function VideosPage() {
                                     <p className="text-gray-500 text-sm line-clamp-2 mb-6 flex-1">
                                         {video.excerpt}
                                     </p>
-                                    <div className="flex items-center gap-3 pt-4 border-t border-gray-50">
-                                        <div className="relative w-8 h-8 rounded-full overflow-hidden bg-gray-100">
-                                            <Image src={video.author.avatar} alt={video.author.name} fill className="object-cover" />
-                                        </div>
-                                        <Link href={`/author/${slugify(video.author.name)}`} onClick={(e) => e.stopPropagation()} className="text-xs font-bold text-gray-700 hover:text-teal-600 transition-colors relative z-10">{video.author.name}</Link>
+                                    <div className="pt-4 border-t border-gray-50">
+                                        <span className="text-xs text-gray-400 font-bold uppercase tracking-widest">{video.date}</span>
                                     </div>
                                 </div>
                             </div>
