@@ -157,7 +157,14 @@ export function Header() {
 
                         <div className="relative">
                             <SignedIn>
-                                <UserButton afterSignOutUrl="/" />
+                                <UserButton
+                                    afterSignOutUrl="/"
+                                    appearance={{
+                                        elements: {
+                                            userPreviewSecondaryIdentifier: { display: "none" },
+                                        },
+                                    }}
+                                />
                             </SignedIn>
                             <SignedOut>
                                 <motion.div className="relative" onMouseEnter={() => setIsLoginHovered(true)} onMouseLeave={() => setIsLoginHovered(false)}>

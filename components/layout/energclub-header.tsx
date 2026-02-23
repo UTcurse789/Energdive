@@ -29,7 +29,14 @@ export function EnergClubHeader() {
                     </Link>
 
                     <SignedIn>
-                        <UserButton afterSignOutUrl="/" />
+                        <UserButton
+                            afterSignOutUrl="/"
+                            appearance={{
+                                elements: {
+                                    userPreviewSecondaryIdentifier: { display: "none" },
+                                },
+                            }}
+                        />
                     </SignedIn>
                     <SignedOut>
                         <Link href="/auth">

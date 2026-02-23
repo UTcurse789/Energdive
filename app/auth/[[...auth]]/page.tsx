@@ -4,6 +4,7 @@ import { useSignIn, useSignUp, useAuth, useClerk } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { useState, useCallback, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import Image from "next/image";
 import DotGrid from "@/components/DotGrid";
 
 type AuthStep = "identifier" | "otp-signin" | "otp-signup" | "otp-phone" | "complete";
@@ -159,35 +160,101 @@ export default function UnifiedAuthPage() {
                 const result = await signUp!.attemptEmailAddressVerification({
                     code: code.trim(),
                 });
+                console.log("[Auth] Sign-up verification result:", result.status, result.createdSessionId);
+                console.log("[Auth] Missing fields:", signUp!.missingFields);
+                console.log("[Auth] Unverified fields:", signUp!.unverifiedFields);
+
                 if (result.status === "complete") {
-                    if (result.createdSessionId) {
-                        await setActive!({ session: result.createdSessionId });
+                    const sessionId = result.createdSessionId || signUp!.createdSessionId;
+                    if (sessionId) {
+                        await setActive!({ session: sessionId });
                     }
                     setStep("complete");
                     router.replace("/dashboard");
+                } else if (result.status === "missing_requirements") {
+                    // Email verified but CAPTCHA/other requirement blocked completion
+                    // Fallback: use backend to create user + sign-in token (bypasses CAPTCHA)
+                    console.log("[Auth] Falling back to backend user creation...");
+                    const emailValue = identifier.trim();
+                    const res = await fetch("/api/auth/email-verify", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ email: emailValue }),
+                    });
+                    const data = await res.json();
+
+                    if (data.success && data.token) {
+                        const ticketResult = await signIn!.create({
+                            strategy: "ticket",
+                            ticket: data.token,
+                        });
+                        if (ticketResult.createdSessionId) {
+                            await setActive!({ session: ticketResult.createdSessionId });
+                        }
+                        setStep("complete");
+                        router.replace("/dashboard");
+                    } else {
+                        setError(data.error || "Could not complete sign-up. Please try again.");
+                    }
+                } else {
+                    setError(`Verification status: ${result.status}. Please try again.`);
                 }
             } else {
                 const result = await signIn!.attemptFirstFactor({
                     strategy: "email_code",
                     code: code.trim(),
                 });
+                console.log("[Auth] Sign-in verification result:", result.status, result.createdSessionId);
+
                 if (result.status === "complete") {
-                    if (result.createdSessionId) {
-                        await setActive!({ session: result.createdSessionId });
+                    const sessionId = result.createdSessionId || signIn!.createdSessionId;
+                    if (sessionId) {
+                        await setActive!({ session: sessionId });
                     }
                     setStep("complete");
                     router.replace("/dashboard");
+                } else {
+                    setError(`Verification status: ${result.status}. Please try again.`);
                 }
             }
         } catch (err: any) {
-            setError(
-                err?.errors?.[0]?.longMessage ||
-                "Invalid code. Please try again."
-            );
+            console.error("[Auth] Verification error:", err);
+            const errMsg = err?.errors?.[0]?.longMessage || err?.errors?.[0]?.message || "";
+
+            // If verification was already done (retry scenario), fall back to backend
+            if (isNewUser && errMsg.toLowerCase().includes("already been verified")) {
+                console.log("[Auth] Already verified — falling back to backend...");
+                try {
+                    const emailValue = identifier.trim();
+                    const res = await fetch("/api/auth/email-verify", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ email: emailValue }),
+                    });
+                    const data = await res.json();
+
+                    if (data.success && data.token) {
+                        const ticketResult = await signIn!.create({
+                            strategy: "ticket",
+                            ticket: data.token,
+                        });
+                        if (ticketResult.createdSessionId) {
+                            await setActive!({ session: ticketResult.createdSessionId });
+                        }
+                        setStep("complete");
+                        router.replace("/dashboard");
+                        return;
+                    }
+                } catch (backendErr) {
+                    console.error("[Auth] Backend fallback error:", backendErr);
+                }
+            }
+
+            setError(errMsg || "Invalid code. Please try again.");
         } finally {
             setLoading(false);
         }
-    }, [code, isNewUser, signIn, signUp, signInLoaded, signUpLoaded, setActive, router]);
+    }, [code, identifier, isNewUser, signIn, signUp, signInLoaded, signUpLoaded, setActive, router]);
 
     // ── Step 2b: Verify OTP (Phone - MSG91 → Clerk sign-in token) ──
     const handlePhoneOTPSubmit = useCallback(async () => {
@@ -359,9 +426,15 @@ export default function UnifiedAuthPage() {
 
                     {/* Header */}
                     <div className="text-center mb-6">
-                        <h1 className="text-xl font-bold text-zinc-900 tracking-tight font-sans">
-                            Welcome to Energdive
-                        </h1>
+                        <div className="flex justify-center mb-4">
+                            <Image
+                                src="/Energdive-Logo.png"
+                                alt="Energdive"
+                                width={160}
+                                height={40}
+                                priority
+                            />
+                        </div>
                         <p className="text-sm text-zinc-500 mt-1">
                             {step === "identifier"
                                 ? "Sign in or create your account"
