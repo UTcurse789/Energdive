@@ -134,38 +134,6 @@ export async function invalidateLeadToken(leadId: string): Promise<void> {
 }
 
 /**
- * Update arbitrary fields on a Zoho Lead record.
- * Used to write back Magic_Token, Token_Expiry, etc.
- */
-export async function updateLeadFields(
-    leadId: string,
-    fields: Record<string, any>
-): Promise<void> {
-    const token = await getZohoAccessToken();
-
-    const updateBody = {
-        data: [{ id: leadId, ...fields }],
-    };
-
-    const response = await fetch(`${ZOHO_API_URL}/Leads`, {
-        method: "PUT",
-        headers: {
-            Authorization: `Zoho-oauthtoken ${token}`,
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify(updateBody),
-    });
-
-    if (!response.ok) {
-        const errBody = await response.text();
-        console.error(`[ZOHO] Failed to update lead ${leadId}:`, errBody);
-        throw new Error(`Failed to update Zoho lead ${leadId}`);
-    }
-
-    console.log(`[ZOHO] Lead ${leadId} updated:`, Object.keys(fields).join(", "));
-}
-
-/**
  * Fetch a Lead directly by its Zoho Record ID
  */
 export async function getLeadById(leadId: string): Promise<ZohoLead | null> {
