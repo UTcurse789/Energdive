@@ -35,32 +35,40 @@ export async function POST(req: Request) {
 
         // Step 2: Format phone to E.164 for Clerk
         const e164Phone = mobile.startsWith("91") ? `+${mobile}` : `+91${mobile}`;
+        const placeholderEmail = `phone_${mobile}@phone.energdive.com`;
 
-        // Step 3: Find or create Clerk user
+        // Step 3: Find or create Clerk user — try multiple lookup strategies
         let clerkUser;
         let isNew = false;
 
-        // Search for existing user by externalId (phone) first
-        const existingUsers = await clerk.users.getUserList({
-            externalId: [e164Phone],
-        });
+        // Strategy 1: Search by externalId
+        const byExternal = await clerk.users.getUserList({ externalId: [e164Phone] });
+        if (byExternal.data.length > 0) {
+            clerkUser = byExternal.data[0];
+            console.log(`[Auth Phone] Found user by externalId: ${clerkUser.id}`);
+        }
 
-        if (existingUsers.data.length > 0) {
-            clerkUser = existingUsers.data[0];
-            console.log(`[Auth Phone] Found existing Clerk user: ${clerkUser.id}`);
-        } else {
-            // Also try searching by phone number in case user was created via Clerk directly
-            const phoneUsers = await clerk.users.getUserList({
-                phoneNumber: [e164Phone],
-            });
+        // Strategy 2: Search by phone number
+        if (!clerkUser) {
+            const byPhone = await clerk.users.getUserList({ phoneNumber: [e164Phone] });
+            if (byPhone.data.length > 0) {
+                clerkUser = byPhone.data[0];
+                console.log(`[Auth Phone] Found user by phone: ${clerkUser.id}`);
+            }
+        }
 
-            if (phoneUsers.data.length > 0) {
-                clerkUser = phoneUsers.data[0];
-                console.log(`[Auth Phone] Found existing Clerk user by phone: ${clerkUser.id}`);
-            } else {
-                // Create new Clerk user — Clerk needs at least one identifier (email/username)
-                // Generate a placeholder email for phone-only users
-                const placeholderEmail = `phone_${mobile}@phone.energdive.com`;
+        // Strategy 3: Search by placeholder email
+        if (!clerkUser) {
+            const byEmail = await clerk.users.getUserList({ emailAddress: [placeholderEmail] });
+            if (byEmail.data.length > 0) {
+                clerkUser = byEmail.data[0];
+                console.log(`[Auth Phone] Found user by placeholder email: ${clerkUser.id}`);
+            }
+        }
+
+        // Strategy 4: Create new user
+        if (!clerkUser) {
+            try {
                 clerkUser = await clerk.users.createUser({
                     emailAddress: [placeholderEmail],
                     externalId: e164Phone,
@@ -68,17 +76,27 @@ export async function POST(req: Request) {
                     skipPasswordRequirement: true,
                 });
                 isNew = true;
-                console.log(`[Auth Phone] Created new Clerk user: ${clerkUser.id}`);
+                console.log(`[Auth Phone] Created new user: ${clerkUser.id}`);
+            } catch (createErr: any) {
+                console.error("[Auth Phone] createUser error:", JSON.stringify(createErr?.errors));
+                // If creation failed (duplicate), try one more broad search
+                const allUsers = await clerk.users.getUserList({ query: mobile });
+                if (allUsers.data.length > 0) {
+                    clerkUser = allUsers.data[0];
+                    console.log(`[Auth Phone] Found user via query search: ${clerkUser.id}`);
+                } else {
+                    throw createErr;
+                }
             }
         }
 
         // Step 4: Create a sign-in token for the user
         const signInToken = await clerk.signInTokens.createSignInToken({
             userId: clerkUser.id,
-            expiresInSeconds: 60, // 1 min to use
+            expiresInSeconds: 60,
         });
 
-        console.log(`[Auth Phone] Sign-in token created for user: ${clerkUser.id}`);
+        console.log(`[Auth Phone] Sign-in token created for: ${clerkUser.id}`);
 
         return NextResponse.json({
             success: true,

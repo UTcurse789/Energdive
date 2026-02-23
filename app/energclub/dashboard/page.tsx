@@ -29,13 +29,18 @@ export default async function EnergClubDashboard() {
                         <div className="bg-white/10 p-1 rounded-full">
                             <UserButton appearance={{
                                 elements: {
-                                    userButtonAvatarBox: "w-12 h-12"
+                                    userButtonAvatarBox: "w-12 h-12",
+                                    userPreviewSecondaryIdentifier: { display: "none" },
                                 }
                             }} />
                         </div>
                         <div>
                             <p className="text-sm font-bold text-white">{user?.fullName}</p>
-                            <p className="text-xs text-gray-400">{user?.primaryEmailAddress?.emailAddress}</p>
+                            <p className="text-xs text-gray-400">
+                                {user?.primaryEmailAddress?.emailAddress?.startsWith("phone_")
+                                    ? (user?.publicMetadata as any)?.phone || "Phone User"
+                                    : user?.primaryEmailAddress?.emailAddress}
+                            </p>
                         </div>
                     </div>
                 </div>
