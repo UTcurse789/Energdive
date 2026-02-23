@@ -52,8 +52,8 @@ export function Hero() {
             .then((data) => setCoverStories(data?.data || []))
             .catch(console.error);
 
-        // News for trending sidebar
-        fetch(`${STRAPI_BASE}/api/contents?filters[type_of_content][name][$eq]=News&pagination[pageSize]=10&populate=*`)
+        // Featured content for Top Stories sidebar
+        fetch(`${STRAPI_BASE}/api/contents?filters[featured][$eq]=true&pagination[pageSize]=10&populate=*&sort=publishedAt:desc`)
             .then((res) => res.json())
             .then((data) => setArticles(data?.data || []))
             .catch(console.error)
@@ -61,7 +61,7 @@ export function Hero() {
     }, []);
 
     const carouselArticles = coverStories;        // 👈 Cover stories in carousel
-    const topStories = articles.slice(0, 6);      // 👈 News in sidebar
+    const topStories = articles.slice(0, 6);      // 👈 Featured in sidebar
 
     const goToSlide = useCallback((index: number) => {
         if (isTransitioning || index === currentSlide) return;
@@ -170,7 +170,7 @@ export function Hero() {
                             {/* Metadata Sidebar */}
                             <div className="md:col-span-1 border-l border-slate-100 pl-8 space-y-8">
                                 <div className="space-y-3">
-                                    <p className="text-[10px] font-black uppercase tracking-tighter text-slate-400">Contributor</p>
+                                    <p className="text-[10px] font-black uppercase tracking-tighter text-slate-400">Author</p>
                                     <div className="flex items-center gap-3">
                                         <div className="w-12 h-12 rounded-full bg-[#1a4731] flex items-center justify-center text-white font-bold text-lg">
                                             {featured.author?.name?.charAt(0) || "T"}
@@ -196,7 +196,7 @@ export function Hero() {
                         <div className="flex items-center justify-between mb-8 pb-4 border-b border-slate-100">
                             <h3 className="text-sm font-black uppercase tracking-[0.2em] text-[#1a1a1a] flex items-center gap-2">
                                 <span className="w-2 h-2 rounded-full bg-red-600 animate-pulse" />
-                                Trending Now
+                                Top Stories
                             </h3>
                             <Link href="/news" className="text-[10px] font-black text-[#1a4731] flex items-center gap-1 hover:text-[#09B697] transition-colors">
                                 EXPLORE <ArrowRight size={12} />

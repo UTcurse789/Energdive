@@ -76,7 +76,7 @@ export default async function OpinionDetailPage({
     readTime: "5 min read",
     author: {
       name: article?.author?.name,
-      role: article?.author?.designation || "Contributor",
+      role: article?.author?.designation || "Author",
       avatar:
         article?.author?.avatar?.url
           ? `${STRAPI}${article.author.avatar.url}`

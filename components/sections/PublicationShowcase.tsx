@@ -51,9 +51,9 @@ const features = [
     },
 ];
 
-export function PublicationShowcase() {
+export function PublicationShowcase({ variant = "full" }: { variant?: "full" | "compact" }) {
     return (
-        <section className="container mx-auto px-6 lg:px-12 py-24">
+        <section className="container mx-auto px-6 lg:px-12 py-24 max-w-[1400px]">
 
             {/* 1. DARK HERO SECTION WITH TILTED CARD */}
             <div className="bg-zinc-900 rounded-[3rem] p-10 md:p-20 border border-zinc-800 text-white relative overflow-hidden shadow-2xl mb-24">
@@ -111,40 +111,44 @@ export function PublicationShowcase() {
                 </div>
             </div>
 
-            {/* 2. FEATURES GRID (Matches your white card reference image) */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {features.map((feature) => (
-                    <div
-                        key={feature.id}
-                        className="bg-white p-8 md:p-10 rounded-[2rem] border border-zinc-100 
-                        shadow-[0_10px_30px_-10px_rgba(0,0,0,0.05)] 
-                        hover:shadow-[0_20px_40px_-10px_rgba(0,0,0,0.1)] 
-                        transition-all duration-300 hover:-translate-y-1 group flex flex-col items-center text-center h-full"
-                    >
-                        {/* Icon */}
-                        <div className="mb-6 w-14 h-14 bg-zinc-50 rounded-2xl flex items-center justify-center text-[#00A651] group-hover:bg-[#00A651] group-hover:text-white transition-colors">
-                            {feature.icon}
-                        </div>
+            {variant === "full" && (
+                <>
+                    {/* 2. FEATURES GRID (Matches your white card reference image) */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {features.map((feature) => (
+                            <div
+                                key={feature.id}
+                                className="bg-white p-8 md:p-10 rounded-[2rem] border border-zinc-100 
+                                shadow-[0_10px_30px_-10px_rgba(0,0,0,0.05)] 
+                                hover:shadow-[0_20px_40px_-10px_rgba(0,0,0,0.1)] 
+                                transition-all duration-300 hover:-translate-y-1 group flex flex-col items-center text-center h-full"
+                            >
+                                {/* Icon */}
+                                <div className="mb-6 w-14 h-14 bg-zinc-50 rounded-2xl flex items-center justify-center text-[#00A651] group-hover:bg-[#00A651] group-hover:text-white transition-colors">
+                                    {feature.icon}
+                                </div>
 
-                        {/* Title */}
-                        <h3 className="text-2xl font-serif font-bold text-zinc-900 mb-4 leading-tight">
-                            {feature.title}
-                        </h3>
+                                {/* Title */}
+                                <h3 className="text-2xl font-serif font-bold text-zinc-900 mb-4 leading-tight">
+                                    {feature.title}
+                                </h3>
 
-                        {/* Description */}
-                        <p className="text-sm text-zinc-500 leading-relaxed font-medium">
-                            {feature.desc}
+                                {/* Description */}
+                                <p className="text-sm text-zinc-500 leading-relaxed font-medium">
+                                    {feature.desc}
+                                </p>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Bottom Footer Text */}
+                    <div className="mt-20 text-center max-w-4xl mx-auto px-6">
+                        <p className="text-lg md:text-xl font-serif italic text-zinc-500 leading-relaxed">
+                            "Through a dual print and digital format, <strong className="text-zinc-900 not-italic">ENERGDIVE</strong> represents not just a magazine—but a knowledge movement for India's sustainable energy future."
                         </p>
                     </div>
-                ))}
-            </div>
-
-            {/* Bottom Footer Text */}
-            <div className="mt-20 text-center max-w-4xl mx-auto px-6">
-                <p className="text-lg md:text-xl font-serif italic text-zinc-500 leading-relaxed">
-                    "Through a dual print and digital format, <strong className="text-zinc-900 not-italic">ENERGDIVE</strong> represents not just a magazine—but a knowledge movement for India’s sustainable energy future."
-                </p>
-            </div>
+                </>
+            )}
         </section>
     );
 }
