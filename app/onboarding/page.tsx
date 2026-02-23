@@ -9,7 +9,7 @@ export default async function OnboardingPage() {
     const { userId } = await auth();
 
     if (!userId) {
-        redirect("/sign-in");
+        redirect("/auth");
     }
 
     // DB check — if profile already exists, go to dashboard

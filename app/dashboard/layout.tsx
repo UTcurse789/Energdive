@@ -12,7 +12,7 @@ export default async function DashboardLayout({
     const { userId } = await auth();
 
     if (!userId) {
-        redirect("/sign-in");
+        redirect("/auth");
     }
 
     // DB check — the single source of truth for onboarding status
