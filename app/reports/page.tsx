@@ -223,6 +223,19 @@ export default function ReportsPage() {
               <p className="text-xl text-white/70 max-w-xl mb-10 font-serif italic">
                 Mapping the high-priority shifts in global energy infrastructure.
               </p>
+
+              <p className="text-xl text-white/70 max-w-2xl mb-12">
+                Explore in-depth reports featuring data-driven analysis, sector insights, policy reviews,
+                and market intelligence shaping India’s evolving energy landscape.
+              </p>
+
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                className="flex items-center gap-3 bg-white text-black px-8 py-4 rounded-full font-bold text-sm uppercase"
+              >
+                Browse All Reports
+                <ArrowRight className="w-4 h-4" />
+              </motion.button>
             </motion.div>
           </div>
         </section>

@@ -129,8 +129,6 @@ export default async function NewsDetailPage({
                     <nav className="flex items-center gap-1.5 text-xs text-gray-400 font-sans">
                         <Link href="/" className="hover:text-teal-600 transition-colors">Home</Link>
                         <ChevronRight className="h-3 w-3" />
-                        <Link href="/news" className="hover:text-teal-600 transition-colors">News</Link>
-                        <ChevronRight className="h-3 w-3" />
                         <span className="text-gray-600 font-medium truncate max-w-[200px]">{article.category}</span>
                     </nav>
                 </div>
