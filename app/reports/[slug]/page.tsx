@@ -1,261 +1,670 @@
+// import Link from "next/link";
+// import Image from "next/image";
+// import { Header } from "@/components/layout/header";
+// import { Footer } from "@/components/layout/footer";
+// import { Button } from "@/components/ui/buttons";
+// import {
+//     Download,
+//     ChevronLeft,
+//     Calendar,
+//     Clock,
+//     Share2,
+//     BarChart3,
+//     ShieldCheck,
+//     BookmarkPlus,
+// } from "lucide-react";
+
+// function slugify(text: string): string {
+//     return text.toLowerCase().trim().replace(/[^\w\s-]/g, "").replace(/[\s_]+/g, "-").replace(/-+/g, "-").replace(/^-+|-+$/g, "");
+// }
+
+// /* =========================
+//    TYPES
+// ========================= */
+
+// interface PageProps {
+//     params: Promise<{ slug: string }>;
+// }
+
+// /* =========================
+//    FETCH REPORT FROM STRAPI
+// ========================= */
+
+// async function getReport(slug: string) {
+//     try {
+//         const res = await fetch(
+//             `${process.env.NEXT_PUBLIC_STRAPI_URL}/api/type-of-contents?filters[slug][$eq]=reports&populate[contents][populate]=*`,
+//             {
+//                 cache: "no-store",
+//                 headers: {
+//                     Authorization: `Bearer ${process.env.STRAPI_API_TOKEN}`,
+//                 },
+//             }
+//         );
+
+//         const json = await res.json();
+
+//         const reports =
+//             json?.data?.[0]?.contents ||
+//             json?.data?.[0]?.attributes?.contents ||
+//             [];
+
+//         return reports.find((r: any) => r.slug === slug) || null;
+//     } catch (e) {
+//         console.error("STRAPI ERROR:", e);
+//         return null;
+//     }
+// }
+
+// /* =========================
+//    BLOCK RENDERER
+// ========================= */
+
+// function RenderBlocks({ blocks }: any) {
+//     if (!blocks) return null;
+
+//     return blocks.map((block: any, i: number) => {
+//         if (block.type === "paragraph") {
+//             return (
+//                 <p key={i}>
+//                     {block.children?.map((c: any) => c.text).join("")}
+//                 </p>
+//             );
+//         }
+
+//         if (block.type === "heading") {
+//             const Tag = (`h${block.level}` as 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6') || 'h3';
+
+//             return (
+//                 <Tag key={i}>
+//                     {block.children?.map((c: any) => c.text).join("")}
+//                 </Tag>
+//             );
+//         }
+
+//         return null;
+//     });
+// }
+
+// /* =========================
+//    PAGE
+// ========================= */
+
+// export default async function ArticlePage(props: PageProps) {
+//     const { slug } = await props.params;
+//     const article = await getReport(slug);
+
+//     if (!article) {
+//         return <div className="p-20 text-center">Report not found</div>;
+//     }
+
+//     /* ---------- IMAGE ---------- */
+
+//     const imageUrl =
+//         article?.FeaturedImage?.url
+//             ? `${process.env.NEXT_PUBLIC_STRAPI_URL}${article.FeaturedImage.url}`
+//             : article?.FeaturedImage?.data?.attributes?.url
+//                 ? `${process.env.NEXT_PUBLIC_STRAPI_URL}${article.FeaturedImage.data.attributes.url}`
+//                 : null;
+
+//     /* ---------- AUTHOR ---------- */
+
+//     const author = article?.author;
+
+//     const authorBio =
+//         author?.bio?.[0]?.children?.[0]?.text || "";
+
+//     /* ✅ AUTHOR AVATAR (AUTO FROM STRAPI) */
+//     const authorAvatar =
+//         author?.avatar?.url
+//             ? `${process.env.NEXT_PUBLIC_STRAPI_URL}${author.avatar.url}`
+//             : author?.avatar?.data?.attributes?.url
+//                 ? `${process.env.NEXT_PUBLIC_STRAPI_URL}${author.avatar.data.attributes.url}`
+//                 : null;
+
+//     /* ---------- DOWNLOAD URL (SOURCE FIELD) ---------- */
+//     const downloadUrl = article?.source || "#";
+
+//     /* ---------- EXCERPT ---------- */
+
+//     const excerpt =
+//         article?.Excerpt?.[0]?.children?.[0]?.text || "";
+
+//     return (
+//         <div className="min-h-screen bg-[#FDFDFD] font-sans text-zinc-900 overflow-x-hidden">
+
+//             <Header />
+
+//             <main className="pt-[40px] sm:pt-[60px] pb-16 sm:pb-32">
+//                 <article className="container mx-auto px-4 sm:px-6 lg:px-12 max-w-6xl">
+
+//                     {/* TOP BAR */}
+//                     <div className="flex flex-wrap justify-between items-center gap-4 mb-6 sm:mb-8">
+//                         <Link
+//                             href="/reports"
+//                             className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 hover:text-[#00A651]"
+//                         >
+//                             <ChevronLeft className="w-4 h-4" />
+//                             Back to Intelligence
+//                         </Link>
+
+//                         <div className="flex gap-4">
+//                             <button className="p-2 rounded-full border">
+//                                 <BookmarkPlus className="w-4 h-4 text-zinc-500" />
+//                             </button>
+//                             <button className="p-2 rounded-full border">
+//                                 <Share2 className="w-4 h-4 text-zinc-500" />
+//                             </button>
+//                         </div>
+//                     </div>
+
+//                     {/* HEADER */}
+//                     <header className="text-center mb-10 sm:mb-16">
+//                         <span className="inline-block px-3 sm:px-4 py-1 sm:py-1.5 border border-[#00A651] text-[#00A651] text-[9px] sm:text-[10px] font-black uppercase rounded-full mb-4 sm:mb-6">
+//                             HSE & Sustainability Analysis
+//                         </span>
+
+//                         <h1 className="text-2xl sm:text-4xl md:text-6xl lg:text-7xl font-black uppercase italic leading-[1.05] mb-6 sm:mb-10 px-2 sm:px-0">
+//                             {article.Title}
+//                         </h1>
+
+//                         <div className="flex flex-wrap justify-center gap-4 sm:gap-8 text-[10px] sm:text-[11px] font-bold text-zinc-400 uppercase">
+//                             <span className="flex items-center gap-1.5 sm:gap-2">
+//                                 <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#00A651]" />
+//                                 {article.Date}
+//                             </span>
+
+//                             <span className="flex items-center gap-1.5 sm:gap-2">
+//                                 <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#00A651]" />
+//                                 8 min read
+//                             </span>
+
+//                             <span className="flex items-center gap-1.5 sm:gap-2 text-[#00A651]">
+//                                 <ShieldCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+//                                 ENCIS Verified
+//                             </span>
+//                         </div>
+//                     </header>
+
+//                     {/* HERO IMAGE */}
+//                     {imageUrl && (
+//                         <div className="relative h-[250px] sm:h-[400px] md:h-[600px] w-full rounded-xl sm:rounded-2xl overflow-hidden shadow-2xl mb-12 sm:mb-24">
+//                             <Image
+//                                 src={imageUrl}
+//                                 alt={article.Title}
+//                                 fill
+//                                 className="object-cover"
+//                                 priority
+//                             />
+//                         </div>
+//                     )}
+
+//                     {/* CONTENT GRID */}
+//                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 sm:gap-16">
+
+//                         {/* SIDEBAR */}
+//                         <aside className="lg:col-span-3 space-y-8 sm:space-y-10 order-2 lg:order-1">
+
+
+
+//                             {/* DOWNLOAD CARD */}
+//                             <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-zinc-900 text-white">
+//                                 <h4 className="text-[10px] font-black uppercase text-[#00A651] mb-4">
+//                                     Official Publication
+//                                 </h4>
+
+//                                 <p className="text-xs text-zinc-400 mb-6">
+//                                     Recommendations and strategic insights from industry leaders.
+//                                 </p>
+
+//                                 <a href={downloadUrl} target="_blank" rel="noopener noreferrer">
+//                                     <Button className="w-full bg-[#00A651] text-xs font-black uppercase py-6">
+//                                         Download Report
+//                                         <Download className="w-4 h-4 ml-2" />
+//                                     </Button>
+//                                 </a>
+//                             </div>
+
+//                         </aside>
+
+//                         {/* MAIN CONTENT */}
+//                         <div className="lg:col-span-9 order-1 lg:order-2">
+//                             <div className="max-w-3xl">
+
+//                                 {excerpt && (
+//                                     <div className="mb-10 sm:mb-16 p-5 sm:p-10 bg-white border-l-4 border-[#00A651] rounded-r-xl sm:rounded-r-3xl">
+//                                         <div className="flex items-center gap-2 text-[#00A651] mb-4">
+//                                             <BarChart3 className="w-5 h-5" />
+//                                             <span className="text-xs font-black uppercase">
+//                                                 Core Mission
+//                                             </span>
+//                                         </div>
+
+//                                         <p className="text-lg sm:text-2xl font-serif italic text-zinc-700">
+//                                             {excerpt}
+//                                         </p>
+//                                     </div>
+//                                 )}
+
+//                                 <div className="prose prose-xl max-w-none">
+//                                     <RenderBlocks blocks={article.Content} />
+//                                 </div>
+
+//                             </div>
+//                         </div>
+
+//                     </div>
+//                 </article>
+//             </main>
+//         </div>
+//     );
+// }
+import React from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { notFound } from "next/navigation";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
-import { Button } from "@/components/ui/buttons";
 import {
     Download,
     ChevronLeft,
     Calendar,
-    Clock,
-    Share2,
-    BarChart3,
     ShieldCheck,
     BookmarkPlus,
+    Share2,
+    ArrowUpRight,
+    FileText,
+    TrendingUp,
+    Clock,
+    Quote
 } from "lucide-react";
 
-function slugify(text: string): string {
-    return text.toLowerCase().trim().replace(/[^\w\s-]/g, "").replace(/[\s_]+/g, "-").replace(/-+/g, "-").replace(/^-+|-+$/g, "");
-}
+const STRAPI = process.env.NEXT_PUBLIC_STRAPI_URL;
 
-/* =========================
-   TYPES
-========================= */
-
-interface PageProps {
-    params: Promise<{ slug: string }>;
-}
-
-/* =========================
-   FETCH REPORT FROM STRAPI
-========================= */
+/* ==========================================================
+   DATA FETCHING
+   ========================================================== */
 
 async function getReport(slug: string) {
     try {
         const res = await fetch(
-            `${process.env.NEXT_PUBLIC_STRAPI_URL}/api/type-of-contents?filters[slug][$eq]=reports&populate[contents][populate]=*`,
-            {
-                cache: "no-store",
-                headers: {
-                    Authorization: `Bearer ${process.env.STRAPI_API_TOKEN}`,
-                },
-            }
+            `${STRAPI}/api/contents?filters[slug][$eq]=${slug}&filters[type_of_content][name][$eq]=Reports&populate=*`,
+            { cache: "no-store" }
         );
-
         const json = await res.json();
-
-        const reports =
-            json?.data?.[0]?.contents ||
-            json?.data?.[0]?.attributes?.contents ||
-            [];
-
-        return reports.find((r: any) => r.slug === slug) || null;
+        return json?.data?.[0] ?? null;
     } catch (e) {
-        console.error("STRAPI ERROR:", e);
+        console.error("Strapi Fetch Error:", e);
         return null;
     }
 }
 
-/* =========================
-   BLOCK RENDERER
-========================= */
+async function getTrending() {
+    try {
+        const res = await fetch(
+            `${STRAPI}/api/contents?filters[type_of_content][name][$eq]=Reports&pagination[limit]=3&populate=*`,
+            { cache: "no-store" }
+        );
+        const json = await res.json();
+        return json?.data ?? [];
+    } catch (e) {
+        return [];
+    }
+}
 
-function RenderBlocks({ blocks }: any) {
-    if (!blocks) return null;
+/* ==========================================================
+   CONTENT RENDERERS
+   ========================================================== */
 
-    return blocks.map((block: any, i: number) => {
-        if (block.type === "paragraph") {
-            return (
-                <p key={i}>
-                    {block.children?.map((c: any) => c.text).join("")}
-                </p>
-            );
-        }
-
-        if (block.type === "heading") {
-            const Tag = (`h${block.level}` as 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6') || 'h3';
-
-            return (
-                <Tag key={i}>
-                    {block.children?.map((c: any) => c.text).join("")}
-                </Tag>
-            );
-        }
-
-        return null;
+function renderInlineChildren(children: any[]) {
+    return children?.map((child: any, idx: number) => {
+        let node: React.ReactNode = child.text;
+        if (child.bold) node = <strong key={idx} className="font-black text-zinc-900">{node}</strong>;
+        if (child.italic) node = <em key={idx} className="italic text-zinc-400">{node}</em>;
+        return node;
     });
 }
 
-/* =========================
-   PAGE
-========================= */
-
-export default async function ArticlePage(props: PageProps) {
-    const { slug } = await props.params;
-    const article = await getReport(slug);
-
-    if (!article) {
-        return <div className="p-20 text-center">Report not found</div>;
-    }
-
-    /* ---------- IMAGE ---------- */
-
-    const imageUrl =
-        article?.FeaturedImage?.url
-            ? `${process.env.NEXT_PUBLIC_STRAPI_URL}${article.FeaturedImage.url}`
-            : article?.FeaturedImage?.data?.attributes?.url
-                ? `${process.env.NEXT_PUBLIC_STRAPI_URL}${article.FeaturedImage.data.attributes.url}`
-                : null;
-
-    /* ---------- AUTHOR ---------- */
-
-    const author = article?.author;
-
-    const authorBio =
-        author?.bio?.[0]?.children?.[0]?.text || "";
-
-    /* ✅ AUTHOR AVATAR (AUTO FROM STRAPI) */
-    const authorAvatar =
-        author?.avatar?.url
-            ? `${process.env.NEXT_PUBLIC_STRAPI_URL}${author.avatar.url}`
-            : author?.avatar?.data?.attributes?.url
-                ? `${process.env.NEXT_PUBLIC_STRAPI_URL}${author.avatar.data.attributes.url}`
-                : null;
-
-    /* ---------- DOWNLOAD URL (SOURCE FIELD) ---------- */
-    const downloadUrl = article?.source || "#";
-
-    /* ---------- EXCERPT ---------- */
-
-    const excerpt =
-        article?.Excerpt?.[0]?.children?.[0]?.text || "";
-
-    return (
-        <div className="min-h-screen bg-[#FDFDFD] font-sans text-zinc-900 overflow-x-hidden">
-
-            <Header />
-
-            <main className="pt-[40px] sm:pt-[60px] pb-16 sm:pb-32">
-                <article className="container mx-auto px-4 sm:px-6 lg:px-12 max-w-6xl">
-
-                    {/* TOP BAR */}
-                    <div className="flex flex-wrap justify-between items-center gap-4 mb-6 sm:mb-8">
-                        <Link
-                            href="/reports"
-                            className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 hover:text-[#00A651]"
-                        >
-                            <ChevronLeft className="w-4 h-4" />
-                            Back to Intelligence
-                        </Link>
-
-                        <div className="flex gap-4">
-                            <button className="p-2 rounded-full border">
-                                <BookmarkPlus className="w-4 h-4 text-zinc-500" />
-                            </button>
-                            <button className="p-2 rounded-full border">
-                                <Share2 className="w-4 h-4 text-zinc-500" />
-                            </button>
+function RenderBlocks({ blocks }: { blocks: any[] }) {
+    if (!blocks) return null;
+    return blocks.map((block: any, i: number) => {
+        switch (block.type) {
+            case "heading":
+                const Tag = (`h${block.level || 2}` as any);
+                return (
+                    <Tag key={i} className="font-sans font-black uppercase tracking-tighter text-zinc-900 mt-20 mb-6 text-2xl md:text-3xl border-b border-zinc-100 pb-4">
+                        <span className="text-[#00A651] mr-3 text-lg">▸</span>
+                        {renderInlineChildren(block.children)}
+                    </Tag>
+                );
+            case "quote":
+                return (
+                    <div key={i} className="my-16 relative">
+                        <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-[#00A651] to-emerald-300 rounded-full" />
+                        <div className="pl-10 py-6">
+                            <Quote className="w-8 h-8 text-[#00A651]/30 mb-4" />
+                            <p className="text-2xl md:text-3xl font-serif italic text-zinc-700 leading-snug">
+                                {renderInlineChildren(block.children)}
+                            </p>
                         </div>
                     </div>
+                );
+            default:
+                return (
+                    <p key={i} className="font-serif text-lg leading-[1.9] text-zinc-600 mb-8">
+                        {renderInlineChildren(block.children)}
+                    </p>
+                );
+        }
+    });
+}
 
-                    {/* HEADER */}
-                    <header className="text-center mb-10 sm:mb-16">
-                        <span className="inline-block px-3 sm:px-4 py-1 sm:py-1.5 border border-[#00A651] text-[#00A651] text-[9px] sm:text-[10px] font-black uppercase rounded-full mb-4 sm:mb-6">
-                            HSE & Sustainability Analysis
-                        </span>
+/* ==========================================================
+   PAGE COMPONENT
+   ========================================================== */
 
-                        <h1 className="text-2xl sm:text-4xl md:text-6xl lg:text-7xl font-black uppercase italic leading-[1.05] mb-6 sm:mb-10 px-2 sm:px-0">
-                            {article.Title}
-                        </h1>
+export default async function IntelligenceReportPage({ params }: { params: Promise<{ slug: string }> }) {
+    const { slug } = await params;
+    const article = await getReport(slug);
+    const trending = await getTrending();
 
-                        <div className="flex flex-wrap justify-center gap-4 sm:gap-8 text-[10px] sm:text-[11px] font-bold text-zinc-400 uppercase">
-                            <span className="flex items-center gap-1.5 sm:gap-2">
-                                <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#00A651]" />
-                                {article.Date}
-                            </span>
+    if (!article) notFound();
 
-                            <span className="flex items-center gap-1.5 sm:gap-2">
-                                <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#00A651]" />
-                                8 min read
-                            </span>
+    const imageUrl = article.FeaturedImage?.url ? `${STRAPI}${article.FeaturedImage.url}` : null;
+    const downloadUrl = article.source || "#";
+    const excerpt = article.Excerpt?.[0]?.children?.[0]?.text || "";
 
-                            <span className="flex items-center gap-1.5 sm:gap-2 text-[#00A651]">
-                                <ShieldCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                                ENCIS Verified
-                            </span>
-                        </div>
-                    </header>
+    return (
+        <div className="min-h-screen  font-sans text-zinc-900">
+            <Header />
 
-                    {/* HERO IMAGE */}
-                    {imageUrl && (
-                        <div className="relative h-[250px] sm:h-[400px] md:h-[600px] w-full rounded-xl sm:rounded-2xl overflow-hidden shadow-2xl mb-12 sm:mb-24">
-                            <Image
-                                src={imageUrl}
-                                alt={article.Title}
-                                fill
-                                className="object-cover"
-                                priority
-                            />
-                        </div>
-                    )}
+            <main className="pt-24 pb-32">
+                <div className="container mx-auto px-6 max-w-[1440px]">
 
-                    {/* CONTENT GRID */}
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 sm:gap-16">
+                    {/* ── BREADCRUMB ── */}
+                    <div className="mb-10 pb-6 border-b border-zinc-200">
+                        <Link
+                            href="/reports"
+                            className="group inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 hover:text-[#00A651] transition-colors duration-200"
+                        >
+                            <ChevronLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform duration-200" />
+                            Intelligence Index
+                        </Link>
+                    </div>
 
-                        {/* SIDEBAR */}
-                        <aside className="lg:col-span-3 space-y-8 sm:space-y-10 order-2 lg:order-1">
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
 
+                        {/* ════════════════════════════════════════
+                            LEFT COLUMN — DOWNLOAD + ACTIONS
+                        ════════════════════════════════════════ */}
+                        <aside className="hidden lg:flex lg:col-span-3 flex-col gap-4 sticky top-28">
 
+                            {/* Download Card */}
+                            <div className="relative bg-zinc-950 rounded-3xl overflow-hidden border border-white/5">
+                                {/* Green top bar */}
+                                <div className="h-[3px] w-full bg-gradient-to-r from-[#00A651] via-emerald-300 to-[#00A651]" />
 
-                            {/* DOWNLOAD CARD */}
-                            <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-zinc-900 text-white">
-                                <h4 className="text-[10px] font-black uppercase text-[#00A651] mb-4">
-                                    Official Publication
-                                </h4>
+                                {/* Ambient glow */}
+                                <div className="absolute -top-10 -right-10 w-48 h-48 bg-[#00A651]/15 rounded-full blur-3xl pointer-events-none" />
+                                <div className="absolute -bottom-10 -left-10 w-36 h-36 bg-emerald-500/5 rounded-full blur-2xl pointer-events-none" />
 
-                                <p className="text-xs text-zinc-400 mb-6">
-                                    Recommendations and strategic insights from industry leaders.
-                                </p>
+                                <div className="relative z-10 p-7">
+                                    {/* Live badge */}
+                                    <div className="inline-flex items-center gap-2 bg-[#00A651]/10 border border-[#00A651]/25 rounded-full px-3.5 py-1.5 mb-7">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-[#00A651] animate-pulse" />
+                                        <span className="text-[9px] font-black uppercase tracking-[0.18em] text-[#00A651]">
+                                            Official Publication
+                                        </span>
+                                    </div>
 
-                                <a href={downloadUrl} target="_blank" rel="noopener noreferrer">
-                                    <Button className="w-full bg-[#00A651] text-xs font-black uppercase py-6">
-                                        Download Report
-                                        <Download className="w-4 h-4 ml-2" />
-                                    </Button>
-                                </a>
+                                    {/* Icon box */}
+                                    <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mb-6">
+                                        <FileText className="w-6 h-6 text-[#00A651]" />
+                                    </div>
+
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-1">Full Report</p>
+                                    <h4 className="text-white font-black text-base leading-snug mb-3">
+                                        Technical<br />Whitepaper
+                                    </h4>
+                                    <p className="text-[11px] text-zinc-500 font-serif italic leading-relaxed mb-8">
+                                        Verified data models, methodology &amp; complete analysis included.
+                                    </p>
+
+                                    {/* Download button */}
+                                    <a href={downloadUrl} target="_blank" rel="noreferrer" className="block mb-3">
+                                        <button className="w-full group bg-[#00A651] hover:bg-white rounded-2xl py-4 transition-all duration-300">
+                                            <span className="flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest text-white group-hover:text-zinc-900 transition-colors duration-300">
+                                                <Download className="w-3.5 h-3.5" />
+                                                Download PDF
+                                            </span>
+                                        </button>
+                                    </a>
+                                    <p className="text-center text-[9px] text-zinc-600 uppercase tracking-widest">
+                                        Free Access · PDF
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Actions card */}
+                            {/* <div className="bg-white rounded-3xl border border-zinc-100 overflow-hidden shadow-sm">
+                                {[
+                                    { icon: BookmarkPlus, label: "Save Report" },
+                                    { icon: Share2, label: "Share Intel" },
+                                ].map(({ icon: Icon, label }, idx) => (
+                                    <button
+                                        key={label}
+                                        className={`w-full flex items-center justify-between px-6 py-4 text-[10px] font-black uppercase tracking-widest text-zinc-400 hover:text-[#00A651] hover:bg-zinc-50 transition-all duration-200 group ${idx === 0 ? "border-b border-zinc-100" : ""}`}
+                                    >
+                                        <span className="flex items-center gap-3">
+                                            <span className="w-8 h-8 rounded-xl bg-zinc-100 group-hover:bg-[#00A651]/10 flex items-center justify-center transition-colors duration-200">
+                                                <Icon size={13} className="group-hover:text-[#00A651] transition-colors duration-200" />
+                                            </span>
+                                            {label}
+                                        </span>
+                                        <span className="text-zinc-300 group-hover:text-[#00A651] group-hover:translate-x-0.5 transition-all duration-200">→</span>
+                                    </button>
+                                ))}
+                            </div> */}
+
+                            {/* Meta card */}
+                            <div className="bg-white rounded-3xl border border-zinc-100 p-6 space-y-4 shadow-sm">
+                                <p className="text-[9px] font-black uppercase tracking-widest text-zinc-300 mb-4">Report Details</p>
+                                <div className="flex items-center gap-3 text-[11px] font-bold text-zinc-500">
+                                    <Calendar size={13} className="text-[#00A651]" />
+                                    {new Date(article.publishedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                </div>
+                                <div className="flex items-center gap-3 text-[11px] font-bold text-zinc-500">
+                                    <Clock size={13} className="text-[#00A651]" />
+                                    12 min read
+                                </div>
+                                <div className="flex items-center gap-3 text-[11px] font-bold text-[#00A651]">
+                                    <ShieldCheck size={13} />
+                                    ENCIS Verified
+                                </div>
                             </div>
 
                         </aside>
 
-                        {/* MAIN CONTENT */}
-                        <div className="lg:col-span-9 order-1 lg:order-2">
-                            <div className="max-w-3xl">
+                        {/* ════════════════════════════════════════
+                            CENTER COLUMN — ARTICLE BODY
+                        ════════════════════════════════════════ */}
+                        <article className="lg:col-span-6">
 
-                                {excerpt && (
-                                    <div className="mb-10 sm:mb-16 p-5 sm:p-10 bg-white border-l-4 border-[#00A651] rounded-r-xl sm:rounded-r-3xl">
-                                        <div className="flex items-center gap-2 text-[#00A651] mb-4">
-                                            <BarChart3 className="w-5 h-5" />
-                                            <span className="text-xs font-black uppercase">
-                                                Core Mission
-                                            </span>
+                            {/* Title block */}
+                            <header className="mb-14">
+                                <h1 className="text-4xl md:text-6xl font-black uppercase tracking-tighter leading-[0.9] mb-10 text-zinc-900">
+                                    {article.Title}
+                                </h1>
+
+                                {/* Mobile meta */}
+                                <div className="flex flex-wrap gap-5 text-[10px] font-black uppercase tracking-[0.18em] text-zinc-400 border-t border-zinc-200 pt-7 lg:hidden">
+                                    <span className="flex items-center gap-2">
+                                        <Calendar size={11} className="text-[#00A651]" />
+                                        {new Date(article.publishedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                    </span>
+                                    <span className="flex items-center gap-2">
+                                        <Clock size={11} className="text-[#00A651]" />
+                                        12 min read
+                                    </span>
+                                    <span className="flex items-center gap-2 text-[#00A651]">
+                                        <ShieldCheck size={11} />
+                                        ENCIS Verified
+                                    </span>
+                                </div>
+                            </header>
+
+                            {/* Featured image */}
+                            {imageUrl && (
+                                <div className="relative aspect-[1/1] w-full rounded-[2rem] overflow-hidden shadow-xl mb-16 bg-zinc-100">
+                                    <Image src={imageUrl} alt="Report Cover" fill className="object-cover" priority />
+                                    <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-black/30 to-transparent" />
+                                </div>
+                            )}
+
+                            {/* Excerpt callout */}
+                            {excerpt && (
+                                <div className="mb-14 relative overflow-hidden rounded-3xl bg-zinc-950 p-8 md:p-10">
+                                    <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-[#00A651] via-emerald-300 to-transparent" />
+                                    <div className="absolute -bottom-12 -right-12 w-40 h-40 bg-[#00A651]/10 rounded-full blur-3xl pointer-events-none" />
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-[#00A651] mb-4 relative z-10">
+                                        Core Mission
+                                    </p>
+                                    <p className="text-xl md:text-2xl font-serif italic text-white leading-snug relative z-10">
+                                        &ldquo;{excerpt}&rdquo;
+                                    </p>
+                                </div>
+                            )}
+
+                            {/* Body content */}
+                            <div className="mb-20">
+                                <RenderBlocks blocks={article.Content} />
+                            </div>
+
+                            {/* Bottom CTA */}
+                            <div className="border-t border-zinc-200 pt-12 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+                                <div>
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-1">Full Document</p>
+                                    <p className="text-sm font-bold text-zinc-700">Download the complete whitepaper</p>
+                                </div>
+                                <a href={downloadUrl} target="_blank" rel="noreferrer">
+                                    <button className="group inline-flex items-center gap-2 bg-zinc-950 hover:bg-[#00A651] text-white rounded-2xl px-6 py-4 text-[10px] font-black uppercase tracking-widest transition-all duration-300">
+                                        <Download className="w-3.5 h-3.5" />
+                                        Download PDF
+                                    </button>
+                                </a>
+                            </div>
+
+                        </article>
+
+                        {/* ════════════════════════════════════════
+                            RIGHT COLUMN — DISCOVERY RAIL
+                        ════════════════════════════════════════ */}
+                        <aside className="lg:col-span-3 flex flex-col gap-5 lg:sticky lg:top-28">
+
+                            {/* Top Priority card */}
+                            {trending[0] && (
+                                <div className="rounded-3xl overflow-hidden border border-zinc-100 bg-white shadow-sm group">
+                                    {/* Image */}
+                                    <div className="relative aspect-[16/10] w-full bg-zinc-100 overflow-hidden">
+                                        {trending[0].FeaturedImage?.url && (
+                                            <Image
+                                                src={`${STRAPI}${trending[0].FeaturedImage.url}`}
+                                                fill
+                                                alt={trending[0].Title}
+                                                className="object-cover grayscale group-hover:grayscale-0 group-hover:scale-105 transition-all duration-700"
+                                            />
+                                        )}
+                                        {/* Label pill */}
+                                        <div className="absolute top-3 left-3 inline-flex items-center gap-1.5 bg-zinc-950/80 backdrop-blur-sm rounded-full px-3 py-1.5">
+                                            <TrendingUp size={9} className="text-[#00A651]" />
+                                            <span className="text-[9px] font-black uppercase tracking-widest text-white">Top Priority</span>
                                         </div>
+                                    </div>
 
-                                        <p className="text-lg sm:text-2xl font-serif italic text-zinc-700">
-                                            {excerpt}
+                                    <div className="p-5">
+                                        <p className="text-[9px] font-black uppercase tracking-widest text-[#00A651] mb-2">Technical Brief</p>
+                                        <h5 className="font-black text-sm leading-snug text-zinc-900 mb-5 group-hover:text-[#00A651] transition-colors duration-200 line-clamp-3">
+                                            {trending[0].Title}
+                                        </h5>
+                                        <Link
+                                            href={`/reports/${trending[0].slug}`}
+                                            className="inline-flex items-center gap-2 bg-zinc-950 hover:bg-[#00A651] text-white rounded-xl px-4 py-2.5 text-[10px] font-black uppercase tracking-widest transition-all duration-300"
+                                        >
+                                            Open Report <ArrowUpRight size={11} />
+                                        </Link>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Related Briefings */}
+                            {trending.slice(1).length > 0 && (
+                                <div className="bg-white rounded-3xl border border-zinc-100 shadow-sm overflow-hidden">
+                                    <div className="px-5 py-4 border-b border-zinc-100">
+                                        <p className="text-[9px] font-black uppercase tracking-[0.22em] text-zinc-400 flex items-center gap-2">
+                                            <span className="w-3 h-px bg-zinc-300 inline-block" />
+                                            Related Briefings
                                         </p>
                                     </div>
-                                )}
 
-                                <div className="prose prose-xl max-w-none">
-                                    <RenderBlocks blocks={article.Content} />
+                                    {trending.slice(1).map((item: any, idx: number) => (
+                                        <Link
+                                            key={item.id}
+                                            href={`/reports/${item.slug}`}
+                                            className={`group flex items-start gap-4 p-5 hover:bg-zinc-50 transition-all duration-200 ${idx < trending.slice(1).length - 1 ? "border-b border-zinc-100" : ""}`}
+                                        >
+                                            {/* Thumbnail */}
+                                            <div className="relative w-14 h-14 rounded-xl overflow-hidden bg-zinc-100 flex-shrink-0">
+                                                {item.FeaturedImage?.url && (
+                                                    <Image
+                                                        src={`${STRAPI}${item.FeaturedImage.url}`}
+                                                        fill
+                                                        alt={item.Title}
+                                                        className="object-cover grayscale group-hover:grayscale-0 transition-all duration-500"
+                                                    />
+                                                )}
+                                            </div>
+
+                                            {/* Text */}
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-[9px] font-black uppercase tracking-widest text-[#00A651] mb-1">
+                                                    Brief 0{idx + 2}
+                                                </p>
+                                                <p className="text-xs font-bold text-zinc-800 leading-snug group-hover:text-[#00A651] transition-colors duration-200 line-clamp-2">
+                                                    {item.Title}
+                                                </p>
+                                            </div>
+
+                                            <ArrowUpRight
+                                                size={12}
+                                                className="text-zinc-300 group-hover:text-[#00A651] mt-0.5 flex-shrink-0 transition-colors duration-200"
+                                            />
+                                        </Link>
+                                    ))}
                                 </div>
+                            )}
 
+                            {/* Newsletter / promo nudge */}
+                            <div className="relative rounded-3xl overflow-hidden bg-zinc-950 p-6">
+                                <div className="h-[2px] absolute top-0 left-0 right-0 bg-gradient-to-r from-[#00A651] via-emerald-300 to-transparent" />
+                                <div className="absolute -bottom-8 -right-8 w-32 h-32 bg-[#00A651]/10 rounded-full blur-2xl pointer-events-none" />
+                                <p className="text-[9px] font-black uppercase tracking-widest text-[#00A651] mb-3 relative z-10">
+                                    Intel Digest
+                                </p>
+                                <p className="text-white font-black text-sm leading-snug mb-5 relative z-10">
+                                    Get weekly intelligence briefings in your inbox.
+                                </p>
+                                <button className="relative z-10 w-full bg-[#00A651] hover:bg-white rounded-xl py-3 text-[10px] font-black uppercase tracking-widest text-white hover:text-zinc-900 transition-all duration-300">
+                                    Subscribe Free
+                                </button>
                             </div>
-                        </div>
+
+                        </aside>
 
                     </div>
-                </article>
+                </div>
             </main>
+
+            <Footer />
         </div>
     );
 }
