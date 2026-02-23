@@ -86,8 +86,8 @@ export default function AboutPage() {
                             </span>
                         </div>
                         <h1 className="text-6xl md:text-8xl lg:text-9xl font-black tracking-tighter text-zinc-900 leading-[0.85] uppercase italic">
-                            Vision & <br />
-                            <span className="text-[#00A651] not-italic">Purpose.</span>
+                            About
+                            <span className="text-[#00A651] not-italic">.</span>
                         </h1>
                     </motion.div>
                 </section>
@@ -141,7 +141,7 @@ export default function AboutPage() {
                 </section>
 
                 {/* 3. STRATEGIC PARTNERS LOOP */}
-                <section className="w-full  border-y border-zinc-100 py-28 mb-32 overflow-hidden">
+                {/* <section className="w-full  border-y border-zinc-100 py-28 mb-32 overflow-hidden">
                     <div className="container mx-auto px-6 mb-16 text-center">
                         <p className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-400">
                             Our Strategic Initiatives
@@ -164,7 +164,7 @@ export default function AboutPage() {
                             ariaLabel="Strategic Partners"
                         />
                     </div>
-                </section>
+                </section> */}
 
                 {/* 4. THE NEED SECTION */}
                 <section className="container mt-[120px] mx-auto px-6 lg:px-12">
