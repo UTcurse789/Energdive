@@ -70,7 +70,7 @@ function AcceptInviteContent() {
                     <h1 className="text-xl font-bold text-gray-900 mb-2">Link Expired</h1>
                     <p className="text-gray-500 text-sm mb-6">{error}</p>
                     <a
-                        href="/sign-in"
+                        href="/auth"
                         className="inline-block bg-[#0AB996] text-white px-6 py-2.5 rounded-lg text-sm font-semibold hover:bg-[#099e82] transition-colors"
                     >
                         Go to Sign In

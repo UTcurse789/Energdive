@@ -8,7 +8,7 @@ import { EnergClubHeader } from "@/components/layout/energclub-header";
 export default function SiteLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const isEnergClub = pathname.startsWith("/energclub");
-    const isAuthPage = pathname.startsWith("/sign-in") || pathname.startsWith("/sign-up");
+    const isAuthPage = pathname.startsWith("/auth");
     const isDashboard = pathname.startsWith("/dashboard");
     const isOnboarding = pathname.startsWith("/onboarding");
 
