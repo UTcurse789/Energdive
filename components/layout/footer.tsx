@@ -2,11 +2,10 @@
 
 import Link from "next/link";
 import NextImage from "next/image";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
     Mail,
     MapPin,
-    Phone,
     ArrowRight,
     Send,
     Twitter,
@@ -61,6 +60,12 @@ const SECTOR_ORDER = [
 export function Footer() {
     const [email, setEmail] = useState("");
     const [subscribed, setSubscribed] = useState(false);
+    const [year, setYear] = useState(2026); // Default to current year or a static value
+
+    useEffect(() => {
+        setYear(new Date().getFullYear());
+    }, []);
+
     const orderedSectors = SECTOR_ORDER
         .map((slug) => SECTORS.find((sector) => sector.slug === slug))
         .filter((sector): sector is Sector => Boolean(sector));
@@ -199,24 +204,20 @@ export function Footer() {
                                 <span className="text-[13px] text-gray-500 leading-relaxed">Sector 12A, Dwarka, New Delhi 110075</span>
                             </li>
                             <li>
+                                {/* Hydration Fix: Hardcoded email matches client and server */}
                                 <a href="mailto:contact@energdive.com" className="flex items-center gap-2.5 text-[13px] text-gray-500 hover:text-white transition-colors">
                                     <Mail size={13} className="text-gray-600 shrink-0" />
                                     contact@energdive.com
                                 </a>
                             </li>
-                            <li>
-                                <a href="tel:+911234567890" className="flex items-center gap-2.5 text-[13px] text-gray-500 hover:text-white transition-colors">
-                                    <Phone size={13} className="text-gray-600 shrink-0" />
-                                    +91 11 4544 4425
-                                </a>
-                            </li>
                         </ul>
                     </div>
                 </div>
+
                 {/* ─── Bottom Bar ─── */}
                 <div className="flex flex-col md:flex-row justify-between items-center gap-4 py-6 border-t border-white/[0.06]">
                     <p className="text-[11px] text-gray-600">
-                        &copy; <span suppressHydrationWarning>{new Date().getFullYear()}</span> EnergDive. All rights reserved. Published by ClariSector Technologies Pvt. Ltd.
+                        &copy; <span>{year}</span> EnergDive. All rights reserved. Published by ClariSector Technologies Pvt. Ltd.
                     </p>
                     <div className="flex items-center gap-5">
                         <Link href="/terms" className="text-[11px] text-gray-600 hover:text-gray-400 transition-colors">Terms</Link>
