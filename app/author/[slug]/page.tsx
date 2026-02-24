@@ -2,6 +2,8 @@ import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { Calendar, ArrowRight, Briefcase, FileText, Tag } from "lucide-react";
+import { DateChip } from "@/components/ui/date-chip";
+import { formatContentDate } from "@/lib/date";
 
 const STRAPI_BASE = process.env.NEXT_PUBLIC_STRAPI_URL || "http://206.189.132.187:1337";
 
@@ -24,19 +26,6 @@ function getImageUrl(img: any): string {
     const url = attrs?.formats?.large?.url || attrs?.formats?.medium?.url || attrs?.formats?.small?.url || attrs?.url;
     if (!url) return "/magazine-default.jpg";
     return url.startsWith("http") ? url : `${STRAPI_BASE}${url}`;
-}
-
-function formatDate(dateStr: string): string {
-    if (!dateStr) return "";
-    try {
-        return new Date(dateStr).toLocaleDateString("en-IN", {
-            day: "2-digit",
-            month: "short",
-            year: "numeric",
-        });
-    } catch {
-        return dateStr;
-    }
 }
 
 function getExcerpt(excerpt: any): string {
@@ -152,7 +141,7 @@ export default async function AuthorPage({
             slug: a.slug || "",
             excerpt: getExcerpt(a.Excerpt) || "",
             image: getImageUrl(a.FeaturedImage),
-            date: formatDate(a.Date || a.createdAt),
+            date: formatContentDate(a.Date || a.publishedAt || a.createdAt),
             category: a.type_of_content?.name || a.type_of_content?.data?.attributes?.name || "Article",
             sector: sectorAttrs?.name || "",
         };
@@ -213,7 +202,7 @@ export default async function AuthorPage({
                                 {articles[0]?.date && (
                                     <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/5 px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-zinc-200">
                                         <Calendar size={12} />
-                                        Latest: {articles[0].date}
+                                        Latest: <DateChip value={articles[0].date} className="text-[10px]" />
                                     </div>
                                 )}
                             </div>
@@ -261,8 +250,7 @@ export default async function AuthorPage({
 
                                         <div className="p-6 flex flex-col h-[calc(100%-0px)]">
                                             <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-zinc-400 mb-3">
-                                                <Calendar className="w-3.5 h-3.5 text-[#09B697]" />
-                                                <span>{article.date || "Recent"}</span>
+                                                <DateChip value={article.date || "Recent"} className="text-[10px]" />
                                                 {article.sector && (
                                                     <>
                                                         <span className="text-zinc-300">|</span>

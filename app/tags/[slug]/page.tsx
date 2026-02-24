@@ -1,19 +1,12 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Clock, Tag, Play, ArrowUpRight } from "lucide-react";
+import { Tag, Play, ArrowUpRight } from "lucide-react";
 import { TagBadge } from "@/components/ui/tag-badge";
 import { slugify } from "@/lib/utils";
+import { DateChip } from "@/components/ui/date-chip";
+import { formatContentDate } from "@/lib/date";
 
 const STRAPI_BASE = process.env.NEXT_PUBLIC_STRAPI_URL || "http://206.189.132.187:1337";
-
-function formatDate(dateStr: string) {
-    if (!dateStr) return "";
-    return new Date(dateStr).toLocaleDateString("en-GB", {
-        day: "numeric",
-        month: "short",
-        year: "numeric",
-    });
-}
 
 function readAttrs(item: any) {
     return item?.attributes || item || {};
@@ -97,7 +90,7 @@ async function fetchTagContent(tagSlug: string) {
                     title: attrs.Title || attrs.title || "",
                     slug: attrs.slug || "",
                     image: resolveImage(entry),
-                    date: formatDate(attrs.publishedAt || attrs.createdAt || attrs.date || attrs.Date),
+                    date: formatContentDate(attrs.publishedAt || attrs.createdAt || attrs.date || attrs.Date),
                     excerpt,
                     contentType:
                         attrs.type_of_content?.name ||
@@ -144,7 +137,7 @@ async function fetchTagVideos(tagSlug: string) {
                     thumbnail:
                         toAbsoluteUrl(thumbnailUrl) ||
                         `https://img.youtube.com/vi/${attrs.youtubeId}/mqdefault.jpg`,
-                    date: formatDate(attrs.date || attrs.createdAt),
+                    date: formatContentDate(attrs.date || attrs.createdAt),
                 };
             })
             .filter((video: any) => video.slug);
@@ -218,8 +211,7 @@ export default async function TagPage({ params }: { params: Promise<{ slug: stri
                                     </div>
                                     <div className="p-5">
                                         <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-[#00A651] mb-3">
-                                            <Clock size={10} />
-                                            <span>{item.date}</span>
+                                            <DateChip value={item.date} className="text-[10px]" />
                                             {item.sector && (
                                                 <>
                                                     <span className="text-zinc-300">-</span>
@@ -274,7 +266,7 @@ export default async function TagPage({ params }: { params: Promise<{ slug: stri
                                     </div>
                                     <div className="p-5">
                                         <h3 className="text-base font-bold group-hover:text-[#00A651] transition-colors line-clamp-2">{video.title}</h3>
-                                        <span className="text-[10px] text-zinc-400 mt-2 block uppercase tracking-widest">{video.date}</span>
+                                        <DateChip value={video.date} className="text-[10px] mt-2" />
                                     </div>
                                 </Link>
                             </article>
@@ -295,4 +287,3 @@ export default async function TagPage({ params }: { params: Promise<{ slug: stri
         </div>
     );
 }
-

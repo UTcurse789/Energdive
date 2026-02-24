@@ -265,6 +265,8 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
+import { ScrollProgress } from "@/components/ui/scroll-progress";
+import { DateChip } from "@/components/ui/date-chip";
 import {
     Download,
     ChevronLeft,
@@ -278,6 +280,7 @@ import {
     Clock,
     Quote
 } from "lucide-react";
+import { formatContentDate } from "@/lib/date";
 
 const STRAPI = process.env.NEXT_PUBLIC_STRAPI_URL;
 
@@ -376,6 +379,7 @@ export default async function IntelligenceReportPage({ params }: { params: Promi
 
     return (
         <div className="min-h-screen  font-sans text-zinc-900">
+            <ScrollProgress />
             <Header />
 
             <main className="pt-24 pb-32">
@@ -469,10 +473,7 @@ export default async function IntelligenceReportPage({ params }: { params: Promi
                             {/* Meta card */}
                             <div className="bg-white rounded-3xl border border-zinc-100 p-6 space-y-4 shadow-sm">
                                 <p className="text-[9px] font-black uppercase tracking-widest text-zinc-300 mb-4">Report Details</p>
-                                <div className="flex items-center gap-3 text-[11px] font-bold text-zinc-500">
-                                    <Calendar size={13} className="text-[#00A651]" />
-                                    {new Date(article.publishedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
-                                </div>
+                                <DateChip value={formatContentDate(article.Date || article.publishedAt || article.createdAt)} />
                                 <div className="flex items-center gap-3 text-[11px] font-bold text-zinc-500">
                                     <Clock size={13} className="text-[#00A651]" />
                                     12 min read
@@ -498,10 +499,7 @@ export default async function IntelligenceReportPage({ params }: { params: Promi
 
                                 {/* Mobile meta */}
                                 <div className="flex flex-wrap gap-5 text-[10px] font-black uppercase tracking-[0.18em] text-zinc-400 border-t border-zinc-200 pt-7 lg:hidden">
-                                    <span className="flex items-center gap-2">
-                                        <Calendar size={11} className="text-[#00A651]" />
-                                        {new Date(article.publishedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
-                                    </span>
+                                    <DateChip value={formatContentDate(article.Date || article.publishedAt || article.createdAt)} className="text-[10px]" />
                                     <span className="flex items-center gap-2">
                                         <Clock size={11} className="text-[#00A651]" />
                                         12 min read

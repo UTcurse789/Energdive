@@ -5,8 +5,11 @@ import { notFound } from "next/navigation";
 import { BlocksRenderer } from "@strapi/blocks-react-renderer";
 import { SidebarSubscribe } from "@/components/sidebar-subscribe";
 import { TagBadge } from "@/components/ui/tag-badge";
+import { ScrollProgress } from "@/components/ui/scroll-progress";
+import { DateChip } from "@/components/ui/date-chip";
 import { ISSUES } from "@/data/dummy";
-import { ArrowRight, Clock, Calendar, ChevronRight } from "lucide-react";
+import { ArrowRight, Calendar, ChevronRight } from "lucide-react";
+import { formatContentDate } from "@/lib/date";
 
 const STRAPI_BASE_URL = "http://206.189.132.187:1337";
 
@@ -38,9 +41,9 @@ async function getArticle(slug: string) {
 
 async function getRelated(tags: string[], currentSlug: string) {
     if (!tags.length) {
-        // Fallback: fetch latest articles excluding current
+        // Fallback: fetch latest news excluding current
         const res = await fetch(
-            `${STRAPI_BASE_URL}/api/contents?filters[slug][$ne]=${currentSlug}&pagination[limit]=4&populate=*&sort=publishedAt:desc`,
+            `${STRAPI_BASE_URL}/api/contents?filters[type_of_content][name][$eq]=News&filters[slug][$ne]=${currentSlug}&pagination[limit]=4&populate=*&sort=publishedAt:desc`,
             { cache: "no-store" }
         );
         if (!res.ok) return [];
@@ -52,7 +55,7 @@ async function getRelated(tags: string[], currentSlug: string) {
         .map((tag, i) => `filters[tags][slug][$in][${i}]=${tag}`)
         .join("&");
 
-    const url = `${STRAPI_BASE_URL}/api/contents?${tagFilters}&filters[slug][$ne]=${currentSlug}&populate=*&pagination[limit]=4`;
+    const url = `${STRAPI_BASE_URL}/api/contents?filters[type_of_content][name][$eq]=News&${tagFilters}&filters[slug][$ne]=${currentSlug}&populate=*&pagination[limit]=4`;
 
     const res = await fetch(url, { cache: "no-store" });
     if (!res.ok) return [];
@@ -97,11 +100,7 @@ export default async function NewsDetailPage({
         image: attrs.FeaturedImage?.url
             ? `${STRAPI_BASE_URL}${attrs.FeaturedImage.url}`
             : "/magazine-default.jpg",
-        date: new Date(attrs.createdAt).toLocaleDateString("en-GB", {
-            day: "2-digit",
-            month: "short",
-            year: "numeric",
-        }),
+        date: formatContentDate(attrs.Date || attrs.publishedAt || attrs.createdAt),
         author: author
             ? {
                 name: author.name,
@@ -121,6 +120,7 @@ export default async function NewsDetailPage({
 
     return (
         <div className="min-h-screen bg-white">
+            <ScrollProgress />
             <Header />
 
             <main className="pt-20 pb-24">
@@ -143,10 +143,7 @@ export default async function NewsDetailPage({
                             <span className="inline-block bg-teal-50 text-teal-700 text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full">
                                 {article.category}
                             </span>
-                            <div className="flex items-center gap-1.5 text-xs text-gray-400">
-                                <Calendar className="h-3.5 w-3.5" />
-                                <span>{article.date}</span>
-                            </div>
+                            <DateChip value={article.date} />
                         </div>
 
                         {/* Title */}
@@ -182,10 +179,7 @@ export default async function NewsDetailPage({
                                     >
                                         {article.author.name}
                                     </Link>
-                                    <div className="flex items-center gap-2 text-sm text-gray-400 mt-0.5">
-                                        <Clock className="h-3.5 w-3.5" />
-                                        <span>{article.date}</span>
-                                    </div>
+                                    <DateChip value={article.date} className="mt-0.5" />
                                 </div>
                             </div>
                         )}
@@ -264,7 +258,7 @@ export default async function NewsDetailPage({
                                                 src={latestIssue.coverImage}
                                                 alt={latestIssue.title}
                                                 fill
-                                                className="object-cover transition-transform duration-700 group-hover:scale-105"
+                                                className="object-contain bg-white p-1 transition-transform duration-700 group-hover:scale-[1.02]"
                                             />
                                             <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                                         </div>
@@ -303,9 +297,7 @@ export default async function NewsDetailPage({
                                                 ? `${STRAPI_BASE_URL}${r.FeaturedImage.url}`
                                                 : "/magazine-default.jpg";
 
-                                            const itemDate = r.publishedAt || item.publishedAt
-                                                ? new Date(r.publishedAt || item.publishedAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })
-                                                : "";
+                                            const itemDate = formatContentDate(r.publishedAt || item.publishedAt);
 
                                             return (
                                                 <Link
@@ -319,7 +311,7 @@ export default async function NewsDetailPage({
                                                             src={imgUrl}
                                                             alt=""
                                                             fill
-                                                            className="object-cover transition-transform duration-500 group-hover:scale-110"
+                                                            className="object-contain bg-white p-0.5 transition-transform duration-500 group-hover:scale-[1.02]"
                                                         />
                                                     </div>
 
@@ -329,7 +321,7 @@ export default async function NewsDetailPage({
                                                             {r.Title}
                                                         </h4>
                                                         {itemDate && (
-                                                            <p className="text-[11px] text-gray-400">{itemDate}</p>
+                                                            <DateChip value={itemDate} className="text-[10px]" />
                                                         )}
                                                     </div>
                                                 </Link>

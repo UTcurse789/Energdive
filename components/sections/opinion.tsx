@@ -6,6 +6,7 @@ import Image from "next/image";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { ChevronLeft, ChevronRight, ArrowUpRight } from "lucide-react";
 import { slugify } from "@/lib/utils";
+import { formatContentDate } from "@/lib/date";
 
 const STRAPI_BASE = process.env.NEXT_PUBLIC_STRAPI_URL || "http://206.189.132.187:1337";
 
@@ -64,11 +65,7 @@ export function OpinionSection() {
                             ? `${STRAPI_BASE}${item.author.avatar.url}`
                             : "/default-avatar.png",
                         authorRole: item.author?.role || "Author",
-                        date: item.publishedAt
-                            ? new Date(item.publishedAt).toLocaleDateString("en-GB", {
-                                day: "numeric", month: "short", year: "numeric",
-                            })
-                            : "",
+                        date: formatContentDate(item.Date || item.publishedAt || item.createdAt),
                     };
                 });
                 setOpinions(mapped);

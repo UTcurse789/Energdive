@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
+import { formatContentDate } from "@/lib/date";
 import { Search, ChevronDown, Facebook, Twitter, Linkedin, Megaphone, ChevronRight, Zap, Menu, X, MapPin, Mail, Phone, Play, Calendar, Globe, ArrowRight } from "lucide-react";
 import { SECTORS } from "@/data/dummy";
 import { motion, AnimatePresence } from "framer-motion";
@@ -396,7 +397,7 @@ export function Header() {
                                             {activeSector.subSectors?.map((sub) => (
                                                 <Link
                                                     key={sub}
-                                                    href={`/sectors/${activeSector.slug}?sub=${sub.toLowerCase().replace(/\s+/g, '-')}`}
+                                                    href={`/sectors/${activeSector.slug}?sub=${encodeURIComponent(sub.toLowerCase().replace(/\s+/g, "-"))}`}
                                                     onClick={closeMenus}
                                                     className="group px-5 py-4 bg-gray-50 border border-gray-100 rounded-lg hover:border-[#00A651] hover:bg-[#00A651]/5 transition-all"
                                                 >
@@ -622,7 +623,7 @@ export function Header() {
                                                             </div>
                                                         </div>
                                                         <p className="text-[13px] font-bold text-gray-800 group-hover:text-[#00A651] transition-colors line-clamp-2 leading-snug">{video.title}</p>
-                                                        <p className="text-[11px] text-gray-400 mt-1.5">{video.date ? new Date(video.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : ''}</p>
+                                                        <p className="text-[11px] text-gray-400 mt-1.5">{formatContentDate(video.date)}</p>
                                                     </Link>
                                                 );
                                             }) : (
