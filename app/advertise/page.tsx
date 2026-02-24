@@ -76,7 +76,7 @@ export default function AdvertisePage() {
                                 <span className="text-[#00A651]">the Future</span>
                             </h1>
                             <p className="text-lg md:text-xl text-gray-400 leading-relaxed max-w-3xl mb-10">
-                                Advertising in ENERGDIVE is not a transaction\u2014it&apos;s an alignment with India&apos;s most credible energy narrative. Every placement, partnership, and feature represents a statement of leadership.
+                                Advertising in ENERGDIVE is not a transaction—it’s an alignment with India’s most credible energy narrative. Every placement, partnership, and feature represents a statement of leadership, signalling that your brand stands at the heart of India’s clean energy transformation.
                             </p>
                             <div className="flex flex-wrap gap-4">
                                 <Link
@@ -107,7 +107,7 @@ export default function AdvertisePage() {
                     >
                         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 md:gap-14 items-start">
                             <div className="lg:col-span-5">
-                                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-[#00A651] mb-4 block">Why Partner With Us</span>
+                                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-[#00A651] mb-4 block">Why Partner with ENERGDIVE?</span>
                                 <h2 className="text-4xl md:text-5xl font-black text-zinc-900 leading-[0.95] mb-8">
                                     More Than <br />
                                     <span className="text-zinc-400">Reach.</span>

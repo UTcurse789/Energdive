@@ -5,9 +5,9 @@ import Image from "next/image";
 import { ArrowUpRight, Globe, Users, Award } from "lucide-react";
 
 const STATS = [
-    { label: "Active Readers", value: "50K+", icon: Users },
+    { label: "Active Readers", value: "10K+", icon: Users },
     { label: "Global Reach", value: "12+ Countries", icon: Globe },
-    { label: "Industry Awards", value: "08", icon: Award },
+    { label: "Industry Awards", value: "08+", icon: Award },
 ];
 
 const WHY_SUBSCRIBE = [
