@@ -16,6 +16,11 @@ export function TickerClient({ initialQuotes }: TickerClientProps) {
 
     if (!Array.isArray(quotes) || quotes.length === 0) return null;
 
+    const priceFormatter = new Intl.NumberFormat("en-US", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+    });
+
     const tickerQuotes = [...quotes, ...quotes, ...quotes, ...quotes];
 
     return (
@@ -35,7 +40,7 @@ export function TickerClient({ initialQuotes }: TickerClientProps) {
                         </span>
 
                         <span className="font-mono font-bold text-sm tracking-tighter text-zinc-900 dark:text-zinc-100">
-                            {quote.price?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            {quote.price != null ? priceFormatter.format(quote.price) : "--"}
                         </span>
 
                         <span

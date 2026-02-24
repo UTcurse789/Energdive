@@ -2,7 +2,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Loading() {
     return (
-        <main className="bg-[#FDFDFD] min-h-screen antialiased">
+        <div className="bg-[#FDFDFD] min-h-screen antialiased">
             <div className="fixed top-0 left-0 right-0 h-1 bg-[#00A651]/20 z-70" />
 
             <article className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl pt-12">
@@ -55,6 +55,6 @@ export default function Loading() {
                     </div>
                 </div>
             </article>
-        </main>
+        </div>
     );
 }

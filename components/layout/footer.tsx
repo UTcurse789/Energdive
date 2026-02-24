@@ -16,19 +16,9 @@ import {
     Facebook,
 } from "lucide-react";
 
-const brandGreen = "#00A651";
+import { SECTORS } from "@/data/dummy";
 
-const SECTORS = [
-    { name: "Oil & Gas", href: "/sectors/oil-gas" },
-    { name: "Power Generation", href: "/sectors/power-generation" },
-    { name: "Renewables", href: "/sectors/renewables" },
-    { name: "New Energies", href: "/sectors/new-energies" },
-    { name: "Transmission", href: "/sectors/transmission" },
-    { name: "Distribution", href: "/sectors/distribution" },
-    { name: "Electricity Markets", href: "/sectors/electricity-markets" },
-    { name: "Energy Storage", href: "/sectors/energy-storage" },
-    { name: "Sustainability & Safety", href: "/sectors/sustainability-and-safety" },
-];
+const brandGreen = "#00A651";
 
 const QUICK_LINKS = [
     { name: "News", href: "/news" },
@@ -55,9 +45,24 @@ const SOCIAL_ICONS = [
     { Icon: Facebook, href: "#", label: "Facebook" },
 ];
 
+const SECTOR_ORDER = [
+    "oil-gas",
+    "power-generation",
+    "renewables",
+    "transmission",
+    "distribution",
+    "electricity-markets",
+    "new-energies",
+    "energy-storage",
+    "sustainability-and-safety",
+];
+
 export function Footer() {
     const [email, setEmail] = useState("");
     const [subscribed, setSubscribed] = useState(false);
+    const orderedSectors = SECTOR_ORDER
+        .map((slug) => SECTORS.find((sector) => sector.slug === slug))
+        .filter(Boolean);
 
     const handleSubscribe = (e: React.FormEvent) => {
         e.preventDefault();
@@ -146,10 +151,10 @@ export function Footer() {
                     <div className="lg:col-span-2">
                         <h4 className="text-[10px] font-black uppercase tracking-[0.15em] text-gray-500 mb-5 pb-2 border-b border-white/[0.06]">Sectors</h4>
                         <ul className="space-y-2">
-                            {SECTORS.map((sector) => (
-                                <li key={sector.name}>
-                                    <Link href={sector.href} className="text-[13px] text-gray-500 hover:text-white transition-colors">
-                                        {sector.name}
+                            {orderedSectors.map((sector) => (
+                                <li key={sector.title}>
+                                    <Link href={`/sectors/${sector.slug}`} className="text-[13px] text-gray-500 hover:text-white transition-colors">
+                                        {sector.title}
                                     </Link>
                                 </li>
                             ))}
@@ -207,11 +212,10 @@ export function Footer() {
                         </ul>
                     </div>
                 </div>
-
                 {/* ─── Bottom Bar ─── */}
                 <div className="flex flex-col md:flex-row justify-between items-center gap-4 py-6 border-t border-white/[0.06]">
                     <p className="text-[11px] text-gray-600">
-                        &copy; {new Date().getFullYear()} EnergDive. All rights reserved. Published by ClariSector Technologies Pvt. Ltd.
+                        &copy; <span suppressHydrationWarning>{new Date().getFullYear()}</span> EnergDive. All rights reserved. Published by ClariSector Technologies Pvt. Ltd.
                     </p>
                     <div className="flex items-center gap-5">
                         <Link href="/terms" className="text-[11px] text-gray-600 hover:text-gray-400 transition-colors">Terms</Link>

@@ -73,18 +73,14 @@ const nextConfig: NextConfig = {
         port: '1337',
         pathname: '/uploads/**',
       },
-      // {
-      //   protocol: "http",
-      //   hostname: "206.189.132.187",
-      //   port: "1337",
-      //   pathname: "/uploads/**",
-      // },
       {
         protocol: "https",
         hostname: "img.youtube.com",
       },
 
     ],
+    qualities: [75, 100],
+    unoptimized: false,
   },
 };
 
