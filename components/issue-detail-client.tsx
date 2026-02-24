@@ -82,12 +82,12 @@ export function IssueDetailClient({ issue }: IssueDetailClientProps) {
                                         <Link href={article.href ?? "#"} className="block">
                                             {/* Image */}
                                             {article.image && (
-                                                <div className="relative aspect-video mb-4 overflow-hidden bg-gray-100 rounded-lg">
+                                                <div className="relative aspect-[16/10] mb-4 overflow-hidden bg-gray-100 rounded-lg">
                                                     <Image
                                                         src={article.image}
                                                         alt={article.title}
                                                         fill
-                                                        className="object-cover transition-transform duration-500 group-hover:scale-105"
+                                                        className="object-contain transition-transform duration-500 group-hover:scale-105"
                                                     />
                                                 </div>
                                             )}
