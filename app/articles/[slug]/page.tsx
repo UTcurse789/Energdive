@@ -5,8 +5,11 @@ import { notFound } from "next/navigation";
 import { BlocksRenderer } from "@strapi/blocks-react-renderer";
 import { SidebarSubscribe } from "@/components/sidebar-subscribe";
 import { TagBadge } from "@/components/ui/tag-badge";
+import { ScrollProgress } from "@/components/ui/scroll-progress";
+import { DateChip } from "@/components/ui/date-chip";
 import { ISSUES } from "@/data/dummy";
-import { ArrowRight, Clock, Calendar, ChevronRight } from "lucide-react";
+import { ArrowRight, Calendar, ChevronRight } from "lucide-react";
+import { formatContentDate } from "@/lib/date";
 
 const STRAPI = "http://206.189.132.187:1337";
 
@@ -39,7 +42,7 @@ async function getArticle(slug: string) {
 
 async function getRelated(slug: string) {
     const res = await fetch(
-        `${STRAPI}/api/contents?filters[slug][$ne]=${slug}&pagination[limit]=4&populate=*&sort=publishedAt:desc`,
+        `${STRAPI}/api/contents?filters[type_of_content][name][$eq]=Articles&filters[slug][$ne]=${slug}&pagination[limit]=4&populate=*&sort=publishedAt:desc`,
         { cache: "no-store" }
     );
     const json = await res.json();
@@ -78,12 +81,7 @@ export default async function ArticlePage(props: any) {
         image: articleData.FeaturedImage?.url
             ? `${STRAPI}${articleData.FeaturedImage.url}`
             : "/magazine-default.jpg",
-        date: articleData.publishedAt
-            ? new Date(articleData.publishedAt).toLocaleDateString(
-                "en-GB",
-                { day: "2-digit", month: "short", year: "numeric" }
-            )
-            : "",
+        date: formatContentDate(articleData.Date || articleData.publishedAt || articleData.createdAt),
         author: articleData.author
             ? {
                 name: articleData.author.name,
@@ -99,6 +97,7 @@ export default async function ArticlePage(props: any) {
 
     return (
         <div className="min-h-screen bg-white">
+            <ScrollProgress />
             <Header />
 
             <main className="pt-20 pb-24">
@@ -123,10 +122,7 @@ export default async function ArticlePage(props: any) {
                             <span className="inline-block bg-teal-50 text-teal-700 text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full">
                                 {article.category}
                             </span>
-                            <div className="flex items-center gap-1.5 text-xs text-gray-400">
-                                <Calendar className="h-3.5 w-3.5" />
-                                <span>{article.date}</span>
-                            </div>
+                            <DateChip value={article.date} />
                         </div>
 
                         {/* Title */}
@@ -162,10 +158,7 @@ export default async function ArticlePage(props: any) {
                                     >
                                         {article.author.name}
                                     </Link>
-                                    <div className="flex items-center gap-2 text-sm text-gray-400 mt-0.5">
-                                        <Clock className="h-3.5 w-3.5" />
-                                        <span>{article.date}</span>
-                                    </div>
+                                    <DateChip value={article.date} className="mt-0.5" />
                                 </div>
                             </div>
                         )}
@@ -244,7 +237,7 @@ export default async function ArticlePage(props: any) {
                                                 src={latestIssue.coverImage}
                                                 alt={latestIssue.title}
                                                 fill
-                                                className="object-cover transition-transform duration-700 group-hover:scale-105"
+                                                className="object-contain bg-white p-1 transition-transform duration-700 group-hover:scale-[1.02]"
                                             />
                                             <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                                         </div>
@@ -282,9 +275,7 @@ export default async function ArticlePage(props: any) {
                                                 ? `${STRAPI}${item.FeaturedImage.url}`
                                                 : "/magazine-default.jpg";
 
-                                            const itemDate = item.publishedAt
-                                                ? new Date(item.publishedAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })
-                                                : "";
+                                            const itemDate = formatContentDate(item.Date || item.publishedAt || item.createdAt);
 
                                             return (
                                                 <Link
@@ -298,7 +289,7 @@ export default async function ArticlePage(props: any) {
                                                             src={imgUrl}
                                                             alt=""
                                                             fill
-                                                            className="object-cover transition-transform duration-500 group-hover:scale-110"
+                                                            className="object-contain bg-white p-0.5 transition-transform duration-500 group-hover:scale-[1.02]"
                                                         />
                                                     </div>
 
@@ -308,7 +299,7 @@ export default async function ArticlePage(props: any) {
                                                             {item.Title}
                                                         </h4>
                                                         {itemDate && (
-                                                            <p className="text-[11px] text-gray-400">{itemDate}</p>
+                                                            <DateChip value={itemDate} className="text-[10px]" />
                                                         )}
                                                     </div>
                                                 </Link>

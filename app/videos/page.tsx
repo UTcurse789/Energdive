@@ -98,15 +98,11 @@ export default function VideosPage() {
 
                 {/* Header Section */}
                 <div className="text-center pt-16 pb-12">
-                    <div className="inline-flex items-center gap-2 bg-teal-50 text-teal-700 px-4 py-2 rounded-full text-xs font-black uppercase tracking-widest mb-6 border border-teal-100">
-                        <Play size={12} className="fill-teal-700" />
-                        Video Library
-                    </div>
                     <h1 className="text-5xl md:text-6xl font-serif font-medium mb-6 tracking-tight text-gray-900">
-                        EnergDive Videos
+                        Videos
                     </h1>
                     <p className="text-gray-600 max-w-2xl mx-auto text-lg">
-                        Insights from industry leaders and energy analysts shaping the future of the global energy transition.
+                        Watch conversations that matter with ENERGDIVE Videos, where domain experts and sector leaders share quick insights and viewpoints on India’s evolving energy landscape.
                     </p>
                 </div>
 

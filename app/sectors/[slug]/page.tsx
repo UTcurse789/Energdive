@@ -1,12 +1,14 @@
 "use client";
 
 import React, { useState, useMemo, useEffect } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, ChevronRight, Clock, ArrowUpRight, Play } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { TagBadge } from "@/components/ui/tag-badge";
+import { DateChip } from "@/components/ui/date-chip";
+import { formatContentDate } from "@/lib/date";
 
 /* ================================
    STRAPI CONFIG & HELPERS
@@ -46,15 +48,6 @@ async function fetchSectorVideos(slug: string) {
     } catch {
         return [];
     }
-}
-
-function formatDate(dateStr: string) {
-    if (!dateStr) return "Recent";
-    return new Date(dateStr).toLocaleDateString("en-GB", {
-        day: "numeric",
-        month: "short",
-        year: "numeric",
-    });
 }
 
 function normalizeText(value: string) {
@@ -197,7 +190,9 @@ const SECTOR_HERO_MAP: Record<
 ================================ */
 export default function SectorIntelligencePage() {
     const params = useParams();
+    const searchParams = useSearchParams();
     const slug = params?.slug as string;
+    const subParam = searchParams?.get("sub") || "";
 
     const [articles, setArticles] = useState<any[]>([]);
     const [videos, setVideos] = useState<any[]>([]);
@@ -276,6 +271,28 @@ export default function SectorIntelligencePage() {
 
         return ["ALL", ...Array.from(new Set(children))];
     }, [childSectors]);
+
+    useEffect(() => {
+        if (!subCategories.length) return;
+
+        if (!subParam) {
+            setActiveTab("ALL");
+            return;
+        }
+
+        const normalizedParam = normalizeText(subParam.replace(/[-_]+/g, " "));
+        const matchedTab = subCategories.find((cat) => {
+            if (cat === "ALL") return false;
+            const normalizedCat = normalizeText(cat);
+            return (
+                normalizedCat === normalizedParam ||
+                normalizedCat.includes(normalizedParam) ||
+                normalizedParam.includes(normalizedCat)
+            );
+        });
+
+        setActiveTab(matchedTab || "ALL");
+    }, [subParam, subCategories]);
 
     const filteredReports = useMemo(() => {
         return articles.filter((report) => {
@@ -460,12 +477,7 @@ export default function SectorIntelligencePage() {
 
                                         {/* Card Meta */}
                                         <div className="space-y-3 px-1">
-                                            <div className="flex items-center gap-3 text-[9px] font-black uppercase tracking-widest text-[#00C6A7]">
-                                                <span className="flex items-center gap-1">
-                                                    <Clock size={10} />
-                                                    {formatDate(report.date)}
-                                                </span>
-                                            </div>
+                                            <DateChip value={report.date} className="text-[10px]" />
 
                                             <h3 className="text-2xl font-bold leading-tight tracking-tight text-[#1a1a1a] group-hover:text-[#00C6A7] transition-colors duration-300">
                                                 {report.title}
@@ -528,14 +540,14 @@ export default function SectorIntelligencePage() {
                                             </div>
                                         </div>
                                         <h3 className="text-sm font-bold group-hover:text-[#00A651] transition-colors line-clamp-2">{video.title}</h3>
-                                        <span className="text-[10px] text-gray-400 mt-1 block">{formatDate(video.date)}</span>
+                                        <DateChip value={video.date} className="text-[10px] mt-1" />
                                     </Link>
                                 ))}
                             </div>
                         ) : (
                             <div className="rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 px-6 py-10 text-center">
                                 <p className="text-sm text-zinc-500">
-                                    Is filter/search ke saath koi video match nahi hua.
+                                    No Video Found
                                 </p>
                             </div>
                         )}

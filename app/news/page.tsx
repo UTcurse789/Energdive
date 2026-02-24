@@ -6,12 +6,15 @@ import Image from "next/image";
 import { Header } from "@/components/layout/header";
 import { Plus, MoveRight, Bookmark, BarChart3, Zap, Globe2, ShieldCheck, ArrowUpRight } from "lucide-react";
 import { motion } from "framer-motion";
+import { DateChip } from "@/components/ui/date-chip";
+import { formatContentDate } from "@/lib/date";
 
 const STRAPI_BASE_URL = "http://206.189.132.187:1337";
 
 export default function ArchitectEditorialPage() {
     const [articles, setArticles] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [visibleCount, setVisibleCount] = useState(30);
 
     useEffect(() => {
         async function fetchData() {
@@ -47,8 +50,15 @@ export default function ArchitectEditorialPage() {
                                     ? `${STRAPI_BASE_URL}${attrs.FeaturedImage.url}`
                                     : "/placeholder.jpg",
                             excerpt: excerptText,
-                            category: attrs.type_of_content?.data?.attributes?.name || "Intelligence",
-                            readTime: "5 MIN"
+                            category: attrs.type_of_content?.data?.attributes?.name || "NEWS",
+                            sector: (
+                                attrs.sectors?.[0]?.name ||
+                                attrs.sectors?.data?.[0]?.attributes?.name ||
+                                attrs.sector?.name ||
+                                attrs.sector?.data?.attributes?.name ||
+                                "Energy"
+                            ),
+                            date: formatContentDate(attrs.Date || attrs.publishedAt || attrs.createdAt),
                         };
                     });
                     setArticles(formattedData);
@@ -67,30 +77,27 @@ export default function ArchitectEditorialPage() {
 
     const heroArticle = articles[0];
     const topInsights = articles.slice(1, 5); // Side bar mein 4 news
-    const allNews = articles;
+    const allNews = articles.slice(5);
+    const visibleNews = allNews.slice(0, visibleCount);
 
     return (
         <div className="min-h-screen bg-[#FDFDFD] text-[#1A1A1A] selection:bg-black selection:text-white font-sans overflow-x-hidden">
             <Header />
 
-            <main className="pt-[80px]">
+            <main className="pt-[10px]">
                 {/* 1. HERO BANNER */}
                 <section className="w-full py-12 md:py-20 bg-white border-b border-black">
                     <div className="container mx-auto px-4 sm:px-6 lg:px-12">
                         <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8">
                             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex-1">
-                                <div className="flex items-center gap-4 mb-6">
-                                    <span className="w-12 h-[2px] bg-[#00A651]"></span>
-                                    <span className="text-[10px] md:text-[12px] font-black uppercase tracking-[4px] text-gray-400 leading-none">Intelligence Portal 2026</span>
-                                </div>
+
                                 <h1 className="text-3xl sm:text-5xl md:text-7xl lg:text-[8vw] font-black tracking-tighter leading-[0.85] uppercase italic">
-                                    ENERGY <br />
-                                    <span className="text-[#00A651] not-italic">DISCOURSE.</span>
+                                    New
                                 </h1>
                             </motion.div>
                             <div className="lg:w-1/3 border-l-2 border-black pl-6 py-2">
-                                <p className="text-sm md:text-base font-bold uppercase tracking-widest text-gray-500 leading-relaxed italic">
-                                    Strategic insights into the global energy transition, policy shifts, and market volatility.
+                                <p className="text-sm md:text-base font-bold tracking-widest text-gray-500 leading-relaxed italic">
+                                    Track daily energy developments with ENERGDIVE News - from regulatory announcements and industry moves to innovations and sector-wide trends.
                                 </p>
                             </div>
                         </div>
@@ -112,7 +119,7 @@ export default function ArchitectEditorialPage() {
 
                 <div className="container mx-auto px-4 sm:px-6 lg:px-12 py-10 sm:py-16">
                     {/* 3. EDITORIAL GRID (8:4) */}
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 mb-24">
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 mt-10 mb-24">
                         <div className="lg:col-span-8 group">
                             <Link href={`/news/${heroArticle.slug}`} className="block">
                                 <div className="relative aspect-video overflow-hidden bg-gray-100 mb-6 border border-gray-100 shadow-xl">
@@ -121,8 +128,9 @@ export default function ArchitectEditorialPage() {
                                         <ArrowUpRight size={28} />
                                     </div>
                                     <div className="absolute inset-0 bg-linear-to-t from-black/90 via-transparent to-transparent flex flex-col justify-end p-6 md:p-10">
-                                        <span className="bg-[#00A651] text-white text-[10px] font-black uppercase px-3 py-1 w-fit mb-4">Lead Report</span>
-                                        <h2 className="text-3xl md:text-5xl lg:text-6xl font-black text-white tracking-tighter leading-[0.9] group-hover:underline decoration-white/30 italic uppercase">{heroArticle.title}</h2>
+                                        <h2 className="text-3xl md:text-5xl lg:text-6xl font-black text-white tracking-tighter leading-[0.9]">
+                                            {heroArticle.title}
+                                        </h2>
                                     </div>
                                 </div>
                                 <p className="text-lg md:text-xl text-gray-500 font-serif italic leading-relaxed line-clamp-3">{heroArticle.excerpt}</p>
@@ -130,7 +138,9 @@ export default function ArchitectEditorialPage() {
                         </div>
 
                         <div className="lg:col-span-4 flex flex-col border-t lg:border-t-0 lg:border-l border-gray-200 pt-10 lg:pt-0 lg:pl-10">
-                            <h3 className="text-xs font-black uppercase tracking-[4px] mb-10 border-b-2 border-black pb-4">Latest Analysis</h3>
+                            <h3 className="text-sm md:text-base font-black uppercase tracking-[4px] mb-10 border-b-2 border-black pb-4">
+                                Latest Analysis
+                            </h3>
                             <div className="space-y-8">
                                 {topInsights.map((item, idx) => (
                                     <Link href={`/news/${item.slug}`} key={idx} className="flex gap-5 group items-start">
@@ -138,8 +148,9 @@ export default function ArchitectEditorialPage() {
                                             <Image src={item.image} alt="" fill className="object-cover grayscale group-hover:grayscale-0 transition-all duration-500" />
                                         </div>
                                         <div className="flex flex-col">
-                                            <span className="text-[9px] font-black text-[#00A651] uppercase tracking-widest mb-1">{item.category}</span>
-                                            <h4 className="font-bold text-base leading-tight group-hover:underline transition-colors line-clamp-3 italic uppercase">{item.title}</h4>
+                                            <span className="text-[9px] font-black text-[#00A651] uppercase tracking-widest mb-1">{item.sector}</span>
+                                            <DateChip value={item.date} className="mb-1 text-[10px]" />
+                                            <h4 className="font-bold text-base leading-tight group-hover: transition-colors line-clamp-3">{item.title}</h4>
                                         </div>
                                     </Link>
                                 ))}
@@ -150,30 +161,42 @@ export default function ArchitectEditorialPage() {
                     {/* 4. MARKET INTELLIGENCE (The rest of 34 entries) */}
                     <section className="mb-32">
                         <div className="flex items-center gap-4 mb-12">
-                            <h2 className="text-4xl font-black uppercase italic">Market <span className="text-[#00A651] not-italic">Archive</span></h2>
+                            <h2 className="text-4xl font-black uppercase italic">News <span className="text-[#00A651] not-italic">Archive</span></h2>
                             <div className="flex-1 h-1px bg-gray-200"></div>
                             <span className="text-xs font-black text-gray-400 uppercase">{articles.length} Total Reports</span>
                         </div>
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-16">
-                            {allNews.map((item, idx) => (
+                            {visibleNews.map((item, idx) => (
                                 <div key={idx} className="group flex flex-col border-t border-gray-100 pt-6 hover:border-black transition-all duration-500">
                                     <div className="relative aspect-4/3 mb-6 overflow-hidden bg-gray-100 border border-gray-100">
                                         <Image src={item.image} alt="" fill className="object-cover group-hover:scale-110 transition-transform duration-700" />
                                     </div>
                                     <div className="flex flex-col flex-1">
                                         <div className="flex justify-between text-[9px] font-black uppercase text-gray-400 mb-3">
-                                            <span>{item.category}</span>
-                                            <span>{item.readTime}</span>
+                                            <span>{item.sector}</span>
+                                            <DateChip value={item.date} className="text-[9px]" />
                                         </div>
-                                        <h4 className="font-bold text-lg leading-tight line-clamp-2 group-hover:text-[#00A651] transition-colors mb-4 italic uppercase">{item.title}</h4>
+                                        <h4 className="font-bold text-lg leading-tight line-clamp-2 group-hover:text-[#00A651] transition-colors mb-4">{item.title}</h4>
                                         <Link href={`/news/${item.slug}`} className="mt-auto inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest hover:gap-4 transition-all text-black">
-                                            Read Analysis <MoveRight size={14} className="text-[#00A651]" />
+                                            Read More <MoveRight size={14} className="text-[#00A651]" />
                                         </Link>
                                     </div>
                                 </div>
                             ))}
                         </div>
+
+                        {visibleCount < allNews.length && (
+                            <div className="mt-12 flex justify-center">
+                                <button
+                                    type="button"
+                                    onClick={() => setVisibleCount((prev) => prev + 30)}
+                                    className="inline-flex items-center gap-2 border border-black px-6 py-3 text-xs font-black uppercase tracking-widest text-black transition-colors hover:bg-black hover:text-white"
+                                >
+                                    Load More
+                                </button>
+                            </div>
+                        )}
                     </section>
                 </div>
             </main>

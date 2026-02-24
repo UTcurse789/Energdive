@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Loader2, AlertCircle, User, Calendar, Clock } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { formatContentDate } from "@/lib/date";
 
 interface FeedItem {
     id: string;
@@ -88,12 +89,6 @@ export function IntelligenceFeed() {
             </div>
         );
     }
-
-    const formatDate = (d: string) => {
-        if (!d) return "";
-        try { return new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }); }
-        catch { return d; }
-    };
 
     const getDetailUrl = (item: FeedItem) => {
         return `/articles/${item.slug}`;
@@ -183,7 +178,7 @@ export function IntelligenceFeed() {
                                             )}
                                             <span className="text-xs font-semibold" style={{ color: "var(--dash-text-muted)" }}>{item.author}</span>
                                             <span className="text-xs flex items-center gap-1 ml-auto" style={{ color: "var(--dash-text-dim)" }}>
-                                                <Calendar size={10} /> {formatDate(item.date)}
+                                                <Calendar size={10} /> {formatContentDate(item.date)}
                                             </span>
                                         </div>
                                     </div>

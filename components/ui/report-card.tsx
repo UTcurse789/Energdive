@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { ArrowRight, FileText, Download } from "lucide-react";
 import { Article } from "@/types";
 import { cn, slugify } from "@/lib/utils";
+import { DateChip } from "@/components/ui/date-chip";
 
 export interface ReportCardProps {
     article: Article;
@@ -47,9 +48,7 @@ export function ReportCard({ article, className, variant = "default", baseUrl = 
                     <span className="text-[10px] font-black uppercase tracking-widest text-primary bg-primary/10 px-2 py-1 rounded">
                         {article.category}
                     </span>
-                    <span className="text-xs text-zinc-500 font-medium">
-                        {article.date}
-                    </span>
+                    <DateChip value={article.date} className="text-[10px]" />
                 </div>
 
                 <Link href={`${baseUrl}/${article.slug}`} className="block mb-3">

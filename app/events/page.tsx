@@ -5,9 +5,10 @@ import Image from "next/image";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { motion, AnimatePresence } from "framer-motion";
-import { Calendar, MapPin, Clock, ArrowUpRight, Navigation, Loader2 } from "lucide-react";
+import { MapPin, Clock, ArrowUpRight, Navigation, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { BlocksRenderer } from "@strapi/blocks-react-renderer";
+import { DateChip } from "@/components/ui/date-chip";
 
 export default function EventsPage() {
     const [events, setEvents] = useState<any[]>([]);
@@ -35,7 +36,7 @@ export default function EventsPage() {
     const tabs = [
         { id: "ongoing", label: "Ongoing" },
         { id: "upcoming", label: "Upcoming" },
-        { id: "past", label: "Past Summits" },
+        { id: "past", label: "Past Events" },
     ];
 
     const filteredEvents = useMemo(() => {
@@ -61,8 +62,11 @@ export default function EventsPage() {
                         animate={{ opacity: 1, y: 0 }}
                         className="text-5xl md:text-7xl font-black tracking-tighter text-zinc-900 leading-none uppercase italic"
                     >
-                        Global <span className="text-[#00A651] not-italic">Summits.</span>
+                        Events <span className="text-[#00A651] not-italic">.</span>
                     </motion.h1>
+                    <p className="text-gray-600 max-w-3xl text-lg leading-relaxed mt-6 mb-8">
+                        Watch conversations that matter with ENERGDIVE Videos, where domain experts and sector leaders share quick insights and viewpoints on India’s evolving energy landscape.
+                    </p>
                 </section>
 
                 {/* TAB NAVIGATION */}
@@ -139,10 +143,7 @@ export default function EventsPage() {
 
                                             <div className="mt-auto space-y-4">
                                                 <div className="flex flex-wrap items-center gap-4 text-[11px] font-bold uppercase tracking-wider text-zinc-400">
-                                                    <div className="flex items-center gap-2">
-                                                        <Calendar size={14} className="text-[#00A651]" />
-                                                        <span>{new Date(event.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
-                                                    </div>
+                                                    <DateChip value={event.date} />
                                                     <div className="w-1 h-1 bg-zinc-200 rounded-full hidden sm:block" />
                                                     <div className="flex items-center gap-2">
                                                         <Clock size={14} className="text-[#00A651]" />

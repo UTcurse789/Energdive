@@ -10,6 +10,7 @@ import { ARTICLES } from "@/data/dummy";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { MarketTicker } from "@/components/features/ticker";
 import { Article } from "@/types";
+import { formatContentDate } from "@/lib/date";
 
 const STRAPI_BASE = "http://206.189.132.187:1337";
 
@@ -49,11 +50,7 @@ function mapArticle(article: any, sectorName: string): Article {
     category: sectorName || "Energy",
     image: extractImageUrl(article),
     excerpt: extractExcerpt(article),
-    date: article.publishedAt
-      ? new Date(article.publishedAt).toLocaleDateString("en-GB", {
-        day: "numeric", month: "short", year: "numeric",
-      })
-      : "",
+    date: formatContentDate(article.Date || article.publishedAt || article.createdAt),
     author: article.author ? {
       name: article.author.name || "Staff Writer",
       avatar: article.author.avatar?.url ? `${STRAPI_BASE}${article.author.avatar.url}` : "/default-avatar.png",

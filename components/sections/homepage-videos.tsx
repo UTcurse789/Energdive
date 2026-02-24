@@ -2,6 +2,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { Play } from "lucide-react";
 import { SectionHeading } from "@/components/ui/section-heading";
+import { DateChip } from "@/components/ui/date-chip";
+import { formatContentDate } from "@/lib/date";
 
 const STRAPI_BASE = process.env.NEXT_PUBLIC_STRAPI_URL || "http://206.189.132.187:1337";
 
@@ -24,11 +26,7 @@ async function getLatestVideos() {
                 slug: item.slug || "",
                 youtubeId: item.youtubeId || "",
                 thumbnail: thumbUrl,
-                date: item.date
-                    ? new Date(item.date).toLocaleDateString("en-GB", {
-                        day: "numeric", month: "short", year: "numeric",
-                    })
-                    : "",
+                date: formatContentDate(item.date || item.createdAt),
                 category: item.sectors?.[0]?.name || "Energy",
             };
         });
@@ -77,7 +75,7 @@ export async function HomepageVideos() {
                             <h3 className="text-lg font-bold leading-snug mt-1 text-gray-900 group-hover:text-[#00A651] transition-colors line-clamp-2">
                                 {video.title}
                             </h3>
-                            <span className="text-xs text-gray-400 mt-1 block">{video.date}</span>
+                            <DateChip value={video.date} className="text-[10px] mt-1" />
                         </Link>
                     ))}
                 </div>
@@ -110,7 +108,7 @@ export async function HomepageVideos() {
                                     <h4 className="text-sm font-bold leading-snug mt-1 text-gray-900 group-hover:text-[#00A651] transition-colors line-clamp-2">
                                         {video.title}
                                     </h4>
-                                    <span className="text-[10px] text-gray-400 mt-1 block">{video.date}</span>
+                                    <DateChip value={video.date} className="text-[10px] mt-1" />
                                 </div>
                             </Link>
                         ))}

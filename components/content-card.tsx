@@ -1,10 +1,11 @@
 "use client";
 
 import { StrapiData, ContentItem, getStrapiMedia } from "@/lib/strapi";
-import { Calendar, User, Tag as TagIcon } from "lucide-react";
+import { User, Tag as TagIcon } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { slugify } from "@/lib/utils";
+import { DateChip } from "@/components/ui/date-chip";
 
 interface ContentCardProps {
     item: StrapiData<ContentItem>;
@@ -19,12 +20,6 @@ export function ContentCard({ item }: ContentCardProps) {
     const coverImage = getStrapiMedia(cover?.data?.attributes?.url || null);
     const industryName = industry?.data?.attributes?.name;
     const sectorName = sector?.data?.attributes?.name;
-
-    const date = new Date(publishedAt).toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-    });
 
     return (
         <article className="group relative flex flex-col bg-white border border-gray-100 rounded-xl overflow-hidden hover:shadow-md transition-shadow h-full">
@@ -53,10 +48,7 @@ export function ContentCard({ item }: ContentCardProps) {
                             {sectorName}
                         </span>
                     )}
-                    <span className="flex items-center gap-1">
-                        <Calendar size={12} />
-                        {date}
-                    </span>
+                    <DateChip value={publishedAt} className="text-[10px]" />
                 </div>
 
                 {/* Title & Excerpt */}
