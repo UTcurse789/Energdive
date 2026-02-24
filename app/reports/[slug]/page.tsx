@@ -289,7 +289,7 @@ async function getReport(slug: string) {
     try {
         const res = await fetch(
             `${STRAPI}/api/contents?filters[slug][$eq]=${slug}&filters[type_of_content][name][$eq]=Reports&populate=*`,
-            { cache: "no-store" }
+            { next: { revalidate: 120 } }
         );
         const json = await res.json();
         return json?.data?.[0] ?? null;
@@ -303,7 +303,7 @@ async function getTrending() {
     try {
         const res = await fetch(
             `${STRAPI}/api/contents?filters[type_of_content][name][$eq]=Reports&pagination[limit]=3&populate=*`,
-            { cache: "no-store" }
+            { next: { revalidate: 120 } }
         );
         const json = await res.json();
         return json?.data ?? [];
@@ -404,8 +404,7 @@ export default async function IntelligenceReportPage({ params }: { params: Promi
                                 {/* Green top bar */}
                                 <div className="h-[3px] w-full bg-gradient-to-r from-[#00A651] via-emerald-300 to-[#00A651]" />
 
-                                {/* Ambient glow */}
-                                <div className="absolute -top-10 -right-10 w-48 h-48 bg-[#00A651]/15 rounded-full blur-3xl pointer-events-none" />
+                                <div className="absolute inset-0 bg-linear-to-r from-white via-white/50 to-transparent pointer-events-none" />
                                 <div className="absolute -bottom-10 -left-10 w-36 h-36 bg-emerald-500/5 rounded-full blur-2xl pointer-events-none" />
 
                                 <div className="relative z-10 p-7">
@@ -418,7 +417,7 @@ export default async function IntelligenceReportPage({ params }: { params: Promi
                                     </div>
 
                                     {/* Icon box */}
-                                    <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mb-6">
+                                    <div className="w-8 h-8 rounded-full border-2 border-white overflow-hidden shrink-0 shadow-sm flex items-center justify-center">
                                         <FileText className="w-6 h-6 text-[#00A651]" />
                                     </div>
 
@@ -515,16 +514,19 @@ export default async function IntelligenceReportPage({ params }: { params: Promi
 
                             {/* Featured image */}
                             {imageUrl && (
-                                <div className="relative aspect-[1/1] w-full rounded-[2rem] overflow-hidden shadow-xl mb-16 bg-zinc-100">
+                                <div className="relative aspect-square w-full rounded-[2rem] overflow-hidden shadow-xl mb-16 bg-zinc-100">
                                     <Image src={imageUrl} alt="Report Cover" fill className="object-cover" priority />
-                                    <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-black/30 to-transparent" />
+                                    <div className="absolute inset-0 bg-linear-to-b from-black/60 via-black/20 to-transparent" />
                                 </div>
                             )}
 
                             {/* Excerpt callout */}
                             {excerpt && (
-                                <div className="mb-14 relative overflow-hidden rounded-3xl bg-zinc-950 p-8 md:p-10">
+                                <div className="aspect-16/10 relative overflow-hidden rounded-3xl bg-zinc-950 p-8 md:p-10">
                                     <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-[#00A651] via-emerald-300 to-transparent" />
+                                    <div className="absolute top-4 right-4 bg-linear-to-r from-[#00A651] to-emerald-400 text-white text-[8px] font-black italic px-3 py-1 rounded-full shadow-lg z-10">
+                                        <span className="relative z-10">Verified</span>
+                                    </div>
                                     <div className="absolute -bottom-12 -right-12 w-40 h-40 bg-[#00A651]/10 rounded-full blur-3xl pointer-events-none" />
                                     <p className="text-[10px] font-black uppercase tracking-widest text-[#00A651] mb-4 relative z-10">
                                         Core Mission
@@ -565,7 +567,7 @@ export default async function IntelligenceReportPage({ params }: { params: Promi
                             {trending[0] && (
                                 <div className="rounded-3xl overflow-hidden border border-zinc-100 bg-white shadow-sm group">
                                     {/* Image */}
-                                    <div className="relative aspect-[16/10] w-full bg-zinc-100 overflow-hidden">
+                                    <div className="relative aspect-16/10 w-full bg-zinc-100 overflow-hidden">
                                         {trending[0].FeaturedImage?.url && (
                                             <Image
                                                 src={`${STRAPI}${trending[0].FeaturedImage.url}`}

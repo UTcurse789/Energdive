@@ -60,7 +60,7 @@ async function fetchTagContent(tagSlug: string) {
     try {
         const res = await fetch(
             `${STRAPI_BASE}/api/contents?filters[tags][slug][$eq]=${encodeURIComponent(tagSlug)}&populate=*&sort=publishedAt:desc&pagination[pageSize]=50`,
-            { cache: "no-store" }
+            { next: { revalidate: 120 } }
         );
         if (!res.ok) return { articles: [], tagName: tagSlug };
 
@@ -121,7 +121,7 @@ async function fetchTagVideos(tagSlug: string) {
     try {
         const res = await fetch(
             `${STRAPI_BASE}/api/videos?filters[tags][slug][$eq]=${encodeURIComponent(tagSlug)}&populate=*&sort=createdAt:desc`,
-            { cache: "no-store" }
+            { next: { revalidate: 120 } }
         );
         if (!res.ok) return [];
 
@@ -192,7 +192,7 @@ export default async function TagPage({ params }: { params: Promise<{ slug: stri
                         {articles.map((item: any) => (
                             <article key={item.id} className="group">
                                 <Link href={getContentRoute(item)} className="block">
-                                    <div className="relative aspect-[16/10] rounded-xl overflow-hidden mb-4 bg-zinc-200">
+                                    <div className="relative aspect-16/10 overflow-hidden rounded-xl mb-4 bg-zinc-200">
                                         <Image
                                             src={item.image}
                                             alt={item.title}
@@ -244,7 +244,8 @@ export default async function TagPage({ params }: { params: Promise<{ slug: stri
                                         fill
                                         className="object-cover group-hover:scale-110 transition-transform duration-500"
                                     />
-                                    <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
+                                    <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/20 to-black/80" />
+                                    <div className="absolute inset-0 flex items-center justify-center">
                                         <div className="w-12 h-12 bg-white/90 rounded-full flex items-center justify-center pl-1">
                                             <div className="w-0 h-0 border-t-[6px] border-t-transparent border-l-[10px] border-l-red-600 border-b-[6px] border-b-transparent"></div>
                                         </div>

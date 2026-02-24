@@ -74,7 +74,7 @@ function extractText(field: any): string {
 async function getAllAuthors() {
     const res = await fetch(
         `${STRAPI_BASE}/api/authors?populate=avatar&pagination[pageSize]=100`,
-        { cache: "no-store" }
+        { next: { revalidate: 120 } }
     );
     if (!res.ok) return [];
     const json = await res.json();
@@ -94,7 +94,7 @@ async function getContentByAuthor(authorName: string) {
     const encodedName = encodeURIComponent(authorName);
     const res = await fetch(
         `${STRAPI_BASE}/api/contents?filters[author][name][$eq]=${encodedName}&populate[0]=FeaturedImage&populate[1]=author.avatar&populate[2]=sectors&populate[3]=type_of_content&pagination[pageSize]=50&sort=createdAt:desc`,
-        { cache: "no-store" }
+        { next: { revalidate: 120 } }
     );
     if (!res.ok) return [];
     const json = await res.json();
@@ -160,6 +160,7 @@ export default async function AuthorPage({
                                 />
                             ) : (
                                 <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#1a4731] to-[#09B697]">
+                                    <div className="absolute top-0 right-0 w-32 h-32 bg-linear-to-br from-[#00A651]/20 to-transparent rounded-full blur-2xl -mr-16 -mt-16" />
                                     <span className="text-5xl font-bold text-white">
                                         {authorName.charAt(0).toUpperCase()}
                                     </span>

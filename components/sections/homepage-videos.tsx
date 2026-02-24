@@ -9,7 +9,7 @@ async function getLatestVideos() {
     try {
         const res = await fetch(
             `${STRAPI_BASE}/api/videos?populate[0]=thumbnail&populate[1]=sectors&sort=createdAt:desc&pagination[pageSize]=5`,
-            { cache: "no-store" }
+            { next: { revalidate: 120 } }
         );
         if (!res.ok) return [];
         const json = await res.json();

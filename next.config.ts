@@ -1,6 +1,43 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Enable gzip compression for all responses
+  compress: true,
+
+  // Tree-shake heavy client-side libraries
+  experimental: {
+    optimizePackageImports: [
+      "lucide-react",
+      "framer-motion",
+      "recharts",
+      "react-icons",
+    ],
+  },
+
+  // Aggressive cache headers for static assets & images
+  async headers() {
+    return [
+      {
+        source: "/_next/static/(.*)",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=31536000, immutable",
+          },
+        ],
+      },
+      {
+        source: "/:path*(jpg|jpeg|png|gif|svg|webp|ico|woff|woff2|ttf)",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=86400, stale-while-revalidate=43200",
+          },
+        ],
+      },
+    ];
+  },
+
   images: {
     // SVG support
     dangerouslyAllowSVG: true,

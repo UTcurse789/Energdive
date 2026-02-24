@@ -56,7 +56,7 @@ async function getIssue(slug: string) {
 
     // First fetch: list
     const res = await fetch(`${STRAPI_URL}/api/issues?populate[0]=CoverImage&populate[1]=contents&populate[2]=contents.type_of_content&populate[3]=contents.sectors&populate[4]=contents.author&populate[5]=contents.FeaturedImage`, {
-        cache: "no-store",
+        next: { revalidate: 120 },
     });
 
     if (!res.ok) return null;
@@ -73,7 +73,7 @@ async function getIssue(slug: string) {
     // Second fetch: detail (USE ID, NOT documentId)
     const detailRes = await fetch(
         `${STRAPI_URL}/api/issues/${item.id}?populate[0]=CoverImage&populate[1]=contents&populate[2]=contents.type_of_content&populate[3]=contents.sectors&populate[4]=contents.author&populate[5]=contents.FeaturedImage`,
-        { cache: "no-store" }
+        { next: { revalidate: 120 } }
     );
 
     if (!detailRes.ok) return mapIssue(item, slug);
@@ -167,7 +167,7 @@ function mapIssue(item: any, slug: string): Issue {
 }
 
 export async function generateStaticParams() {
-    const res = await fetch(`${STRAPI_URL}/api/issues`, { cache: "no-store" });
+    const res = await fetch(`${STRAPI_URL}/api/issues`, { next: { revalidate: 120 } });
     if (!res.ok) return [];
     const json = await res.json();
     return (json.data ?? []).map((item: any) => ({

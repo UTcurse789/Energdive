@@ -129,12 +129,17 @@ export async function GET(request: Request) {
             };
         });
 
-        return NextResponse.json({
+        const response = NextResponse.json({
             items: feedItems,
             pagination: json?.meta?.pagination || { page, pageSize, total: feedItems.length },
             sectors: communityNames,
             totalContent: json?.meta?.pagination?.total || 0,
         });
+        response.headers.set(
+            "Cache-Control",
+            "public, s-maxage=60, stale-while-revalidate=120"
+        );
+        return response;
     } catch (error) {
         console.error("[DASHBOARD_FEED]", error);
         return NextResponse.json({ error: "Internal server error" }, { status: 500 });

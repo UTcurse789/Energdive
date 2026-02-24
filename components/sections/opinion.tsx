@@ -35,7 +35,7 @@ export function OpinionSection() {
                     `&populate[author][populate]=avatar` +
                     `&populate=FeaturedImage` +
                     `&sort=publishedAt:desc`,
-                    { cache: "no-store" }
+                    { next: { revalidate: 120 } }
                 );
                 if (!res.ok) return;
                 const json = await res.json();

@@ -23,7 +23,7 @@ const STRAPI = process.env.NEXT_PUBLIC_STRAPI_URL;
 async function fetchOpinions() {
   const res = await fetch(
     `${STRAPI}/api/contents?filters[type_of_content][name][$eq]=Opinion&populate[author][populate]=avatar&populate=FeaturedImage`,
-    { cache: "no-store" }
+    { next: { revalidate: 120 } }
   );
 
   const json = await res.json();
@@ -123,7 +123,7 @@ export default function OpinionPage() {
                   href={`/opinion/${opinion.slug}`}
                   className="block overflow-hidden rounded-2xl mb-8"
                 >
-                  <div className="relative aspect-[3/4] bg-zinc-100 overflow-hidden">
+                  <div className="relative aspect-3/4 bg-zinc-100 overflow-hidden">
                     {opinion.image && (
                       <Image
                         src={opinion.image}
