@@ -92,7 +92,7 @@ export default function ArchitectEditorialPage() {
                             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex-1">
 
                                 <h1 className="text-3xl sm:text-5xl md:text-7xl lg:text-[8vw] font-black tracking-tighter leading-[0.85] uppercase italic">
-                                    New
+                                    News
                                 </h1>
                             </motion.div>
                             <div className="lg:w-1/3 border-l-2 border-black pl-6 py-2">
