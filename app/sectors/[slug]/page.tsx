@@ -177,10 +177,10 @@ const SECTOR_HERO_MAP: Record<
         quickSignals: ["BESS Pipeline", "Duration Economics", "Grid Integration"],
         heroImage: "https://images.unsplash.com/photo-1620714223084-8fcacc6dfd8d?auto=format&fit=crop&q=80&w=2200",
     },
-    "sustainability": {
-        breadcrumbLabel: "Sustainability",
-        description: "Explore ENERGDIVE’s sustainability intelligence - from environment and HSE practices to ESG trends, climate strategies, and pathways driving resilient, responsible growth.",
-        quickSignals: ["ESG Disclosure", "HSE Compliance", "Net-Zero Execution"],
+    "sustainability-and-safety": {
+        breadcrumbLabel: "Sustainability & Safety",
+        description: "Explore ENERGDIVE's sustainability intelligence - from environment and HSE practices to ESG trends, safety, climate strategies, and pathways driving resilient, responsible growth.",
+        quickSignals: ["ESG Disclosure", "HSE & Safety", "Net-Zero Execution"],
         heroImage: "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&q=80&w=2200",
     },
 };
@@ -351,7 +351,7 @@ export default function SectorIntelligencePage() {
                     <motion.nav
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/5 px-4 py-2 text-[10px] font-black text-[#00C6A7] uppercase tracking-[0.2em] mb-10 backdrop-blur-sm"
+                        className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/5 px-4 py-2 text-[10px] font-black text-[#00C6A7] uppercase tracking-[0.2em] mb-10 mt-10 backdrop-blur-sm"
                     >
                         <Link href="/" className="hover:text-white transition">EnergDive</Link>
                         <ChevronRight size={10} className="text-white/40" />
@@ -395,7 +395,7 @@ export default function SectorIntelligencePage() {
                         initial={{ opacity: 0, y: 16 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.48 }}
-                        className="mt-6 flex flex-wrap gap-2"
+                        className="mt-6 flex flex-wrap gap-2 mb-25"
                     >
                         {sectorMeta.quickSignals.map((signal: string) => (
                             <span

@@ -62,11 +62,11 @@ export const SECTORS: Sector[] = [
         subSectors: ["BESS", "Pumped Hydro", "Thermal Storage", "Long-duration"],
     },
     {
-        title: "Sustainability",
-        slug: "sustainability",
-        description: "Explore ENERGDIVE’s sustainability intelligence - from environment and HSE practices to ESG trends, climate strategies, and pathways driving resilient, responsible growth.",
+        title: "Sustainability & Safety",
+        slug: "sustainability-and-safety",
+        description: "Explore ENERGDIVE's sustainability intelligence - from environment and HSE practices to ESG trends, safety, climate strategies, and pathways driving resilient, responsible growth.",
         heroImage: "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&q=80&w=1600",
-        subSectors: ["ESG", "HSE", "Net Zero", "Circular Economy"],
+        subSectors: ["ESG", "HSE", "Safety", "Net Zero", "Environment"],
     },
 ];
 
