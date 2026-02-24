@@ -247,37 +247,6 @@ export default function SectorIntelligencePage() {
         });
     }, [slug]);
 
-    if (loading) return (
-        <div className="min-h-screen bg-[#fafafa]">
-            <Header />
-            <div className="w-full h-[62vh] bg-black relative flex items-center px-6 lg:px-16">
-                <div className="max-w-[1400px] w-full">
-                    <Skeleton className="h-4 w-48 mb-10 bg-white/20 rounded-full" />
-                    <Skeleton className="h-24 w-3/4 mb-7 bg-white/10" />
-                    <Skeleton className="h-6 w-1/2 mb-10 bg-white/5" />
-                    <div className="flex gap-4">
-                        <Skeleton className="h-10 w-32 rounded-full bg-white/10" />
-                        <Skeleton className="h-10 w-32 rounded-full bg-white/10" />
-                    </div>
-                </div>
-            </div>
-            <div className="container mx-auto px-6 lg:px-16 py-20">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
-                    {[...Array(6)].map((_, i) => (
-                        <div key={i} className="space-y-6">
-                            <Skeleton className="aspect-16/10 w-full rounded-2xl" />
-                            <div className="space-y-4">
-                                <Skeleton className="h-4 w-24" />
-                                <Skeleton className="h-10 w-full" />
-                                <Skeleton className="h-16 w-full" />
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            </div>
-        </div>
-    );
-
     const sectorMeta = useMemo(() => {
         const fallbackTitle = slug?.replaceAll("-", " ").replace(/\b\w/g, (c) => c.toUpperCase());
         const customMeta = (slug && SECTOR_HERO_MAP[slug]) || null;
@@ -360,7 +329,15 @@ export default function SectorIntelligencePage() {
         });
     }, [videos, activeTab, searchQuery]);
 
-    return (
+    // Simplified loading state WITHOUT complex Skeletons to avoid hydration mismatches
+    const content = loading ? (
+        <div className="min-h-screen bg-[#fafafa]">
+            <Header />
+            <div className="flex items-center justify-center h-[50vh]">
+                <div className="w-8 h-8 border-2 border-[#00C6A7] border-t-transparent rounded-full animate-spin" />
+            </div>
+        </div>
+    ) : (
         <div className="min-h-screen bg-[#fafafa] text-[#121212] selection:bg-[#00C6A7]/30">
 
             {/* HERO SECTION */}
@@ -593,4 +570,6 @@ export default function SectorIntelligencePage() {
 
         </div>
     );
+
+    return content;
 }

@@ -26,12 +26,36 @@ export default function IssuesPage() {
     useEffect(() => {
         async function fetchIssues() {
             try {
-                const res = await fetch(`${STRAPI_URL}/api/issues?populate=CoverImage`);
+                // Bust cache with timestamp
+                const res = await fetch(`${STRAPI_URL}/api/issues?populate=CoverImage&t=${Date.now()}`);
                 const json = await res.json();
 
+                console.log("DEBUG: Issues Raw Data:", json);
+
+                if (!json.data || !Array.isArray(json.data)) {
+                    console.error("DEBUG: json.data is not an array", json);
+                    return;
+                }
+
                 const formatted: Issue[] = json.data.map((item: any) => {
-                    // 👇 CoverImage is ARRAY
-                    const rawUrl = item.CoverImage?.[0]?.url;
+                    const dataObj = item.attributes || item;
+
+                    // PARANOID EXTRACTION: try all possible casing and nesting
+                    const month = dataObj.Month || dataObj.month || item.Month || item.month || "";
+                    const year = dataObj.Year || dataObj.year || item.Year || item.year || "";
+                    const slugField = dataObj.slug || dataObj.Slug || item.slug || item.Slug || "";
+
+                    const finalSlug = (month && year)
+                        ? `${String(month).toLowerCase().trim()}-${String(year).trim()}`
+                        : (slugField || "undefined");
+
+                    // CoverImage paranoid extraction
+                    const coverImageData = dataObj.CoverImage?.data?.attributes ||
+                        dataObj.CoverImage?.[0] ||
+                        dataObj.CoverImage ||
+                        item.CoverImage;
+
+                    const rawUrl = coverImageData?.url;
 
                     const coverImage = rawUrl
                         ? rawUrl.startsWith("http")
@@ -41,16 +65,17 @@ export default function IssuesPage() {
 
                     return {
                         id: item.id,
-                        slug: item.slug,
-                        title: item.Title,
-                        month: item.Month,
-                        year: item.Year?.toString(),
-                        volume: item.Volume?.toString(),
-                        number: item.IssueNumber?.toString(),
+                        slug: finalSlug,
+                        title: dataObj.Title || dataObj.title || `${month} ${year}` || "Untitled Issue",
+                        month: String(month),
+                        year: String(year),
+                        volume: (dataObj.Volume || dataObj.volume || "")?.toString(),
+                        number: (dataObj.IssueNumber || dataObj.issueNumber || dataObj.Number || "")?.toString(),
                         coverImage,
                     };
                 });
 
+                console.log("DEBUG: Formatted Issues:", formatted);
                 setIssues(formatted);
             } catch (err) {
                 console.error("Fetch error:", err);
@@ -77,7 +102,7 @@ export default function IssuesPage() {
 
                 {/* HEADER */}
                 <div className="text-center mb-12">
-                    <h1 className="text-4xl mb-8">Browse the Archive</h1>
+                    <h1 className="text-4xl mb-8 font-black uppercase tracking-tight">Issue Archive</h1>
 
                     <input
                         value={searchQuery}

@@ -53,6 +53,14 @@ export default function ReportsPage() {
     });
   }, []);
 
+  const filteredReports = useMemo(() => {
+    return reports.filter((report) => {
+      const matchesSearch = report.title.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesCategory = selectedCategory === "All" || report.category === selectedCategory;
+      return matchesSearch && matchesCategory;
+    });
+  }, [reports, searchQuery, selectedCategory]);
+
   if (loading) return (
     <div className="min-h-screen bg-[#FDFDFD]">
       <Header />
@@ -83,14 +91,6 @@ export default function ReportsPage() {
       </div>
     </div>
   );
-
-  const filteredReports = useMemo(() => {
-    return reports.filter((report) => {
-      const matchesSearch = report.title.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesCategory = selectedCategory === "All" || report.category === selectedCategory;
-      return matchesSearch && matchesCategory;
-    });
-  }, [reports, searchQuery, selectedCategory]);
 
   return (
     <div className="min-h-screen bg-[#FDFDFD] font-sans text-zinc-900 overflow-x-hidden">

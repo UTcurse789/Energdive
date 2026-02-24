@@ -40,7 +40,7 @@ function renderInlineChildren(children: any[]) {
 
 export default function OpinionContent({ opinion, recommended }: any) {
     return (
-        <main className="bg-[#FDFDFD] min-h-screen selection:bg-[#00A651]/10 antialiased">
+        <div className="bg-[#FDFDFD] min-h-screen selection:bg-[#00A651]/10 antialiased">
             <ScrollProgress />
 
             <article className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl pt-12">
@@ -100,7 +100,7 @@ export default function OpinionContent({ opinion, recommended }: any) {
                         <motion.div
                             initial={{ opacity: 0, scale: 0.98 }}
                             animate={{ opacity: 1, scale: 1 }}
-                            className="relative aspect-[4/5] overflow-hidden rounded-2xl shadow-3xl bg-zinc-100"
+                            className="relative aspect-4/5 overflow-hidden rounded-2xl shadow-3xl bg-zinc-100"
                         >
                             {opinion.featuredImage && (
                                 <Image src={opinion.featuredImage} alt={opinion.title} fill className="object-cover grayscale hover:grayscale-0 transition-all duration-1000" priority />
@@ -120,7 +120,6 @@ export default function OpinionContent({ opinion, recommended }: any) {
 
                                 switch (block.type) {
                                     case "heading":
-                                        /* Sub Heading: Balanced size and bold */
                                         return (
                                             <h2 key={i} className="font-bold tracking-tight text-2xl mt-12 mb-6 text-zinc-900">
                                                 {renderInlineChildren(block.children)}
@@ -139,8 +138,37 @@ export default function OpinionContent({ opinion, recommended }: any) {
                                             </blockquote>
                                         );
 
+                                    case "list":
+                                        return (
+                                            <ul key={i} className="list-disc pl-6 mb-8 space-y-3 font-serif text-[20px] leading-[1.85] text-zinc-700">
+                                                {block.children?.map((item: any, liIdx: number) => (
+                                                    <li key={liIdx}>
+                                                        {renderInlineChildren(item.children)}
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        );
+
+                                    case "image":
+                                        return (
+                                            <figure key={i} className="my-16 not-prose">
+                                                <div className="relative aspect-video rounded-3xl overflow-hidden bg-zinc-100">
+                                                    <Image
+                                                        src={block.image?.url}
+                                                        alt={block.image?.alternativeText || ""}
+                                                        fill
+                                                        className="object-cover"
+                                                    />
+                                                </div>
+                                                {block.image?.caption && (
+                                                    <figcaption className="mt-4 text-center text-sm text-zinc-400 font-serif italic">
+                                                        {block.image.caption}
+                                                    </figcaption>
+                                                )}
+                                            </figure>
+                                        );
+
                                     default:
-                                        /* Main Content: Increased size and readability */
                                         return (
                                             <p key={i} className="font-serif text-[20px] leading-[1.85] text-zinc-700 mb-8 selection:bg-[#00A651]/20">
                                                 {renderInlineChildren(block.children)}
@@ -177,7 +205,7 @@ export default function OpinionContent({ opinion, recommended }: any) {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
                         {recommended?.map((item: any) => (
                             <Link key={item.id} href={`/opinion/${item.slug}`} className="group space-y-6">
-                                <div className="relative aspect-[3/4] overflow-hidden rounded-xl grayscale group-hover:grayscale-0 transition-all duration-700">
+                                <div className="relative aspect-3/4 overflow-hidden rounded-xl grayscale group-hover:grayscale-0 transition-all duration-700">
                                     {item.featuredImage && (
                                         <Image src={item.featuredImage} alt={item.title} fill className="object-cover group-hover:scale-105 transition-transform duration-700" />
                                     )}
@@ -192,6 +220,6 @@ export default function OpinionContent({ opinion, recommended }: any) {
                     </div>
                 </div>
             </footer>
-        </main>
+        </div>
     );
 }

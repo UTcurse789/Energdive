@@ -83,6 +83,11 @@ export default async function Home() {
   const finalBentoItems = allContents
     ? allContents
       .filter((a: any) => a.featured === true)
+      .sort((a: any, b: any) => {
+        const aDate = Date.parse(a.publishedAt || a.createdAt || "") || 0;
+        const bDate = Date.parse(b.publishedAt || b.createdAt || "") || 0;
+        return bDate - aDate;
+      })
       .map((article: any) => ({
         id: article.id,
         title: article.Title || "",
@@ -91,7 +96,6 @@ export default async function Home() {
         slug: article.slug || "",
         excerpt: extractExcerpt(article),
       }))
-      .sort(() => Math.random() - 0.5)
       .slice(0, 6)
     : ARTICLES.slice(0, 6).map((a) => ({
       id: a.id,
@@ -106,7 +110,11 @@ export default async function Home() {
   const heroTopStories = allContents
     ? allContents
       .filter((a: any) => a.type_of_content?.name === "News")
-      .sort(() => Math.random() - 0.5)
+      .sort((a: any, b: any) => {
+        const aDate = Date.parse(a.publishedAt || a.createdAt || "") || 0;
+        const bDate = Date.parse(b.publishedAt || b.createdAt || "") || 0;
+        return bDate - aDate;
+      })
       .slice(0, 6)
     : [];
 
