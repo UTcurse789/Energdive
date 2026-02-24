@@ -16,6 +16,7 @@ import {
     Facebook,
 } from "lucide-react";
 
+import { Sector } from "@/types";
 import { SECTORS } from "@/data/dummy";
 
 const brandGreen = "#00A651";
@@ -62,7 +63,7 @@ export function Footer() {
     const [subscribed, setSubscribed] = useState(false);
     const orderedSectors = SECTOR_ORDER
         .map((slug) => SECTORS.find((sector) => sector.slug === slug))
-        .filter(Boolean);
+        .filter((sector): sector is Sector => Boolean(sector));
 
     const handleSubscribe = (e: React.FormEvent) => {
         e.preventDefault();
