@@ -13,6 +13,7 @@ import {
 } from "framer-motion";
 import { ArrowUpRight, ArrowRight } from "lucide-react";
 import { slugify } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const STRAPI = process.env.NEXT_PUBLIC_STRAPI_URL;
 
@@ -32,6 +33,7 @@ async function fetchOpinions() {
 
 export default function OpinionPage() {
   const [opinions, setOpinions] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const { scrollY } = useScroll();
   const y1 = useTransform(scrollY, [0, 500], [0, 200]);
@@ -59,8 +61,41 @@ export default function OpinionPage() {
       }));
 
       setOpinions(formatted);
+      setLoading(false);
     });
   }, []);
+
+  if (loading) return (
+    <div className="min-h-screen bg-[#FDFDFD]">
+      <Header />
+      <div className="pt-20">
+        <div className="w-full h-[60vh] bg-zinc-900 flex items-center px-4 lg:px-8">
+          <div className="max-w-5xl w-full">
+            <Skeleton className="h-20 w-3/4 mb-6 bg-white/20" />
+            <Skeleton className="h-6 w-1/2 mb-10 bg-white/10" />
+            <Skeleton className="h-12 w-48 rounded-full bg-white/20" />
+          </div>
+        </div>
+        <div className="container mx-auto px-4 lg:px-12 py-20">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-12">
+            {[...Array(8)].map((_, i) => (
+              <div key={i} className="space-y-6">
+                <Skeleton className="aspect-3/4 w-full rounded-2xl" />
+                <div className="space-y-4">
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-8 w-full" />
+                  <div className="flex gap-3 pt-4 border-t">
+                    <Skeleton className="h-10 w-10 rounded-full" />
+                    <Skeleton className="h-4 w-32 mt-3" />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-[#FDFDFD] font-sans text-zinc-900 overflow-x-hidden">
