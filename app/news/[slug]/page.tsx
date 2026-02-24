@@ -199,7 +199,7 @@ export default async function NewsDetailPage({
                         {/* Article Body */}
                         <article className="relative">
                             {/* Decorative side line */}
-                            <div className="absolute inset-x-0 bottom-0 h-2/3 bg-linear-to-t from-black/80 via-black/40 to-transparent flex flex-col justify-end p-8 md:p-12" />
+                            {/* <div className="absolute inset-x-0 bottom-0 h-2/3 bg-linear-to-t from-black/80 via-black/40 to-transparent flex flex-col justify-end p-8 md:p-12" /> */}
 
                             <div className="prose prose-lg max-w-none font-serif text-[18px] leading-[1.95] text-gray-800
                                 prose-headings:font-bold prose-headings:text-gray-900 prose-headings:tracking-tight
