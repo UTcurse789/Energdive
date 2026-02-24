@@ -11,7 +11,7 @@ const STRAPI = process.env.NEXT_PUBLIC_STRAPI_URL;
 async function fetchReports() {
   const res = await fetch(
     `${STRAPI}/api/contents?filters[type_of_content][name][$eq]=Reports&populate=*`,
-    { cache: "no-store" }
+    { next: { revalidate: 120 } }
   );
   const json = await res.json();
   return json?.data ?? [];

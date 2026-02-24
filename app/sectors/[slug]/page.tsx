@@ -31,7 +31,7 @@ async function fetchSectorWithChildren(slug: string) {
 async function fetchSectorArticles(slug: string) {
     try {
         const url = `${STRAPI}/api/contents?filters[type_of_content][name][$eq]=Articles&filters[sectors][slug][$eq]=${slug}&populate=*`;
-        const res = await fetch(url, { cache: "no-store" });
+        const res = await fetch(url, { next: { revalidate: 120 } });
         const json = await res.json();
         return json?.data || [];
     } catch {
@@ -42,7 +42,7 @@ async function fetchSectorArticles(slug: string) {
 async function fetchSectorVideos(slug: string) {
     try {
         const url = `${STRAPI}/api/videos?filters[sectors][slug][$eq]=${slug}&populate=*&sort=createdAt:desc`;
-        const res = await fetch(url, { cache: "no-store" });
+        const res = await fetch(url, { next: { revalidate: 120 } });
         const json = await res.json();
         return json?.data || [];
     } catch {

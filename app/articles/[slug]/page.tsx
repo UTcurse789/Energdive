@@ -33,7 +33,7 @@ async function getArticle(slug: string) {
         `filters[slug][$eq]=${slug}` +
         `&populate=*`;
 
-    const res = await fetch(url, { cache: "no-store" });
+    const res = await fetch(url, { next: { revalidate: 60 } });
     const json = await res.json();
     return json?.data?.[0] ?? null;
 }
@@ -172,13 +172,13 @@ export default async function ArticlePage(props: any) {
                                 priority
                                 className="object-cover transition-transform duration-700 group-hover:scale-[1.02]"
                             />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
                         </div>
 
                         {/* Article Body */}
                         <article className="relative">
                             {/* Decorative side line */}
-                            <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-gradient-to-b from-teal-500 via-teal-200 to-transparent rounded-full hidden lg:block -ml-6" />
+                            <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/80 via-black/40 to-transparent flex flex-col justify-end p-8 md:p-12" />
 
                             <div className="prose prose-lg max-w-none font-serif text-[18px] leading-[1.95] text-gray-800
                                 prose-headings:font-bold prose-headings:text-gray-900 prose-headings:tracking-tight
@@ -227,8 +227,10 @@ export default async function ArticlePage(props: any) {
                             {latestIssue && (
                                 <div className="rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
                                     <h3 className="mb-4 flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">
-                                        <Calendar className="h-3.5 w-3.5 text-teal-500" />
-                                        Latest Issue
+                                        <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-widest text-[#00A651] bg-white/90 backdrop-blur-md px-4 py-2 rounded-full w-fit shadow-lg bg-gradient-to-b from-white to-zinc-50 border border-white/20">
+                                            <Calendar className="h-3.5 w-3.5 text-teal-500" />
+                                            Latest Issue
+                                        </div>
                                     </h3>
 
                                     <Link href={`/issues/${latestIssue.slug}`} className="group block">

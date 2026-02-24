@@ -64,7 +64,7 @@ async function getAllContents() {
   try {
     const res = await fetch(
       `${STRAPI_BASE}/api/contents?pagination[pageSize]=100&populate=*`,
-      { cache: "no-store" }
+      { next: { revalidate: 60 } }
     );
     if (!res.ok) return null;
     const json = await res.json();

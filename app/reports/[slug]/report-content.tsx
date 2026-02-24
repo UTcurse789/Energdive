@@ -45,7 +45,7 @@ async function getReport(slug: string) {
         const res = await fetch(
             `${process.env.NEXT_PUBLIC_STRAPI_URL}/api/type-of-contents?filters[slug][$eq]=reports&populate[contents][populate]=*`,
             {
-                cache: "no-store",
+                next: { revalidate: 120 },
                 headers: {
                     Authorization: `Bearer ${process.env.STRAPI_API_TOKEN}`,
                 },

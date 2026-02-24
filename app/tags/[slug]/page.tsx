@@ -53,7 +53,7 @@ async function fetchTagContent(tagSlug: string) {
     try {
         const res = await fetch(
             `${STRAPI_BASE}/api/contents?filters[tags][slug][$eq]=${encodeURIComponent(tagSlug)}&populate=*&sort=publishedAt:desc&pagination[pageSize]=50`,
-            { cache: "no-store" }
+            { next: { revalidate: 120 } }
         );
         if (!res.ok) return { articles: [], tagName: tagSlug };
 
@@ -114,7 +114,7 @@ async function fetchTagVideos(tagSlug: string) {
     try {
         const res = await fetch(
             `${STRAPI_BASE}/api/videos?filters[tags][slug][$eq]=${encodeURIComponent(tagSlug)}&populate=*&sort=createdAt:desc`,
-            { cache: "no-store" }
+            { next: { revalidate: 120 } }
         );
         if (!res.ok) return [];
 

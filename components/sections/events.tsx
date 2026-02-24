@@ -6,7 +6,7 @@ const STRAPI_BASE = "http://206.189.132.187:1337";
 async function getEvents() {
     try {
         const res = await fetch(`${STRAPI_BASE}/api/events?populate=*`, {
-            cache: "no-store",
+            next: { revalidate: 120 },
         });
         if (!res.ok) return [];
         const json = await res.json();
