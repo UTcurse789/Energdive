@@ -5,7 +5,9 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState, useCallback, useRef } from "react";
-import { ChevronLeft, ChevronRight, Clock, ArrowRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, ArrowRight } from "lucide-react";
+import { DateChip } from "@/components/ui/date-chip";
+import { formatContentDate } from "@/lib/date";
 
 function slugify(text: string): string {
     return text.toLowerCase().trim().replace(/[^\w\s-]/g, "").replace(/[\s_]+/g, "-").replace(/-+/g, "-").replace(/^-+|-+$/g, "");
@@ -18,17 +20,6 @@ function getImageUrl(article: any): string {
     if (!img) return "/placeholder.jpg";
     const url = img.formats?.large?.url || img.formats?.medium?.url || img.url;
     return url.startsWith("http") ? url : `${STRAPI_BASE}${url}`;
-}
-
-function formatDate(dateStr: string): string {
-    if (!dateStr) return "";
-    try {
-        return new Date(dateStr).toLocaleDateString("en-IN", {
-            day: "2-digit", month: "short", year: "numeric"
-        });
-    } catch {
-        return dateStr;
-    }
 }
 
 function getExcerpt(excerpt: any[]): string {
@@ -182,10 +173,7 @@ export function Hero() {
                                 </div>
                                 <div className="space-y-3">
                                     <p className="text-[10px] font-black uppercase tracking-tighter text-slate-400">Filed On</p>
-                                    <div className="flex items-center gap-2 text-sm font-semibold text-[#1a1a1a]">
-                                        <Clock size={16} className="text-[#09B697]" />
-                                        {formatDate(featured.Date || featured.createdAt)}
-                                    </div>
+                                    <DateChip value={formatContentDate(featured.Date || featured.createdAt)} />
                                 </div>
                             </div>
                         </div>
@@ -220,9 +208,7 @@ export function Hero() {
                                         <h4 className="font-serif text-[15.5px] font-bold leading-snug text-[#1a1a1a] group-hover:text-[#09B697] transition-colors line-clamp-2">
                                             {story.Title}
                                         </h4>
-                                        <p className="text-[10px] text-slate-400 font-medium">
-                                            {formatDate(story.Date)}
-                                        </p>
+                                        <DateChip value={formatContentDate(story.Date || story.createdAt)} className="text-[10px]" />
                                     </div>
                                 </Link>
                             ))}

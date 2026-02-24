@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { motion, useScroll, useSpring } from "framer-motion";
+import { motion } from "framer-motion";
 import {
     Linkedin,
     Twitter,
@@ -15,6 +15,7 @@ import {
     ArrowRight
 } from "lucide-react";
 import { Button } from "@/components/ui/buttons";
+import { ScrollProgress } from "@/components/ui/scroll-progress";
 
 /* ---------- Helper: Title Case Function ---------- */
 function toTitleCase(str: string) {
@@ -38,16 +39,9 @@ function renderInlineChildren(children: any[]) {
 }
 
 export default function OpinionContent({ opinion, recommended }: any) {
-    const { scrollYProgress } = useScroll();
-    const scaleX = useSpring(scrollYProgress, { stiffness: 100, damping: 30, restDelta: 0.001 });
-
     return (
         <main className="bg-[#FDFDFD] min-h-screen selection:bg-[#00A651]/10 antialiased">
-            {/* Reading Progress Bar */}
-            <motion.div
-                className="fixed top-0 left-0 right-0 h-1 bg-[#00A651] origin-left z-50"
-                style={{ scaleX }}
-            />
+            <ScrollProgress />
 
             <article className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl pt-12">
                 {/* Navigation */}

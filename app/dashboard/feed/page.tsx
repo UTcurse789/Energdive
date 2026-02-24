@@ -5,6 +5,7 @@ import { Loader2, AlertCircle, User, Calendar, Lock, Sparkles } from "lucide-rea
 import Image from "next/image";
 import Link from "next/link";
 import { useDashboard } from "@/components/dashboard/dashboard-shell";
+import { formatContentDate } from "@/lib/date";
 
 interface FeedItem {
     id: string;
@@ -65,12 +66,6 @@ export default function IntelligencePage() {
         }
         fetchEarlyAccess();
     }, [activeTab, feedKey]);
-
-    const formatDate = (d: string) => {
-        if (!d) return "";
-        try { return new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }); }
-        catch { return d; }
-    };
 
     const getDetailUrl = (item: FeedItem) => {
         const t = item.contentType?.toLowerCase() || "";
@@ -229,11 +224,11 @@ export default function IntelligencePage() {
                                                         <User size={11} style={{ color: "var(--dash-text-dim)" }} />
                                                     </div>
                                                 )}
-                                                <span className="text-xs font-semibold" style={{ color: "var(--dash-text-muted)" }}>{item.author}</span>
-                                                <span className="text-xs flex items-center gap-1 ml-auto" style={{ color: "var(--dash-text-dim)" }}>
-                                                    <Calendar size={10} /> {formatDate(item.date)}
-                                                </span>
-                                            </div>
+                                            <span className="text-xs font-semibold" style={{ color: "var(--dash-text-muted)" }}>{item.author}</span>
+                                            <span className="text-xs flex items-center gap-1 ml-auto" style={{ color: "var(--dash-text-dim)" }}>
+                                                <Calendar size={10} /> {formatContentDate(item.date)}
+                                            </span>
+                                        </div>
                                         </div>
 
                                         {/* Thumbnail */}

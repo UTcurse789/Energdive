@@ -1,13 +1,14 @@
 "use client";
 
 import React, { useState, useMemo, useEffect } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, ChevronRight, Clock, ArrowUpRight, Play } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { TagBadge } from "@/components/ui/tag-badge";
-import { SECTORS } from "@/data/dummy";
+import { DateChip } from "@/components/ui/date-chip";
+import { formatContentDate } from "@/lib/date";
 
 /* ================================
    STRAPI CONFIG & HELPERS
@@ -16,10 +17,12 @@ const STRAPI = process.env.NEXT_PUBLIC_STRAPI_URL;
 
 async function fetchSectorWithChildren(slug: string) {
     try {
-        const url = `${STRAPI}/api/sectors?filters[slug][$eq]=${slug}&populate=children`;
-        const res = await fetch(url, { next: { revalidate: 120 } });
+        const url = `${STRAPI}/api/sectors?filters[slug][$eq]=${slug}&populate=*`;
+        const res = await fetch(url, { cache: "no-store" });
         const json = await res.json();
-        return json?.data?.[0] || null;
+        const raw = json?.data?.[0] || null;
+        if (!raw) return null;
+        return raw?.attributes ? { id: raw.id, ...raw.attributes } : raw;
     } catch {
         return null;
     }
@@ -45,15 +48,6 @@ async function fetchSectorVideos(slug: string) {
     } catch {
         return [];
     }
-}
-
-function formatDate(dateStr: string) {
-    if (!dateStr) return "Recent";
-    return new Date(dateStr).toLocaleDateString("en-GB", {
-        day: "numeric",
-        month: "short",
-        year: "numeric",
-    });
 }
 
 function normalizeText(value: string) {
@@ -99,14 +93,30 @@ function extractTagObjects(raw: any): { name: string; slug: string }[] {
         .filter(Boolean);
 }
 
+function resolveMediaUrl(raw: any): string | null {
+    if (!raw) return null;
+
+    const source = Array.isArray(raw) ? raw[0] : raw;
+    const data = source?.data || source;
+    const attrs = data?.attributes || data;
+    const path =
+        attrs?.formats?.large?.url ||
+        attrs?.formats?.medium?.url ||
+        attrs?.formats?.small?.url ||
+        attrs?.formats?.thumbnail?.url ||
+        attrs?.url ||
+        null;
+
+    if (!path) return null;
+    return path.startsWith("http") ? path : `${STRAPI}${path}`;
+}
+
 const DEFAULT_SECTOR_META = {
     title: "Sector Intelligence",
     description:
         "Deep-dive proprietary market data and critical infrastructure insights mapping the global energy transition.",
     breadcrumbLabel: "Strategic Monitoring Desk",
     heroImage: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2072",
-    spotlight:
-        "Track capital flows, policy turns, and infrastructure moves through one high-signal sector lens.",
     quickSignals: ["Policy Momentum", "Investment Outlook", "Technology Shift"],
 };
 
@@ -114,62 +124,62 @@ const SECTOR_HERO_MAP: Record<
     string,
     {
         breadcrumbLabel: string;
-        spotlight: string;
+        description: string;
         quickSignals: [string, string, string];
         heroImage: string;
     }
 > = {
     "oil-gas": {
         breadcrumbLabel: "Oil & Gas",
-        spotlight: "From upstream risk to downstream margins, monitor every link in the oil and gas value chain.",
+        description: "Explore oil & gas intelligence from ENERGDIVE, bringing you insights on policy, markets, infrastructure, technology, and developments shaping the sector’s future.",
         quickSignals: ["Upstream Activity", "Refining Margins", "Trade & Logistics"],
         heroImage: "https://images.unsplash.com/photo-1473341304170-971dccb5ac1e?auto=format&fit=crop&q=80&w=2200",
     },
     "power-generation": {
-        breadcrumbLabel: "Generation Performance Grid",
-        spotlight: "Follow thermal, hydro, nuclear, and gas portfolios through demand shifts and cost pressure.",
+        breadcrumbLabel: "Power Generation",
+        description: "Track the evolution of India’s power & utilities sector with ENERGDIVE - from generation and grid innovation to the rapid shift to renewables, energy storage, digitalisation, and regulatory change.",
         quickSignals: ["Fuel Mix", "Plant Reliability", "Capacity Additions"],
         heroImage: "https://images.unsplash.com/photo-1466611653911-95081537e5b7?auto=format&fit=crop&q=80&w=2200",
     },
     renewables: {
-        breadcrumbLabel: "Clean Energy Growth Radar",
-        spotlight: "Capture deployment velocity across solar, wind, and emerging renewable infrastructure.",
+        breadcrumbLabel: "Renewable Energy",
+        description: "Capture deployment velocity across solar, wind, and emerging renewable infrastructure.",
         quickSignals: ["Solar Buildout", "Wind Pipeline", "Storage Pairing"],
         heroImage: "https://images.unsplash.com/photo-1509391366360-2e959784a276?auto=format&fit=crop&q=80&w=2200",
     },
     transmission: {
-        breadcrumbLabel: "Grid Backbone Intelligence",
-        spotlight: "Track interconnectors, high-voltage expansion, and bottlenecks shaping regional stability.",
+        breadcrumbLabel: "Transmission",
+        description: "Track interconnectors, high-voltage expansion, and bottlenecks shaping regional stability.",
         quickSignals: ["HVDC Projects", "Grid Bottlenecks", "Cross-Border Links"],
         heroImage: "https://images.unsplash.com/photo-1617195737496-caf2cfeb4b7f?auto=format&fit=crop&q=80&w=2200",
     },
     distribution: {
-        breadcrumbLabel: "Last-Mile Operations Desk",
-        spotlight: "Observe urban and rural network modernization through smart-grid and metering progress.",
+        breadcrumbLabel: "Distribution",
+        description: "Observe urban and rural network modernization through smart-grid and metering progress.",
         quickSignals: ["Loss Reduction", "Smart Metering", "Network Reliability"],
         heroImage: "https://images.unsplash.com/photo-1548337138-e87d889cc369?auto=format&fit=crop&q=80&w=2200",
     },
     "electricity-markets": {
-        breadcrumbLabel: "Power Market Signals",
-        spotlight: "Decode spot price movement, contract behavior, and policy intervention across power markets.",
+        breadcrumbLabel: "Electricity Markets",
+        description: "Decode spot price movement, contract behavior, and policy intervention across power markets.",
         quickSignals: ["Spot Volatility", "Demand Curves", "Market Reform"],
         heroImage: "https://images.unsplash.com/photo-1559526324-4b87b5e36e44?auto=format&fit=crop&q=80&w=2200",
     },
     "new-energies": {
-        breadcrumbLabel: "Next-Fuel Innovation Desk",
-        spotlight: "Track hydrogen, ammonia, and biofuel value chains as industrial decarbonization scales.",
+        breadcrumbLabel: "New Energies",
+        description: "Discover new energies intelligence from ENERGDIVE, covering green hydrogen, storage innovation, biofuels, CCUS, carbon markets, and technologies shaping India’s clean transformation.",
         quickSignals: ["Hydrogen Projects", "Fuel Pathways", "Industrial Adoption"],
         heroImage: "https://images.unsplash.com/photo-1532601224476-15c79f2f7a51?auto=format&fit=crop&q=80&w=2200",
     },
     "energy-storage": {
-        breadcrumbLabel: "Flexibility & Storage Monitor",
-        spotlight: "Follow grid-scale batteries, long-duration storage, and balancing strategies in real time.",
+        breadcrumbLabel: "Energy Storage",
+        description: "Follow grid-scale batteries, long-duration storage, and balancing strategies in real time.",
         quickSignals: ["BESS Pipeline", "Duration Economics", "Grid Integration"],
         heroImage: "https://images.unsplash.com/photo-1620714223084-8fcacc6dfd8d?auto=format&fit=crop&q=80&w=2200",
     },
-    "sustainability-safety": {
-        breadcrumbLabel: "ESG & Risk Assurance Hub",
-        spotlight: "Monitor HSE standards, ESG disclosure, and transition-risk governance across critical assets.",
+    "sustainability": {
+        breadcrumbLabel: "Sustainability",
+        description: "Explore ENERGDIVE’s sustainability intelligence - from environment and HSE practices to ESG trends, climate strategies, and pathways driving resilient, responsible growth.",
         quickSignals: ["ESG Disclosure", "HSE Compliance", "Net-Zero Execution"],
         heroImage: "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&q=80&w=2200",
     },
@@ -180,17 +190,30 @@ const SECTOR_HERO_MAP: Record<
 ================================ */
 export default function SectorIntelligencePage() {
     const params = useParams();
+    const searchParams = useSearchParams();
     const slug = params?.slug as string;
+    const subParam = searchParams?.get("sub") || "";
 
     const [articles, setArticles] = useState<any[]>([]);
     const [videos, setVideos] = useState<any[]>([]);
     const [childSectors, setChildSectors] = useState<any[]>([]);
+    const [sectorInfo, setSectorInfo] = useState<any | null>(null);
     const [searchQuery, setSearchQuery] = useState("");
     const [activeTab, setActiveTab] = useState("ALL");
 
     useEffect(() => {
         if (!slug) return;
-        fetchSectorWithChildren(slug).then((sector) => setChildSectors(sector?.children || []));
+        fetchSectorWithChildren(slug).then((sector) => {
+            setSectorInfo(sector);
+
+            const normalizedChildren = Array.isArray(sector?.children)
+                ? sector.children
+                : Array.isArray(sector?.children?.data)
+                    ? sector.children.data.map((item: any) => (item?.attributes ? { id: item.id, ...item.attributes } : item))
+                    : [];
+
+            setChildSectors(normalizedChildren);
+        });
         fetchSectorArticles(slug).then((data) => {
             const formatted = data.map((item: any) => ({
                 id: item.id,
@@ -222,18 +245,23 @@ export default function SectorIntelligencePage() {
 
     const sectorMeta = useMemo(() => {
         const fallbackTitle = slug?.replaceAll("-", " ").replace(/\b\w/g, (c) => c.toUpperCase());
-        const fromDummy = SECTORS.find((sector) => sector.slug === slug);
         const customMeta = (slug && SECTOR_HERO_MAP[slug]) || null;
+        const liveTitle = sectorInfo?.name || sectorInfo?.title || sectorInfo?.Title || "";
+        const liveDescription = sectorInfo?.description || sectorInfo?.Description || "";
+        const liveHero =
+            resolveMediaUrl(sectorInfo?.heroImage) ||
+            resolveMediaUrl(sectorInfo?.image) ||
+            resolveMediaUrl(sectorInfo?.coverImage) ||
+            resolveMediaUrl(sectorInfo?.bannerImage);
 
         return {
-            title: fromDummy?.title || fallbackTitle || DEFAULT_SECTOR_META.title,
-            description: fromDummy?.description || DEFAULT_SECTOR_META.description,
-            breadcrumbLabel: customMeta?.breadcrumbLabel || DEFAULT_SECTOR_META.breadcrumbLabel,
-            heroImage: customMeta?.heroImage || fromDummy?.heroImage || DEFAULT_SECTOR_META.heroImage,
-            spotlight: customMeta?.spotlight || DEFAULT_SECTOR_META.spotlight,
+            title: liveTitle || fallbackTitle || DEFAULT_SECTOR_META.title,
+            description: liveDescription || customMeta?.description || DEFAULT_SECTOR_META.description,
+            breadcrumbLabel: customMeta?.breadcrumbLabel || liveTitle || fallbackTitle || DEFAULT_SECTOR_META.breadcrumbLabel,
+            heroImage: liveHero || customMeta?.heroImage || DEFAULT_SECTOR_META.heroImage,
             quickSignals: customMeta?.quickSignals || DEFAULT_SECTOR_META.quickSignals,
         };
-    }, [slug]);
+    }, [slug, sectorInfo]);
 
     const subCategories = useMemo(() => {
         const children = childSectors
@@ -243,6 +271,28 @@ export default function SectorIntelligencePage() {
 
         return ["ALL", ...Array.from(new Set(children))];
     }, [childSectors]);
+
+    useEffect(() => {
+        if (!subCategories.length) return;
+
+        if (!subParam) {
+            setActiveTab("ALL");
+            return;
+        }
+
+        const normalizedParam = normalizeText(subParam.replace(/[-_]+/g, " "));
+        const matchedTab = subCategories.find((cat) => {
+            if (cat === "ALL") return false;
+            const normalizedCat = normalizeText(cat);
+            return (
+                normalizedCat === normalizedParam ||
+                normalizedCat.includes(normalizedParam) ||
+                normalizedParam.includes(normalizedCat)
+            );
+        });
+
+        setActiveTab(matchedTab || "ALL");
+    }, [subParam, subCategories]);
 
     const filteredReports = useMemo(() => {
         return articles.filter((report) => {
@@ -284,12 +334,12 @@ export default function SectorIntelligencePage() {
                     src={sectorMeta.heroImage}
                     alt={sectorMeta.title}
                     fill
-                    className="object-cover opacity-45 scale-[1.06]"
+                    className="object-cover opacity-60 scale-[1.06]"
                 />
-                <div className="absolute inset-0 bg-linear-to-r from-black/88 via-black/62 to-black/35" />
-                <div className="absolute inset-0 bg-linear-to-t from-black/90 via-transparent to-transparent" />
+                <div className="absolute inset-0 bg-linear-to-r from-black/72 via-black/48 to-black/22" />
+                <div className="absolute inset-0 bg-linear-to-t from-black/72 via-black/8 to-transparent" />
                 <div
-                    className="absolute inset-0 opacity-20"
+                    className="absolute inset-0 opacity-14"
                     style={{
                         backgroundImage:
                             "linear-gradient(to right, rgba(255,255,255,0.08) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.08) 1px, transparent 1px)",
@@ -305,7 +355,7 @@ export default function SectorIntelligencePage() {
                     >
                         <Link href="/" className="hover:text-white transition">EnergDive</Link>
                         <ChevronRight size={10} className="text-white/40" />
-                        <span className="text-white/60">Intelligence</span>
+                        <span className="text-white/60">Articles & Videos</span>
                         <ChevronRight size={10} className="text-white/40" />
                         <span className="text-white">{sectorMeta.breadcrumbLabel}</span>
                     </motion.nav>
@@ -327,15 +377,6 @@ export default function SectorIntelligencePage() {
                         {sectorMeta.description}
                     </motion.p>
 
-                    <motion.p
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: 0.32 }}
-                        className="mt-6 text-sm md:text-base text-white/80 max-w-2xl"
-                    >
-                        {sectorMeta.spotlight}
-                    </motion.p>
-
                     <motion.div
                         initial={{ opacity: 0, y: 12 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -347,9 +388,6 @@ export default function SectorIntelligencePage() {
                         </div>
                         <div className="rounded-full border border-white/20 bg-white/5 px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-white backdrop-blur-sm">
                             {videos.length} Videos
-                        </div>
-                        <div className="rounded-full border border-white/20 bg-white/5 px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-white backdrop-blur-sm">
-                            {childSectors.length} Focus Tracks
                         </div>
                     </motion.div>
 
@@ -439,12 +477,7 @@ export default function SectorIntelligencePage() {
 
                                         {/* Card Meta */}
                                         <div className="space-y-3 px-1">
-                                            <div className="flex items-center gap-3 text-[9px] font-black uppercase tracking-widest text-[#00C6A7]">
-                                                <span className="flex items-center gap-1">
-                                                    <Clock size={10} />
-                                                    {formatDate(report.date)}
-                                                </span>
-                                            </div>
+                                            <DateChip value={report.date} className="text-[10px]" />
 
                                             <h3 className="text-2xl font-bold leading-tight tracking-tight text-[#1a1a1a] group-hover:text-[#00C6A7] transition-colors duration-300">
                                                 {report.title}
@@ -479,7 +512,7 @@ export default function SectorIntelligencePage() {
                         <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-6">
                             <Search size={32} className="text-gray-300" />
                         </div>
-                        <h2 className="text-2xl font-bold text-gray-300">No Intelligence Found</h2>
+                        <h2 className="text-2xl font-bold text-gray-300">No Articles Found</h2>
                         <p className="text-gray-400 mt-2">Adjust your filters or try a different search term.</p>
                     </motion.div>
                 )}
@@ -507,14 +540,14 @@ export default function SectorIntelligencePage() {
                                             </div>
                                         </div>
                                         <h3 className="text-sm font-bold group-hover:text-[#00A651] transition-colors line-clamp-2">{video.title}</h3>
-                                        <span className="text-[10px] text-gray-400 mt-1 block">{formatDate(video.date)}</span>
+                                        <DateChip value={video.date} className="text-[10px] mt-1" />
                                     </Link>
                                 ))}
                             </div>
                         ) : (
                             <div className="rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 px-6 py-10 text-center">
                                 <p className="text-sm text-zinc-500">
-                                    Is filter/search ke saath koi video match nahi hua.
+                                    No Video Found
                                 </p>
                             </div>
                         )}

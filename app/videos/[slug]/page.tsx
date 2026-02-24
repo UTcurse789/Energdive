@@ -3,7 +3,10 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BlocksRenderer, type BlocksContent } from '@strapi/blocks-react-renderer';
-import { ArrowLeft, Share2, Youtube, Clock, Calendar, Tag, User } from "lucide-react";
+import { ScrollProgress } from "@/components/ui/scroll-progress";
+import { DateChip } from "@/components/ui/date-chip";
+import { ArrowLeft, Share2, Youtube, Tag } from "lucide-react";
+import { formatContentDate } from "@/lib/date";
 
 function slugify(text: string): string {
     return text.toLowerCase().trim().replace(/[^\w\s-]/g, "").replace(/[\s_]+/g, "-").replace(/-+/g, "-").replace(/^-+|-+$/g, "");
@@ -53,9 +56,7 @@ export default async function VideoDetailPage({ params }: { params: Promise<{ sl
     // Extract metadata
     const title = video.title;
     const youtubeId = video.youtubeId;
-    const createdAt = new Date(video.publishedAt).toLocaleDateString('en-US', {
-        day: 'numeric', month: 'long', year: 'numeric'
-    });
+    const createdAt = formatContentDate(video.publishedAt);
     const description: BlocksContent = video.description;
     const category = video.sectors?.[0]?.name || "Energy";
     const authorName = video.author?.name || "Team ENERGDIVE";
@@ -65,6 +66,7 @@ export default async function VideoDetailPage({ params }: { params: Promise<{ sl
 
     return (
         <main className="min-h-screen bg-gray-50 text-black font-sans pb-20">
+            <ScrollProgress />
             {/* Navigation */}
             <div className="border-b border-gray-100 bg-white sticky top-0 z-10">
                 <div className="mx-auto px-6 max-w-[1400px] py-4">
@@ -98,10 +100,7 @@ export default async function VideoDetailPage({ params }: { params: Promise<{ sl
                         </h1>
 
                         <div className="flex flex-wrap items-center gap-6 pt-4 text-sm text-gray-400 font-medium">
-                            <div className="flex items-center gap-2">
-                                <Calendar size={16} />
-                                <span>Published on {createdAt}</span>
-                            </div>
+                            <DateChip value={createdAt} />
                             <div className="flex items-center gap-2 text-red-600 font-bold cursor-pointer hover:opacity-80">
                                 <Share2 size={16} />
                                 <span>Share Video</span>

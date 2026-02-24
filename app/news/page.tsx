@@ -6,12 +6,15 @@ import Image from "next/image";
 import { Header } from "@/components/layout/header";
 import { Plus, MoveRight, Bookmark, BarChart3, Zap, Globe2, ShieldCheck, ArrowUpRight } from "lucide-react";
 import { motion } from "framer-motion";
+import { DateChip } from "@/components/ui/date-chip";
+import { formatContentDate } from "@/lib/date";
 
 const STRAPI_BASE_URL = "http://206.189.132.187:1337";
 
 export default function ArchitectEditorialPage() {
     const [articles, setArticles] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [visibleCount, setVisibleCount] = useState(30);
 
     useEffect(() => {
         async function fetchData() {
@@ -47,8 +50,15 @@ export default function ArchitectEditorialPage() {
                                     ? `${STRAPI_BASE_URL}${attrs.FeaturedImage.url}`
                                     : "/placeholder.jpg",
                             excerpt: excerptText,
-                            category: attrs.type_of_content?.data?.attributes?.name || "Intelligence",
-                            readTime: "5 MIN"
+                            category: attrs.type_of_content?.data?.attributes?.name || "NEWS",
+                            sector: (
+                                attrs.sectors?.[0]?.name ||
+                                attrs.sectors?.data?.[0]?.attributes?.name ||
+                                attrs.sector?.name ||
+                                attrs.sector?.data?.attributes?.name ||
+                                "Energy"
+                            ),
+                            date: formatContentDate(attrs.Date || attrs.publishedAt || attrs.createdAt),
                         };
                     });
                     setArticles(formattedData);
@@ -67,13 +77,14 @@ export default function ArchitectEditorialPage() {
 
     const heroArticle = articles[0];
     const topInsights = articles.slice(1, 5); // Side bar mein 4 news
-    const allNews = articles;
+    const allNews = articles.slice(5);
+    const visibleNews = allNews.slice(0, visibleCount);
 
     return (
         <div className="min-h-screen bg-[#FDFDFD] text-[#1A1A1A] selection:bg-black selection:text-white font-sans overflow-x-hidden">
             <Header />
 
-            <main className="pt-[30px]">
+            <main className="pt-[10px]">
                 {/* 1. HERO BANNER */}
                 <section className="w-full py-12 md:py-20 bg-white border-b border-black">
                     <div className="container mx-auto px-4 sm:px-6 lg:px-12">
@@ -81,7 +92,7 @@ export default function ArchitectEditorialPage() {
                             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex-1">
 
                                 <h1 className="text-3xl sm:text-5xl md:text-7xl lg:text-[8vw] font-black tracking-tighter leading-[0.85] uppercase italic">
-                                    News
+                                    New
                                 </h1>
                             </motion.div>
                             <div className="lg:w-1/3 border-l-2 border-black pl-6 py-2">
@@ -117,7 +128,6 @@ export default function ArchitectEditorialPage() {
                                         <ArrowUpRight size={28} />
                                     </div>
                                     <div className="absolute inset-0 bg-linear-to-t from-black/90 via-transparent to-transparent flex flex-col justify-end p-6 md:p-10">
-                                        <span className="bg-[#00A651] text-white text-[10px] font-black uppercase px-3 py-1 w-fit mb-4">Lead Report</span>
                                         <h2 className="text-3xl md:text-5xl lg:text-6xl font-black text-white tracking-tighter leading-[0.9]">
                                             {heroArticle.title}
                                         </h2>
@@ -138,7 +148,8 @@ export default function ArchitectEditorialPage() {
                                             <Image src={item.image} alt="" fill className="object-cover grayscale group-hover:grayscale-0 transition-all duration-500" />
                                         </div>
                                         <div className="flex flex-col">
-                                            <span className="text-[9px] font-black text-[#00A651] uppercase tracking-widest mb-1">{item.category}</span>
+                                            <span className="text-[9px] font-black text-[#00A651] uppercase tracking-widest mb-1">{item.sector}</span>
+                                            <DateChip value={item.date} className="mb-1 text-[10px]" />
                                             <h4 className="font-bold text-base leading-tight group-hover: transition-colors line-clamp-3">{item.title}</h4>
                                         </div>
                                     </Link>
@@ -156,15 +167,15 @@ export default function ArchitectEditorialPage() {
                         </div>
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-16">
-                            {allNews.map((item, idx) => (
+                            {visibleNews.map((item, idx) => (
                                 <div key={idx} className="group flex flex-col border-t border-gray-100 pt-6 hover:border-black transition-all duration-500">
                                     <div className="relative aspect-4/3 mb-6 overflow-hidden bg-gray-100 border border-gray-100">
                                         <Image src={item.image} alt="" fill className="object-cover group-hover:scale-110 transition-transform duration-700" />
                                     </div>
                                     <div className="flex flex-col flex-1">
                                         <div className="flex justify-between text-[9px] font-black uppercase text-gray-400 mb-3">
-                                            <span>{item.category}</span>
-                                            <span>{item.readTime}</span>
+                                            <span>{item.sector}</span>
+                                            <DateChip value={item.date} className="text-[9px]" />
                                         </div>
                                         <h4 className="font-bold text-lg leading-tight line-clamp-2 group-hover:text-[#00A651] transition-colors mb-4">{item.title}</h4>
                                         <Link href={`/news/${item.slug}`} className="mt-auto inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest hover:gap-4 transition-all text-black">
@@ -174,6 +185,18 @@ export default function ArchitectEditorialPage() {
                                 </div>
                             ))}
                         </div>
+
+                        {visibleCount < allNews.length && (
+                            <div className="mt-12 flex justify-center">
+                                <button
+                                    type="button"
+                                    onClick={() => setVisibleCount((prev) => prev + 30)}
+                                    className="inline-flex items-center gap-2 border border-black px-6 py-3 text-xs font-black uppercase tracking-widest text-black transition-colors hover:bg-black hover:text-white"
+                                >
+                                    Load More
+                                </button>
+                            </div>
+                        )}
                     </section>
                 </div>
             </main>

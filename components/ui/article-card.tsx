@@ -5,6 +5,7 @@ import Image from "next/image";
 import { cn, slugify } from "@/lib/utils";
 import { Clock } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { DateChip } from "@/components/ui/date-chip";
 
 import { Article } from "@/types";
 
@@ -45,7 +46,7 @@ export function ArticleCard({ article, className, variant = "vertical" }: Articl
                             {article.category}
                         </span>
                         <span className="text-xs text-muted-foreground">•</span>
-                        <span className="text-xs text-muted-foreground">{article.date}</span>
+                        <DateChip value={article.date} className="text-[10px]" />
                     </div>
 
                     <h3 className={cn(

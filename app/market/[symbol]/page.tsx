@@ -3,6 +3,7 @@ import { MarketChart } from "@/components/features/market-chart";
 import { notFound } from "next/navigation";
 import { Activity, Globe, Info, TrendingUp } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { DateChip } from "@/components/ui/date-chip";
 
 export default async function Page({ params }: { params: Promise<{ symbol: string }> }) {
     const { symbol } = await params;
@@ -69,9 +70,7 @@ export default async function Page({ params }: { params: Promise<{ symbol: strin
                                             <span className="text-[10px] font-black text-primary uppercase tracking-[0.2em] bg-primary/5 px-2 py-1 rounded">
                                                 {n.site}
                                             </span>
-                                            <span className="text-[10px] text-zinc-400 font-bold uppercase">
-                                                {new Date(n.publishedDate).toLocaleDateString()}
-                                            </span>
+                                            <DateChip value={n.publishedDate} className="text-[10px]" />
                                         </div>
 
                                         <h4 className="text-2xl font-bold font-serif leading-[1.2] group-hover:text-primary transition-all duration-300 decoration-primary/30 underline-offset-8 group-hover:underline">

@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Issue } from "@/types";
 import { slugify } from "@/lib/utils";
+import { ScrollProgress } from "@/components/ui/scroll-progress";
 
 interface IssueDetailClientProps {
     issue: Issue;
@@ -31,6 +32,7 @@ function getTypeBadgeColors(contentType: string | null | undefined) {
 export function IssueDetailClient({ issue }: IssueDetailClientProps) {
     return (
         <main className="min-h-screen bg-white pb-20">
+            <ScrollProgress />
             {/* Hero Section */}
             <div className="bg-gray-50 border-b">
                 <div className="mx-auto max-w-[1100px] px-4 sm:px-6 py-10 md:py-20">
