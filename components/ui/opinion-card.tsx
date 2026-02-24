@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { ArrowUpRight } from "lucide-react";
 import { cn, slugify } from "@/lib/utils";
 import { Opinion } from "@/types";
+import { DateChip } from "@/components/ui/date-chip";
 
 
 interface OpinionCardProps {
@@ -52,7 +53,7 @@ export function OpinionCard({ opinion, className, isLarge }: OpinionCardProps) {
                 <div className="flex items-center gap-3 mb-4 text-[10px] font-bold uppercase tracking-[0.2em]">
                     <span className="text-[#00A651]">{opinion.category || "INSIGHT"}</span>
                     <span className="h-1px w-4 bg-zinc-200" />
-                    <span className="text-zinc-400">{opinion.date}</span>
+                    <DateChip value={opinion.date} className="text-[10px]" />
                 </div>
 
                 {/* Title */}

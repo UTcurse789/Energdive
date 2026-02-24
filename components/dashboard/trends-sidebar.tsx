@@ -435,6 +435,7 @@ import { FileBarChart2, Loader2, Plus, X, ChevronDown, User, Calendar, Pencil, C
 import Link from "next/link";
 import Image from "next/image";
 import { useDashboard } from "@/components/dashboard/dashboard-shell";
+import { formatContentDate } from "@/lib/date";
 
 interface TrendingItem {
     id: string;
@@ -487,12 +488,6 @@ export function TrendsSidebar() {
 
     const getLink = (item: TrendingItem) => `/news/${item.slug}`;
 
-    const formatDate = (d: string) => {
-        if (!d) return "";
-        try { return new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric" }); }
-        catch { return d; }
-    };
-
     const cardStyle = {
         background: "var(--dash-card)",
         border: "1px solid var(--dash-border)",
@@ -542,7 +537,7 @@ export function TrendsSidebar() {
                                             )}
                                             <span className="text-[10px]" style={{ color: "var(--dash-text-dim)" }}>{item.author}</span>
                                             <span className="text-[10px] ml-auto flex items-center gap-0.5" style={{ color: "var(--dash-text-dim)" }}>
-                                                <Calendar size={9} />{formatDate(item.date)}
+                                                <Calendar size={9} />{formatContentDate(item.date)}
                                             </span>
                                         </div>
                                     </div>
