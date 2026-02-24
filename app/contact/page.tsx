@@ -199,7 +199,7 @@ const tabs = [
                 </p>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
-                    {['Journalism', 'Data Analysis', 'Web Development', 'Marketing'].map((role) => (
+                    {['Journalism', 'Social-Media', 'Sales-Executive', 'Marketing'].map((role) => (
                         <div key={role} className="p-4 bg-zinc-50 rounded-xl text-zinc-600 font-medium text-sm text-center border border-zinc-100">
                             {role}
                         </div>

@@ -120,7 +120,7 @@ export default function AboutPage() {
                                 transition={{ delay: 0.2 }}
                             >
                                 <p className="text-2xl md:text-3xl font-serif text-zinc-700 leading-relaxed mb-10">
-                                    India is entering a defining decade—one that will shape not only its energy security but also its global influence in the age of sustainability.
+                                    India is entering a defining decade—one that will shape not only its energy security but also its global influence in the age of sustainability. Over the past ten years, bold policy reforms, resilient public sector leadership, and a surge in private innovation have transformed India into one of the world’s most dynamic and diversified energy markets.
                                 </p>
                                 <div className="prose prose-lg text-zinc-500 mb-10">
                                     <p>
@@ -132,7 +132,7 @@ export default function AboutPage() {
                                 </div>
                                 <div className="bg-[#00A651]/5 border-l-4 border-[#00A651] p-8 rounded-r-2xl">
                                     <p className="text-lg font-bold italic text-zinc-800 leading-relaxed">
-                                        "ENERGDIVE emerges at this pivotal juncture as the definitive voice of India’s energy transformation—documenting not just the journey, but the leadership and ideas shaping it."
+                                        ENERGDIVE emerges at this pivotal juncture as the definitive voice of India’s energy transformation—documenting not just the journey, but the leadership and ideas shaping it.
                                     </p>
                                 </div>
                             </motion.div>
@@ -168,42 +168,49 @@ export default function AboutPage() {
 
                 {/* 4. THE NEED SECTION */}
                 <section className="container mt-[120px] mx-auto px-6 lg:px-12">
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            whileInView={{ opacity: 1, scale: 1 }}
-                            viewport={{ once: true }}
-                            className="relative aspect-4/5 bg-zinc-100 rounded-[3rem] overflow-hidden shadow-2xl"
-                        >
-                            <Image
-                                src="/energdive.jpg"
-                                alt="Strategic Intelligence Platform"
-                                fill
-                                className="object-cover transition-all duration-1000 hover:scale-105"
-                            />
-                        </motion.div>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+                        {/* Wrap in a div to control alignment and maximum width */}
+                        <div className="flex justify-center lg:justify-start">
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                whileInView={{ opacity: 1, scale: 1 }}
+                                viewport={{ once: true }}
+                                // Changed max-w to md (or sm) and aspect to 3/4 to reduce height
+                                className="relative w-full max-w-md aspect-[3/4] bg-zinc-100 rounded-[2.5rem] overflow-hidden shadow-2xl"
+                            >
+                                <Image
+                                    src="/energdive.jpg"
+                                    alt="Strategic Intelligence Platform"
+                                    fill
+                                    className="object-cover transition-all duration-1000"
+                                />
+                            </motion.div>
+                        </div>
+
                         <div>
-                            <span className="inline-block px-4 py-1.5 border border-zinc-200 rounded-full text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 mb-8">
-                                The Void
+                            <span className="inline-block px-4 py-1.5 border border-zinc-200 rounded-full text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 mb-6">
+                                The Need
                             </span>
-                            <h2 className="text-5xl md:text-6xl font-black uppercase italic leading-[0.9] mb-10 text-zinc-900">
-                                A Strategic <br />
-                                Intelligence <span className="text-[#00A651]">Platform.</span>
+                            <h2 className="text-4xl md:text-xl lg:text-4xl font-black uppercase italic leading-[0.9] mb-8 text-zinc-900">
+                                A Strategic  <br />
+                                Intelligence Platform for  <span className="text-[#00A651]">India’s Energy Future..</span>
                             </h2>
-                            <p className="text-xl text-zinc-600 leading-relaxed mb-8 font-serif">
-                                India’s energy transition is not a single narrative—it is a convergence of technologies, markets, and policies that must evolve in harmony.
+                            <p className="text-lg md:text-xl text-zinc-600 leading-relaxed mb-6 font-serif">
+                                India’s energy transition is not a single narrative—it is a convergence of technologies, markets, and policies that must evolve in harmony. The pace and scale of this transformation demand more than coverage; they demand strategic intelligence.
                             </p>
-                            <p className="text-lg text-zinc-500 leading-relaxed mb-10">
-                                <strong>ENERGDIVE</strong> is designed to fill this critical void. Conceived as India’s foremost Strategic Intelligence Platform, it will unify diverse stakeholders on one credible and data-driven platform.
+                            <p className="text-base text-zinc-500 leading-relaxed mb-8">
+                                <strong className="text-[#00A651]">ENERGDIVE</strong> is designed to fill this critical void. Conceived as India’s foremost Strategic Intelligence Platform, it will unify diverse stakeholders—ministries, PSUs, industry leaders, investors, and global institutions—on one credible and data-driven platform.
+                            </p>
+                            <p className="text-base text-zinc-500 leading-relaxed mb-8">
+                                Its mission is to transform information into intelligence, insight into influence, and influence into impact. By curating high-quality thought leadership and evidence-based dialogue, ENERGDIVE will empower decision-makers to translate ambition into action
                             </p>
                             <div className="flex items-center gap-4">
                                 <div className="h-[2px] w-12 bg-[#00A651]" />
-                                <span className="text-xs font-bold uppercase tracking-widest text-[#00A651]">Mission: Transform Information into Impact</span>
+                                <span className="text-xs font-bold uppercase tracking-widest text-[#00A651]">Anchored in India’s national vision for sustainable and inclusive growth.</span>
                             </div>
                         </div>
                     </div>
                 </section>
-
                 <div className="mt-[120px]">
                     <PublicationShowcase />
                 </div>
