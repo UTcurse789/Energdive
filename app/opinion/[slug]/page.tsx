@@ -131,7 +131,7 @@
 
 
 import { notFound } from "next/navigation";
-import { OpinionContent } from "./opinion-content";
+import OpinionContent from "./opinion-content";
 
 const STRAPI = process.env.NEXT_PUBLIC_STRAPI_URL;
 
@@ -160,18 +160,24 @@ export default async function OpinionDetailPage({ params }: { params: Promise<{ 
 
   const recommendedRaw = await getRecommended(slug);
 
+  // page.tsx mein mapping thodi safe kar dete hain
   const opinion = {
     id: article.id,
-    title: article.Title,
-    excerpt: article?.Excerpt?.[0]?.children?.[0]?.text || "",
-    content: article?.Content || [],
+    // Agar Strapi v4 use kar rahe ho toh article.attributes.Title ho sakta hai
+    title: article.Title || article.attributes?.Title,
+    excerpt: article?.Excerpt?.[0]?.children?.[0]?.text || article.attributes?.Excerpt?.[0]?.children?.[0]?.text || "",
+    content: article?.Content || article.attributes?.Content || [],
     category: "Strategic Opinion",
     readTime: "6 min read",
-    featuredImage: article?.FeaturedImage?.url ? `${STRAPI}${article.FeaturedImage.url}` : "/placeholder.jpg",
+    featuredImage: (article.FeaturedImage?.url || article.attributes?.FeaturedImage?.data?.attributes?.url)
+      ? `${STRAPI}${article.FeaturedImage?.url || article.attributes?.FeaturedImage?.data?.attributes?.url}`
+      : "/placeholder.jpg",
     author: {
-      name: article?.author?.name || "Editorial Staff",
-      role: article?.author?.designation || "Senior Analyst",
-      avatar: article?.author?.avatar?.url ? `${STRAPI}${article.author.avatar.url}` : "/placeholder.jpg",
+      name: article?.author?.name || article.attributes?.author?.data?.attributes?.name || "Editorial Staff",
+      role: article?.author?.designation || article.attributes?.author?.data?.attributes?.designation || "Senior Analyst",
+      avatar: (article?.author?.avatar?.url || article.attributes?.author?.data?.attributes?.avatar?.data?.attributes?.url)
+        ? `${STRAPI}${article?.author?.avatar?.url || article.attributes?.author?.data?.attributes?.avatar?.data?.attributes?.url}`
+        : "/placeholder.jpg",
     }
   };
 

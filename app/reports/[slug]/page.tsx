@@ -404,7 +404,7 @@ export default async function IntelligenceReportPage({ params }: { params: Promi
                                 {/* Green top bar */}
                                 <div className="h-[3px] w-full bg-gradient-to-r from-[#00A651] via-emerald-300 to-[#00A651]" />
 
-                                <div className="absolute inset-0 bg-linear-to-r from-white via-white/50 to-transparent pointer-events-none" />
+                                {/* <div className="absolute inset-0 bg-linear-to-r from-white via-white/50 to-transparent pointer-events-none" /> */}
                                 <div className="absolute -bottom-10 -left-10 w-36 h-36 bg-emerald-500/5 rounded-full blur-2xl pointer-events-none" />
 
                                 <div className="relative z-10 p-7">
@@ -543,7 +543,7 @@ export default async function IntelligenceReportPage({ params }: { params: Promi
                             </div>
 
                             {/* Bottom CTA */}
-                            <div className="border-t border-zinc-200 pt-12 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+                            {/* <div className="border-t border-zinc-200 pt-12 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
                                 <div>
                                     <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-1">Full Document</p>
                                     <p className="text-sm font-bold text-zinc-700">Download the complete whitepaper</p>
@@ -554,7 +554,7 @@ export default async function IntelligenceReportPage({ params }: { params: Promi
                                         Download PDF
                                     </button>
                                 </a>
-                            </div>
+                            </div> */}
 
                         </article>
 

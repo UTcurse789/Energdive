@@ -1,103 +1,127 @@
 [
   {
     "endpoint": "Homepage",
-    "url": "http://localhost:3000/",
+    "url": "http://206.189.132.187:3000/",
     "connections": 100,
     "duration": 5,
-    "requests_total": 0,
-    "requests_per_sec": 0,
-    "latency_p50_ms": 0,
-    "latency_p99_ms": 0,
-    "latency_avg_ms": 0,
-    "throughput_mb_per_sec": 0,
+    "requests_total": 74,
+    "requests_per_sec": 15,
+    "latency_p50_ms": 3316,
+    "latency_p99_ms": 5021,
+    "latency_avg_ms": 3336,
+    "throughput_mb_per_sec": 3,
     "errors": 0,
     "timeouts": 0,
     "non2xx": 0,
-    "statusCodes": {}
+    "statusCodes": {
+      "200": {
+        "count": 74
+      }
+    }
   },
   {
     "endpoint": "Reports Page",
-    "url": "http://localhost:3000/reports",
+    "url": "http://206.189.132.187:3000/reports",
     "connections": 100,
     "duration": 5,
-    "requests_total": 0,
-    "requests_per_sec": 0,
-    "latency_p50_ms": 0,
-    "latency_p99_ms": 0,
-    "latency_avg_ms": 0,
-    "throughput_mb_per_sec": 0,
+    "requests_total": 112,
+    "requests_per_sec": 22,
+    "latency_p50_ms": 3305,
+    "latency_p99_ms": 4994,
+    "latency_avg_ms": 3253,
+    "throughput_mb_per_sec": 0.72,
     "errors": 0,
     "timeouts": 0,
     "non2xx": 0,
-    "statusCodes": {}
+    "statusCodes": {
+      "200": {
+        "count": 112
+      }
+    }
   },
   {
     "endpoint": "News Page",
-    "url": "http://localhost:3000/news",
+    "url": "http://206.189.132.187:3000/news",
     "connections": 100,
     "duration": 5,
-    "requests_total": 0,
-    "requests_per_sec": 0,
-    "latency_p50_ms": 0,
-    "latency_p99_ms": 0,
-    "latency_avg_ms": 0,
-    "throughput_mb_per_sec": 0,
+    "requests_total": 204,
+    "requests_per_sec": 41,
+    "latency_p50_ms": 1996,
+    "latency_p99_ms": 3510,
+    "latency_avg_ms": 1943,
+    "throughput_mb_per_sec": 1.22,
     "errors": 0,
     "timeouts": 0,
     "non2xx": 0,
-    "statusCodes": {}
+    "statusCodes": {
+      "200": {
+        "count": 204
+      }
+    }
   },
   {
     "endpoint": "About Page",
-    "url": "http://localhost:3000/about",
+    "url": "http://206.189.132.187:3000/about",
     "connections": 100,
     "duration": 5,
-    "requests_total": 0,
-    "requests_per_sec": 0,
-    "latency_p50_ms": 0,
-    "latency_p99_ms": 0,
-    "latency_avg_ms": 0,
-    "throughput_mb_per_sec": 0,
+    "requests_total": 184,
+    "requests_per_sec": 37,
+    "latency_p50_ms": 2097,
+    "latency_p99_ms": 3410,
+    "latency_avg_ms": 2145,
+    "throughput_mb_per_sec": 1.88,
     "errors": 0,
     "timeouts": 0,
     "non2xx": 0,
-    "statusCodes": {}
+    "statusCodes": {
+      "200": {
+        "count": 184
+      }
+    }
   },
   {
     "endpoint": "API /content",
-    "url": "http://localhost:3000/api/content?page=1",
+    "url": "http://206.189.132.187:3000/api/content?page=1",
     "connections": 100,
     "duration": 5,
-    "requests_total": 0,
-    "requests_per_sec": 0,
-    "latency_p50_ms": 0,
-    "latency_p99_ms": 0,
-    "latency_avg_ms": 0,
-    "throughput_mb_per_sec": 0,
+    "requests_total": 223,
+    "requests_per_sec": 45,
+    "latency_p50_ms": 1830,
+    "latency_p99_ms": 3397,
+    "latency_avg_ms": 1843,
+    "throughput_mb_per_sec": 5.7,
     "errors": 0,
     "timeouts": 0,
     "non2xx": 0,
-    "statusCodes": {}
+    "statusCodes": {
+      "200": {
+        "count": 223
+      }
+    }
   },
   {
     "endpoint": "Homepage",
-    "url": "http://localhost:3000/",
+    "url": "http://206.189.132.187:3000/",
     "connections": 200,
     "duration": 5,
-    "requests_total": 0,
-    "requests_per_sec": 0,
-    "latency_p50_ms": 0,
-    "latency_p99_ms": 0,
-    "latency_avg_ms": 0,
-    "throughput_mb_per_sec": 0,
+    "requests_total": 78,
+    "requests_per_sec": 16,
+    "latency_p50_ms": 3277,
+    "latency_p99_ms": 4959,
+    "latency_avg_ms": 3269,
+    "throughput_mb_per_sec": 3.16,
     "errors": 0,
     "timeouts": 0,
     "non2xx": 0,
-    "statusCodes": {}
+    "statusCodes": {
+      "200": {
+        "count": 78
+      }
+    }
   },
   {
     "endpoint": "Reports Page",
-    "url": "http://localhost:3000/reports",
+    "url": "http://206.189.132.187:3000/reports",
     "connections": 200,
     "duration": 5,
     "requests_total": 0,
@@ -113,50 +137,62 @@
   },
   {
     "endpoint": "News Page",
-    "url": "http://localhost:3000/news",
+    "url": "http://206.189.132.187:3000/news",
     "connections": 200,
     "duration": 5,
-    "requests_total": 0,
-    "requests_per_sec": 0,
-    "latency_p50_ms": 0,
-    "latency_p99_ms": 0,
-    "latency_avg_ms": 0,
-    "throughput_mb_per_sec": 0,
-    "errors": 14952,
+    "requests_total": 25,
+    "requests_per_sec": 5,
+    "latency_p50_ms": 4528,
+    "latency_p99_ms": 5010,
+    "latency_avg_ms": 4556,
+    "throughput_mb_per_sec": 0.15,
+    "errors": 0,
     "timeouts": 0,
     "non2xx": 0,
-    "statusCodes": {}
+    "statusCodes": {
+      "200": {
+        "count": 25
+      }
+    }
   },
   {
     "endpoint": "About Page",
-    "url": "http://localhost:3000/about",
+    "url": "http://206.189.132.187:3000/about",
     "connections": 200,
     "duration": 5,
-    "requests_total": 0,
-    "requests_per_sec": 0,
-    "latency_p50_ms": 0,
-    "latency_p99_ms": 0,
-    "latency_avg_ms": 0,
-    "throughput_mb_per_sec": 0,
-    "errors": 13231,
+    "requests_total": 97,
+    "requests_per_sec": 19,
+    "latency_p50_ms": 3992,
+    "latency_p99_ms": 5008,
+    "latency_avg_ms": 3903,
+    "throughput_mb_per_sec": 0.99,
+    "errors": 0,
     "timeouts": 0,
     "non2xx": 0,
-    "statusCodes": {}
+    "statusCodes": {
+      "200": {
+        "count": 97
+      }
+    }
   },
   {
     "endpoint": "API /content",
-    "url": "http://localhost:3000/api/content?page=1",
+    "url": "http://206.189.132.187:3000/api/content?page=1",
     "connections": 200,
     "duration": 5,
-    "requests_total": 0,
-    "requests_per_sec": 0,
-    "latency_p50_ms": 0,
-    "latency_p99_ms": 0,
-    "latency_avg_ms": 0,
-    "throughput_mb_per_sec": 0,
-    "errors": 13855,
+    "requests_total": 124,
+    "requests_per_sec": 25,
+    "latency_p50_ms": 3905,
+    "latency_p99_ms": 4996,
+    "latency_avg_ms": 3830,
+    "throughput_mb_per_sec": 3.17,
+    "errors": 0,
     "timeouts": 0,
     "non2xx": 0,
-    "statusCodes": {}
+    "statusCodes": {
+      "200": {
+        "count": 124
+      }
+    }
   }
 ]

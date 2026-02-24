@@ -109,7 +109,7 @@ export default function OpinionPage() {
         <div className="container mx-auto px-4 sm:px-6 lg:px-12 pt-12 sm:pt-20">
 
           {/* GRID */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-y-12 sm:gap-y-20 gap-x-8 sm:gap-x-12">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-y-12 sm:gap-y-20 gap-x-8 sm:gap-x-12">
             {opinions.map((opinion) => (
               <motion.div
                 key={opinion.id}
@@ -151,7 +151,7 @@ export default function OpinionPage() {
                   </div>
 
                   <Link href={`/opinion/${opinion.slug}`}>
-                    <h3 className="font-serif font-bold text-3xl leading-[1.1] group-hover:text-[#00A651] mb-6">
+                    <h3 className="font-serif font-bold text-2xl leading-[1.1] group-hover:text-[#00A651] mb-6">
                       {opinion.title}
                     </h3>
                   </Link>
