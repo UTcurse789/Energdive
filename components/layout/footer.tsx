@@ -27,7 +27,7 @@ const SECTORS = [
     { name: "Distribution", href: "/sectors/distribution" },
     { name: "Electricity Markets", href: "/sectors/electricity-markets" },
     { name: "Energy Storage", href: "/sectors/energy-storage" },
-    { name: "Sustainability", href: "/sectors/sustainability" },
+    { name: "Sustainability & Safety", href: "/sectors/sustainability-and-safety" },
 ];
 
 const QUICK_LINKS = [

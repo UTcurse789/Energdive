@@ -14,7 +14,8 @@ import { formatContentDate } from "@/lib/date";
 
 const STRAPI_BASE = "http://206.189.132.187:1337";
 
-const ALLOWED_SECTORS = ["Oil & Gas", "Power Generation", "New Energies", "Distribution"];
+const ALLOWED_SECTORS = ["Oil & Gas", "Power Generation", "New Energies", "Sustainability & Safety"];
+
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -107,14 +108,15 @@ export default async function Home() {
       const articles = allContents
         .filter((article: any) =>
           article.sectors?.some((s: any) => s.name === sectorName) &&
-          article.type_of_content?.name === "Articles"
+          article.type_of_content?.name === "Articles" &&
+          article.featured_in_sector === true
         )
         .slice(0, 4)
         .map((article: any) => mapArticle(article, sectorName));
 
       return {
         title: sectorName,
-        slug: sectorName.toLowerCase().replace(/ & /g, "-").replace(/ /g, "-"),
+        slug: sectorName.toLowerCase().replace(/ & /g, "-and-").replace(/ /g, "-"),
         articles,
       };
     }).filter((s) => s.articles.length > 0)
@@ -157,6 +159,17 @@ export default async function Home() {
               articles={sector.articles}
             />
           ))}
+
+          {/* View All Sectors Button */}
+          <div className="flex justify-center py-12">
+            <a
+              href="/sectors"
+              className="group inline-flex items-center gap-3 px-8 py-4 bg-[#09B697] text-white text-[12px] font-black uppercase tracking-[0.2em] rounded-full hover:bg-[#078a72] transition-all duration-300 shadow-lg shadow-[#09B697]/20 hover:shadow-xl hover:shadow-[#09B697]/30 hover:-translate-y-0.5"
+            >
+              View All Sectors
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="transition-transform duration-300 group-hover:translate-x-1"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg>
+            </a>
+          </div>
         </div>
       </div>
 
