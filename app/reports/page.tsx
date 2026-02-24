@@ -5,6 +5,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
 import { ArrowUpRight, Clock, Search } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Header } from "@/components/layout/header";
 
 const STRAPI = process.env.NEXT_PUBLIC_STRAPI_URL;
 
@@ -28,6 +30,7 @@ function formatDate(dateStr: string) {
 
 export default function ReportsPage() {
   const [reports, setReports] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
 
@@ -46,8 +49,40 @@ export default function ReportsPage() {
         image: item?.FeaturedImage?.url ? `${STRAPI}${item.FeaturedImage.url}` : null,
       }));
       setReports(formatted);
+      setLoading(false);
     });
   }, []);
+
+  if (loading) return (
+    <div className="min-h-screen bg-[#FDFDFD]">
+      <Header />
+      <div className="pt-20">
+        <div className="w-full h-[70vh] bg-zinc-900 flex items-center px-6 lg:px-12">
+          <div className="max-w-4xl w-full">
+            <Skeleton className="h-24 w-3/4 mb-6 bg-white/20" />
+            <Skeleton className="h-8 w-1/2 bg-white/10" />
+          </div>
+        </div>
+        <div className="container mx-auto px-6 lg:px-12 py-20 mt-16">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="space-y-8">
+                <Skeleton className="aspect-[3/4] w-full rounded-2xl" />
+                <div className="space-y-4">
+                  <div className="flex gap-4">
+                    <Skeleton className="h-4 w-20" />
+                    <Skeleton className="h-4 w-20" />
+                  </div>
+                  <Skeleton className="h-10 w-full" />
+                  <Skeleton className="h-16 w-full" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 
   const filteredReports = useMemo(() => {
     return reports.filter((report) => {
@@ -139,7 +174,7 @@ export default function ReportsPage() {
                     className="flex flex-col h-full"
                   >
                     {/* IMAGE CONTAINER */}
-                    <div className="relative aspect-[3/4] bg-zinc-100 overflow-hidden rounded-2xl mb-8">
+                    <div className="relative aspect-3/4 bg-zinc-100 overflow-hidden rounded-2xl mb-8">
                       {report.image && (
                         <Image
                           src={report.image}

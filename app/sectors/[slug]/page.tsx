@@ -4,6 +4,8 @@ import React, { useState, useMemo, useEffect } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, ChevronRight, Clock, ArrowUpRight, Play } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Header } from "@/components/layout/header";
 import Image from "next/image";
 import Link from "next/link";
 import { TagBadge } from "@/components/ui/tag-badge";
@@ -200,6 +202,7 @@ export default function SectorIntelligencePage() {
     const [sectorInfo, setSectorInfo] = useState<any | null>(null);
     const [searchQuery, setSearchQuery] = useState("");
     const [activeTab, setActiveTab] = useState("ALL");
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         if (!slug) return;
@@ -240,8 +243,40 @@ export default function SectorIntelligencePage() {
                 tags: extractNames(item.tags),
             }));
             setVideos(formatted);
+            setLoading(false);
         });
     }, [slug]);
+
+    if (loading) return (
+        <div className="min-h-screen bg-[#fafafa]">
+            <Header />
+            <div className="w-full h-[62vh] bg-black relative flex items-center px-6 lg:px-16">
+                <div className="max-w-[1400px] w-full">
+                    <Skeleton className="h-4 w-48 mb-10 bg-white/20 rounded-full" />
+                    <Skeleton className="h-24 w-3/4 mb-7 bg-white/10" />
+                    <Skeleton className="h-6 w-1/2 mb-10 bg-white/5" />
+                    <div className="flex gap-4">
+                        <Skeleton className="h-10 w-32 rounded-full bg-white/10" />
+                        <Skeleton className="h-10 w-32 rounded-full bg-white/10" />
+                    </div>
+                </div>
+            </div>
+            <div className="container mx-auto px-6 lg:px-16 py-20">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
+                    {[...Array(6)].map((_, i) => (
+                        <div key={i} className="space-y-6">
+                            <Skeleton className="aspect-16/10 w-full rounded-2xl" />
+                            <div className="space-y-4">
+                                <Skeleton className="h-4 w-24" />
+                                <Skeleton className="h-10 w-full" />
+                                <Skeleton className="h-16 w-full" />
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </div>
+    );
 
     const sectorMeta = useMemo(() => {
         const fallbackTitle = slug?.replaceAll("-", " ").replace(/\b\w/g, (c) => c.toUpperCase());

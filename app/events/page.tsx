@@ -9,6 +9,7 @@ import { MapPin, Clock, ArrowUpRight, Navigation, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { BlocksRenderer } from "@strapi/blocks-react-renderer";
 import { DateChip } from "@/components/ui/date-chip";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function EventsPage() {
     const [events, setEvents] = useState<any[]>([]);
@@ -45,8 +46,37 @@ export default function EventsPage() {
 
     if (loading) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-white">
-                <Loader2 className="animate-spin text-[#00A651]" size={40} />
+            <div className="min-h-screen bg-[#FDFDFD]">
+                <Header />
+                <div className="pt-10">
+                    <section className="container mx-auto px-6 lg:px-12 mb-16">
+                        <Skeleton className="h-16 md:h-20 w-3/4 mb-6" />
+                        <Skeleton className="h-4 w-full max-w-2xl mb-2" />
+                        <Skeleton className="h-4 w-1/2 max-w-2xl" />
+                    </section>
+                    <div className="border-y border-zinc-100 py-6 mb-12">
+                        <div className="container mx-auto px-6 lg:px-12">
+                            <Skeleton className="h-10 w-64 rounded-full" />
+                        </div>
+                    </div>
+                    <div className="container mx-auto px-6 lg:px-12">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+                            {[...Array(6)].map((_, i) => (
+                                <div key={i} className="space-y-8 rounded-[2rem] border border-zinc-100 p-8">
+                                    <Skeleton className="aspect-video w-full rounded-2xl" />
+                                    <div className="space-y-4">
+                                        <Skeleton className="h-8 w-full" />
+                                        <Skeleton className="h-20 w-full" />
+                                        <div className="flex gap-4 pt-4 border-t">
+                                            <Skeleton className="h-4 w-24" />
+                                            <Skeleton className="h-4 w-24" />
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
             </div>
         );
     }

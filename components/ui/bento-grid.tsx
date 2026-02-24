@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import MagicBento from '../MagicBento';
 import { SectionHeading } from "./section-heading";
+import { cn } from "@/lib/utils";
 
 const STRAPI_BASE = "http://206.189.132.187:1337";
 const API_URL =
@@ -136,20 +137,8 @@ export function BentoGrid({ items: propItems, className }: BentoGridProps) {
     );
 
     return (
-        <section className={`py-24 bg-white relative overflow-hidden ${className || ""}`}>
-            <div
-                className="absolute inset-0 pointer-events-none opacity-[0.03]"
-                style={{
-                    backgroundImage: 'radial-gradient(#09B697 1px, transparent 1px)',
-                    backgroundSize: '32px 32px',
-                }}
-            />
-
-            <div className="container px-4 mx-auto relative z-10">
-                <div className="transition-all duration-1000 ease-in-out">
-                    <MagicBento {...bentoConfig} />
-                </div>
-            </div>
-        </section>
+        <div className={cn("transition-all duration-1000 ease-in-out", className)}>
+            <MagicBento {...bentoConfig} />
+        </div>
     );
 }

@@ -18,7 +18,8 @@ const STRAPI_BASE = "http://206.189.132.187:1337";
 function getImageUrl(article: any): string {
     const img = article.FeaturedImage;
     if (!img) return "/placeholder.jpg";
-    const url = img.formats?.large?.url || img.formats?.medium?.url || img.url;
+    // const url = img.formats?.large?.url || img.formats?.medium?.url || img.url;
+    const url = img.url
     return url.startsWith("http") ? url : `${STRAPI_BASE}${url}`;
 }
 
@@ -28,7 +29,11 @@ function getExcerpt(excerpt: any[]): string {
 
 
 
-export function Hero() {
+interface HeroProps {
+    topStories?: any[];
+}
+
+export function Hero({ topStories: propTopStories }: HeroProps) {
     const [coverStories, setCoverStories] = useState<any[]>([]);
     const [articles, setArticles] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -41,18 +46,23 @@ export function Hero() {
         fetch(`${STRAPI_BASE}/api/contents?filters[type_of_content][name][$contains]=Cover&populate=*&pagination[pageSize]=10`)
             .then((res) => res.json())
             .then((data) => setCoverStories(data?.data || []))
-            .catch(console.error);
-
-        // Featured content for Top Stories sidebar
-        fetch(`${STRAPI_BASE}/api/contents?filters[featured][$eq]=true&pagination[pageSize]=10&populate=*&sort=publishedAt:desc`)
-            .then((res) => res.json())
-            .then((data) => setArticles(data?.data || []))
             .catch(console.error)
-            .finally(() => setLoading(false));
-    }, []);
+            .finally(() => {
+                if (propTopStories) setLoading(false);
+            });
+
+        // If topStories is passed as prop, we don't need to fetch featured local content
+        if (!propTopStories) {
+            fetch(`${STRAPI_BASE}/api/contents?filters[featured][$eq]=true&pagination[pageSize]=10&populate=*&sort=publishedAt:desc`)
+                .then((res) => res.json())
+                .then((data) => setArticles(data?.data || []))
+                .catch(console.error)
+                .finally(() => setLoading(false));
+        }
+    }, [propTopStories]);
 
     const carouselArticles = coverStories;        // 👈 Cover stories in carousel
-    const topStories = articles.slice(0, 6);      // 👈 Featured in sidebar
+    const topStories = propTopStories || articles.slice(0, 6);
 
     const goToSlide = useCallback((index: number) => {
         if (isTransitioning || index === currentSlide) return;
@@ -97,6 +107,8 @@ export function Hero() {
                                 alt={featured.Title}
                                 fill
                                 priority
+                                quality={100}
+                                sizes="(max-width: 1024px) 100vw, 1200px"
                                 className={`object-cover transition-all duration-700 ${isTransitioning ? "opacity-40 scale-105" : "opacity-100 scale-100"
                                     } group-hover/img:scale-110`}
                             />
@@ -160,7 +172,7 @@ export function Hero() {
 
                             {/* Metadata Sidebar */}
                             <div className="md:col-span-1 border-l border-slate-100 pl-8 space-y-8">
-                                <div className="space-y-3">
+                                {/* <div className="space-y-3">
                                     <p className="text-[10px] font-black uppercase tracking-tighter text-slate-400">Author</p>
                                     <div className="flex items-center gap-3">
                                         <div className="w-12 h-12 rounded-full bg-[#1a4731] flex items-center justify-center text-white font-bold text-lg">
@@ -170,7 +182,7 @@ export function Hero() {
                                             {featured.author?.name || "Team EnergyDive"}
                                         </Link>
                                     </div>
-                                </div>
+                                </div> */}
                                 <div className="space-y-3">
                                     <p className="text-[10px] font-black uppercase tracking-tighter text-slate-400">Filed On</p>
                                     <DateChip value={formatContentDate(featured.Date || featured.createdAt)} />
@@ -220,6 +232,37 @@ export function Hero() {
     );
 }
 
+import { Skeleton } from "@/components/ui/skeleton";
+
 function HeroSkeleton() {
-    return <div className="container py-20 animate-pulse bg-slate-50 rounded-3xl h-[650px] mx-auto my-12" />;
+    return (
+        <section className="py-10 bg-white">
+            <div className="container mx-auto px-4">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+                    <div className="lg:col-span-8 flex flex-col">
+                        <Skeleton className="aspect-[16/8.5] w-full rounded-3xl" />
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mt-10">
+                            <div className="md:col-span-3 space-y-5">
+                                <Skeleton className="h-6 w-32" />
+                                <Skeleton className="h-12 w-full" />
+                                <Skeleton className="h-20 w-full" />
+                            </div>
+                        </div>
+                    </div>
+                    <div className="lg:col-span-4 lg:pl-10 space-y-8">
+                        <Skeleton className="h-8 w-full border-b pb-4" />
+                        {[...Array(5)].map((_, i) => (
+                            <div key={i} className="flex gap-5 pb-5 border-b last:border-0">
+                                <Skeleton className="h-10 w-10" />
+                                <div className="flex-1 space-y-2">
+                                    <Skeleton className="h-3 w-24" />
+                                    <Skeleton className="h-5 w-full" />
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+        </section>
+    );
 }

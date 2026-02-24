@@ -79,10 +79,10 @@ async function getAllContents() {
 export default async function Home() {
   const allContents = await getAllContents();
 
-  // ── Bento: random 6 from all news ──
+  // ── Bento: Random 6 from Featured Contents (Swapped from Hero Sidebar) ──
   const finalBentoItems = allContents
     ? allContents
-      .filter((a: any) => a.type_of_content?.name === "News")
+      .filter((a: any) => a.featured === true)
       .map((article: any) => ({
         id: article.id,
         title: article.Title || "",
@@ -101,6 +101,14 @@ export default async function Home() {
       slug: a.slug,
       excerpt: a.excerpt,
     }));
+
+  // ── Hero Sidebar: Random 6 from All News (Swapped from Bento) ──
+  const heroTopStories = allContents
+    ? allContents
+      .filter((a: any) => a.type_of_content?.name === "News")
+      .sort(() => Math.random() - 0.5)
+      .slice(0, 6)
+    : [];
 
   // ── Sectors: group by allowed sectors — ONLY Articles ──
   const sectorsWithArticles = allContents
@@ -125,10 +133,10 @@ export default async function Home() {
   return (
     <>
       {/* Cover Story (left) + Trending (right) — the original Hero */}
-      <Hero />
+      <Hero topStories={heroTopStories} />
 
-      {/* News Bento */}
-      <section className="py-24 bg-white relative overflow-hidden">
+      {/* Featured Bento */}
+      <section className="py-12 bg-white relative overflow-hidden">
         <div
           className="absolute inset-0 pointer-events-none opacity-[0.03]"
           style={{
@@ -138,15 +146,17 @@ export default async function Home() {
         />
         <div className="container px-4 mx-auto relative z-10 max-w-[1400px]">
           <SectionHeading
-            title="News"
-            linkText="Explore All News"
+            title="Featured"
+            linkText="Explore All"
             linkHref="/news"
           />
-          <div className="mt-8">
+          <div className="-mt-6">
             <BentoGrid items={finalBentoItems} />
           </div>
         </div>
       </section>
+
+      <OpinionSection />
 
       {/* Sector Blocks */}
       <div className="border-b border-border">
@@ -173,7 +183,7 @@ export default async function Home() {
         </div>
       </div>
 
-      <OpinionSection />
+
       <HomepageVideos />
       <PublicationShowcase variant="compact" />
       <EventsSection />

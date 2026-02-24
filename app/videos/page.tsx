@@ -5,6 +5,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Play, Eye, Calendar, Filter, Loader2 } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Header } from "@/components/layout/header";
 import { slugify } from "@/lib/utils";
 
 // --- Types for our mapped data ---
@@ -83,12 +85,55 @@ export default function VideosPage() {
 
     if (loading) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-white">
-                <div className="flex flex-col items-center gap-4">
-                    <Loader2 className="animate-spin text-teal-600" size={40} />
-                    <p className="text-gray-500 font-medium">Loading Video Library...</p>
+            <main className="min-h-screen bg-gray-50 pb-20">
+                <Header />
+                <div className="mx-auto px-6 max-w-[1440px]">
+                    {/* Header Skeleton */}
+                    <div className="text-center pt-16 pb-12">
+                        <Skeleton className="h-16 md:h-20 w-48 mx-auto mb-6" />
+                        <Skeleton className="h-6 w-full max-w-2xl mx-auto mb-2" />
+                        <Skeleton className="h-6 w-1/2 mx-auto" />
+                    </div>
+
+                    {/* Featured Video Skeleton */}
+                    <div className="py-8">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 bg-white rounded-3xl overflow-hidden border border-gray-100">
+                            <Skeleton className="aspect-video lg:aspect-auto min-h-[400px] w-full" />
+                            <div className="p-10 space-y-6">
+                                <Skeleton className="h-6 w-24 rounded-full" />
+                                <Skeleton className="h-12 w-full" />
+                                <Skeleton className="h-24 w-full" />
+                                <Skeleton className="h-4 w-32 border-t pt-6" />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Filter Skeleton */}
+                    <div className="py-12 flex flex-col md:flex-row justify-between gap-6">
+                        <Skeleton className="h-6 w-32" />
+                        <div className="flex gap-2">
+                            {[...Array(5)].map((_, i) => (
+                                <Skeleton key={i} className="h-10 w-24 rounded-full" />
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Grid Skeleton */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+                        {[...Array(6)].map((_, i) => (
+                            <div key={i} className="bg-white rounded-2xl border border-gray-100 p-6 space-y-6">
+                                <Skeleton className="aspect-video w-full rounded-xl" />
+                                <div className="space-y-4">
+                                    <Skeleton className="h-4 w-24" />
+                                    <Skeleton className="h-8 w-full" />
+                                    <Skeleton className="h-12 w-full" />
+                                    <Skeleton className="h-4 w-24 border-t pt-4" />
+                                </div>
+                            </div>
+                        ))}
+                    </div>
                 </div>
-            </div>
+            </main>
         );
     }
 
