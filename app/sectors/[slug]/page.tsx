@@ -317,12 +317,12 @@ export default function SectorIntelligencePage() {
                     src={sectorMeta.heroImage}
                     alt={sectorMeta.title}
                     fill
-                    className="object-cover opacity-45 scale-[1.06]"
+                    className="object-cover opacity-60 scale-[1.06]"
                 />
-                <div className="absolute inset-0 bg-linear-to-r from-black/88 via-black/62 to-black/35" />
-                <div className="absolute inset-0 bg-linear-to-t from-black/90 via-transparent to-transparent" />
+                <div className="absolute inset-0 bg-linear-to-r from-black/72 via-black/48 to-black/22" />
+                <div className="absolute inset-0 bg-linear-to-t from-black/72 via-black/8 to-transparent" />
                 <div
-                    className="absolute inset-0 opacity-20"
+                    className="absolute inset-0 opacity-14"
                     style={{
                         backgroundImage:
                             "linear-gradient(to right, rgba(255,255,255,0.08) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.08) 1px, transparent 1px)",
