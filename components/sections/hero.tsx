@@ -184,7 +184,7 @@ export function Hero({ topStories: propTopStories }: HeroProps) {
                                     </div>
                                 </div> */}
                                 <div className="space-y-3">
-                                    <p className="text-[10px] font-black uppercase tracking-tighter text-slate-400">Filed On</p>
+                                    <p className="text-[10px] font-black uppercase tracking-tighter text-slate-400">Publised on</p>
                                     <DateChip value={formatContentDate(featured.Date || featured.createdAt)} />
                                 </div>
                             </div>

@@ -123,7 +123,7 @@ export default function SectorsPage() {
             </section>
 
             {/* ── Sectors Grid ── */}
-            <section className="container mx-auto mt-15 mb-15 px-6 lg:px-16 max-w-[1400px] py-20">
+            <section className="container mx-auto mt-20 mb-32 px-6 lg:px-16 max-w-[1400px] py-20">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                     {MAIN_SECTORS.map((sector) => (
                         <Link key={sector.slug} href={`/sectors/${sector.slug}`} className="group relative bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300">
