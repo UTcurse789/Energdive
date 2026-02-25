@@ -11,6 +11,7 @@ import { SectionHeading } from "@/components/ui/section-heading";
 import { MarketTicker } from "@/components/features/ticker";
 import { Article } from "@/types";
 import { formatContentDate } from "@/lib/date";
+import { Publication2 } from "@/components/sections/publication2";
 
 const STRAPI_BASE = "http://206.189.132.187:1337";
 
@@ -193,7 +194,7 @@ export default async function Home() {
 
 
       <HomepageVideos />
-      <PublicationShowcase variant="compact" />
+      <Publication2 variant="compact" />
       <EventsSection />
     </>
   );

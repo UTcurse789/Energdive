@@ -42,7 +42,7 @@ export function ArticleCard({ article, className, variant = "vertical" }: Articl
                 {/* Content */}
                 <div className={cn("flex flex-col flex-1", variant === "horizontal" && "md:w-2/3")}>
                     <div className="flex items-center gap-2 mb-2">
-                        <span className="text-xs font-bold text-primary tracking-wider uppercase">
+                        <span className="text-xs text-[#00BFA5] font-bold  tracking-wider uppercase">
                             {article.category}
                         </span>
                         <span className="text-xs text-muted-foreground">•</span>

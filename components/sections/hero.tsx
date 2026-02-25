@@ -196,7 +196,7 @@ export function Hero({ topStories: propTopStories }: HeroProps) {
                         <div className="flex items-center justify-between mb-8 pb-4 border-b border-slate-100">
                             <h3 className="text-sm font-black uppercase tracking-[0.2em] text-[#1a1a1a] flex items-center gap-2">
                                 <span className="w-2 h-2 rounded-full bg-red-600 animate-pulse" />
-                                Top Stories
+                                Latest News
                             </h3>
                             <Link href="/news" className="text-[10px] font-black text-[#1a4731] flex items-center gap-1 hover:text-[#09B697] transition-colors">
                                 EXPLORE <ArrowRight size={12} />
