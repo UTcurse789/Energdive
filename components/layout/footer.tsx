@@ -196,22 +196,7 @@ export function Footer() {
                     </div>
 
                     {/* Contact */}
-                    <div className="lg:col-span-2">
-                        <h4 className="text-[10px] font-black uppercase tracking-[0.15em] text-gray-500 mb-5 pb-2 border-b border-white/[0.06]">Get in Touch</h4>
-                        <ul className="space-y-3">
-                            <li className="flex items-start gap-2.5">
-                                <MapPin size={13} className="text-gray-600 mt-0.5 shrink-0" />
-                                <span className="text-[13px] text-gray-500 leading-relaxed">Sector 12A, Dwarka, New Delhi 110075</span>
-                            </li>
-                            <li>
-                                {/* Hydration Fix: Hardcoded email matches client and server */}
-                                <a href="mailto:contact@energdive.com" className="flex items-center gap-2.5 text-[13px] text-gray-500 hover:text-white transition-colors">
-                                    <Mail size={13} className="text-gray-600 shrink-0" />
-                                    contact@energdive.com
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
+
                 </div>
 
                 {/* ─── Bottom Bar ─── */}
