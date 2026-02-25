@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import MagicBento from '../MagicBento';
-import { SectionHeading } from "./section-heading";
 import { cn } from "@/lib/utils";
 
 const STRAPI_BASE = "http://206.189.132.187:1337";
@@ -23,6 +22,8 @@ export interface BentoItem {
     image: string;
     slug: string;
     excerpt: string;
+    description?: string;
+    label?: string;
 }
 
 interface BentoGridProps {
@@ -55,17 +56,14 @@ function extractExcerpt(article: any): string {
 }
 
 export function BentoGrid({ items: propItems, className }: BentoGridProps) {
-    /** * FIX 1: Ensure 'image' and 'slug' are explicitly included.
-     * Some MagicBento implementations look for 'description' instead of 'excerpt'.
-     */
     const formatBentoItem = (item: any) => ({
         ...item,
         title: item.title,
         description: item.excerpt || item.description || "",
         label: item.category || item.label || "Energy",
-        image: item.image, // CRITICAL: Ensure image URL is passed
-        slug: item.slug,   // CRITICAL: Ensure slug is passed for linking
-        href: `/news/${item.slug}`, // Extra helper for some MagicBento link logic
+        image: item.image,
+        slug: item.slug,
+        href: `/news/${item.slug}`,
         color: item.color || "#060010",
     });
 
@@ -114,7 +112,6 @@ export function BentoGrid({ items: propItems, className }: BentoGridProps) {
         fetchAndRandomize();
     }, [propItems]);
 
-    // Shared MagicBento Config
     const bentoConfig = {
         items,
         textAutoHide: true,
@@ -128,17 +125,34 @@ export function BentoGrid({ items: propItems, className }: BentoGridProps) {
         particleCount: 12,
         glowColor: "9, 182, 151",
         disableAnimations: false,
+        // Passing image fit classes if the component supports it
+        imgClassName: "object-cover w-full h-full block",
     };
 
     if (loading) return (
-        <div className="container mx-auto px-4 py-20">
-            <div className="h-[600px] bg-slate-50 animate-pulse rounded-3xl w-full" />
+        <div className="container mx-auto px-4 py-20 flex justify-center">
+            <div className="h-[600px] max-w-7xl bg-slate-100 animate-pulse rounded-3xl w-full" />
         </div>
     );
 
     return (
-        <div className={cn("transition-all duration-1000 ease-in-out", className)}>
-            <MagicBento {...bentoConfig} />
-        </div>
+        <section className={cn("w-full py-12 flex flex-col items-center justify-center", className)}>
+            {/* CSS Hack to ensure images fill their parent blocks within MagicBento */}
+            <style jsx global>{`
+                .magic-bento-container img, 
+                [data-bento-grid] img {
+                    object-fit: cover !important;
+                    width: 100% !important;
+                    height: 100% !important;
+                    display: block !important;
+                }
+            `}</style>
+
+            <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="w-full transition-all duration-1000 ease-in-out">
+                    <MagicBento {...bentoConfig} />
+                </div>
+            </div>
+        </section>
     );
 }

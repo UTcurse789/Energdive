@@ -8,7 +8,7 @@ import {
     MapPin,
     ArrowRight,
     Send,
-    Twitter,
+    X,
     Linkedin,
     Youtube,
     Instagram,
@@ -38,11 +38,11 @@ const COMPANY = [
 ];
 
 const SOCIAL_ICONS = [
-    { Icon: Twitter, href: "#", label: "Twitter" },
-    { Icon: Linkedin, href: "#", label: "LinkedIn" },
-    { Icon: Youtube, href: "#", label: "YouTube" },
-    { Icon: Instagram, href: "#", label: "Instagram" },
-    { Icon: Facebook, href: "#", label: "Facebook" },
+    { Icon: X, href: "https://x.com/energdive", label: "Twitter" },
+    { Icon: Linkedin, href: "https://www.linkedin.com/company/energdive/", label: "LinkedIn" },
+    { Icon: Youtube, href: "https://www.youtube.com/@energdive", label: "YouTube" },
+    { Icon: Instagram, href: "https://www.instagram.com/energdiveindia", label: "Instagram" },
+    { Icon: Facebook, href: "https://www.facebook.com/energdive/", label: "Facebook" },
 ];
 
 const SECTOR_ORDER = [
@@ -217,7 +217,7 @@ export function Footer() {
                 {/* ─── Bottom Bar ─── */}
                 <div className="flex flex-col md:flex-row justify-between items-center gap-4 py-6 border-t border-white/[0.06]">
                     <p className="text-[11px] text-gray-600">
-                        &copy; <span>{year}</span> EnergDive. All rights reserved. Published by ClariSector Technologies Pvt. Ltd.
+                        &copy; <span>{year}</span> EnergDive. All rights reserved.
                     </p>
                     <div className="flex items-center gap-5">
                         <Link href="/terms" className="text-[11px] text-gray-600 hover:text-gray-400 transition-colors">Terms</Link>

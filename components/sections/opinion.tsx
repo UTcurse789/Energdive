@@ -101,7 +101,7 @@ export function OpinionSection() {
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-20 items-center mt-12 group">
                     {/* Image Column */}
                     <div className="lg:col-span-4 flex justify-center lg:justify-start">
-                        <div className="relative w-full aspect-square max-w-[400px] border border-zinc-800 p-2 bg-white transition-transform duration-500 group-hover:scale-[1.02]">
+                        <div className="relative w-full h-[500px] max-w-[400px] border border-zinc-800 p-2 bg-white transition-transform duration-500 group-hover:scale-[1.02]">
                             <div className="relative w-full h-full overflow-hidden border border-zinc-200">
                                 <Image
                                     src={current.image}

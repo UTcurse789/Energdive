@@ -14,7 +14,7 @@ export function DateChip({ value, className }: DateChipProps) {
     if (!formatted) return null;
 
     return (
-        <span className={cn("inline-flex items-center gap-2 text-[#00BFA5] text-[11px] font-black uppercase tracking-[0.14em]", className)}>
+        <span className={cn("inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.14em]", className)}>
             <Clock3 size={14} className="shrink-0" />
             <span>{formatted}</span>
         </span>
