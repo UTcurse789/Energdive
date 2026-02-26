@@ -12,6 +12,10 @@ export default async function syncUserToBrevo(user: any) {
                     PHONE: user.phone || "",
                     ORGANISATION: user.organization || "",
                     JOB_TITLE: user.job_title || "",
+                    COMMUNITY: user.community || "",
+                    SUB_COMMUNITY: user.sub_community || "",
+                    INDUSTRY: user.industry || "",
+                    SUB_INDUSTRY: user.sub_industry || "",
                     SOURCE: "Portal"
                 },
                 updateEnabled: true
