@@ -16,7 +16,7 @@ export function SidebarSubscribe() {
                 <div className="mb-1 flex items-center gap-2">
                     <Mail className="h-4 w-4 text-teal-400" />
                     <span className="text-[10px] font-black uppercase tracking-[0.2em] text-teal-400">
-                        Daily Updates
+                        Regular Updates
                     </span>
                 </div>
 
@@ -40,7 +40,7 @@ export function SidebarSubscribe() {
                 </a>
 
                 <p className="mt-4 text-center text-[10px] text-gray-500">
-                    Free • No spam • Unsubscribe anytime
+                No spam • Unsubscribe anytime
                 </p>
             </div>
         </div>
