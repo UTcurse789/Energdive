@@ -73,10 +73,10 @@ export async function POST(req: Request) {
         // ── Sync to Brevo ──────────────────────────────────
         await syncUserToBrevo({
             ...fullUser,
-            COMMUNITY: (fullUser.communities || []).join(","),
-            SUB_COMMUNITY: (fullUser.sub_communities || []).join(","),
-            INDUSTRY: (fullUser.industries || []).join(","),
-            SUB_INDUSTRY: (fullUser.sub_industries || []).join(","),
+            COMMUNITY: fullUser.communities.join(","),
+            SUB_COMMUNITY: fullUser.sub_communities.join(","),
+            INDUSTRY: fullUser.industries.join(","),
+            SUB_INDUSTRY: fullUser.sub_industries.join(","),
         });
 
         console.log("✅ Full profile synced to Brevo");
