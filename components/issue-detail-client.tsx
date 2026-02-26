@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Issue } from "@/types";
 import { slugify } from "@/lib/utils";
 import { ScrollProgress } from "@/components/ui/scroll-progress";
+import { ShareButton } from "@/components/ui/share-button";
 
 interface IssueDetailClientProps {
     issue: Issue;
@@ -63,6 +64,13 @@ export function IssueDetailClient({ issue }: IssueDetailClientProps) {
                                     {issue.description}
                                 </p>
                             )}
+                            <div className="mt-6 flex justify-center md:justify-start">
+                                <ShareButton
+                                    title={`${issue.month} ${issue.year} Issue`}
+                                    text={issue.description}
+                                    className="text-gray-500 hover:text-teal-600 font-medium text-sm border border-gray-200 px-3 py-1.5 rounded-full bg-white hover:bg-gray-50 shadow-sm"
+                                />
+                            </div>
                         </div>
                     </div>
                 </div>

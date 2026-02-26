@@ -7,6 +7,7 @@ import { SidebarSubscribe } from "@/components/sidebar-subscribe";
 import { TagBadge } from "@/components/ui/tag-badge";
 import { ScrollProgress } from "@/components/ui/scroll-progress";
 import { DateChip } from "@/components/ui/date-chip";
+import { ShareButton } from "@/components/ui/share-button";
 import { ISSUES } from "@/data/dummy";
 import { ArrowRight, Calendar, ChevronRight } from "lucide-react";
 import { formatContentDate } from "@/lib/date";
@@ -117,12 +118,19 @@ export default async function ArticlePage(props: any) {
                     {/* ═══════════════ MAIN COLUMN ═══════════════ */}
                     <div className="lg:col-span-8">
 
-                        {/* Category + Date */}
-                        <div className="flex items-center gap-3 mb-5">
-                            <span className="inline-block bg-teal-50 text-teal-700 text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full">
-                                {article.category}
-                            </span>
-                            <DateChip value={article.date} />
+                        {/* Category + Date + Share */}
+                        <div className="flex items-center justify-between mb-5">
+                            <div className="flex items-center gap-3">
+                                <span className="inline-block bg-teal-50 text-teal-700 text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full">
+                                    {article.category}
+                                </span>
+                                <DateChip value={article.date} />
+                            </div>
+                            <ShareButton
+                                title={article.title}
+                                text={article.excerpt}
+                                className="text-gray-500 hover:text-teal-600 font-medium text-sm border border-gray-200 px-3 py-1.5 rounded-full bg-white hover:bg-gray-50 shadow-sm"
+                            />
                         </div>
 
                         {/* Title */}

@@ -10,6 +10,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { TagBadge } from "@/components/ui/tag-badge";
 import { DateChip } from "@/components/ui/date-chip";
+import { ShareButton } from "@/components/ui/share-button";
 import { formatContentDate } from "@/lib/date";
 
 /* ================================
@@ -360,17 +361,30 @@ export default function SectorIntelligencePage() {
                 />
 
                 <div className="container mx-auto px-6 lg:px-16 max-w-[1400px] relative z-10">
-                    <motion.nav
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/5 px-4 py-2 text-[10px] font-black text-[#00C6A7] uppercase tracking-[0.2em] mb-10 mt-10 backdrop-blur-sm"
-                    >
-                        <Link href="/" className="hover:text-white transition">EnergDive</Link>
-                        <ChevronRight size={10} className="text-white/40" />
-                        <span className="text-white/60">Articles & Videos</span>
-                        <ChevronRight size={10} className="text-white/40" />
-                        <span className="text-white">{sectorMeta.breadcrumbLabel}</span>
-                    </motion.nav>
+                    <div className="flex justify-between items-start mb-10 mt-10">
+                        <motion.nav
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/5 px-4 py-2 text-[10px] font-black text-[#00C6A7] uppercase tracking-[0.2em] backdrop-blur-sm"
+                        >
+                            <Link href="/" className="hover:text-white transition">EnergDive</Link>
+                            <ChevronRight size={10} className="text-white/40" />
+                            <span className="text-white/60">Articles & Videos</span>
+                            <ChevronRight size={10} className="text-white/40" />
+                            <span className="text-white">{sectorMeta.breadcrumbLabel}</span>
+                        </motion.nav>
+
+                        <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                        >
+                            <ShareButton
+                                title={sectorMeta.title}
+                                text={sectorMeta.description}
+                                className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/5 px-4 py-2 text-[10px] font-black text-white hover:bg-white/10 uppercase tracking-[0.2em] backdrop-blur-sm transition-colors"
+                            />
+                        </motion.div>
+                    </div>
 
                     <motion.h1
                         initial={{ opacity: 0, x: -20 }}
