@@ -42,7 +42,7 @@ export function IssueDetailClient({ issue }: IssueDetailClientProps) {
                                 src={issue.coverImage}
                                 alt={issue.title}
                                 fill
-                                className="object-cover"
+                                className="object-fill"
                                 priority
                             />
                         </div>
@@ -50,13 +50,16 @@ export function IssueDetailClient({ issue }: IssueDetailClientProps) {
                             <p className="text-xs sm:text-sm font-bold uppercase tracking-widest text-[#003B5C] mb-2">
                                 Digital Edition
                             </p>
-                            <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold mb-4">
+                            <h2 className="text-xl sm:text-2xl md:text-4xl font-bold mb-4">
                                 {issue.month} {issue.year}
-                            </h1>
+                            </h2>
+                            {/* <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold mb-4">
+                                {issue.title}
+                            </h1> */}   
                             <div className="flex flex-wrap justify-center md:justify-start gap-3 sm:gap-4 text-xs sm:text-sm text-gray-500 uppercase tracking-widest">
                                 <span>Volume {issue.volume}</span>
                                 <span className="hidden sm:inline">•</span>
-                                <span>Number {issue.number}</span>
+                                <span>Issue {issue.number}</span>
                             </div>
                             {issue.description && (
                                 <p className="mt-4 sm:mt-6 text-base sm:text-lg text-gray-600 leading-relaxed max-w-2xl">
@@ -125,8 +128,8 @@ export function IssueDetailClient({ issue }: IssueDetailClientProps) {
 
                                             {/* Author */}
                                             {article.author && (
-                                                <p className="text-[10px] sm:text-xs font-medium text-gray-500">
-                                                    By {article.author.name}
+                                                <p className="text-[12px] sm:text-xs font-bold text-gray-500">
+                                                     {article.author.name}
                                                 </p>
                                             )}
                                         </Link>

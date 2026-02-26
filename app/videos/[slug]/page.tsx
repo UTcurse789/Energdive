@@ -72,7 +72,7 @@ export default async function VideoDetailPage({ params }: { params: Promise<{ sl
                 <div className="mx-auto px-6 max-w-[1400px] py-4">
                     <Link href="/videos" className="inline-flex items-center text-gray-500 hover:text-teal-600 transition-colors text-sm font-bold group">
                         <ArrowLeft size={16} className="mr-2 group-hover:-translate-x-1 transition-transform" />
-                        BACK TO VIDEO LIBRARY
+                        BACK TO VIDEO
                     </Link>
                 </div>
             </div>
@@ -123,7 +123,7 @@ export default async function VideoDetailPage({ params }: { params: Promise<{ sl
                             </div>
                         </section>
 
-                        <section className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm flex items-start gap-6">
+                        {/* <section className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm flex items-start gap-6">
                             <div className="relative w-20 h-20 rounded-2xl overflow-hidden flex-0 bg-gray-50 border border-gray-100">
                                 <Image src={authorAvatar} sizes="32px" alt={authorName} fill className="object-cover" />
                             </div>
@@ -136,7 +136,7 @@ export default async function VideoDetailPage({ params }: { params: Promise<{ sl
                                     The editorial unit of ENERGDIVE, tracking policy and innovation breakthroughs in the energy sector.
                                 </p>
                             </div>
-                        </section>
+                        </section> */}
                     </div>
 
                     {/* Right Side: More Videos */}

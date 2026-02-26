@@ -403,7 +403,7 @@ export default function SectorIntelligencePage() {
                         </div>
                     </motion.div>
 
-                    <motion.div
+                    {/* <motion.div
                         initial={{ opacity: 0, y: 16 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.48 }}
@@ -417,7 +417,7 @@ export default function SectorIntelligencePage() {
                                 {signal}
                             </span>
                         ))}
-                    </motion.div>
+                    </motion.div> */}
                 </div>
 
                 <div className="absolute left-0 right-0 bottom-0 h-16 bg-linear-to-t from-[#fafafa] to-transparent" />
@@ -532,40 +532,51 @@ export default function SectorIntelligencePage() {
 
             {/* VIDEOS SECTION */}
             {videos.length > 0 && (
-                <section className="border-t border-gray-200 bg-white">
-                    <div className="container mx-auto px-6 lg:px-16 max-w-[1400px] py-20">
-                        {filteredVideos.length > 0 ? (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mt-15 mb-15">
-                                {filteredVideos.map((video) => (
-                                    <Link key={video.id} href={`/videos/${video.slug}`} className="group block">
-                                        <div className="relative aspect-video rounded-xl overflow-hidden mb-3 bg-gray-200">
-                                            <Image
-                                                src={video.thumbnail}
-                                                alt={video.title}
-                                                fill
-                                                className="object-cover"
-                                            />
-                                            <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
-                                                <div className="w-12 h-12 bg-white/90 rounded-full flex items-center justify-center pl-1 opacity-80 group-hover:opacity-100 transition-all">
-                                                    <Play size={18} className="text-red-600 fill-red-600" />
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <h3 className="text-sm font-bold group-hover:text-[#00A651] transition-colors line-clamp-2">{video.title}</h3>
-                                        <DateChip value={video.date} className="text-[10px] mt-1" />
-                                    </Link>
-                                ))}
+    <section className="border-t border-gray-200 bg-white pb-30">
+        <div className="container mx-auto px-6 lg:px-16 max-w-[1400px] py-20">
+            
+            {/* Section Heading */}
+            <div className="mb-12">
+                <h2 className="text-3xl font-bold tracking-tight text-gray-900 pt-10">
+                    Videos
+                </h2>
+                <div className="w-16 h-1 bg-[#00A651] mt-3"></div>
+            </div>
+
+            {filteredVideos.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                    {filteredVideos.map((video) => (
+                        <Link key={video.id} href={`/videos/${video.slug}`} className="group block">
+                            <div className="relative aspect-video rounded-xl overflow-hidden mb-3 bg-gray-200">
+                                <Image
+                                    src={video.thumbnail}
+                                    alt={video.title}
+                                    fill
+                                    className="object-cover"
+                                />
+                                <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
+                                    <div className="w-12 h-12 bg-white/90 rounded-full flex items-center justify-center pl-1 opacity-80 group-hover:opacity-100 transition-all">
+                                        <Play size={18} className="text-red-600 fill-red-600" />
+                                    </div>
+                                </div>
                             </div>
-                        ) : (
-                            <div className="rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 px-6 py-10 text-center">
-                                <p className="text-sm text-zinc-500">
-                                    No Video Found
-                                </p>
-                            </div>
-                        )}
-                    </div>
-                </section>
+                            <h3 className="text-sm font-bold group-hover:text-[#00A651] transition-colors line-clamp-2">
+                                {video.title}
+                            </h3>
+                            <DateChip value={video.date} className="text-[10px] mt-1" />
+                        </Link>
+                    ))}
+                </div>
+            ) : (
+                <div className="rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 px-6 py-10 text-center">
+                    <p className="text-sm text-zinc-500">
+                        No Video Found
+                    </p>
+                </div>
             )}
+        </div>
+    </section>
+)}
 
 
         </div>
