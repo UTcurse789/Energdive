@@ -12,15 +12,14 @@ export default async function syncUserToBrevo(user: any) {
                     PHONE: user.phone || "",
                     ORGANISATION: user.organization || "",
                     JOB_TITLE: user.job_title || "",
-                    COMMUNITY: user.COMMUNITY || "",
-                    SUB_COMMUNITY: user.SUB_COMMUNITY || "",
-                    INDUSTRY: user.INDUSTRY || "",
-                    SUB_INDUSTRY: user.SUB_INDUSTRY || "",
+                    COMMUNITY: (user.communities || []).join(","),
+                    SUB_COMMUNITY: (user.sub_communities || []).join(","),
+                    INDUSTRY: (user.industries || []).join(","),
+                    SUB_INDUSTRY: (user.sub_industries || []).join(","),
                     SOURCE: "Portal"
                 },
                 updateEnabled: true
             },
-
             {
                 headers: {
                     "api-key": process.env.BREVO_API_KEY!,
