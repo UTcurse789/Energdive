@@ -110,7 +110,7 @@ export default function UnifiedAuthPage() {
                         await setActive!({ session: result.createdSessionId });
                     }
                     setStep("complete");
-                    router.replace("/dashboard");
+                    window.location.href = "/dashboard";
                 }
             } catch (err: any) {
                 const clerkError = err?.errors?.[0];
@@ -170,7 +170,7 @@ export default function UnifiedAuthPage() {
                         await setActive!({ session: sessionId });
                     }
                     setStep("complete");
-                    router.replace("/dashboard");
+                    window.location.href = "/dashboard";
                 } else if (result.status === "missing_requirements") {
                     // Email verified but CAPTCHA/other requirement blocked completion
                     // Fallback: use backend to create user + sign-in token (bypasses CAPTCHA)
@@ -192,7 +192,7 @@ export default function UnifiedAuthPage() {
                             await setActive!({ session: ticketResult.createdSessionId });
                         }
                         setStep("complete");
-                        router.replace("/dashboard");
+                        window.location.href = "/dashboard";
                     } else {
                         setError(data.error || "Could not complete sign-up. Please try again.");
                     }
@@ -212,7 +212,7 @@ export default function UnifiedAuthPage() {
                         await setActive!({ session: sessionId });
                     }
                     setStep("complete");
-                    router.replace("/dashboard");
+                    window.location.href = "/dashboard";
                 } else {
                     setError(`Verification status: ${result.status}. Please try again.`);
                 }
@@ -242,7 +242,7 @@ export default function UnifiedAuthPage() {
                             await setActive!({ session: ticketResult.createdSessionId });
                         }
                         setStep("complete");
-                        router.replace("/dashboard");
+                        window.location.href = "/dashboard";
                         return;
                     }
                 } catch (backendErr) {
@@ -286,7 +286,7 @@ export default function UnifiedAuthPage() {
                     }
                     setIsNewUser(data.isNewUser);
                     setStep("complete");
-                    router.replace("/dashboard");
+                    window.location.href = "/dashboard";
                 }
             } else {
                 setError(data.error || "Verification failed. Please try again.");

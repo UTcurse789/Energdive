@@ -69,7 +69,8 @@ function AccessContent() {
                 if (result.status === "complete" && result.createdSessionId) {
                     setStatus("redirecting");
                     await setActive({ session: result.createdSessionId });
-                    router.push("/dashboard");
+                    // Hard redirect with cache-busting query param to guarantee server hit
+                    window.location.href = `/dashboard?t=${Date.now()}`;
                 } else {
                     throw new Error("Sign-in could not be completed");
                 }
