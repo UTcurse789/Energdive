@@ -58,8 +58,10 @@ export async function POST(req: Request) {
             communitySelections: body.communitySelections,
         });
 
-        // ── Update Clerk metadata (so middleware can gate) ──────────
-        await (await clerkClient()).users.updateUserMetadata(userId, {
+        // ── Update Clerk metadata and profile (so middleware can gate, and UI shows name) ──────────
+        await (await clerkClient()).users.updateUser(userId, {
+            firstName: body.firstName,
+            lastName: body.lastName,
             publicMetadata: { onboarding_completed: true },
         });
 
