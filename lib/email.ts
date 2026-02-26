@@ -9,6 +9,8 @@ const BREVO_API_KEY = process.env.BREVO_API_KEY || "";
 const BREVO_API_URL = "https://api.brevo.com/v3/smtp/email";
 const FROM_EMAIL = process.env.FROM_EMAIL || "no-reply@info.energdive.com";
 const FROM_NAME = process.env.FROM_NAME || "EnergDive";
+import fs from 'fs';
+import path from 'path';
 
 interface SendEmailOptions {
     to: string;
@@ -52,9 +54,6 @@ async function sendEmail(options: SendEmailOptions): Promise<void> {
     console.log(`[EMAIL] Sent "${options.subject}" to ${options.to}`);
 }
 
-/**
- * Send the "Portal Access Granted" email with a magic login link.
- */
 export async function sendPortalAccessEmail(
     to: string,
     firstName: string,
@@ -62,70 +61,74 @@ export async function sendPortalAccessEmail(
 ): Promise<void> {
     const subject = "Your EnergDive Portal Access is Ready";
 
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://206.189.132.187:3000";
+    const logoUrl = `${appUrl}/logo2-removebg-preview.png`;
+
     const htmlContent = `
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>${subject}</title>
 </head>
-<body style="margin:0;padding:0;background-color:#f5f5f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
-    <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f5f5f5;padding:40px 20px;">
+<body style="margin:0;padding:0;background-color:#0B0F19;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#0B0F19;padding:40px 20px;">
         <tr>
             <td align="center">
-                <table width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
-                    <!-- Header -->
+                <table width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 20px 40px rgba(0,0,0,0.3);">
+                    
                     <tr>
-                        <td style="background:linear-gradient(135deg,#0a2e1f 0%,#1a4731 100%);padding:32px 40px;text-align:center;">
-                            <h1 style="margin:0;color:#ffffff;font-size:24px;font-weight:800;letter-spacing:-0.5px;">
-                                EnergDive
-                            </h1>
-                            <p style="margin:8px 0 0;color:#09B697;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;">
-                                Energy Intelligence Platform
-                            </p>
+                        <td style="background:#0a2e1f;padding:40px 40px 32px;text-align:center;border-bottom:4px solid #09B697;">
+                            ${logoUrl
+            ? `<img src="${logoUrl}" alt="EnergDive Logo" width="180" style="display:block;margin:0 auto;max-width:200px;height:auto;" />`
+            : `<h1 style="color:#ffffff;margin:0;font-size:24px;">EnergDive</h1>`
+        }
                         </td>
                     </tr>
 
-                    <!-- Body -->
                     <tr>
-                        <td style="padding:40px;">
-                            <h2 style="margin:0 0 8px;color:#121212;font-size:22px;font-weight:700;">
-                                Welcome to EnergDive, ${firstName}!
+                        <td style="padding:48px 40px;">
+                            <h2 style="margin:0 0 16px;color:#111827;font-size:26px;font-weight:800;letter-spacing:-0.5px;line-height:1.2;">
+                                Hello ${firstName},
                             </h2>
-                            <p style="margin:0 0 24px;color:#666;font-size:15px;line-height:1.6;">
-                                Your portal access has been activated. Click the button below to sign in instantly — no password needed.
+                            <p style="margin:0 0 24px;color:#4B5563;font-size:16px;line-height:1.7;">
+                                Your exclusive access to the <strong>EnergDive Intelligence Portal</strong> is now active.
                             </p>
 
-                            <!-- CTA Button -->
-                            <table width="100%" cellpadding="0" cellspacing="0">
-                                <tr>
-                                    <td align="center" style="padding:8px 0 32px;">
-                                        <a href="${magicLink}"
-                                           style="display:inline-block;background:#09B697;color:#ffffff;font-size:15px;font-weight:700;text-decoration:none;padding:14px 36px;border-radius:8px;letter-spacing:0.3px;">
-                                            Access Your Portal →
-                                        </a>
-                                    </td>
-                                </tr>
-                            </table>
+                            <div style="background-color:#F9FAFB;border:1px solid #E5E7EB;border-radius:12px;padding:32px;text-align:center;margin-bottom:24px;">
+                                <p style="margin:0 0 20px;color:#6B7280;font-size:14px;font-weight:600;text-transform:uppercase;letter-spacing:1px;">
+                                    One-Click Secure Access
+                                </p>
+                                <a href="${magicLink}"
+                                   style="display:inline-block;background:#09B697;color:#ffffff;font-size:16px;font-weight:700;text-decoration:none;padding:16px 40px;border-radius:10px;box-shadow:0 4px 12px rgba(9,182,151,0.3);">
+                                    Access Your Portal &rarr;
+                                </a>
+                                <p style="margin:20px 0 0;color:#9CA3AF;font-size:12px;">
+                                    This secure link will expire in 24 hours.
+                                </p>
+                            </div>
 
-                            <p style="margin:0 0 16px;color:#999;font-size:13px;line-height:1.5;">
-                                This link is valid for <strong>24 hours</strong> and can only be used once. If it expires, contact your account manager for a new link.
+                            <p style="margin:0 0 32px;color:#6B7280;font-size:14px;line-height:1.6;font-style:italic;">
+                                <strong>Tip:</strong> You don't need a password.
                             </p>
 
-                            <hr style="border:none;border-top:1px solid #eee;margin:24px 0;" />
+                            <hr style="border:none;border-top:1px solid #F3F4F6;margin:0 0 24px;" />
 
-                            <p style="margin:0;color:#bbb;font-size:12px;line-height:1.5;">
-                                If the button doesn't work, copy and paste this URL into your browser:<br/>
-                                <a href="${magicLink}" style="color:#09B697;word-break:break-all;">${magicLink}</a>
+                            <p style="margin:0;color:#9CA3AF;font-size:12px;line-height:1.5;">
+                                Copy and paste this link:<br/>
+                                <a href="${magicLink}" style="color:#09B697;text-decoration:underline;">${magicLink}</a>
                             </p>
                         </td>
                     </tr>
 
-                    <!-- Footer -->
                     <tr>
-                        <td style="background-color:#fafafa;padding:20px 40px;text-align:center;border-top:1px solid #eee;">
-                            <p style="margin:0;color:#999;font-size:11px;">
-                                © ${new Date().getFullYear()} EnergDive. All rights reserved.
+                        <td style="background-color:#F9FAFB;padding:32px 40px;text-align:center;border-top:1px solid #F3F4F6;">
+                            <p style="margin:0 0 8px;color:#111827;font-size:13px;font-weight:700;">
+                                EnergDive Intelligence
+                            </p>
+                            <p style="margin:0;color:#9CA3AF;font-size:11px;">
+                                &copy; ${new Date().getFullYear()} ENERGDIVE.
                             </p>
                         </td>
                     </tr>

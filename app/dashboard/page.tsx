@@ -3,10 +3,14 @@
 import { useDashboard } from "@/components/dashboard/dashboard-shell";
 import { TrendsSidebar } from "@/components/dashboard/trends-sidebar";
 import { IntelligenceFeed } from "@/components/dashboard/intelligence-feed";
+import { useUser } from "@clerk/nextjs";
 
 export default function DashboardPage() {
     const { profile } = useDashboard();
-    const firstName = profile.first_name || "User";
+    const { user } = useUser();
+
+    // First try the custom database, then fall back to the raw Clerk session, then default to "User"
+    const firstName = profile.first_name || user?.firstName || "User";
 
     return (
         <div className="animate-fade-in-up">
