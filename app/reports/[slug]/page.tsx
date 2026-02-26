@@ -267,6 +267,7 @@ import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { ScrollProgress } from "@/components/ui/scroll-progress";
 import { DateChip } from "@/components/ui/date-chip";
+import { SubscribeFreeButton } from "@/components/subscribe-free-button";
 import {
     Download,
     ChevronLeft,
@@ -653,9 +654,9 @@ export default async function IntelligenceReportPage({ params }: { params: Promi
                                 <p className="text-white font-black text-sm leading-snug mb-5 relative z-10">
                                     Get weekly intelligence briefings in your inbox.
                                 </p>
-                                <button className="relative z-10 w-full bg-[#00A651] hover:bg-white rounded-xl py-3 text-[10px] font-black uppercase tracking-widest text-white hover:text-zinc-900 transition-all duration-300">
+                                <SubscribeFreeButton className="relative z-10 w-full bg-[#00A651] hover:bg-white rounded-xl py-3 text-[10px] font-black uppercase tracking-widest text-white hover:text-zinc-900 transition-all duration-300">
                                     Subscribe Free
-                                </button>
+                                </SubscribeFreeButton>
                             </div>
 
                         </aside>
