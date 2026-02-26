@@ -170,7 +170,7 @@ export default function UnifiedAuthPage() {
                         await setActive!({ session: sessionId });
                     }
                     setStep("complete");
-                    window.location.href = "/dashboard";
+                    setTimeout(() => window.location.replace("/dashboard"), 300);
                 } else if (result.status === "missing_requirements") {
                     // Email verified but CAPTCHA/other requirement blocked completion
                     // Fallback: use backend to create user + sign-in token (bypasses CAPTCHA)
@@ -192,7 +192,7 @@ export default function UnifiedAuthPage() {
                             await setActive!({ session: ticketResult.createdSessionId });
                         }
                         setStep("complete");
-                        window.location.href = "/dashboard";
+                        setTimeout(() => window.location.replace("/dashboard"), 300);
                     } else {
                         setError(data.error || "Could not complete sign-up. Please try again.");
                     }
@@ -212,7 +212,7 @@ export default function UnifiedAuthPage() {
                         await setActive!({ session: sessionId });
                     }
                     setStep("complete");
-                    window.location.href = "/dashboard";
+                    setTimeout(() => window.location.replace("/dashboard"), 300);
                 } else {
                     setError(`Verification status: ${result.status}. Please try again.`);
                 }
@@ -242,7 +242,7 @@ export default function UnifiedAuthPage() {
                             await setActive!({ session: ticketResult.createdSessionId });
                         }
                         setStep("complete");
-                        window.location.href = "/dashboard";
+                        setTimeout(() => window.location.replace("/dashboard"), 300);
                         return;
                     }
                 } catch (backendErr) {
@@ -286,7 +286,7 @@ export default function UnifiedAuthPage() {
                     }
                     setIsNewUser(data.isNewUser);
                     setStep("complete");
-                    window.location.href = "/dashboard";
+                    setTimeout(() => window.location.replace("/dashboard"), 300);
                 }
             } else {
                 setError(data.error || "Verification failed. Please try again.");
