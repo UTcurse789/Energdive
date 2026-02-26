@@ -12,14 +12,15 @@ export default async function syncUserToBrevo(user: any) {
                     PHONE: user.phone || "",
                     ORGANISATION: user.organization || "",
                     JOB_TITLE: user.job_title || "",
-                    COMMUNITY: user.community || "",
-                    SUB_COMMUNITY: user.sub_community || "",
-                    INDUSTRY: user.industry || "",
-                    SUB_INDUSTRY: user.sub_industry || "",
+                    COMMUNITY: user.COMMUNITY || "",
+                    SUB_COMMUNITY: user.SUB_COMMUNITY || "",
+                    INDUSTRY: user.INDUSTRY || "",
+                    SUB_INDUSTRY: user.SUB_INDUSTRY || "",
                     SOURCE: "Portal"
                 },
                 updateEnabled: true
             },
+
             {
                 headers: {
                     "api-key": process.env.BREVO_API_KEY!,
@@ -28,8 +29,8 @@ export default async function syncUserToBrevo(user: any) {
             }
         );
 
-        console.log("Brevo synced:", user.email);
+        console.log("✅ Brevo synced:", user.email);
     } catch (err: any) {
-        console.error("Brevo sync failed:", err.response?.data || err.message);
+        console.error("❌ Brevo sync failed:", err.response?.data || err.message);
     }
 }
