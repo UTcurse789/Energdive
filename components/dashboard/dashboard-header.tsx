@@ -7,7 +7,7 @@ import {
     Search, Bell, Home, LayoutGrid, BrainCircuit, Users,
     CreditCard, Calendar, Settings
 } from "lucide-react";
-import { UserButton } from "@clerk/nextjs";
+import { UserButton, useUser } from "@clerk/nextjs";
 import { useDashboard } from "./dashboard-shell";
 
 const NAV_ITEMS = [
@@ -22,8 +22,10 @@ const NAV_ITEMS = [
 
 export function DashboardHeader() {
     const { profile } = useDashboard();
+    const { user } = useUser();
     const pathname = usePathname();
-    const firstName = profile.first_name || "User";
+    const firstName = profile.first_name || user?.firstName || "User";
+    const lastName = profile.last_name || user?.lastName || "";
     const role = profile.job_title || "Member";
 
     return (
@@ -89,7 +91,7 @@ export function DashboardHeader() {
                     >
                         <div className="text-right hidden sm:block">
                             <p className="text-sm font-bold leading-none" style={{ color: "var(--dash-text)" }}>
-                                {firstName} {profile.last_name}
+                                {firstName} {lastName}
                             </p>
                             <p className="text-xs mt-1" style={{ color: "var(--dash-text-dim)" }}>
                                 {role}

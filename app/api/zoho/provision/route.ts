@@ -140,7 +140,7 @@ export async function POST(req: NextRequest) {
         log(`DB user provisioned: id=${userId}`);
 
         // ── 6. Build magic link & send email via Brevo ──────────────
-        const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://206.189.132.187:3000";
         const magicLink = `${appUrl}/access?token=${encodeURIComponent(magicToken)}`;
 
         log(`Magic link generated for ${email}`);
