@@ -8,7 +8,7 @@ const MAIN_SECTORS = [
         title: "Oil & Gas",
         slug: "oil-gas",
         description: "Insights on policy, markets, infrastructure, technology, and developments shaping the oil & gas sector's future.",
-        heroImage: "https://images.unsplash.com/photo-1473341304170-971dccb5ac1e?auto=format&fit=crop&q=80&w=800",
+        heroImage: "https://images.unsplash.com/photo-1516937941344-00b4e0337589?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
         subSectors: ["Upstream", "Midstream", "Downstream", "LNG", "CGD", "Refining", "Petrochemicals"],
     },
     {
@@ -29,7 +29,7 @@ const MAIN_SECTORS = [
         title: "Transmission",
         slug: "transmission",
         description: "High-voltage infrastructure and cross-border interconnectors strengthening grid stability.",
-        heroImage: "https://images.unsplash.com/photo-1617195737496-caf2cfeb4b7f?auto=format&fit=crop&q=80&w=800",
+        heroImage: "https://images.unsplash.com/photo-1473341304170-971dccb5ac1e?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
         subSectors: ["HVDC", "Interconnectors", "Grid Infrastructure", "Smart Grid"],
     },
     {
@@ -96,17 +96,17 @@ export default function SectorsPage() {
 
                 <div className="container mx-auto px-6 lg:px-16 max-w-[1400px] relative z-10 py-28 md:py-36">
                     <nav className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/5 px-4 py-2 text-[10px] font-black text-[#00C6A7] uppercase tracking-[0.2em] mb-10 backdrop-blur-sm mt-8">
-                        <Link href="/" className="hover:text-white transition">EnergDive</Link>
+                        <Link href="/" className="hover:text-white transition">ENERGDIVE</Link>
                         <ChevronRight size={10} className="text-white/40" />
                         <span className="text-white">Sectors</span>
                     </nav>
 
                     <h1 className="text-5xl md:text-7xl lg:text-[96px] font-black uppercase leading-[0.9] tracking-tighter text-white mb-6">
-                        Industry<br />Sectors
+                        Energy <br />Sectors
                     </h1>
 
                     <p className="text-lg md:text-xl text-gray-300 max-w-xl border-l-2 border-[#00C6A7] pl-6 font-light leading-relaxed">
-                        Deep-dive into every corner of India&apos;s energy landscape — from upstream oil & gas to sustainability and safety.
+                        Step into India’s interconnected energy ecosystem with ENERGDIVE, covering oil & gas, power, renewables, markets, storage, sustainability, and new technologies.
                     </p>
 
                     <div className="mt-8 flex flex-wrap gap-3 mb-20">
@@ -123,8 +123,8 @@ export default function SectorsPage() {
             </section>
 
             {/* ── Sectors Grid ── */}
-            <section className="container mx-auto mt-20 mb-32 px-6 lg:px-16 max-w-[1400px] py-20">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <section className="container mx-auto mt-20 px-6 lg:px-16 max-w-[1400px] pt-20 pb-48">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 pb-30">
                     {MAIN_SECTORS.map((sector) => (
                         <Link key={sector.slug} href={`/sectors/${sector.slug}`} className="group relative bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300">
                             <div className="relative h-48 overflow-hidden">
