@@ -153,7 +153,7 @@ export default async function Home() {
             backgroundSize: "40px 40px",
           }}
         />
-        <div className="container px-4 mx-auto relative z-10 max-w-[1400px]">
+        <div className="w-full max-w-[1800px] mx-auto px-6 lg:px-16 relative z-10">
           <SectionHeading
             title="Featured"
             linkText="Explore All"
