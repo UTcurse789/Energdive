@@ -69,8 +69,14 @@ function AccessContent() {
                 if (result.status === "complete" && result.createdSessionId) {
                     setStatus("redirecting");
                     await setActive({ session: result.createdSessionId });
-                    // Hard redirect with cache-busting query param to guarantee server hit
-                    window.location.href = `/dashboard?t=${Date.now()}`;
+
+                    // The ultimate cache-busting Next.js nuke:
+                    // 1. replace() prevents them from hitting "back" into a broken state
+                    // 2. The timestamp prevents the browser from using a cached HTTP response
+                    // 3. We use a slight delay so Clerk's cookies have time to completely save to the browser
+                    setTimeout(() => {
+                        window.location.replace(`/dashboard?reload=${Date.now()}`);
+                    }, 300);
                 } else {
                     throw new Error("Sign-in could not be completed");
                 }
