@@ -71,13 +71,7 @@ export async function POST(req: Request) {
         const fullUser = await getFullUserProfile(userId);
 
         // ── Sync to Brevo ──────────────────────────────────
-        await syncUserToBrevo({
-            ...fullUser,
-            COMMUNITY: fullUser.communities.join(","),
-            SUB_COMMUNITY: fullUser.sub_communities.join(","),
-            INDUSTRY: fullUser.industries.join(","),
-            SUB_INDUSTRY: fullUser.sub_industries.join(","),
-        });
+        await syncUserToBrevo(fullUser);
 
         console.log("✅ Full profile synced to Brevo");
 

@@ -3,6 +3,7 @@ import { Webhook } from "svix";
 import { NextResponse } from "next/server";
 import syncUserToBrevo from "@/lib/brevoSync";
 import db from "@/lib/db";
+import { getFullUserProfile } from "@/lib/getFullUserProfile";
 
 export async function POST(req: Request) {
     try {
@@ -69,7 +70,9 @@ export async function POST(req: Request) {
                 [id, email, first_name, last_name]
             );
 
-            const user = result.rows[0];
+            // Fetch full profile with community/industry data from join tables
+            const fullUser = await getFullUserProfile(id);
+            const user = fullUser || result.rows[0];
 
             try {
                 await syncUserToBrevo(user);
