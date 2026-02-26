@@ -5,7 +5,8 @@ import { notFound } from "next/navigation";
 import { BlocksRenderer, type BlocksContent } from '@strapi/blocks-react-renderer';
 import { ScrollProgress } from "@/components/ui/scroll-progress";
 import { DateChip } from "@/components/ui/date-chip";
-import { ArrowLeft, Share2, Youtube, Tag } from "lucide-react";
+import { ShareButton } from "@/components/ui/share-button";
+import { ArrowLeft, Youtube, Tag } from "lucide-react";
 import { formatContentDate } from "@/lib/date";
 
 function slugify(text: string): string {
@@ -101,9 +102,8 @@ export default async function VideoDetailPage({ params }: { params: Promise<{ sl
 
                         <div className="flex flex-wrap items-center gap-6 pt-4 text-sm text-gray-400 font-medium">
                             <DateChip value={createdAt} />
-                            <div className="flex items-center gap-2 text-red-600 font-bold cursor-pointer hover:opacity-80">
-                                <Share2 size={16} />
-                                <span>Share Video</span>
+                            <div className="flex items-center gap-2 text-red-600 font-bold hover:opacity-80">
+                                <ShareButton title={title} url={`https://www.youtube.com/watch?v=${youtubeId}`} className="text-red-600 hover:text-red-700" />
                             </div>
                         </div>
                     </div>

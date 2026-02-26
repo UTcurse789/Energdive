@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/buttons";
 import { ScrollProgress } from "@/components/ui/scroll-progress";
+import { ShareButton } from "@/components/ui/share-button";
 
 /* ---------- Helper: Title Case Function ---------- */
 function toTitleCase(str: string) {
@@ -55,7 +56,11 @@ export default function OpinionContent({ opinion, recommended }: any) {
                     </Link>
                     <div className="flex items-center gap-2">
                         <Button variant="ghost" size="sm" className="rounded-full"><Bookmark className="w-4 h-4" /></Button>
-                        <Button variant="ghost" size="sm" className="rounded-full"><Share2 className="w-4 h-4" /></Button>
+                        <ShareButton
+                            title={opinion.title}
+                            text={opinion.excerpt}
+                            className="bg-transparent text-zinc-900 hover:bg-zinc-100 hover:text-zinc-900 p-2 rounded-full"
+                        />
                     </div>
                 </nav>
 

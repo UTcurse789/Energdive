@@ -12,8 +12,8 @@ import { useDashboard } from "./dashboard-shell";
 
 const NAV_ITEMS = [
     { label: "Main Site", href: "/", icon: Home },
-    { label: "Dashboard", href: "/dashboard", icon: LayoutGrid },
-    { label: "Intelligence", href: "/dashboard/feed", icon: BrainCircuit },
+    { label: "My Feed", href: "/dashboard", icon: LayoutGrid },
+    // { label: "Intelligence", href: "/dashboard/feed", icon: BrainCircuit },
     // { label: "Community", href: "/dashboard/community", icon: Users },
     { label: "Subscriptions", href: "/dashboard/subscriptions", icon: CreditCard },
     { label: "Events", href: "/dashboard/events", icon: Calendar },
@@ -39,39 +39,31 @@ export function DashboardHeader() {
         >
             {/* ── Top Row ── */}
             <div
-                className="flex items-center justify-between px-6 py-3 h-[70px]"
+                className="relative flex items-center justify-between px-6 py-3 h-[70px]"
                 style={{ borderBottom: "1px solid var(--dash-border-subtle)" }}
             >
-                <Image
-                    src="/energclub.png"
-                    alt="ENERGClub"
-                    width={130}
-                    height={42}
-                    className="object-contain"
-                    priority
-                />
+                {/* Left Side: Original Logo */}
+                <div className="flex-shrink-0">
+                    <Image
+                        src="/logo2-removebg-preview.png"
+                        alt="ENERGClub"
+                        width={150}
+                        height={50}
+                        className="object-contain"
+                        priority
+                    />
+                </div>
 
-                {/* Search */}
-                {/* <div className="flex-1 max-w-2xl mx-12 hidden md:block">
-                    <div className="relative group">
-                        <Search
-                            className="absolute left-4 top-1/2 -translate-y-1/2 transition-colors"
-                            style={{ color: "var(--dash-text-dim)" }}
-                            size={17}
-                        />
-                        <input
-                            type="text"
-                            placeholder="Search (Coming Soon)"
-                            disabled
-                            className="w-full rounded-full py-2.5 pl-11 pr-4 text-sm outline-none transition-all"
-                            style={{
-                                background: "var(--dash-surface-2)",
-                                border: "1px solid var(--dash-border)",
-                                color: "var(--dash-text-muted)",
-                            }}
-                        />
-                    </div>
-                </div> */}
+                {/* Centre Side: New Logo */}
+                <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+                    <Image
+                        src="/energclub.png"
+                        alt="EnergDive"
+                        width={150} // Size aap adjust kar sakte ho
+                        height={50}
+                        className="object-contain"
+                    />
+                </div>
 
                 {/* Right Actions */}
                 <div className="flex items-center gap-5">
