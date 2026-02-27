@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Issue } from "@/types";
 import { slugify } from "@/lib/utils";
 import { ScrollProgress } from "@/components/ui/scroll-progress";
+import { ShareButton } from "@/components/ui/share-button";
 
 interface IssueDetailClientProps {
     issue: Issue;
@@ -42,7 +43,7 @@ export function IssueDetailClient({ issue }: IssueDetailClientProps) {
                                 src={issue.coverImage}
                                 alt={issue.title}
                                 fill
-                                className="object-cover"
+                                className="object-fill"
                                 priority
                             />
                         </div>
@@ -50,9 +51,12 @@ export function IssueDetailClient({ issue }: IssueDetailClientProps) {
                             <p className="text-xs sm:text-sm font-bold uppercase tracking-widest text-[#003B5C] mb-2">
                                 Digital Edition
                             </p>
-                            <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold mb-4">
+                            <h2 className="text-xl sm:text-2xl md:text-4xl font-bold mb-4">
                                 {issue.month} {issue.year}
-                            </h1>
+                            </h2>
+                            {/* <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold mb-4">
+                                {issue.title}
+                            </h1> */}
                             <div className="flex flex-wrap justify-center md:justify-start gap-3 sm:gap-4 text-xs sm:text-sm text-gray-500 uppercase tracking-widest">
                                 <span>Volume {issue.volume}</span>
                                 <span className="hidden sm:inline">•</span>
@@ -63,6 +67,13 @@ export function IssueDetailClient({ issue }: IssueDetailClientProps) {
                                     {issue.description}
                                 </p>
                             )}
+                            <div className="mt-6 flex justify-center md:justify-start">
+                                <ShareButton
+                                    title={`${issue.month} ${issue.year} Issue`}
+                                    text={issue.description}
+                                    className="text-gray-500 hover:text-teal-600 font-medium text-sm border border-gray-200 px-3 py-1.5 rounded-full bg-white hover:bg-gray-50 shadow-sm"
+                                />
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -125,8 +136,8 @@ export function IssueDetailClient({ issue }: IssueDetailClientProps) {
 
                                             {/* Author */}
                                             {article.author && (
-                                                <p className="text-[10px] sm:text-xs font-medium text-gray-500">
-                                                    By {article.author.name}
+                                                <p className="text-[12px] sm:text-xs font-bold text-gray-500">
+                                                    {article.author.name}
                                                 </p>
                                             )}
                                         </Link>

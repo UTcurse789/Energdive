@@ -110,7 +110,7 @@ export default function ReportsPage() {
               <motion.h1
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
-                className="text-6xl md:text-9xl font-black uppercase italic text-[#00A651]"
+                className="text-6xl md:text-9xl font-black uppercase text-[#00A651]"
               >
                 Reports
               </motion.h1>
@@ -130,8 +130,18 @@ export default function ReportsPage() {
 
         {/* SEARCH & FILTER AREA */}
         <div className="container mx-auto px-6 lg:px-12 max-w-[1400px] mt-16 mb-20">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-8 border-b border-zinc-200 pb-12">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-8 pt-20 pb-12">
             <div className="relative w-full md:w-96">
+              <button
+                onClick={() => setSelectedCategory("All")}
+                className={`hover:text-black transition-colors ${selectedCategory === "All" ? "text-[#00A651]" : ""}`}
+              >
+                All Reports
+              </button>
+            </div>
+
+            <div className="flex gap-8 items-center text-[10px] font-bold uppercase tracking-widest text-zinc-400">
+              
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 w-4 h-4" />
               <input
                 type="text"
@@ -139,15 +149,7 @@ export default function ReportsPage() {
                 className="w-full pl-12 pr-4 py-3 bg-zinc-100 rounded-full text-sm focus:outline-none focus:ring-1 focus:ring-[#00A651] transition-all"
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
-            </div>
-
-            <div className="flex gap-8 items-center text-[10px] font-bold uppercase tracking-widest text-zinc-400">
-              <button
-                onClick={() => setSelectedCategory("All")}
-                className={`hover:text-black transition-colors ${selectedCategory === "All" ? "text-[#00A651]" : ""}`}
-              >
-                All Reports
-              </button>
+              
             </div>
           </div>
         </div>
@@ -156,7 +158,7 @@ export default function ReportsPage() {
         <div className="container mx-auto px-6 lg:px-12 max-w-[1400px]">
           <motion.div
             layout
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-12 gap-y-24"
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-12 gap-y-24"
           >
             <AnimatePresence mode='popLayout'>
               {filteredReports.map((report, index) => (
@@ -198,7 +200,7 @@ export default function ReportsPage() {
                         </span>
                       </div>
 
-                      <h3 className="text-3xl font-bold font-serif leading-tight group-hover:text-[#00A651] transition-colors">
+                      <h3 className="text-2xl font-bold font-serif leading-tight group-hover:text-[#00A651] transition-colors">
                         {report.title}
                       </h3>
 

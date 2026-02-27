@@ -7,6 +7,7 @@ import { SidebarSubscribe } from "@/components/sidebar-subscribe";
 import { TagBadge } from "@/components/ui/tag-badge";
 import { ScrollProgress } from "@/components/ui/scroll-progress";
 import { DateChip } from "@/components/ui/date-chip";
+import { ShareButton } from "@/components/ui/share-button";
 import { ISSUES } from "@/data/dummy";
 import { ArrowRight, Calendar, ChevronRight } from "lucide-react";
 import { formatContentDate } from "@/lib/date";
@@ -106,8 +107,6 @@ export default async function ArticlePage(props: any) {
                     <nav className="flex items-center gap-1.5 text-xs text-gray-400 font-sans">
                         <Link href="/" className="hover:text-teal-600 transition-colors">Home</Link>
                         <ChevronRight className="h-3 w-3" />
-                        <Link href="/articles" className="hover:text-teal-600 transition-colors">Articles</Link>
-                        <ChevronRight className="h-3 w-3" />
                         <span className="text-gray-600 font-medium truncate max-w-[200px]">{article.category}</span>
                     </nav>
                 </div>
@@ -117,16 +116,23 @@ export default async function ArticlePage(props: any) {
                     {/* ═══════════════ MAIN COLUMN ═══════════════ */}
                     <div className="lg:col-span-8">
 
-                        {/* Category + Date */}
-                        <div className="flex items-center gap-3 mb-5">
-                            <span className="inline-block bg-teal-50 text-teal-700 text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full">
-                                {article.category}
-                            </span>
-                            <DateChip value={article.date} />
+                        {/* Category + Date + Share */}
+                        <div className="flex items-center justify-between mb-5">
+                            <div className="flex items-center gap-3">
+                                <span className="inline-block bg-teal-50 text-teal-700 text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full">
+                                    {article.category}
+                                </span>
+                                <DateChip value={article.date} />
+                            </div>
+                            <ShareButton
+                                title={article.title}
+                                text={article.excerpt}
+                                className="text-gray-500 hover:text-teal-600 font-medium text-sm border border-gray-200 px-3 py-1.5 rounded-full bg-white hover:bg-gray-50 shadow-sm"
+                            />
                         </div>
 
                         {/* Title */}
-                        <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-serif font-bold leading-[1.08] tracking-tight text-gray-900 mb-4 sm:mb-6">
+                        <h1 className="text-2xl  sm:text-4xl md:text-5xl lg:text-6xl font-serif font-bold leading-[1.08] tracking-tight text-gray-900 mb-4 sm:mb-6">
                             {article.title}
                         </h1>
 
@@ -137,31 +143,32 @@ export default async function ArticlePage(props: any) {
 
                         {/* Author row */}
                         {article.author && (
-                            <div className="flex items-center gap-4 mb-10 pb-8 border-b border-gray-100">
-                                {article.author.avatar ? (
-                                    <Image
-                                        src={article.author.avatar}
-                                        width={52}
-                                        height={52}
-                                        alt={article.author.name || ""}
-                                        className="rounded-full ring-2 ring-teal-100"
-                                    />
-                                ) : (
-                                    <div className="w-[52px] h-[52px] rounded-full bg-teal-100 flex items-center justify-center text-teal-700 font-bold text-lg">
-                                        {article.author.name?.charAt(0) || "A"}
-                                    </div>
-                                )}
-                                <div>
-                                    <Link
-                                        href={`/author/${slugify(article.author.name)}`}
-                                        className="font-bold text-gray-900 hover:text-teal-600 transition-colors"
-                                    >
-                                        {article.author.name}
-                                    </Link>
-                                    <DateChip value={article.date} className="mt-0.5" />
-                                </div>
-                            </div>
-                        )}
+    <div className="flex items-center gap-4 mb-10 pb-8 border-b border-gray-100">
+        {article.author.avatar ? (
+            <Image
+                src={article.author.avatar}
+                width={52}
+                height={52}
+                alt={article.author.name || ""}
+                className="rounded-full ring-2 ring-teal-100"
+            />
+        ) : (
+            <div className="w-[52px] h-[52px] rounded-full bg-teal-100 flex items-center justify-center text-teal-700 font-bold text-lg">
+                {article.author.name?.charAt(0) || "A"}
+            </div>
+        )}
+        <div className="flex items-center gap-4">
+            <Link
+                href={`/author/${slugify(article.author.name)}`}
+                className="font-bold text-gray-900 hover:text-teal-600 transition-colors"
+            >
+                {article.author.name}
+            </Link>
+            
+            <DateChip value={article.date} className="mt-0" />
+        </div>
+    </div>
+)}
 
                         {/* Featured Image */}
                         <div className="relative aspect-video mb-12 rounded-xl overflow-hidden shadow-lg shadow-black/10 group">
@@ -177,24 +184,26 @@ export default async function ArticlePage(props: any) {
 
                         {/* Article Body */}
                         <article className="relative">
-                            {/* Decorative side line */}
-                            {/* <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/80 via-black/40 to-transparent flex flex-col justify-end p-8 md:p-12" /> */}
+    {/* Decorative side line */}
+    {/* <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/80 via-black/40 to-transparent flex flex-col justify-end p-8 md:p-12" /> */}
 
-                            <div className="prose prose-lg max-w-none font-serif text-[18px] leading-[1.95] text-gray-800
-                                prose-headings:font-bold prose-headings:text-gray-900 prose-headings:tracking-tight
-                                prose-h2:text-3xl prose-h2:mt-12 prose-h2:mb-4 prose-h2:border-b prose-h2:border-gray-100 prose-h2:pb-3
-                                prose-h3:text-2xl prose-h3:mt-10 prose-h3:mb-3
-                                prose-p:mb-6
-                                prose-a:text-teal-600 prose-a:decoration-teal-300 hover:prose-a:text-teal-800
-                                prose-strong:text-gray-900
-                                prose-blockquote:border-l-teal-500 prose-blockquote:bg-teal-50/30 prose-blockquote:rounded-r-lg prose-blockquote:py-2
-                                prose-img:rounded-lg prose-img:shadow-md
-                                prose-li:marker:text-teal-500
-                                first:prose-p:first-letter:text-6xl first:prose-p:first-letter:font-serif first:prose-p:first-letter:font-bold first:prose-p:first-letter:float-left first:prose-p:first-letter:mr-3 first:prose-p:first-letter:mt-1 first:prose-p:first-letter:text-teal-700"
-                            >
-                                <BlocksRenderer content={article.content} />
-                            </div>
-                        </article>
+    <div className="prose prose-lg max-w-none font-serif text-[18px] leading-[1.95] text-gray-800
+        prose-headings:font-bold prose-headings:text-gray-900 prose-headings:tracking-tight
+        prose-h2:text-[32px] prose-h2:mt-12 prose-h2:mb-6 prose-h2:border-b prose-h2:border-gray-100 prose-h2:pb-3
+        prose-h3:text-[26px] prose-h3:mt-10 prose-h3:mb-4
+        prose-h4:text-[23px] prose-h4:mt-10 prose-h4:mb-4
+        prose-p:mb-6 prose-p:text-[18px]
+        prose-a:text-teal-600 prose-a:decoration-teal-300 hover:prose-a:text-teal-800
+        prose-strong:text-gray-900
+        prose-blockquote:border-l-teal-500 prose-blockquote:bg-teal-50/30 prose-blockquote:rounded-r-lg prose-blockquote:py-2
+        prose-img:rounded-lg prose-img:shadow-md prose-img:my-16
+        prose-figcaption:text-center prose-figcaption:text-[14px] prose-figcaption:text-gray-500 prose-figcaption:mt-3 prose-figcaption:italic prose-figcaption:font-sans
+        prose-li:marker:text-teal-500
+        first:prose-p:first-letter:text-6xl first:prose-p:first-letter:font-serif first:prose-p:first-letter:font-bold first:prose-p:first-letter:float-left first:prose-p:first-letter:mr-3 first:prose-p:first-letter:mt-1 first:prose-p:first-letter:text-teal-700"
+    >
+        <BlocksRenderer content={article.content} />
+    </div>
+</article>
 
                         {/* Tags */}
                         {tags.length > 0 && (
@@ -285,17 +294,23 @@ export default async function ArticlePage(props: any) {
                                                             src={imgUrl}
                                                             alt=""
                                                             fill
-                                                            className="object-contain bg-white p-0.5 transition-transform duration-500 group-hover:scale-[1.02]"
+                                                            className="object-cover bg-white p-0.5 transition-transform duration-500 group-hover:scale-[1.02]"
                                                         />
                                                     </div>
 
                                                     {/* Text */}
                                                     <div className="flex-1 min-w-0">
+                                                        {/* Category Tag */}
+                                                        {item.category && (
+                                                            <span className="inline-block px-2 py-0.5 text-[10px] font-semibold text-teal-700 bg-teal-50 rounded-full mb-1.5 uppercase tracking-wide">
+                                                                {item.category.name}
+                                                            </span>
+                                                        )}
                                                         <h4 className="font-serif font-bold text-sm leading-snug text-gray-900 group-hover:text-teal-600 transition-colors line-clamp-2 mb-1">
                                                             {item.Title}
                                                         </h4>
                                                         {itemDate && (
-                                                            <DateChip value={itemDate} className="text-[10px]" />
+                                                            <DateChip value={itemDate} className="text-[8px]" />
                                                         )}
                                                     </div>
                                                 </Link>

@@ -293,3 +293,273 @@ export async function updateUserProfile(payload: UpdateProfilePayload): Promise<
         client.release();
     }
 }
+
+// ─── Zoho Provision Pipeline ─────────────────────────────────────────
+
+export interface ProvisionPayload {
+    clerkId: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    phone?: string;
+    company?: string;
+    designation?: string;
+    country?: string;
+    state?: string;
+    // Taxonomy names (matched case-insensitively against DB)
+    industryName?: string;
+    subIndustryName?: string;
+    communityName?: string;
+    subCommunityName?: string;
+    // Magic token for one-click login
+    magicToken: string;
+    magicTokenExpiresAt: Date;
+}
+
+/**
+ * Atomic provisioning: upserts user + taxonomy mappings + magic token.
+ * Designed for idempotent Zoho webhook — safe to retry.
+ *
+ * Taxonomy matching is case-insensitive. If a match is not found,
+ * that mapping is silently skipped (does NOT fail the transaction).
+ */
+export async function provisionUser(payload: ProvisionPayload): Promise<number> {
+    const client = await getClient();
+
+    try {
+        await client.query("BEGIN");
+
+        // 1. Upsert user row — ON CONFLICT on clerk_id
+        const userResult = await client.query(
+            `INSERT INTO users (
+                clerk_id, email, first_name, last_name, phone,
+                country, state, job_title, organization,
+                onboarding_completed, magic_token, magic_token_expires_at,
+                created_at
+            ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9, true, $10, $11, NOW())
+            ON CONFLICT (clerk_id) DO UPDATE SET
+                email                  = EXCLUDED.email,
+                first_name             = EXCLUDED.first_name,
+                last_name              = EXCLUDED.last_name,
+                phone                  = COALESCE(EXCLUDED.phone, users.phone),
+                country                = COALESCE(EXCLUDED.country, users.country),
+                state                  = COALESCE(EXCLUDED.state, users.state),
+                job_title              = COALESCE(EXCLUDED.job_title, users.job_title),
+                organization           = COALESCE(EXCLUDED.organization, users.organization),
+                onboarding_completed   = true,
+                magic_token            = EXCLUDED.magic_token,
+                magic_token_expires_at = EXCLUDED.magic_token_expires_at
+            RETURNING id`,
+            [
+                payload.clerkId,
+                payload.email,
+                payload.firstName,
+                payload.lastName,
+                payload.phone || null,
+                payload.country || null,
+                payload.state || null,
+                payload.designation || null,  // maps to job_title
+                payload.company || null,      // maps to organization
+                payload.magicToken,
+                payload.magicTokenExpiresAt,
+            ]
+        );
+
+        const userId: number = userResult.rows[0].id;
+
+        // 2. Resolve industry + sub-industry by case-insensitive name
+        if (payload.industryName) {
+            const indResult = await client.query(
+                `SELECT id FROM industry WHERE LOWER(name) = LOWER($1) LIMIT 1`,
+                [payload.industryName.trim()]
+            );
+
+            if (indResult.rows.length > 0) {
+                const industryId = indResult.rows[0].id;
+                let subIndustryId: number | null = null;
+
+                if (payload.subIndustryName) {
+                    const subResult = await client.query(
+                        `SELECT id FROM sub_industries
+                         WHERE industry_id = $1
+                           AND LOWER(name) = LOWER($2)
+                         LIMIT 1`,
+                        [industryId, payload.subIndustryName.trim()]
+                    );
+                    subIndustryId = subResult.rows[0]?.id ?? null;
+                }
+
+                // Fallback: if sub not matched, pick the first sub-industry
+                if (!subIndustryId) {
+                    const fallback = await client.query(
+                        `SELECT id FROM sub_industries WHERE industry_id = $1 ORDER BY id LIMIT 1`,
+                        [industryId]
+                    );
+                    subIndustryId = fallback.rows[0]?.id ?? null;
+                    if (subIndustryId) {
+                        console.warn(`[PROVISION] Sub-industry "${payload.subIndustryName}" not found, using fallback id=${subIndustryId}`);
+                    }
+                }
+
+                // Only insert if we have a valid sub-industry (NOT NULL constraint)
+                if (subIndustryId) {
+                    await client.query(
+                        `DELETE FROM user_industries WHERE user_id = $1`,
+                        [userId]
+                    );
+                    await client.query(
+                        `INSERT INTO user_industries (user_id, industry_id, sub_industry_id)
+                         VALUES ($1, $2, $3)`,
+                        [userId, industryId, subIndustryId]
+                    );
+                    console.log(`[PROVISION] Industry matched: ${payload.industryName} → ${industryId}, sub → ${subIndustryId}`);
+                } else {
+                    console.warn(`[PROVISION] No sub-industries exist for "${payload.industryName}" — skipping industry mapping`);
+                }
+            } else {
+                console.warn(`[PROVISION] Industry not found: "${payload.industryName}" — skipping`);
+            }
+        }
+
+        // 3. Resolve community + sub-community by case-insensitive name
+        if (payload.communityName) {
+            const commResult = await client.query(
+                `SELECT id FROM communities WHERE LOWER(name) = LOWER($1) LIMIT 1`,
+                [payload.communityName.trim()]
+            );
+
+            if (commResult.rows.length > 0) {
+                const communityId = commResult.rows[0].id;
+                let subCommunityId: number | null = null;
+
+                if (payload.subCommunityName) {
+                    const subResult = await client.query(
+                        `SELECT id FROM sub_communities
+                         WHERE community_id = $1
+                           AND LOWER(name) = LOWER($2)
+                         LIMIT 1`,
+                        [communityId, payload.subCommunityName.trim()]
+                    );
+                    subCommunityId = subResult.rows[0]?.id ?? null;
+                }
+
+                // Fallback: if sub not matched, pick the first sub-community
+                if (!subCommunityId) {
+                    const fallback = await client.query(
+                        `SELECT id FROM sub_communities WHERE community_id = $1 ORDER BY id LIMIT 1`,
+                        [communityId]
+                    );
+                    subCommunityId = fallback.rows[0]?.id ?? null;
+                    if (subCommunityId) {
+                        console.warn(`[PROVISION] Sub-community "${payload.subCommunityName}" not found, using fallback id=${subCommunityId}`);
+                    }
+                }
+
+                // Only insert if we have a valid sub-community (NOT NULL constraint)
+                if (subCommunityId) {
+                    await client.query(
+                        `DELETE FROM user_communities WHERE user_id = $1`,
+                        [userId]
+                    );
+                    await client.query(
+                        `INSERT INTO user_communities (user_id, community_id, sub_community_id)
+                         VALUES ($1, $2, $3)`,
+                        [userId, communityId, subCommunityId]
+                    );
+                    console.log(`[PROVISION] Community matched: ${payload.communityName} → ${communityId}, sub → ${subCommunityId}`);
+                } else {
+                    console.warn(`[PROVISION] No sub-communities exist for "${payload.communityName}" — skipping community mapping`);
+                }
+            } else {
+                console.warn(`[PROVISION] Community not found: "${payload.communityName}" — skipping`);
+            }
+        }
+
+        await client.query("COMMIT");
+        console.log(`[PROVISION] User provisioned: id=${userId} email=${payload.email}`);
+        return userId;
+    } catch (err) {
+        await client.query("ROLLBACK");
+        throw err;
+    } finally {
+        client.release();
+    }
+}
+
+// ─── Magic Token Lookup ──────────────────────────────────────────────
+
+export interface MagicTokenUser {
+    id: number;
+    clerk_id: string;
+    email: string;
+    first_name: string | null;
+    last_name: string | null;
+}
+
+/**
+ * Find a user by their magic_token. Returns null if token not found or expired.
+ */
+export async function getUserByMagicToken(token: string): Promise<MagicTokenUser | null> {
+    try {
+        console.log(`[getUserByMagicToken] Looking up token: ${token.slice(0, 12)}...`);
+
+        // First check: does the token exist at all (ignoring expiry)?
+        const debugResult = await query(
+            `SELECT id, email, magic_token_expires_at,
+                    (magic_token_expires_at > NOW()) as is_valid,
+                    NOW() as db_now
+             FROM users
+             WHERE magic_token = $1
+             LIMIT 1`,
+            [token]
+        );
+
+        if (debugResult.rows.length === 0) {
+            console.warn(`[getUserByMagicToken] Token NOT found in DB at all`);
+
+            // Check if any magic tokens exist
+            const anyTokens = await query(
+                `SELECT id, email, LEFT(magic_token, 12) as token_prefix, magic_token_expires_at
+                 FROM users
+                 WHERE magic_token IS NOT NULL
+                 ORDER BY id DESC
+                 LIMIT 5`
+            );
+            console.log(`[getUserByMagicToken] Users with tokens:`, JSON.stringify(anyTokens.rows));
+
+            return null;
+        }
+
+        const debugRow = debugResult.rows[0];
+        console.log(`[getUserByMagicToken] Token found for user ${debugRow.id} (${debugRow.email}), expires: ${debugRow.magic_token_expires_at}, is_valid: ${debugRow.is_valid}, db_now: ${debugRow.db_now}`);
+
+        if (!debugRow.is_valid) {
+            console.warn(`[getUserByMagicToken] Token is EXPIRED`);
+            return null;
+        }
+
+        // Actual lookup
+        const result = await query<MagicTokenUser>(
+            `SELECT id, clerk_id, email, first_name, last_name
+             FROM users
+             WHERE magic_token = $1
+               AND magic_token_expires_at > NOW()
+             LIMIT 1`,
+            [token]
+        );
+        return result.rows[0] || null;
+    } catch (error) {
+        console.error("[getUserByMagicToken] Failed:", error);
+        return null;
+    }
+}
+
+/**
+ * Clear magic token after use (one-time use enforcement).
+ */
+export async function clearMagicToken(userId: number): Promise<void> {
+    await query(
+        `UPDATE users SET magic_token = NULL, magic_token_expires_at = NULL WHERE id = $1`,
+        [userId]
+    );
+}
