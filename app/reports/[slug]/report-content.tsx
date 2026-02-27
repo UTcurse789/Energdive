@@ -193,10 +193,7 @@ export default async function ArticlePage(props: PageProps) {
                                 <Clock className="w-4 h-4 text-[#00A651]" />
                                 8 min read
                             </span>
-                            <span className="flex items-center gap-2 text-[#00A651]">
-                                <ShieldCheck className="w-4 h-4" />
-                                ENCIS Verified
-                            </span>
+                          
                         </div>
                     </header>
 

@@ -14,8 +14,20 @@ import {
 import { ArrowUpRight, ArrowRight } from "lucide-react";
 import { slugify } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
+import { DateChip } from "@/components/ui/date-chip";
 
 const STRAPI = process.env.NEXT_PUBLIC_STRAPI_URL;
+
+function formatOpinionDate(value?: string) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = date.toLocaleString("en-US", { month: "short" }).toUpperCase();
+  const year = date.getFullYear();
+  return `${day} ${month} ${year}`;
+}
 
 /* ================================
    FETCH OPINIONS FROM STRAPI
@@ -46,7 +58,14 @@ export default function OpinionPage() {
         title: item.Title,
         slug: item.slug,
         date: item.Date,
-        category: "Opinion",
+        sector:
+          item?.sectors?.[0]?.name ||
+          item?.sectors?.data?.[0]?.attributes?.name ||
+          item?.sector?.name ||
+          item?.sector?.data?.attributes?.name ||
+          item?.category ||
+          "OPINION",
+        category: "OPINION",
 
         image:
           item?.FeaturedImage?.url
@@ -176,12 +195,12 @@ export default function OpinionPage() {
 
                 {/* TEXT */}
                 <div className="flex flex-col grow">
-                  <div className="flex items-center gap-3 mb-4 text-[10px] font-bold uppercase">
-                    <span className="text-[#00A651]">
-                      {opinion.category}
+                  <div className="flex items-center justify-between gap-4 mb-4">
+                    <span className="text-[9px] font-black text-[#00A651] uppercase tracking-widest">
+                      {String(opinion.sector || opinion.category || "OPINION").toUpperCase()}
                     </span>
-                    <span className="text-zinc-400">
-                      {opinion.date}
+                    <span className="text-[8px] font-bold uppercase text-zinc-400 tracking-wider">
+                      <DateChip value={opinion.date} />
                     </span>
                   </div>
 

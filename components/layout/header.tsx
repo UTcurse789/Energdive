@@ -243,9 +243,11 @@ export function Header() {
             {/* 1. TOP BLACK BAR */}
             <div className="bg-black text-white py-1.5 px-4 md:px-12 flex justify-between items-center text-[10px] md:text-[11px] font-semibold tracking-wider">
                 <div className="flex gap-4 items-center">
-                    <Facebook className="w-3.5 h-3.5 hover:opacity-70 cursor-pointer" />
-                    <Twitter className="w-3.5 h-3.5 hover:opacity-70 cursor-pointer" />
                     <Linkedin className="w-3.5 h-3.5 hover:opacity-70 cursor-pointer" />
+                    <Twitter className="w-3.5 h-3.5 hover:opacity-70 cursor-pointer" />
+                    <Facebook className="w-3.5 h-3.5 hover:opacity-70 cursor-pointer" />
+                    
+                    
                 </div>
                 <Link href="/advertise" className="flex items-center gap-2 uppercase cursor-pointer hover:text-gray-300 transition-colors">
                     <Megaphone className="w-3.5 h-3.5" />
