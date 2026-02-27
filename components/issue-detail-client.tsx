@@ -56,7 +56,7 @@ export function IssueDetailClient({ issue }: IssueDetailClientProps) {
                             <div className="flex flex-wrap justify-center md:justify-start gap-3 sm:gap-4 text-xs sm:text-sm text-gray-500 uppercase tracking-widest">
                                 <span>Volume {issue.volume}</span>
                                 <span className="hidden sm:inline">•</span>
-                                <span>Number {issue.number}</span>
+                                <span>Number {issue.Issue}</span>
                             </div>
                             {issue.description && (
                                 <p className="mt-4 sm:mt-6 text-base sm:text-lg text-gray-600 leading-relaxed max-w-2xl">
