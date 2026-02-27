@@ -43,7 +43,7 @@ async function getEvents() {
                 image: imageUrl,
                 description,
                 url: event.url || "",
-                time: event.time || "",
+                // time: event.time || "",
             };
         });
     } catch (err) {
