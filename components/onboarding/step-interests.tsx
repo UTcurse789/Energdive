@@ -216,6 +216,84 @@ export default function StepInterests({
                     </p>
                 </div>
 
+                {/* ── Communities Multi-Select ─────────────────────── */}
+                <div className="space-y-3">
+                    <label className="block text-sm font-medium text-zinc-700">
+                        Choose Communities and Sub-Communities
+                    </label>
+
+                    {/* Chips */}
+                    <div className="flex flex-wrap gap-2">
+                        {communities.map((community) => {
+                            const isActive = selectedCommunities.has(community.id);
+                            return (
+                                <button
+                                    key={community.id}
+                                    type="button"
+                                    onClick={() => toggleCommunity(community.id)}
+                                    className={`px-4 py-2 rounded-full text-sm font-medium border transition-all flex items-center gap-2 ${isActive
+                                        ? "bg-[#0AB996]/10 border-[#0AB996] text-[#0AB996]"
+                                        : "bg-white border-zinc-200 text-zinc-600 hover:border-zinc-300"
+                                        }`}
+                                >
+                                    {isActive && <Check className="w-3.5 h-3.5" />}
+                                    {community.name}
+                                </button>
+                            );
+                        })}
+                    </div>
+
+                    {/* Sub-community multi-select (shown for each selected community) */}
+                    {Array.from(selectedCommunities.entries()).map(
+                        ([communityId, subCommunitySet]) => {
+                            const community = communities.find(
+                                (c) => c.id === communityId
+                            );
+                            if (!community) return null;
+
+                            return (
+                                <motion.div
+                                    key={communityId}
+                                    initial={{ opacity: 0, height: 0 }}
+                                    animate={{ opacity: 1, height: "auto" }}
+                                    exit={{ opacity: 0, height: 0 }}
+                                    className="pl-4 border-l-2 border-[#0AB996]/30"
+                                >
+                                    <label className="block text-md font-medium text-zinc-500 mb-2">
+                                        Sub-communities for{" "}
+                                        <span className="text-[#0AB996]">{community.name}</span> (Select multiple)
+                                    </label>
+
+                                    <div className="flex flex-wrap gap-2">
+                                        {community.sub_communities.map((sc) => {
+                                            const isSelected = subCommunitySet.has(sc.id);
+                                            return (
+                                                <button
+                                                    key={sc.id}
+                                                    type="button"
+                                                    onClick={() => toggleSubCommunity(communityId, sc.id)}
+                                                    className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all flex items-center gap-1.5 ${isSelected
+                                                        ? "bg-[#0AB996]/10 border-[#0AB996] text-[#0AB996]"
+                                                        : "bg-white border-zinc-200 text-zinc-600 hover:border-zinc-300"
+                                                        }`}
+                                                >
+                                                    {isSelected && <Check className="w-3 h-3" />}
+                                                    {sc.name}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                </motion.div>
+                            );
+                        }
+                    )}
+
+                    {errors.communitySelections && (
+                        <p className="text-red-500 text-xs">
+                            {errors.communitySelections.message}
+                        </p>
+                    )}
+                </div>
                 {/* ── Industry Select ──────────────────────────────── */}
                 <div className="space-y-1">
                     <label className="block text-sm font-medium text-zinc-700">
@@ -265,84 +343,7 @@ export default function StepInterests({
                     )}
                 </div>
 
-                {/* ── Communities Multi-Select ─────────────────────── */}
-                <div className="space-y-3">
-                    <label className="block text-sm font-medium text-zinc-700">
-                        Communities of Interest
-                    </label>
 
-                    {/* Chips */}
-                    <div className="flex flex-wrap gap-2">
-                        {communities.map((community) => {
-                            const isActive = selectedCommunities.has(community.id);
-                            return (
-                                <button
-                                    key={community.id}
-                                    type="button"
-                                    onClick={() => toggleCommunity(community.id)}
-                                    className={`px-4 py-2 rounded-full text-sm font-medium border transition-all flex items-center gap-2 ${isActive
-                                        ? "bg-[#0AB996]/10 border-[#0AB996] text-[#0AB996]"
-                                        : "bg-white border-zinc-200 text-zinc-600 hover:border-zinc-300"
-                                        }`}
-                                >
-                                    {isActive && <Check className="w-3.5 h-3.5" />}
-                                    {community.name}
-                                </button>
-                            );
-                        })}
-                    </div>
-
-                    {/* Sub-community multi-select (shown for each selected community) */}
-                    {Array.from(selectedCommunities.entries()).map(
-                        ([communityId, subCommunitySet]) => {
-                            const community = communities.find(
-                                (c) => c.id === communityId
-                            );
-                            if (!community) return null;
-
-                            return (
-                                <motion.div
-                                    key={communityId}
-                                    initial={{ opacity: 0, height: 0 }}
-                                    animate={{ opacity: 1, height: "auto" }}
-                                    exit={{ opacity: 0, height: 0 }}
-                                    className="pl-4 border-l-2 border-[#0AB996]/30"
-                                >
-                                    <label className="block text-xs font-medium text-zinc-500 mb-2">
-                                        Sub-communities for{" "}
-                                        <span className="text-[#0AB996]">{community.name}</span> (Select multiple)
-                                    </label>
-
-                                    <div className="flex flex-wrap gap-2">
-                                        {community.sub_communities.map((sc) => {
-                                            const isSelected = subCommunitySet.has(sc.id);
-                                            return (
-                                                <button
-                                                    key={sc.id}
-                                                    type="button"
-                                                    onClick={() => toggleSubCommunity(communityId, sc.id)}
-                                                    className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all flex items-center gap-1.5 ${isSelected
-                                                        ? "bg-[#0AB996]/10 border-[#0AB996] text-[#0AB996]"
-                                                        : "bg-white border-zinc-200 text-zinc-600 hover:border-zinc-300"
-                                                        }`}
-                                                >
-                                                    {isSelected && <Check className="w-3 h-3" />}
-                                                    {sc.name}
-                                                </button>
-                                            );
-                                        })}
-                                    </div>
-                                </motion.div>
-                            );
-                        }
-                    )}
-
-                    {errors.communitySelections && (
-                        <p className="text-red-500 text-xs">
-                            {errors.communitySelections.message}
-                        </p>
-                    )}
-                </div>
             </div>
 
             {/* ── Navigation ──────────────────────────────────────── */}

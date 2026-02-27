@@ -81,7 +81,7 @@ export default async function OnboardingPage() {
             </div>
 
             <div className="relative z-10 mb-8 text-center">
-                <h1 className="text-3xl font-bold text-zinc-900 mb-2">Welcome to Energdive</h1>
+                <h1 className="text-3xl font-bold text-zinc-900 mb-2">Welcome to ENERGClub</h1>
                 <p className="text-zinc-500">Let&apos;s set up your personalized experience.</p>
             </div>
 
