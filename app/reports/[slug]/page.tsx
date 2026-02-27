@@ -450,7 +450,7 @@ export default async function IntelligenceReportPage({ params }: { params: Promi
                             </div>
 
                             {/* Actions card */}
-                            <div className="bg-white rounded-full border border-zinc-200 overflow-hidden shadow-sm hover:border-zinc-300 hover:bg-zinc-50 transition-colors mt-6 mb-4 w-fit mx-auto">
+                            <div className="bg-white rounded-full border border-zinc-200 shadow-sm hover:border-zinc-300 hover:bg-zinc-50 transition-colors mt-6 mb-4 w-fit mx-auto relative z-20">
                                 <ShareButton
                                     title={article.Title}
                                     text={excerpt || "Check out this report"}
