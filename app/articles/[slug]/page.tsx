@@ -9,7 +9,7 @@ import { ScrollProgress } from "@/components/ui/scroll-progress";
 import { DateChip } from "@/components/ui/date-chip";
 import { ShareButton } from "@/components/ui/share-button";
 import { ISSUES } from "@/data/dummy";
-import { ArrowRight, Calendar, ChevronRight } from "lucide-react";
+import { ArrowRight, Calendar, ChevronRight, Printer } from "lucide-react";
 import { formatContentDate } from "@/lib/date";
 import ArticleBody from "@/components/ArticleBody";
 
@@ -125,11 +125,22 @@ export default async function ArticlePage(props: any) {
                                 </span>
                                 <DateChip value={article.date} />
                             </div>
-                            <ShareButton
-                                title={article.title}
-                                text={article.excerpt}
-                                className="text-gray-500 hover:text-teal-600 font-medium text-sm border border-gray-200 px-3 py-1.5 rounded-full bg-white hover:bg-gray-50 shadow-sm"
-                            />
+                            <div className="flex items-center gap-2">
+                                <Link
+                                    href={`/print/${slug}`}
+                                    target="_blank"
+                                    className="flex items-center gap-1.5 text-gray-500 hover:text-red-600 font-medium text-sm border border-gray-200 px-3 py-1.5 rounded-full bg-white hover:bg-gray-50 shadow-sm transition-colors"
+                                    title="Print this article"
+                                >
+                                    <Printer className="h-3.5 w-3.5" />
+                                    Print
+                                </Link>
+                                <ShareButton
+                                    title={article.title}
+                                    text={article.excerpt}
+                                    className="text-gray-500 hover:text-teal-600 font-medium text-sm border border-gray-200 px-3 py-1.5 rounded-full bg-white hover:bg-gray-50 shadow-sm"
+                                />
+                            </div>
                         </div>
 
                         {/* Title */}
