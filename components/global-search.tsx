@@ -355,7 +355,7 @@ export function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
                                 </span>
                                 <span>
                                     Powered by{" "}
-                                    <strong style={{ color: "#00A651" }}>EnergDive Intelligence</strong>
+                                    <strong style={{ color: "#00A651" }}>ENERGDIVE Intelligence</strong>
                                 </span>
                             </div>
                         </motion.div>
