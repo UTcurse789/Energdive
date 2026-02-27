@@ -1,6 +1,8 @@
 import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { updateUserProfile } from "@/lib/queries/users";
+import syncUserToBrevo from "@/lib/brevoSync";
+import { getFullUserProfile } from "@/lib/getFullUserProfile";
 
 /**
  * POST /api/user/update-profile
@@ -28,6 +30,18 @@ export async function POST(req: Request) {
             subIndustryId: body.subIndustryId,
             communitySelections: body.communitySelections,
         });
+
+        // Sync updated profile to Brevo
+        try {
+            const fullUser = await getFullUserProfile(userId);
+            if (fullUser) {
+                await syncUserToBrevo(fullUser);
+                console.log("✅ Profile update synced to Brevo");
+            }
+        } catch (brevoErr) {
+            console.error("❌ Brevo sync after profile update failed:", brevoErr);
+            // Don't fail the profile update if Brevo sync fails
+        }
 
         return NextResponse.json({ success: true });
     } catch (error) {

@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/buttons";
 import { ScrollProgress } from "@/components/ui/scroll-progress";
+import { ShareButton } from "@/components/ui/share-button";
 
 /* ---------- Helper: Title Case Function ---------- */
 function toTitleCase(str: string) {
@@ -55,7 +56,11 @@ export default function OpinionContent({ opinion, recommended }: any) {
                     </Link>
                     <div className="flex items-center gap-2">
                         <Button variant="ghost" size="sm" className="rounded-full"><Bookmark className="w-4 h-4" /></Button>
-                        <Button variant="ghost" size="sm" className="rounded-full"><Share2 className="w-4 h-4" /></Button>
+                        <ShareButton
+                            title={opinion.title}
+                            text={opinion.excerpt}
+                            className="bg-transparent text-zinc-900 hover:bg-zinc-100 hover:text-zinc-900 p-2 rounded-full"
+                        />
                     </div>
                 </nav>
 
@@ -85,7 +90,7 @@ export default function OpinionContent({ opinion, recommended }: any) {
                                     </div>
                                     <div>
                                         <p className="text-[11px] font-black uppercase tracking-widest text-zinc-900">{opinion.author?.name}</p>
-                                        <p className="text-[10px] text-zinc-400 uppercase tracking-widest">{opinion.author?.role}</p>
+                                        {/* <p className="text-[10px] text-zinc-400 uppercase tracking-widest">{opinion.author?.role}</p> */}
                                     </div>
                                 </div>
                                 <div className="h-4 w-px bg-zinc-200" />
@@ -179,7 +184,7 @@ export default function OpinionContent({ opinion, recommended }: any) {
                         </div>
 
                         {/* Newsletter CTA Block */}
-                        <div className="mt-24 p-12 rounded-3xl bg-black text-white overflow-hidden relative">
+                        {/* <div className="mt-24 p-12 rounded-3xl bg-black text-white overflow-hidden relative">
                             <div className="relative z-10">
                                 <h3 className="text-3xl font-black uppercase italic tracking-tighter mb-4">The Strategic Edge.</h3>
                                 <p className="text-zinc-400 font-serif mb-8 text-lg italic">Get exclusive executive summaries delivered weekly.</p>
@@ -188,7 +193,7 @@ export default function OpinionContent({ opinion, recommended }: any) {
                                     <Button className="bg-[#00A651] hover:bg-[#008c44] rounded-full px-10 py-4 font-black uppercase text-[10px] tracking-widest">Join Now</Button>
                                 </div>
                             </div>
-                        </div>
+                        </div> */}
                     </div>
                 </div>
             </article>

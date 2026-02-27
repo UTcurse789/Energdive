@@ -13,9 +13,9 @@ export default async function OnboardingPage() {
         redirect("/auth");
     }
 
-    // DB check — if profile already exists, go to dashboard
+    // DB check — if profile already exists and completed, go to dashboard
     const profile = await getUserProfile(userId);
-    if (profile) {
+    if (profile?.onboarding_completed) {
         redirect("/dashboard");
     }
 

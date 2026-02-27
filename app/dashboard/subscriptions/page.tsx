@@ -43,7 +43,7 @@ const PLANS = [
             "Monthly expert webinars",
             "ENERGDIVE Magazine (digital)",
         ],
-        cta: "Upgrade to Pro",
+        cta: "Coming Soon",
         current: false,
     },
     {
@@ -64,7 +64,7 @@ const PLANS = [
             "ENERGDIVE Magazine (print + digital)",
             "White-label reports",
         ],
-        cta: "Contact Sales",
+        cta: "Coming Soon",
         current: false,
     },
 ];
