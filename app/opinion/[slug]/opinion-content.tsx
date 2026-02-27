@@ -12,7 +12,8 @@ import {
     Bookmark,
     Quote,
     Clock,
-    ArrowRight
+    ArrowRight,
+    Printer
 } from "lucide-react";
 import { Button } from "@/components/ui/buttons";
 import { ScrollProgress } from "@/components/ui/scroll-progress";
@@ -55,6 +56,15 @@ export default function OpinionContent({ opinion, recommended }: any) {
                         Back to Opinions
                     </Link>
                     <div className="flex items-center gap-2">
+                        <Link
+                            href={`/print/${opinion.slug}`}
+                            target="_blank"
+                            className="flex items-center gap-1.5 text-zinc-500 hover:text-red-600 text-sm border border-zinc-200 px-3 py-1.5 rounded-full bg-white hover:bg-zinc-50 transition-colors"
+                            title="Print this article"
+                        >
+                            <Printer className="w-3.5 h-3.5" />
+                            Print
+                        </Link>
                         <Button variant="ghost" size="sm" className="rounded-full"><Bookmark className="w-4 h-4" /></Button>
                         <ShareButton
                             title={opinion.title}

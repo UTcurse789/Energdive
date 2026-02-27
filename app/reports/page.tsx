@@ -141,7 +141,7 @@ export default function ReportsPage() {
             </div>
 
             <div className="flex gap-8 items-center text-[10px] font-bold uppercase tracking-widest text-zinc-400">
-              
+
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 w-4 h-4" />
               <input
                 type="text"
@@ -149,7 +149,8 @@ export default function ReportsPage() {
                 className="w-full pl-12 pr-4 py-3 bg-zinc-100 rounded-full text-sm focus:outline-none focus:ring-1 focus:ring-[#00A651] transition-all"
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
-              
+
+
             </div>
           </div>
         </div>

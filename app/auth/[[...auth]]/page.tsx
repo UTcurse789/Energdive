@@ -428,10 +428,10 @@ export default function UnifiedAuthPage() {
                     <div className="text-center mb-6">
                         <div className="flex justify-center mb-4">
                             <Image
-                                src="/Energdive-Logo.png"
+                                src="/logo - energclub-energdive.png"
                                 alt="Energdive"
-                                width={160}
-                                height={40}
+                                width={250}
+                                height={60}
                                 priority
                             />
                         </div>

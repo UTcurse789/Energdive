@@ -279,7 +279,8 @@ import {
     FileText,
     TrendingUp,
     Clock,
-    Quote
+    Quote,
+    Printer
 } from "lucide-react";
 import { formatContentDate } from "@/lib/date";
 import { ShareButton } from "@/components/ui/share-button";
@@ -448,13 +449,24 @@ export default async function IntelligenceReportPage({ params }: { params: Promi
                             </div>
 
                             {/* Actions card */}
-                            <div className="bg-white rounded-full border border-zinc-200 shadow-sm hover:border-zinc-300 hover:bg-zinc-50 transition-colors mt-6 mb-4 w-fit mx-auto relative z-20">
-                                <ShareButton
-                                    title={article.Title}
-                                    text={excerpt || "Check out this report"}
-                                    className="flex items-center justify-center gap-2 px-6 py-2 text-sm font-medium text-[#445b7e] hover:text-[#2c3e50] transition-all duration-200"
-                                    iconClassName="w-4 h-4"
-                                />
+                            <div className="flex flex-col gap-2 mt-6 mb-4">
+                                <Link
+                                    href={`/print/${slug}`}
+                                    target="_blank"
+                                    className="bg-white rounded-full border border-zinc-200 shadow-sm hover:border-zinc-300 hover:bg-zinc-50 transition-colors flex items-center justify-center gap-2 px-6 py-2 text-sm font-medium text-[#445b7e] hover:text-red-600 w-fit mx-auto"
+                                    title="Print this report"
+                                >
+                                    <Printer className="w-4 h-4" />
+                                    Print
+                                </Link>
+                                <div className="bg-white rounded-full border border-zinc-200 shadow-sm hover:border-zinc-300 hover:bg-zinc-50 transition-colors w-fit mx-auto relative z-20">
+                                    <ShareButton
+                                        title={article.Title}
+                                        text={excerpt || "Check out this report"}
+                                        className="flex items-center justify-center gap-2 px-6 py-2 text-sm font-medium text-[#445b7e] hover:text-[#2c3e50] transition-all duration-200"
+                                        iconClassName="w-4 h-4"
+                                    />
+                                </div>
                             </div>
 
                             {/* Meta card */}

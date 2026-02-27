@@ -163,6 +163,7 @@ export default async function OpinionDetailPage({ params }: { params: Promise<{ 
   // page.tsx mein mapping thodi safe kar dete hain
   const opinion = {
     id: article.id,
+    slug,
     // Agar Strapi v4 use kar rahe ho toh article.attributes.Title ho sakta hai
     title: article.Title || article.attributes?.Title,
     excerpt: article?.Excerpt?.[0]?.children?.[0]?.text || article.attributes?.Excerpt?.[0]?.children?.[0]?.text || "",
