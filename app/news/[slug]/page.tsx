@@ -11,6 +11,7 @@ import { ShareButton } from "@/components/ui/share-button";
 import { ISSUES } from "@/data/dummy";
 import { ArrowRight, Calendar, ChevronRight } from "lucide-react";
 import { formatContentDate } from "@/lib/date";
+import ArticleBody from "@/components/ArticleBody";
 
 const STRAPI_BASE_URL = "http://206.189.132.187:1337";
 
@@ -210,18 +211,20 @@ export default async function NewsDetailPage({
                             {/* <div className="absolute inset-x-0 bottom-0 h-2/3 bg-linear-to-t from-black/80 via-black/40 to-transparent flex flex-col justify-end p-8 md:p-12" /> */}
 
                             <div className="prose prose-lg max-w-none font-serif text-[18px] leading-[1.95] text-gray-800
-                                prose-headings:font-bold prose-headings:text-gray-900 prose-headings:tracking-tight
-                                prose-h2:text-3xl prose-h2:mt-12 prose-h2:mb-4 prose-h2:border-b prose-h2:border-gray-100 prose-h2:pb-3
-                                prose-h3:text-2xl prose-h3:mt-10 prose-h3:mb-3
-                                prose-p:mb-6
-                                prose-a:text-teal-600 prose-a:decoration-teal-300 hover:prose-a:text-teal-800
-                                prose-strong:text-gray-900
-                                prose-blockquote:border-l-teal-500 prose-blockquote:bg-teal-50/30 prose-blockquote:rounded-r-lg prose-blockquote:py-2
-                                prose-img:rounded-lg prose-img:shadow-md
-                                prose-li:marker:text-teal-500
-                                first:prose-p:first-letter:text-6xl first:prose-p:first-letter:font-serif first:prose-p:first-letter:font-bold first:prose-p:first-letter:float-left first:prose-p:first-letter:mr-3 first:prose-p:first-letter:mt-1 first:prose-p:first-letter:text-teal-700"
+
+prose-headings:font-bold prose-headings:text-gray-900 prose-headings:tracking-tight
+prose-h2:text-3xl prose-h2:mt-12 prose-h2:mb-4 prose-h2:border-b prose-h2:border-gray-100 prose-h2:pb-3
+prose-h3:text-2xl prose-h3:mt-10 prose-h3:mb-3
+prose-p:mb-6
+prose-a:text-teal-600 prose-a:decoration-teal-300 hover:prose-a:text-teal-800
+prose-strong:text-gray-900
+prose-blockquote:border-l-teal-500 prose-blockquote:bg-teal-50/30 prose-blockquote:rounded-r-lg prose-blockquote:py-2
+prose-img:rounded-lg prose-img:shadow-md
+prose-li:marker:text-teal-500
+
+first:prose-p:first-letter:text-6xl first:prose-p:first-letter:font-serif first:prose-p:first-letter:font-bold first:prose-p:first-letter:float-left first:prose-p:first-letter:mr-3 first:prose-p:first-letter:mt-1 first:prose-p:first-letter:text-teal-700"
                             >
-                                <BlocksRenderer content={article.content} />
+                                <ArticleBody content={article.content} />
                             </div>
                         </article>
 
