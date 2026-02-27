@@ -664,8 +664,6 @@ export default async function IntelligenceReportPage({ params }: { params: Promi
                     </div>
                 </div>
             </main>
-
-            <Footer />
         </div>
     );
 }

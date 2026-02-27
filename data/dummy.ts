@@ -319,8 +319,8 @@ export const ISSUES: Issue[] = [
         date: "Jan 2026",
         month: "January",
         year: "2026",
-        volume: "105",
-        number: "1",
+        volume: "1",
+        Issue: "2",
         sections: [
             {
                 title: "Essays",

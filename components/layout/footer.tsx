@@ -3,7 +3,7 @@
 import Link from "next/link";
 import NextImage from "next/image";
 import { useState, useEffect } from "react";
-import { SubscribeModal } from "@/components/subscribe-modal";
+import { SubscribeModal } from "../subscribe-modal";
 import {
     Mail,
     MapPin,

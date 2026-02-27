@@ -68,7 +68,7 @@ export async function POST(req: Request) {
             );
         }
 
-        if (!VALID_FREQUENCIES.includes(frequency)) {
+        if (!VALID_FREQUENCIES.some((vf) => frequency.startsWith(vf))) {
             return NextResponse.json(
                 { error: "Please select a frequency (Daily, Weekly, or Monthly)." },
                 { status: 400 }
