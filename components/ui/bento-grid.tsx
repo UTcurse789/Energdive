@@ -139,18 +139,15 @@ export function BentoGrid({ items: propItems, className }: BentoGridProps) {
         <section className={cn("w-full py-12", className)}>
             {/* CSS Hack to ensure images fill their parent blocks within MagicBento */}
             <style jsx global>{`
-            .magic-bento-container {
+.magic-bento-container img, 
+[data-bento-grid] img {
+  object-fit: cover !important;
+  object-position: top center !important; 
   width: 100% !important;
-  max-width: 100% !important;
+  height: 100% !important;
+  display: block !important;
 }
-                .magic-bento-container img, 
-                [data-bento-grid] img {
-                    object-fit: cover !important;
-                    width: 100% !important;
-                    height: 100% !important;
-                    display: block !important;
-                }
-            `}</style>
+`}</style>
 
             <div className="w-full">
                 <div className="w-full transition-all duration-1000 ease-in-out">
