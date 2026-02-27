@@ -103,7 +103,7 @@ export interface Issue {
     month: string;
     year: string;
     volume?: string;
-    number?: string;
+    Issue?: string;
     coverImage: string;
     sections: Section[];
 }
