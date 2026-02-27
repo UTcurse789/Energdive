@@ -5,9 +5,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import {
-    Brain, Lightbulb, Share2, ArrowRight, CheckCircle2,
-    Globe2, Users2, Zap, Factory, Leaf, TreeDeciduous
+    Brain, Lightbulb, Share2, ArrowRight, CheckCircle2
 } from "lucide-react";
+import { title } from "process";
 
 // --- Components ---
 
@@ -34,7 +34,7 @@ const TierCard = ({ title, price, features, recommended = false }: { title: stri
     <div className={`relative p-8 rounded-2xl border ${recommended ? 'border-[#E5B866] bg-[#E5B866]/5' : 'border-zinc-800 bg-zinc-900/50'} flex flex-col h-full`}>
         {recommended && (
             <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#E5B866] text-black text-xs font-bold px-4 py-1 rounded-full uppercase tracking-widest">
-                Most Popular
+                Recommended
             </div>
         )}
         <h3 className={`text-2xl font-serif font-bold mb-2 ${recommended ? 'text-[#E5B866]' : 'text-white'}`}>{title}</h3>
@@ -51,10 +51,23 @@ const TierCard = ({ title, price, features, recommended = false }: { title: stri
             ? 'bg-[#E5B866] text-black hover:bg-[#d4a855]'
             : 'bg-zinc-800 text-white hover:bg-zinc-700'
             }`}>
-            {recommended ? 'Join Now' : 'Learn More'}
+            {recommended ? 'Join Now' : 'Coming Soon'}
         </Link>
     </div>
 );
+
+const ecosystemItems = [
+    { title: "Oil & Gas", img: "https://images.unsplash.com/photo-1516937941344-00b4e0337589?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" },
+    { title: "Power & Utilities", img: "https://images.unsplash.com/photo-1466611653911-95081537e5b7?auto=format&fit=crop&q=80&w=800" },
+    { title: "Renewables", img: "https://images.unsplash.com/photo-1509391366360-2e959784a276?auto=format&fit=crop&q=80&w=800" },
+    { title: "Transmission", img: "https://images.unsplash.com/photo-1473341304170-971dccb5ac1e?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" },
+    { title: "Distribution", img: "https://images.unsplash.com/photo-1548337138-e87d889cc369?auto=format&fit=crop&q=80&w=800" },
+    { title: "Electricity Markets", img: "https://images.unsplash.com/photo-1559526324-4b87b5e36e44?auto=format&fit=crop&q=80&w=800" },
+    { title: "New Energies", img: "https://images.unsplash.com/photo-1532601224476-15c79f2f7a51?auto=format&fit=crop&q=80&w=800" },
+    { title: "Energy Storage", img: "https://images.unsplash.com/photo-1620714223084-8fcacc6dfd8d?auto=format&fit=crop&q=80&w=800" },
+    { title: "Sustainability & Safety", img: "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&q=80&w=800" }
+     
+];
 
 export default function EnergClubPage() {
     return (
@@ -62,9 +75,8 @@ export default function EnergClubPage() {
 
             {/* HERO SECTION */}
             <section className="relative h-screen min-h-[700px] flex items-center justify-center overflow-hidden">
-                {/* Background Image/Video Placeholder */}
                 <div className="absolute inset-0 z-0">
-                    <div className="absolute inset-0 bg-linear-to-b from-black/70 via-black/50 to-black z-10" />
+                    <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black z-10" />
                     <Image
                         src="https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2072&auto=format&fit=crop"
                         alt="Global Network"
@@ -90,7 +102,7 @@ export default function EnergClubPage() {
 
                         <h1 className="text-4xl md:text-6xl lg:text-7xl font-serif font-bold text-white mb-8 leading-tight">
                             Powering India's Intelligent, <br />
-                            <span className="text-transparent bg-clip-text bg-linear-to-r from-[#E5B866] to-[#FFE0B2]">
+                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#E5B866] to-[#FFE0B2]">
                                 Innovative & Interconnected
                             </span> <br />
                             Energy Ecosystem
@@ -127,12 +139,13 @@ export default function EnergClubPage() {
                         </motion.div>
                         <div className="relative h-[400px] rounded-2xl overflow-hidden border border-zinc-800 grayscale hover:grayscale-0 transition-all duration-700">
                             <Image
-                                src="https://images.unsplash.com/photo-1556761175-5973dc0f32e7?q=80&w=1932&auto=format&fit=crop"
-                                alt="Professionals Meeting"
+                                src="/the club.jpg"
+                                alt="The Club"
                                 fill
+                                priority // Add this to prioritize loading for hero-section images
                                 className="object-cover"
                             />
-                            <div className="absolute inset-0 bg-linear-to-t from-black via-transparent to-transparent" />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent" />
                         </div>
                     </div>
                 </div>
@@ -167,7 +180,7 @@ export default function EnergClubPage() {
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
                     <div className="relative h-[500px] rounded-2xl overflow-hidden border border-zinc-800 order-2 lg:order-1">
                         <Image
-                            src="https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=2069&auto=format&fit=crop"
+                            src="/key outcomes.jpg"
                             alt="Innovation"
                             fill
                             className="object-cover"
@@ -195,7 +208,7 @@ export default function EnergClubPage() {
             </section>
 
             {/* ONE ECOSYSTEM BANNER */}
-            <section className="py-24 bg-linear-to-r mt-20 from-zinc-900 via-zinc-800 to-zinc-900 border-y border-[#E5B866]/20">
+            <section className="py-24 bg-gradient-to-r mt-20 from-zinc-900 via-zinc-800 to-zinc-900 border-y border-[#E5B866]/20">
                 <div className="container mx-auto px-6 text-center max-w-4xl">
                     <h3 className="text-3xl md:text-4xl font-serif font-bold text-[#E5B866] mb-6">
                         One Ecosystem. One Community. One Platform.
@@ -204,34 +217,75 @@ export default function EnergClubPage() {
                         An integrated digital platform for India's energy professionals. All figures, power, generation, markets, storage, policy, and one goal: To Access Insights, Fuel Innovation, and Sustain Power for a better ecosystem.
                     </p>
                     <Link href="/auth" className="bg-[#E5B866] text-black px-10 py-4 rounded-full font-bold uppercase tracking-widest hover:bg-white transition-colors duration-300 shadow-[0_0_20px_rgba(229,184,102,0.3)] inline-block">
-                        Join Now
+                        Join Nowx
                     </Link>
                 </div>
             </section>
 
-            {/* THE ECOSYSTEM */}
-            <section className="py-24 container mx-auto px-6 lg:px-12">
-                <div className="text-center m-16">
+            {/* THE ECOSYSTEM - Slow Motion & Grab Effect */}
+            <section className="py-24 overflow-hidden relative">
+                <div className="text-center mb-16 px-6">
                     <SectionHeading className="mb-2">The Ecosystem</SectionHeading>
                     <p className="text-zinc-500 uppercase tracking-widest text-sm">Diverse sectors integrated on one common canvas</p>
                 </div>
 
-                <div className="grid m-20 grid-cols-2 md:grid-cols-4 gap-4">
-                    {[
-                        { title: "Oil & Gas", img: "https://images.unsplash.com/photo-1473341304170-971dccb5ac1e?q=80&w=2070&auto=format&fit=crop" },
-                        { title: "Power & Utilities", img: "https://images.unsplash.com/photo-1473341304170-971dccb5ac1e?q=80&w=2070&auto=format&fit=crop" },
-                        { title: "Non-Utilities", img: "https://images.unsplash.com/photo-1473341304170-971dccb5ac1e?q=80&w=2070&auto=format&fit=crop" },
-                        { title: "Sustainability", img: "https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?q=80&w=2813&auto=format&fit=crop" }
-                    ].map((item, idx) => (
-                        <div key={idx} className="group relative aspect-3/4 rounded-xl overflow-hidden cursor-pointer">
-                            <Image src={item.img} alt={item.title} fill className="object-cover group-hover:scale-110 transition-transform duration-700" />
-                            <div className="absolute inset-0 bg-linear-to-t from-black via-black/40 to-transparent opacity-80 group-hover:opacity-60 transition-opacity" />
-                            <div className="absolute bottom-6 left-0 right-0 text-center">
-                                <span className="text-[#E5B866] text-sm font-bold uppercase tracking-widest border-b border-[#E5B866] pb-1">{item.title}</span>
+                {/* Wrapper to hide scrollbar */}
+                <div className="relative overflow-hidden w-full cursor-grab active:cursor-grabbing">
+                    <motion.div
+                        className="flex gap-4 px-4"
+                        drag="x"
+                        dragConstraints={{ right: 0, left: -2000 }} // Adjust based on content width
+                        animate={{ x: ["0%", "-50%"] }}
+                        transition={{
+                            x: {
+                                repeat: Infinity,
+                                repeatType: "loop",
+                                duration: 60, // Speed slow karne ke liye duration badha di (30 se 60)
+                                ease: "linear",
+                            },
+                        }}
+                        style={{
+                            width: "max-content",
+                            display: "flex",
+                        }}
+                    >
+                        {[...ecosystemItems, ...ecosystemItems].map((item, idx) => (
+                            <div
+                                key={idx}
+                                className="group relative w-[280px] md:w-[350px] shrink-0 aspect-[3/4] rounded-2xl overflow-hidden select-none"
+                            >
+                                <Image
+                                    src={item.img}
+                                    alt={item.title}
+                                    fill
+                                    draggable={false} // Image drag prevent karne ke liye
+                                    className="object-cover group-hover:scale-110 transition-transform duration-700 pointer-events-none"
+                                />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent opacity-80 pointer-events-none" />
+                                <div className="absolute bottom-8 left-0 right-0 text-center pointer-events-none">
+                                    <span className="text-[#E5B866] text-sm font-bold uppercase tracking-[0.3em] border-b border-[#E5B866]/50 pb-2">
+                                        {item.title}
+                                    </span>
+                                </div>
                             </div>
-                        </div>
-                    ))}
+                        ))}
+                    </motion.div>
+
+                    {/* Side Fading Overlays */}
+                    <div className="absolute inset-y-0 left-0 w-32 bg-gradient-to-r from-black to-transparent z-10 pointer-events-none" />
+                    <div className="absolute inset-y-0 right-0 w-32 bg-gradient-to-l from-black to-transparent z-10 pointer-events-none" />
                 </div>
+
+                {/* Global CSS to hide that annoying scrollbar for good */}
+                <style jsx global>{`
+        ::-webkit-scrollbar {
+            display: none !important;
+        }
+        body {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    `}</style>
             </section>
 
             {/* MEMBERSHIP TIERS */}
@@ -244,8 +298,19 @@ export default function EnergClubPage() {
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
                         <TierCard
+                            title="Premier"
+                            price="Paid"
+                            features={[
+                                "Complimentary Subscription to EnergDive Magazine (12 Issues)",
+                                "Publish view points, technical papers & research on our Digital Feed",
+                                "Priority invite to EnergDive Global Forums",
+                                "One complimentary research report per year"
+                            ]}
+                        />
+                        <TierCard
                             title="Standard"
-                            price="Free / Basic"
+                            price="Free"
+                            recommended={true}
                             features={[
                                 "Early access to EnergDive featured content",
                                 "Join multiple digital sub-communities",
@@ -253,17 +318,6 @@ export default function EnergClubPage() {
                                 "10% discount on single reports and magazines",
                                 "Complimentary access to EnergClub Digital Hangout & Virtual Roundtables",
                                 "Digital Membership Card"
-                            ]}
-                        />
-                        <TierCard
-                            title="Premier"
-                            price="Paid"
-                            recommended={true}
-                            features={[
-                                "Complimentary Subscription to EnergDive Magazine (12 Issues)",
-                                "Publish view points, technical papers & research on our Digital Feed",
-                                "Priority invite to EnergDive Global Forums",
-                                "One complimentary research report per year"
                             ]}
                         />
                         <TierCard
@@ -311,17 +365,17 @@ export default function EnergClubPage() {
                         <div className="relative aspect-square w-full max-w-md mx-auto">
                             <div className="absolute inset-0 bg-[#E5B866]/20 rounded-full blur-[100px]" />
                             <Image
-                                src="https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2072&auto=format&fit=crop"
+                                src="/join.jpg"
                                 alt="Network Globe"
                                 fill
-                                className="object-cover rounded-full mix-blend-screen opacity-80 animate-pulse-slow"
+                                className="object-cover rounded-full mix-blend-screen opacity-80"
                             />
                         </div>
                     </div>
                 </div>
             </section>
 
-            {/* ACTIVATE MEMBERSHIP CTA */}
+            {/* FOOTER / ACTIVATE MEMBERSHIP */}
             <section className="py-20 bg-[#111]">
                 <div className="container mx-auto px-6 text-center max-w-3xl">
                     <h3 className="text-2xl md:text-3xl font-serif font-bold text-[#E5B866] mb-6">
@@ -343,12 +397,6 @@ export default function EnergClubPage() {
                                 height={200}
                                 className="m-8"
                             />
-                            <div className="flex gap-6 text-zinc-500">
-                                {/* Social placeholders */}
-                                <div className="w-5 h-5 bg-zinc-800 rounded-full hover:bg-[#E5B866] transition-colors" />
-                                <div className="w-5 h-5 bg-zinc-800 rounded-full hover:bg-[#E5B866] transition-colors" />
-                                <div className="w-5 h-5 bg-zinc-800 rounded-full hover:bg-[#E5B866] transition-colors" />
-                            </div>
                             <p className="text-xs text-zinc-700 uppercase tracking-widest mt-4">
                                 © 2026 EnergDive. All Rights Reserved.
                             </p>
@@ -356,7 +404,6 @@ export default function EnergClubPage() {
                     </div>
                 </div>
             </section>
-
         </main>
     );
 }

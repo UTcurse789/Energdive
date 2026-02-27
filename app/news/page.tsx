@@ -183,9 +183,9 @@ export default function ArchitectEditorialPage() {
                     {/* 4. MARKET INTELLIGENCE (The rest of 34 entries) */}
                     <section className="mb-32">
                         <div className="flex items-center gap-4 mb-12">
-                            <h2 className="text-4xl font-black uppercase italic">News <span className="text-[#00A651] not-italic">Archive</span></h2>
+                            <h2 className="text-4xl font-black uppercase italic">News </h2>
                             <div className="flex-1 h-1px bg-gray-200"></div>
-                            <span className="text-xs font-black text-gray-400 uppercase">{articles.length} Total Reports</span>
+                            {/* <span className="text-xs font-black text-gray-400 uppercase">{articles.length} Total Reports</span> */}
                         </div>
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-16">
@@ -199,7 +199,7 @@ export default function ArchitectEditorialPage() {
                                             <span>{item.sector}</span>
                                             <DateChip value={item.date} className="text-[9px]" />
                                         </div>
-                                        <h4 className="font-bold text-lg leading-tight line-clamp-2 group-hover:text-[#00A651] transition-colors mb-4">{item.title}</h4>
+                                        <h4 className="font-bold text-lg leading-tight line-clamp-4 group-hover:text-[#00A651] transition-colors mb-4">{item.title}</h4>
                                         <Link href={`/news/${item.slug}`} className="mt-auto inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest hover:gap-4 transition-all text-black">
                                             Read More <MoveRight size={14} className="text-[#00A651]" />
                                         </Link>

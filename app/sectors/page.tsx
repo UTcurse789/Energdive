@@ -113,9 +113,9 @@ export default function SectorsPage() {
                         <div className="rounded-full border border-white/20 bg-white/5 px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-white backdrop-blur-sm">
                             {MAIN_SECTORS.length} Sectors
                         </div>
-                        <div className="rounded-full border border-white/20 bg-white/5 px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-white backdrop-blur-sm">
+                        {/* <div className="rounded-full border border-white/20 bg-white/5 px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-white backdrop-blur-sm">
                             {MAIN_SECTORS.reduce((sum, s) => sum + s.subSectors.length, 0)}+ Sub-Sectors
-                        </div>
+                        </div> */}
                     </div>
                 </div>
 
@@ -139,14 +139,14 @@ export default function SectorsPage() {
                             </div>
                             <div className="p-5">
                                 <p className="text-sm text-gray-500 leading-relaxed mb-4 line-clamp-2">{sector.description}</p>
-                                <div className="flex flex-wrap gap-1.5">
+                                {/* <div className="flex flex-wrap gap-1.5">
                                     {sector.subSectors.slice(0, 4).map((sub) => (
                                         <span key={sub} className="inline-flex items-center rounded-full bg-gray-50 border border-gray-100 text-[10px] font-bold text-gray-500 uppercase tracking-wider px-2.5 py-1 group-hover:border-[#009624]/20 group-hover:text-[#009624] transition-colors">{sub}</span>
                                     ))}
                                     {sector.subSectors.length > 4 && (
                                         <span className="inline-flex items-center rounded-full bg-gray-50 border border-gray-100 text-[10px] font-bold text-gray-400 uppercase tracking-wider px-2.5 py-1">+{sector.subSectors.length - 4}</span>
                                     )}
-                                </div>
+                                </div> */}
                                 <div className="mt-4 pt-4 border-t border-gray-50 flex items-center justify-between">
                                     <span className="text-[11px] font-black text-[#009624] uppercase tracking-[0.15em] group-hover:tracking-[0.2em] transition-all">Explore Sector</span>
                                     <ChevronRight size={14} className="text-[#009624] transition-transform group-hover:translate-x-1 duration-300" />

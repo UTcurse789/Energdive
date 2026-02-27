@@ -166,7 +166,7 @@ export default async function NewsDetailPage({
                         </div>
 
                         {/* Author row */}
-                        {article.author && (
+                        {/* {article.author && (
                             <div className="flex items-center gap-4 mb-10 pb-8 border-b border-gray-100">
                                 {article.author.avatar ? (
                                     <Image
@@ -191,7 +191,7 @@ export default async function NewsDetailPage({
                                     <DateChip value={article.date} className="mt-0.5" />
                                 </div>
                             </div>
-                        )}
+                        )} */}
 
                         {/* Featured Image */}
                         <div className="relative aspect-video mb-12 rounded-xl overflow-hidden shadow-lg shadow-black/10 group">
