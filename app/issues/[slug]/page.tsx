@@ -102,7 +102,7 @@ function mapIssue(item: any, slug: string): Issue {
         month: item.Month,
         year: String(item.Year),
         volume: item.Volume,
-        number: item.IssueNumber,
+        Issue: item.IssueNumber,
         coverImage,
         sections: [
             {

@@ -258,12 +258,6 @@ export default async function ArticlePage(props: any) {
                                             {latestIssue.month} {latestIssue.year}
                                         </h4>
 
-                                        {latestIssue.volume && (
-                                            <p className="text-[10px] uppercase tracking-widest font-bold text-gray-400 mb-3">
-                                                Vol. {latestIssue.volume}, No. {latestIssue.number}
-                                            </p>
-                                        )}
-
                                         <span className="inline-flex items-center gap-1 text-xs font-bold text-teal-600 group-hover:gap-2 transition-all">
                                             Read Issue
                                             <ArrowRight className="h-3.5 w-3.5" />

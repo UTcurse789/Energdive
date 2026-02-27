@@ -56,11 +56,11 @@ export function IssueDetailClient({ issue }: IssueDetailClientProps) {
                             </h2>
                             {/* <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold mb-4">
                                 {issue.title}
-                            </h1> */}   
+                            </h1> */}
                             <div className="flex flex-wrap justify-center md:justify-start gap-3 sm:gap-4 text-xs sm:text-sm text-gray-500 uppercase tracking-widest">
                                 <span>Volume {issue.volume}</span>
                                 <span className="hidden sm:inline">•</span>
-                                <span>Issue {issue.number}</span>
+                                <span>Number {issue.Issue}</span>
                             </div>
                             {issue.description && (
                                 <p className="mt-4 sm:mt-6 text-base sm:text-lg text-gray-600 leading-relaxed max-w-2xl">
@@ -137,7 +137,7 @@ export function IssueDetailClient({ issue }: IssueDetailClientProps) {
                                             {/* Author */}
                                             {article.author && (
                                                 <p className="text-[12px] sm:text-xs font-bold text-gray-500">
-                                                     {article.author.name}
+                                                    {article.author.name}
                                                 </p>
                                             )}
                                         </Link>

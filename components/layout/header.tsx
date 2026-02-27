@@ -749,22 +749,21 @@ export function Header() {
                                         </div>
                                     )}
 
-                                    {/* Contact hover content — BRIEF OVERVIEW */}
-                                    {hoveredMoreItem === "contact" && (
-                                        <div className="flex items-start gap-12 h-full">
-                                            <div className="flex-1">
-                                                <h4 className="text-[12px] font-bold uppercase text-gray-400 border-b pb-3 mb-6 tracking-widest">Get In Touch</h4>
-                                                <h3 className="text-2xl font-serif font-bold text-zinc-900 mb-4 leading-tight">We&apos;d Love to Hear From You</h3>
-                                                <p className="text-[14px] text-gray-500 leading-relaxed mb-8">Whether you have a story tip, editorial inquiry, advertising question, or just want to connect — our team is ready to help.</p>
-                                                <div className="grid grid-cols-1 gap-4">
-                                                    <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl border border-gray-100 hover:border-[#00A651]/30 transition-colors">
-                                                        <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: '#00A65112' }}>
-                                                            <MapPin size={18} style={{ color: '#00A651' }} />
-                                                        </div>
-                                                        <div>
-                                                            <p className="text-[12px] font-bold text-gray-400 uppercase tracking-wider">Office</p>
-                                                            <p className="text-[14px] text-gray-700 font-medium">Sector 12A, Dwarka, New Delhi 110075</p>
-                                                        </div>
+                                {/* Contact hover content — BRIEF OVERVIEW */}
+                                {hoveredMoreItem === "contact" && (
+                                    <div className="flex items-start gap-12 h-full">
+                                        <div className="flex-1">
+                                            <h4 className="text-[12px] font-bold uppercase text-gray-400 border-b pb-3 mb-6 tracking-widest">Get In Touch</h4>
+                                            <h3 className="text-2xl font-serif font-bold text-zinc-900 mb-4 leading-tight">We&apos;d Love to Hear From You</h3>
+                                            <p className="text-[14px] text-gray-500 leading-relaxed mb-8">Whether you have a story tip, editorial inquiry, advertising question, or just want to connect — our team is ready to help.</p>
+                                            <div className="grid grid-cols-1 gap-4">
+                                                <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl border border-gray-100 hover:border-[#00A651]/30 transition-colors">
+                                                    <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: '#00A65112' }}>
+                                                        <Mail size={18} style={{ color: '#00A651' }} />
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-[12px] font-bold text-gray-400 uppercase tracking-wider">Email</p>
+                                                        <p className="text-[14px] text-gray-700 font-medium">contact@energdive.com</p>
                                                     </div>
                                                     <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl border border-gray-100 hover:border-[#00A651]/30 transition-colors">
                                                         <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: '#00A65112' }}>

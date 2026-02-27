@@ -45,7 +45,7 @@ export default function OpinionPage() {
         id: item.id,
         title: item.Title,
         slug: item.slug,
-        date: item.Date,
+        // date: item.Date,
         category: "Opinion",
 
         image:

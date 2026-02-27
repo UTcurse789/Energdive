@@ -36,7 +36,7 @@ export default function EventsPage() {
     }, []);
 
     const tabs = [
-        { id: "ongoing", label: "Ongoing" },
+        // { id: "ongoing", label: "Ongoing" },
         { id: "upcoming", label: "Upcoming" },
         { id: "past", label: "Past Events" },
     ];
@@ -96,7 +96,7 @@ export default function EventsPage() {
                         Events <span className="text-[#00A651] not-italic">.</span>
                     </motion.h1>
                     <p className="text-gray-600 max-w-3xl text-lg leading-relaxed mt-6 mb-8">
-                        Watch conversations that matter with ENERGDIVE Videos, where domain experts and sector leaders share quick insights and viewpoints on India’s evolving energy landscape.
+                        ENERGDIVE curates upcoming energy events, conferences, exhibitions, and industry shows, helping you stay informed about the gatherings shaping India’s evolving energy ecosystem.
                     </p>
                 </section>
 
@@ -154,8 +154,8 @@ export default function EventsPage() {
                                             <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-full flex items-center gap-2 shadow-sm border border-zinc-100">
                                                 <div className={cn(
                                                     "w-1.5 h-1.5 rounded-full",
-                                                    event.occurrence === "ongoing" ? "bg-[#00A651] animate-pulse" :
-                                                        event.occurrence === "upcoming" ? "bg-yellow-400" : "bg-red-500"
+                                                    // event.occurrence === "ongoing" ? "bg-[#00A651] animate-pulse" :
+                                                    event.occurrence === "upcoming" ? "bg-yellow-400" : "bg-red-500"
                                                 )} />
                                                 <span className="text-[9px] font-bold uppercase tracking-widest text-zinc-900">
                                                     {event.occurrence}
