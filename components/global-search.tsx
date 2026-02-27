@@ -340,6 +340,19 @@ export function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
                                     }}>ESC</kbd>
                                     to close
                                 </span>
+
+                                <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                                    <kbd style={{
+                                        padding: "2px 6px",
+                                        borderRadius: "4px",
+                                        background: "rgba(209,213,219,0.5)",
+                                        border: "1px solid #d1d5db",
+                                        fontSize: "10px",
+                                        color: "#6b7280",
+                                        fontFamily: "sans-serif",
+                                    }}>CMD + K</kbd>
+                                    to open
+                                </span>
                                 <span>
                                     Powered by{" "}
                                     <strong style={{ color: "#00A651" }}>EnergDive Intelligence</strong>
