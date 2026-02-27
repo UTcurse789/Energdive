@@ -16,7 +16,7 @@ interface Video {
     slug: string;
     excerpt: string;
     youtubeId: string;
-    date: string;
+    // date: string;
     thumbnail: string;
     category: string;
     author: {
@@ -180,9 +180,9 @@ export default function VideosPage() {
                                     <p className="text-gray-600 text-lg mb-8 line-clamp-3 italic">
                                         {featuredVideo.excerpt}
                                     </p>
-                                    <div className="pt-6 border-t border-gray-100">
+                                    {/* <div className="pt-6 border-t border-gray-100">
                                         <p className="text-xs text-gray-400 uppercase tracking-widest font-bold">{featuredVideo.date}</p>
-                                    </div>
+                                    </div> */}
                                 </div>
                             </div>
                         </div>
@@ -240,9 +240,9 @@ export default function VideosPage() {
                                     <p className="text-gray-500 text-sm line-clamp-2 mb-6 flex-1">
                                         {video.excerpt}
                                     </p>
-                                    <div className="pt-4 border-t border-gray-50">
+                                    {/* <div className="pt-4 border-t border-gray-50">
                                         <span className="text-xs text-gray-400 font-bold uppercase tracking-widest">{video.date}</span>
-                                    </div>
+                                    </div> */}
                                 </div>
                             </div>
                         </div>

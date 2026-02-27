@@ -1,6 +1,8 @@
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { saveOnboardingProfile } from "@/lib/queries";
+import { getFullUserProfile } from "@/lib/getFullUserProfile";
+import syncUserToBrevo from "@/lib/brevoSync";
 
 /**
  * POST /api/onboarding/submit
@@ -58,10 +60,20 @@ export async function POST(req: Request) {
             communitySelections: body.communitySelections,
         });
 
-        // ── Update Clerk metadata (so middleware can gate) ──────────
-        await (await clerkClient()).users.updateUserMetadata(userId, {
+        // ── Update Clerk metadata and profile (so middleware can gate, and UI shows name) ──────────
+        await (await clerkClient()).users.updateUser(userId, {
+            firstName: body.firstName,
+            lastName: body.lastName,
             publicMetadata: { onboarding_completed: true },
         });
+
+        // ── Fetch FULL profile ─────────────────────────────
+        const fullUser = await getFullUserProfile(userId);
+
+        // ── Sync to Brevo ──────────────────────────────────
+        await syncUserToBrevo(fullUser);
+
+        console.log("✅ Full profile synced to Brevo");
 
         return NextResponse.json({ success: true, userId: dbUserId });
     } catch (error) {

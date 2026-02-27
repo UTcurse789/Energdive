@@ -267,6 +267,7 @@ import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { ScrollProgress } from "@/components/ui/scroll-progress";
 import { DateChip } from "@/components/ui/date-chip";
+import { SubscribeFreeButton } from "@/components/subscribe-free-button";
 import {
     Download,
     ChevronLeft,
@@ -281,6 +282,7 @@ import {
     Quote
 } from "lucide-react";
 import { formatContentDate } from "@/lib/date";
+import { ShareButton } from "@/components/ui/share-button";
 
 const STRAPI = process.env.NEXT_PUBLIC_STRAPI_URL;
 
@@ -446,25 +448,14 @@ export default async function IntelligenceReportPage({ params }: { params: Promi
                             </div>
 
                             {/* Actions card */}
-                            {/* <div className="bg-white rounded-3xl border border-zinc-100 overflow-hidden shadow-sm">
-                                {[
-                                    { icon: BookmarkPlus, label: "Save Report" },
-                                    { icon: Share2, label: "Share Intel" },
-                                ].map(({ icon: Icon, label }, idx) => (
-                                    <button
-                                        key={label}
-                                        className={`w-full flex items-center justify-between px-6 py-4 text-[10px] font-black uppercase tracking-widest text-zinc-400 hover:text-[#00A651] hover:bg-zinc-50 transition-all duration-200 group ${idx === 0 ? "border-b border-zinc-100" : ""}`}
-                                    >
-                                        <span className="flex items-center gap-3">
-                                            <span className="w-8 h-8 rounded-xl bg-zinc-100 group-hover:bg-[#00A651]/10 flex items-center justify-center transition-colors duration-200">
-                                                <Icon size={13} className="group-hover:text-[#00A651] transition-colors duration-200" />
-                                            </span>
-                                            {label}
-                                        </span>
-                                        <span className="text-zinc-300 group-hover:text-[#00A651] group-hover:translate-x-0.5 transition-all duration-200">→</span>
-                                    </button>
-                                ))}
-                            </div> */}
+                            <div className="bg-white rounded-full border border-zinc-200 shadow-sm hover:border-zinc-300 hover:bg-zinc-50 transition-colors mt-6 mb-4 w-fit mx-auto relative z-20">
+                                <ShareButton
+                                    title={article.Title}
+                                    text={excerpt || "Check out this report"}
+                                    className="flex items-center justify-center gap-2 px-6 py-2 text-sm font-medium text-[#445b7e] hover:text-[#2c3e50] transition-all duration-200"
+                                    iconClassName="w-4 h-4"
+                                />
+                            </div>
 
                             {/* Meta card */}
                             <div className="bg-white rounded-3xl border border-zinc-100 p-6 space-y-4 shadow-sm">

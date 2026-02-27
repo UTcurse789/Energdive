@@ -18,7 +18,7 @@ export default async function DashboardLayout({
     // DB check — the single source of truth for onboarding status
     const profile = await getUserProfile(userId);
 
-    if (!profile) {
+    if (!profile || !profile.onboarding_completed) {
         redirect("/onboarding");
     }
 
