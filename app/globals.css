@@ -105,6 +105,22 @@
   animation: ticker 30s linear infinite;
 }
 
+/* ── Article Image Captions ── */
+@layer utilities {
+
+  .prose p:has(> em:only-child),
+  .prose figcaption em,
+  .prose-figcaption em {
+    font-size: 0.75rem !important;
+    color: #9ca3af !important;
+    text-align: center !important;
+    display: block !important;
+    margin-top: 0.25rem !important;
+    margin-bottom: 0.25rem !important;
+    line-height: 1.5 !important;
+    font-style: italic !important;
+  }
+}
 
 
 @theme inline {
