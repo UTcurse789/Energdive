@@ -9,8 +9,8 @@ import {
     MapPin,
     ArrowRight,
     Send,
-    X,
     Linkedin,
+    X,
     Youtube,
     Instagram,
     Facebook,
@@ -39,8 +39,8 @@ const COMPANY = [
 ];
 
 const SOCIAL_ICONS = [
-    { Icon: X, href: "https://x.com/energdive", label: "Twitter" },
     { Icon: Linkedin, href: "https://www.linkedin.com/company/energdive/", label: "LinkedIn" },
+    { Icon: X, href: "https://x.com/energdive", label: "Twitter" },
     { Icon: Youtube, href: "https://www.youtube.com/@energdive", label: "YouTube" },
     { Icon: Instagram, href: "https://www.instagram.com/energdiveindia", label: "Instagram" },
     { Icon: Facebook, href: "https://www.facebook.com/energdive/", label: "Facebook" },
@@ -86,7 +86,7 @@ export function Footer() {
                             </div>
                             <div>
                                 <h3 className="text-base font-bold tracking-tight">Subscribe to our Newsletter</h3>
-                                <p className="text-xs text-gray-500 mt-0.5">Get energy intelligence delivered weekly. Join 10,000+ industry professionals.</p>
+                                <p className="text-sm text-gray-500 mt-0.5">Get expert insights, updates, and access to communities that match your interests.</p>
                             </div>
                         </div>
                         <button
@@ -107,14 +107,17 @@ export function Footer() {
                     {/* Brand Column */}
                     <div className="lg:col-span-4">
                         <Link href="/" className="inline-block mb-6 group">
-                            <NextImage
-                                src="/logo2-removebg-preview.png"
-                                alt="EnergDive"
-                                width={200}
-                                height={55}
-                                className="h-11 w-auto brightness-0 invert group-hover:opacity-80 transition-opacity"
-                            />
-                        </Link>
+                            <div className="h-11">
+                                <NextImage
+                                    src="/logo2-removebg-preview.png"
+                                    alt="EnergDive"
+                                    width={200}
+                                    height={55}
+                                    className="h-full w-auto group-hover:opacity-80 transition-opacity"
+                                    priority
+                                />
+                            </div>
+                         </Link>
                         <p className="text-gray-500 text-[13px] leading-relaxed mb-7 max-w-sm">
                             India&apos;s premier energy intelligence platform delivering in-depth coverage, analysis, and insights across Oil &amp; Gas, Power, Renewables, and the evolving energy landscape.
                         </p>
@@ -163,7 +166,7 @@ export function Footer() {
 
                     {/* Company */}
                     <div className="lg:col-span-2">
-                        <h4 className="text-[10px] font-black uppercase tracking-[0.15em] text-gray-500 mb-5 pb-2 border-b border-white/[0.06]">Company</h4>
+                        <h4 className="text-[10px] font-black uppercase tracking-[0.15em] text-gray-500 mb-5 pb-2 border-b border-white/[0.06]">Important Links</h4>
                         <ul className="space-y-2">
                             {COMPANY.map((link) => (
                                 <li key={link.name}>
@@ -182,7 +185,7 @@ export function Footer() {
                 {/* ─── Bottom Bar ─── */}
                 <div className="flex flex-col md:flex-row justify-between items-center gap-4 py-6 border-t border-white/[0.06]">
                     <p className="text-[11px] text-gray-600">
-                        &copy; <span>{year}</span> EnergDive. All rights reserved.
+                        &copy; <span>{year}</span> EnergDive. All rights reserved. Clarisector Technologies Pvt. Ltd.
                     </p>
                     <div className="flex items-center gap-5">
                         <Link href="/terms" className="text-[11px] text-gray-600 hover:text-gray-400 transition-colors">Terms</Link>

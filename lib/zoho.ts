@@ -25,7 +25,7 @@ const TOKEN_CACHE_DURATION_MS = 50 * 60 * 1000; // 50 minutes
 /**
  * Refresh the Zoho Access Token (with in-memory caching)
  */
-async function getZohoAccessToken(): Promise<string> {
+export async function getZohoAccessToken(): Promise<string> {
     // Return cached token if still valid
     if (cachedToken && Date.now() < cachedToken.expiresAt) {
         return cachedToken.token;

@@ -1,0 +1,86 @@
+void automation.portal_provision(Int leadId)
+{
+	leadDetails = zoho.crm.getRecordById("Leads", leadId);
+	
+	firstName = ifnull(leadDetails.get("First_Name"), "");
+	email = ifnull(leadDetails.get("Email"), "");
+	
+	if (email == "")
+	{
+		info "SKIP: No email for lead " + leadId;
+		return;
+	}
+	
+	// 1. Build payload
+	payload = Map();
+	payload.put("lead_id", leadId.toString());
+	payload.put("email", email);
+	payload.put("first_name", firstName);
+	payload.put("last_name", ifnull(leadDetails.get("Last_Name"), ""));
+	payload.put("phone", ifnull(leadDetails.get("Phone"), ""));
+	payload.put("company", ifnull(leadDetails.get("Company"), ""));
+	payload.put("designation", ifnull(leadDetails.get("Designation"), ""));
+	payload.put("country", ifnull(leadDetails.get("Country"), ""));
+	payload.put("state", ifnull(leadDetails.get("State"), ""));
+	payload.put("industry", ifnull(leadDetails.get("Industry"), ""));
+	payload.put("sub_industry", ifnull(leadDetails.get("Sub_Industry"), ""));
+	payload.put("community", ifnull(leadDetails.get("Community"), ""));
+	payload.put("sub_community", ifnull(leadDetails.get("Sub_Community"), ""));
+	
+	// 2. Call provision webhook
+	resp = invokeurl
+	[
+		url: "http://206.189.132.187:3000/api/zoho/provision"
+		type: POST
+		parameters: payload
+		headers: {"Content-Type":"application/json","x-webhook-secret":"my_super_secret_123"}
+	];
+	
+	info "Provision response: " + resp;
+	
+	// 3. Parse response & send email with magic link
+	respMap = resp.toMap();
+	
+	if (respMap.get("success") == true)
+	{
+		magicLink = respMap.get("magicLink");
+		info "Magic link: " + magicLink;
+		
+		// 4. Send styled email via Zoho
+		subject = "Your EnergDive Portal Access is Ready";
+		htmlBody = "<div style='font-family:Arial,sans-serif;max-width:600px;margin:0 auto;'>"
+			+ "<div style='background:linear-gradient(135deg,#0a2e1f,#1a4731);padding:32px 40px;text-align:center;border-radius:12px 12px 0 0;'>"
+			+ "<h1 style='color:#fff;font-size:24px;margin:0;'>EnergDive</h1>"
+			+ "<p style='color:#09B697;font-size:11px;text-transform:uppercase;letter-spacing:2px;margin:8px 0 0;'>Energy Intelligence Platform</p>"
+			+ "</div>"
+			+ "<div style='background:#fff;padding:40px;border:1px solid #eee;'>"
+			+ "<h2 style='color:#121212;font-size:22px;margin:0 0 8px;'>Welcome to EnergDive, " + firstName + "!</h2>"
+			+ "<p style='color:#666;font-size:15px;line-height:1.6;'>Your portal access has been activated. Click the button below to sign in instantly — no password needed.</p>"
+			+ "<div style='text-align:center;padding:16px 0 32px;'>"
+			+ "<a href='" + magicLink + "' style='display:inline-block;background:#09B697;color:#fff;font-size:15px;font-weight:700;text-decoration:none;padding:14px 36px;border-radius:8px;'>Access Your Portal &rarr;</a>"
+			+ "</div>"
+			+ "<p style='color:#999;font-size:13px;'>This link is valid for <b>24 hours</b> and can only be used once.</p>"
+			+ "<hr style='border:none;border-top:1px solid #eee;margin:24px 0;'/>"
+			+ "<p style='color:#bbb;font-size:12px;'>If the button doesn't work, copy this URL:<br/>"
+			+ "<a href='" + magicLink + "' style='color:#09B697;word-break:break-all;'>" + magicLink + "</a></p>"
+			+ "</div>"
+			+ "<div style='background:#fafafa;padding:20px;text-align:center;border:1px solid #eee;border-top:none;border-radius:0 0 12px 12px;'>"
+			+ "<p style='color:#999;font-size:11px;margin:0;'>&copy; 2026 EnergDive. All rights reserved.</p>"
+			+ "</div>"
+			+ "</div>";
+		
+		sendmail
+		[
+			from: zoho.adminuserid
+			to: email
+			subject: subject
+			message: htmlBody
+		];
+		
+		info "Email sent to " + email;
+	}
+	else
+	{
+		info "PROVISION FAILED: " + resp;
+	}
+}
