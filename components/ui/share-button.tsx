@@ -31,7 +31,28 @@ export function ShareButton({ title, text, url, className = "", iconClassName = 
         } else {
             // Fallback: Copy to clipboard
             try {
-                await navigator.clipboard.writeText(shareData.url);
+                if (navigator.clipboard && window.isSecureContext) {
+                    await navigator.clipboard.writeText(shareData.url);
+                } else {
+                    const textArea = document.createElement("textarea");
+                    textArea.value = shareData.url;
+                    // Avoid scrolling to bottom
+                    textArea.style.top = "0";
+                    textArea.style.left = "0";
+                    textArea.style.position = "fixed";
+
+                    document.body.appendChild(textArea);
+                    textArea.focus();
+                    textArea.select();
+
+                    try {
+                        document.execCommand('copy');
+                    } catch (err) {
+                        console.error('Fallback copy failed', err);
+                    }
+
+                    document.body.removeChild(textArea);
+                }
                 setCopied(true);
                 setTimeout(() => setCopied(false), 2000);
             } catch (err) {
