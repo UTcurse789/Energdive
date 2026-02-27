@@ -217,9 +217,13 @@ export function Header() {
     const closeMenus = () => { setActiveMenu(null); setHoveredSector(null); setHoveredMoreItem(null); };
     const closeAll = () => { closeMenus(); setMobileMenuOpen(false); setMobileExpanded(null); };
 
-    // Close mega menu on route change (when user clicks a link)
+    // Close mega menu on route change
     useEffect(() => {
-        closeAll();
+        const timer = setTimeout(() => {
+            closeAll();
+        }, 0);
+        return () => clearTimeout(timer);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [pathname]);
 
     // Lock body scroll when mobile menu is open
@@ -623,7 +627,7 @@ export function Header() {
                                         <div>
                                             <h4 className="text-[12px] font-bold uppercase text-gray-400 border-b pb-3 mb-6 tracking-widest">Latest Videos</h4>
                                             <div className="grid grid-cols-3 gap-5">
-                                                {realVideos.length > 0 ? realVideos.map((video: any) => {
+                                                {realEvents.length > 0 ? realEvents.slice(0, 3).map((video: any) => {
                                                     const thumbUrl = video.thumbnail?.url
                                                         ? `${baseUrl}${video.thumbnail.url}`
                                                         : `https://img.youtube.com/vi/${video.youtubeId}/mqdefault.jpg`;
@@ -749,22 +753,14 @@ export function Header() {
                                         </div>
                                     )}
 
-                                {/* Contact hover content — BRIEF OVERVIEW */}
-                                {hoveredMoreItem === "contact" && (
-                                    <div className="flex items-start gap-12 h-full">
-                                        <div className="flex-1">
-                                            <h4 className="text-[12px] font-bold uppercase text-gray-400 border-b pb-3 mb-6 tracking-widest">Get In Touch</h4>
-                                            <h3 className="text-2xl font-serif font-bold text-zinc-900 mb-4 leading-tight">We&apos;d Love to Hear From You</h3>
-                                            <p className="text-[14px] text-gray-500 leading-relaxed mb-8">Whether you have a story tip, editorial inquiry, advertising question, or just want to connect — our team is ready to help.</p>
-                                            <div className="grid grid-cols-1 gap-4">
-                                                <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl border border-gray-100 hover:border-[#00A651]/30 transition-colors">
-                                                    <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: '#00A65112' }}>
-                                                        <Mail size={18} style={{ color: '#00A651' }} />
-                                                    </div>
-                                                    <div>
-                                                        <p className="text-[12px] font-bold text-gray-400 uppercase tracking-wider">Email</p>
-                                                        <p className="text-[14px] text-gray-700 font-medium">contact@energdive.com</p>
-                                                    </div>
+                                    {/* Contact hover content — BRIEF OVERVIEW */}
+                                    {hoveredMoreItem === "contact" && (
+                                        <div className="flex items-start gap-12 h-full">
+                                            <div className="flex-1">
+                                                <h4 className="text-[12px] font-bold uppercase text-gray-400 border-b pb-3 mb-6 tracking-widest">Get In Touch</h4>
+                                                <h3 className="text-2xl font-serif font-bold text-zinc-900 mb-4 leading-tight">We&apos;d Love to Hear From You</h3>
+                                                <p className="text-[14px] text-gray-500 leading-relaxed mb-8">Whether you have a story tip, editorial inquiry, advertising question, or just want to connect — our team is ready to help.</p>
+                                                <div className="grid grid-cols-1 gap-4">
                                                     <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl border border-gray-100 hover:border-[#00A651]/30 transition-colors">
                                                         <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: '#00A65112' }}>
                                                             <Mail size={18} style={{ color: '#00A651' }} />
