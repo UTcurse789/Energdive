@@ -43,7 +43,7 @@
 
 import Image from "next/image";
 import OnboardingWizard from "@/components/onboarding/wizard";
-import { auth } from "@clerk/nextjs/server";
+import { auth, currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { getUserProfile } from "@/lib/queries";
 import OnboardingBackground from "@/components/onboarding/onboarding-bg";
@@ -55,6 +55,12 @@ export default async function OnboardingPage() {
 
     if (!userId) {
         redirect("/auth");
+    }
+
+    // Check Clerk metadata FIRST (always available, no DB needed)
+    const user = await currentUser();
+    if (user?.publicMetadata?.onboarding_completed) {
+        redirect("/dashboard");
     }
 
     // DB check — if profile already exists and completed, go to dashboard
