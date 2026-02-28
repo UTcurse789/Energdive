@@ -141,3 +141,91 @@ export async function sendPortalAccessEmail(
 
     await sendEmail({ to, toName: firstName, subject, htmlContent });
 }
+
+/**
+ * Send a welcome email to a newly onboarded user.
+ */
+export async function sendWelcomeEmail(
+    to: string,
+    firstName: string
+): Promise<void> {
+    const subject = "Welcome to EnergDive! 🎉";
+
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://206.189.132.187:3000";
+    const logoUrl = `${appUrl}/logo2-removebg-preview.png`;
+    const dashboardUrl = `${appUrl}/dashboard`;
+
+    const htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>${subject}</title>
+</head>
+<body style="margin:0;padding:0;background-color:#0B0F19;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#0B0F19;padding:40px 20px;">
+        <tr>
+            <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 20px 40px rgba(0,0,0,0.3);">
+                    
+                    <tr>
+                        <td style="background:#0a2e1f;padding:40px 40px 32px;text-align:center;border-bottom:4px solid #09B697;">
+                            ${logoUrl
+            ? `<img src="${logoUrl}" alt="EnergDive Logo" width="180" style="display:block;margin:0 auto;max-width:200px;height:auto;" />`
+            : `<h1 style="color:#ffffff;margin:0;font-size:24px;">EnergDive</h1>`
+        }
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td style="padding:48px 40px;">
+                            <h2 style="margin:0 0 16px;color:#111827;font-size:26px;font-weight:800;letter-spacing:-0.5px;line-height:1.2;">
+                                Welcome aboard, ${firstName}! 🎉
+                            </h2>
+                            <p style="margin:0 0 24px;color:#4B5563;font-size:16px;line-height:1.7;">
+                                Your <strong>EnergDive Intelligence Portal</strong> account is all set up. You now have access to curated energy industry insights, reports, and analysis tailored to your interests.
+                            </p>
+
+                            <div style="background-color:#F0FDF9;border:1px solid #09B697;border-radius:12px;padding:24px;margin-bottom:24px;">
+                                <p style="margin:0 0 8px;color:#065F46;font-size:14px;font-weight:700;">Here's what you can do:</p>
+                                <ul style="margin:0;padding-left:20px;color:#4B5563;font-size:14px;line-height:2;">
+                                    <li>Browse latest intelligence reports and analysis</li>
+                                    <li>Get content personalized to your industry &amp; community</li>
+                                    <li>Receive updates at your preferred frequency</li>
+                                    <li>Access sector-specific insights and white papers</li>
+                                </ul>
+                            </div>
+
+                            <div style="text-align:center;margin-bottom:24px;">
+                                <a href="${dashboardUrl}"
+                                   style="display:inline-block;background:#09B697;color:#ffffff;font-size:16px;font-weight:700;text-decoration:none;padding:16px 40px;border-radius:10px;box-shadow:0 4px 12px rgba(9,182,151,0.3);">
+                                    Go to Your Dashboard &rarr;
+                                </a>
+                            </div>
+
+                            <p style="margin:0;color:#6B7280;font-size:14px;line-height:1.6;">
+                                If you have any questions, simply reply to this email — we'd love to hear from you.
+                            </p>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td style="background-color:#F9FAFB;padding:32px 40px;text-align:center;border-top:1px solid #F3F4F6;">
+                            <p style="margin:0 0 8px;color:#111827;font-size:13px;font-weight:700;">
+                                EnergDive Intelligence
+                            </p>
+                            <p style="margin:0;color:#9CA3AF;font-size:11px;">
+                                &copy; ${new Date().getFullYear()} ENERGDIVE. All rights reserved.
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>`;
+
+    await sendEmail({ to, toName: firstName, subject, htmlContent });
+}

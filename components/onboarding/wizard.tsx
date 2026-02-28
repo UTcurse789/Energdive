@@ -7,6 +7,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import StepPersonal from "./step-personal";
 import StepProfessional from "./step-professional";
 import StepInterests from "./step-interests";
+import StepPreferences from "./step-preferences";
+
+const TOTAL_STEPS = 4;
 
 export default function OnboardingWizard() {
     const router = useRouter();
@@ -30,6 +33,9 @@ export default function OnboardingWizard() {
         industryId: 0,
         subIndustryId: 0,
         communitySelections: [] as { communityId: number; subCommunityId: number }[],
+        // Step 4
+        preferredFrequency: "daily",
+        preferredFormats: [] as string[],
     });
 
     const handleNext = (data: Partial<typeof formData>) => {
@@ -74,8 +80,8 @@ export default function OnboardingWizard() {
             <div className="h-1.5 bg-zinc-100 w-full">
                 <motion.div
                     className="h-full bg-[#0AB996]"
-                    initial={{ width: "33%" }}
-                    animate={{ width: `${(step / 3) * 100}%` }}
+                    initial={{ width: "25%" }}
+                    animate={{ width: `${(step / TOTAL_STEPS) * 100}%` }}
                     transition={{ duration: 0.3 }}
                 />
             </div>
@@ -83,7 +89,7 @@ export default function OnboardingWizard() {
             <div className="p-8 md:p-12">
                 <div className="mb-8">
                     <span className="text-xs font-bold tracking-wider text-[#0AB996] uppercase">
-                        Step {step} of 3
+                        Step {step} of {TOTAL_STEPS}
                     </span>
                 </div>
 
@@ -106,6 +112,15 @@ export default function OnboardingWizard() {
                     {step === 3 && (
                         <StepInterests
                             key="step3"
+                            defaultValues={formData}
+                            onBack={handleBack}
+                            onNext={handleNext}
+                            isSubmitting={false}
+                        />
+                    )}
+                    {step === 4 && (
+                        <StepPreferences
+                            key="step4"
                             defaultValues={formData}
                             onBack={handleBack}
                             onSubmit={handleFinalSubmit}

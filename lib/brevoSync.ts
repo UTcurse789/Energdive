@@ -16,8 +16,11 @@ export default async function syncUserToBrevo(user: any) {
                     SUB_COMMUNITY: (user.sub_communities || []).join(","),
                     INDUSTRY: (user.industries || []).join(","),
                     SUB_INDUSTRY: (user.sub_industries || []).join(","),
+                    FREQUENCY: ((user.preferred_frequency || "daily").charAt(0).toUpperCase() + (user.preferred_frequency || "daily").slice(1)),
+                    PREFERENCE: (user.preferred_formats || []).join(", "),
                     SOURCE: "Portal"
                 },
+                listIds: [7],
                 updateEnabled: true
             },
             {

@@ -18,6 +18,9 @@ export interface OnboardingPayload {
         communityId: number;
         subCommunityId: number;
     }[];
+    // Subscription preferences
+    preferredFrequency?: string;
+    preferredFormats?: string[];
 }
 
 export interface UserProfile {
@@ -62,8 +65,9 @@ export async function saveOnboardingProfile(
             `INSERT INTO users (
                 clerk_id, email, first_name, last_name, phone,
                 country, state, job_title, organization,
+                preferred_frequency, preferred_formats,
                 onboarding_completed, created_at
-            ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9, true, NOW())
+            ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11, true, NOW())
             ON CONFLICT (clerk_id) DO UPDATE SET
                 email               = EXCLUDED.email,
                 first_name          = EXCLUDED.first_name,
@@ -73,6 +77,8 @@ export async function saveOnboardingProfile(
                 state               = EXCLUDED.state,
                 job_title           = EXCLUDED.job_title,
                 organization        = EXCLUDED.organization,
+                preferred_frequency = EXCLUDED.preferred_frequency,
+                preferred_formats   = EXCLUDED.preferred_formats,
                 onboarding_completed = true
             RETURNING id`,
             [
@@ -85,6 +91,8 @@ export async function saveOnboardingProfile(
                 payload.state || null,
                 payload.jobTitle || null,
                 payload.organization || null,
+                payload.preferredFrequency || 'daily',
+                payload.preferredFormats || [],
             ]
         );
 
@@ -207,6 +215,8 @@ export interface UpdateProfilePayload {
     industryId?: number;
     subIndustryId?: number;
     communitySelections?: { communityId: number; subCommunityId: number }[];
+    preferredFrequency?: string;
+    preferredFormats?: string[];
 }
 
 /**
@@ -232,6 +242,8 @@ export async function updateUserProfile(payload: UpdateProfilePayload): Promise<
             { key: "state", val: payload.state },
             { key: "job_title", val: payload.jobTitle },
             { key: "organization", val: payload.organization },
+            { key: "preferred_frequency", val: payload.preferredFrequency },
+            { key: "preferred_formats", val: payload.preferredFormats },
         ];
 
         for (const f of fields) {

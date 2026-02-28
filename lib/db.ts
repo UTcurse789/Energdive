@@ -22,10 +22,10 @@ function createPool(): Pool {
             rejectUnauthorized: false, // Required for DigitalOcean / self-signed certs
         },
 
-        // Pool tuning — safe defaults for a SaaS workload
-        max: 20,                         // max connections in the pool
-        idleTimeoutMillis: 30_000,       // close idle clients after 30s
-        connectionTimeoutMillis: 5_000,  // fail fast if DB unreachable (reduced from 10s)
+        // Pool tuning — conservative for managed DB with limited connections
+        max: 5,                          // keep low for DigitalOcean managed DB
+        idleTimeoutMillis: 10_000,       // close idle clients after 10s
+        connectionTimeoutMillis: 5_000,  // fail fast if DB unreachable
     });
 
     // Error handling to prevent "Error: Connection terminated unexpectedly" crashing the app
