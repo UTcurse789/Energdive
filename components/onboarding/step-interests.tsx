@@ -51,14 +51,14 @@ type InterestsData = z.infer<typeof interestsSchema>;
 interface StepInterestsProps {
     defaultValues: Partial<InterestsData>;
     onBack: () => void;
-    onSubmit: (data: InterestsData) => void;
+    onNext: (data: InterestsData) => void;
     isSubmitting: boolean;
 }
 
 export default function StepInterests({
     defaultValues,
     onBack,
-    onSubmit,
+    onNext,
     isSubmitting,
 }: StepInterestsProps) {
     // ── State ─────────────────────────────────────────────────────
@@ -203,7 +203,7 @@ export default function StepInterests({
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
-            onSubmit={handleSubmit(onSubmit)}
+            onSubmit={handleSubmit(onNext)}
             className="space-y-8"
         >
             <div className="space-y-6">
@@ -364,10 +364,10 @@ export default function StepInterests({
                     {isSubmitting ? (
                         <>
                             <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                            Saving...
+                            Loading...
                         </>
                     ) : (
-                        "Complete Setup"
+                        "Continue"
                     )}
                 </button>
             </div>

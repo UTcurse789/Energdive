@@ -1,8 +1,8 @@
 import db from "@/lib/db";
 
 export async function getFullUserProfile(clerkId: string) {
-    const res = await db.query(
-        `
+  const res = await db.query(
+    `
     SELECT 
       u.id,
       u.email,
@@ -11,6 +11,8 @@ export async function getFullUserProfile(clerkId: string) {
       u.phone,
       u.job_title,
       u.organization,
+      u.preferred_frequency,
+      u.preferred_formats,
 
       COALESCE(
         (SELECT ARRAY_AGG(DISTINCT c.name)
@@ -43,8 +45,8 @@ export async function getFullUserProfile(clerkId: string) {
     FROM users u
     WHERE u.clerk_id = $1
     `,
-        [clerkId]
-    );
+    [clerkId]
+  );
 
-    return res.rows[0];
+  return res.rows[0];
 }
