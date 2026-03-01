@@ -51,9 +51,14 @@ export function IssueDetailClient({ issue }: IssueDetailClientProps) {
                             <p className="text-xs sm:text-sm font-bold uppercase tracking-widest text-[#003B5C] mb-2">
                                 Digital Edition
                             </p>
-                            <h2 className="text-xl sm:text-2xl md:text-4xl font-bold mb-4">
+                            <h2 className="text-xl sm:text-2xl md:text-4xl font-bold mb-2">
                                 {issue.month} {issue.year}
                             </h2>
+                            {issue.subTitle && (
+                                <p className="text-base sm:text-lg md:text-xl font-serif italic text-gray-600 mb-4">
+                                    {issue.subTitle}
+                                </p>
+                            )}
                             {/* <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold mb-4">
                                 {issue.title}
                             </h1> */}

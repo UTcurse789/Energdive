@@ -164,16 +164,21 @@ export default function OpinionContent({ opinion, recommended }: any) {
                                             </ul>
                                         );
 
-                                    case "image":
+                                    case "image": {
+                                        const imgUrl = block.image?.url
+                                            ? (block.image.url.startsWith("http") ? block.image.url : `https://cms.energdive.com${block.image.url}`)
+                                            : "";
                                         return (
                                             <figure key={i} className="my-16 not-prose">
                                                 <div className="relative aspect-video rounded-3xl overflow-hidden bg-zinc-100">
-                                                    <Image
-                                                        src={block.image?.url}
-                                                        alt={block.image?.alternativeText || ""}
-                                                        fill
-                                                        className="object-cover"
-                                                    />
+                                                    {imgUrl && (
+                                                        // eslint-disable-next-line @next/next/no-img-element
+                                                        <img
+                                                            src={imgUrl}
+                                                            alt={block.image?.alternativeText || ""}
+                                                            style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                                                        />
+                                                    )}
                                                 </div>
                                                 {block.image?.caption && (
                                                     <figcaption className="mt-4 text-center text-sm text-zinc-400 font-serif italic">
@@ -182,6 +187,7 @@ export default function OpinionContent({ opinion, recommended }: any) {
                                                 )}
                                             </figure>
                                         );
+                                    }
 
                                     default:
                                         return (
