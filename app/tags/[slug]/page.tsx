@@ -5,6 +5,7 @@ import { TagBadge } from "@/components/ui/tag-badge";
 import { slugify } from "@/lib/utils";
 import { DateChip } from "@/components/ui/date-chip";
 import { formatContentDate } from "@/lib/date";
+import { buildContentUrl } from "@/lib/content-routes";
 
 const STRAPI_BASE = process.env.NEXT_PUBLIC_STRAPI_URL || "http://206.189.132.187:1337";
 
@@ -147,11 +148,7 @@ async function fetchTagVideos(tagSlug: string) {
 }
 
 function getContentRoute(item: any) {
-    const type = String(item.contentType || "").toLowerCase();
-    if (type.includes("opinion")) return `/opinion/${item.slug}`;
-    if (type.includes("news")) return `/news/${item.slug}`;
-    if (type.includes("report")) return `/reports/${item.slug}`;
-    return `/articles/${item.slug}`;
+    return buildContentUrl({ slug: item.slug, contentType: item.contentType });
 }
 
 export default async function TagPage({ params }: { params: Promise<{ slug: string }> }) {

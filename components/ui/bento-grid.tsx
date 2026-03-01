@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import MagicBento from '../MagicBento';
 import { cn } from "@/lib/utils";
+import { buildContentUrl } from "@/lib/content-routes";
 
 const STRAPI_BASE = "http://206.189.132.187:1337";
 const API_URL =
@@ -63,7 +64,7 @@ export function BentoGrid({ items: propItems, className }: BentoGridProps) {
         label: item.category || item.label || "Energy",
         image: item.image,
         slug: item.slug,
-        href: `/news/${item.slug}`,
+        href: buildContentUrl({ slug: item.slug, contentType: item.contentType }),
         color: item.color || "#060010",
     });
 
@@ -90,6 +91,7 @@ export function BentoGrid({ items: propItems, className }: BentoGridProps) {
                         id: article.id,
                         title: article.Title || "",
                         category: article.sectors?.[0]?.name || "Energy",
+                        contentType: article.type_of_content?.name || "News",
                         image: extractImageUrl(article),
                         slug: article.slug || "",
                         excerpt: extractExcerpt(article),

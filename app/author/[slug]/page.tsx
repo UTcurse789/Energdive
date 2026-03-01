@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Calendar, ArrowRight, Briefcase, FileText, Tag } from "lucide-react";
 import { DateChip } from "@/components/ui/date-chip";
 import { formatContentDate } from "@/lib/date";
+import { buildContentUrl } from "@/lib/content-routes";
 
 const STRAPI_BASE = process.env.NEXT_PUBLIC_STRAPI_URL || "http://206.189.132.187:1337";
 
@@ -91,11 +92,7 @@ async function getContentByAuthor(authorName: string) {
 }
 
 function getContentRoute(item: any) {
-    const type = String(item.category || "").toLowerCase();
-    if (type.includes("opinion")) return `/opinion/${item.slug}`;
-    if (type.includes("news")) return `/news/${item.slug}`;
-    if (type.includes("report")) return `/reports/${item.slug}`;
-    return `/articles/${item.slug}`;
+    return buildContentUrl({ slug: item.slug, contentType: item.category });
 }
 
 function getCategoryBadgeTone(type: string) {
