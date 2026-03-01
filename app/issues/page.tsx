@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { AdBanner } from "@/components/ads/AdBanner";
 
-const STRAPI_URL = "http://206.189.132.187:1337";
+const STRAPI_URL = "https://cms.energdive.com";
 
 interface Issue {
     id: number;

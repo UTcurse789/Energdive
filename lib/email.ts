@@ -61,7 +61,7 @@ export async function sendPortalAccessEmail(
 ): Promise<void> {
     const subject = "Your EnergDive Portal Access is Ready";
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://206.189.132.187:3000";
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://energdive.com";
     const logoUrl = `${appUrl}/logo2-removebg-preview.png`;
 
     const htmlContent = `

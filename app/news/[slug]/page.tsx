@@ -14,7 +14,7 @@ import { ArrowRight, Calendar, ChevronRight, Printer } from "lucide-react";
 import { formatContentDate } from "@/lib/date";
 import ArticleBody from "@/components/ArticleBody";
 
-const STRAPI_BASE_URL = "http://206.189.132.187:1337";
+const STRAPI_BASE_URL = "https://cms.energdive.com";
 
 function slugify(text: string): string {
     return text.toLowerCase().trim().replace(/[^\w\s-]/g, "").replace(/[\s_]+/g, "-").replace(/-+/g, "-").replace(/^-+|-+$/g, "");

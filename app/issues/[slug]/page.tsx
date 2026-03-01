@@ -3,7 +3,7 @@ import IssueDetailClient from "@/components/issue-detail-client";
 import { Issue } from "@/types";
 import { getRoutePrefix, extractContentTypeName } from "@/lib/content-routes";
 
-const STRAPI_URL = "http://206.189.132.187:1337";
+const STRAPI_URL = "https://cms.energdive.com";
 
 function extractText(blocks: any[]) {
     if (!blocks) return "";
