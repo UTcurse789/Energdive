@@ -1,4 +1,5 @@
 import { Hero } from "@/components/sections/hero";
+import { AdRenderer } from "@/components/ads/AdRenderer";
 // import { SpotlightSection } from "@/components/sections/spotlight-section";
 import { BentoGrid } from "@/components/ui/bento-grid";
 import { SectorBlock } from "@/components/ui/sector-block";
@@ -141,6 +142,9 @@ export default async function Home() {
 
   return (
     <>
+      {/* Homepage Hero Ad Banner */}
+      <AdRenderer placement="home_platform_hero" variant="hero" />
+
       {/* Cover Story (left) + Trending (right) — the original Hero */}
       <Hero topStories={heroTopStories} />
 
@@ -159,8 +163,14 @@ export default async function Home() {
             linkText="Explore All"
             linkHref="/news"
           />
-          <div className="-mt-6">
-            <BentoGrid items={finalBentoItems} />
+          <div className="-mt-6 flex flex-col lg:flex-row gap-8 items-start">
+            <div className="flex-1 min-w-0">
+              <BentoGrid items={finalBentoItems} />
+            </div>
+            <AdRenderer
+              placement="home_featured_partner"
+              variant="vertical"
+            />
           </div>
         </div>
       </section>

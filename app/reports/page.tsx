@@ -7,7 +7,7 @@ import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion"
 import { ArrowUpRight, Clock, Search } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Header } from "@/components/layout/header";
-
+import { AdBanner } from "@/components/ads/AdBanner";
 const STRAPI = process.env.NEXT_PUBLIC_STRAPI_URL;
 
 async function fetchReports() {
@@ -127,6 +127,11 @@ export default function ReportsPage() {
             </div>
           </div>
         </section>
+
+        {/* Reports Hero Ad Banner */}
+        <div className="container mx-auto px-6 lg:px-12 max-w-[1400px] pt-8">
+          <AdBanner placement="reports_hero" variant="banner" className="flex justify-center" />
+        </div>
 
         {/* SEARCH & FILTER AREA */}
         <div className="container mx-auto px-6 lg:px-12 max-w-[1400px] mt-16 mb-20">

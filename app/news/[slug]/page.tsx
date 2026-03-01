@@ -4,6 +4,7 @@ import { Header } from "@/components/layout/header";
 import { notFound } from "next/navigation";
 import { BlocksRenderer } from "@strapi/blocks-react-renderer";
 import { SidebarSubscribe } from "@/components/sidebar-subscribe";
+import { AdRenderer } from "@/components/ads/AdRenderer";
 import { TagBadge } from "@/components/ui/tag-badge";
 import { ScrollProgress } from "@/components/ui/scroll-progress";
 import { DateChip } from "@/components/ui/date-chip";
@@ -89,6 +90,12 @@ export default async function NewsDetailPage({
         .filter(Boolean);
 
     const relatedArticles = await getRelated(tagSlugs, slug);
+
+    // Extract sector slug for targeted ad
+    const sectorData = attrs.sectors || attrs.sector?.data?.attributes || null;
+    const sectorSlug: string | undefined = Array.isArray(sectorData)
+        ? sectorData[0]?.slug || undefined
+        : sectorData?.slug || undefined;
 
     const author = attrs.author?.data?.attributes || attrs.author;
 
@@ -257,6 +264,13 @@ first:prose-p:first-letter:text-6xl first:prose-p:first-letter:font-serif first:
                                 </div>
                             </div>
                         )}
+
+                        {/* Industry Partner Ad */}
+                        <AdRenderer
+                            placement="article_partner_end"
+                            sectorSlug={sectorSlug}
+                            variant="native"
+                        />
                     </div>
 
                     {/* ═══════════════ SIDEBAR ═══════════════ */}
