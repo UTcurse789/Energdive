@@ -155,6 +155,7 @@ export default function ReportsPage() {
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
 
+
             </div>
           </div>
         </div>

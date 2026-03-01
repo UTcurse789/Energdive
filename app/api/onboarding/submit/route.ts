@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { saveOnboardingProfile } from "@/lib/queries";
 import { getFullUserProfile } from "@/lib/getFullUserProfile";
 import syncUserToBrevo from "@/lib/brevoSync";
+import { sendWelcomeEmail } from "@/lib/email";
 
 /**
  * POST /api/onboarding/submit
@@ -58,6 +59,8 @@ export async function POST(req: Request) {
             industryId: body.industryId,
             subIndustryId: body.subIndustryId,
             communitySelections: body.communitySelections,
+            preferredFrequency: body.preferredFrequency,
+            preferredFormats: body.preferredFormats,
         });
 
         // ── Update Clerk metadata and profile (so middleware can gate, and UI shows name) ──────────
@@ -71,9 +74,26 @@ export async function POST(req: Request) {
         const fullUser = await getFullUserProfile(userId);
 
         // ── Sync to Brevo ──────────────────────────────────
+        console.log("📋 Brevo sync payload:", {
+            email: fullUser.email,
+            preferred_frequency: fullUser.preferred_frequency,
+            preferred_formats: fullUser.preferred_formats,
+        });
         await syncUserToBrevo(fullUser);
 
         console.log("✅ Full profile synced to Brevo");
+
+        // ── Send Welcome Email ─────────────────────────────
+        try {
+            await sendWelcomeEmail(
+                fullUser.email,
+                fullUser.first_name || body.firstName
+            );
+            console.log("✅ Welcome email sent to:", fullUser.email);
+        } catch (emailErr) {
+            // Non-fatal — don't block onboarding if email fails
+            console.error("⚠️ Welcome email failed:", emailErr);
+        }
 
         return NextResponse.json({ success: true, userId: dbUserId });
     } catch (error) {

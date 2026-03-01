@@ -9,8 +9,9 @@ import { ScrollProgress } from "@/components/ui/scroll-progress";
 import { DateChip } from "@/components/ui/date-chip";
 import { ShareButton } from "@/components/ui/share-button";
 import { ISSUES } from "@/data/dummy";
-import { ArrowRight, Calendar, ChevronRight } from "lucide-react";
+import { ArrowRight, Calendar, ChevronRight, Printer } from "lucide-react";
 import { formatContentDate } from "@/lib/date";
+import ArticleBody from "@/components/ArticleBody";
 
 const STRAPI = "http://206.189.132.187:1337";
 
@@ -124,11 +125,22 @@ export default async function ArticlePage(props: any) {
                                 </span>
                                 <DateChip value={article.date} />
                             </div>
-                            <ShareButton
-                                title={article.title}
-                                text={article.excerpt}
-                                className="text-gray-500 hover:text-teal-600 font-medium text-sm border border-gray-200 px-3 py-1.5 rounded-full bg-white hover:bg-gray-50 shadow-sm"
-                            />
+                            <div className="flex items-center gap-2">
+                                <Link
+                                    href={`/print/${slug}`}
+                                    target="_blank"
+                                    className="flex items-center gap-1.5 text-gray-500 hover:text-red-600 font-medium text-sm border border-gray-200 px-3 py-1.5 rounded-full bg-white hover:bg-gray-50 shadow-sm transition-colors"
+                                    title="Print this article"
+                                >
+                                    <Printer className="h-3.5 w-3.5" />
+                                    Print
+                                </Link>
+                                <ShareButton
+                                    title={article.title}
+                                    text={article.excerpt}
+                                    className="text-gray-500 hover:text-teal-600 font-medium text-sm border border-gray-200 px-3 py-1.5 rounded-full bg-white hover:bg-gray-50 shadow-sm"
+                                />
+                            </div>
                         </div>
 
                         {/* Title */}
@@ -143,32 +155,32 @@ export default async function ArticlePage(props: any) {
 
                         {/* Author row */}
                         {article.author && (
-    <div className="flex items-center gap-4 mb-10 pb-8 border-b border-gray-100">
-        {article.author.avatar ? (
-            <Image
-                src={article.author.avatar}
-                width={52}
-                height={52}
-                alt={article.author.name || ""}
-                className="rounded-full ring-2 ring-teal-100"
-            />
-        ) : (
-            <div className="w-[52px] h-[52px] rounded-full bg-teal-100 flex items-center justify-center text-teal-700 font-bold text-lg">
-                {article.author.name?.charAt(0) || "A"}
-            </div>
-        )}
-        <div className="flex items-center gap-4">
-            <Link
-                href={`/author/${slugify(article.author.name)}`}
-                className="font-bold text-gray-900 hover:text-teal-600 transition-colors"
-            >
-                {article.author.name}
-            </Link>
-            
-            <DateChip value={article.date} className="mt-0" />
-        </div>
-    </div>
-)}
+                            <div className="flex items-center gap-4 mb-10 pb-8 border-b border-gray-100">
+                                {article.author.avatar ? (
+                                    <Image
+                                        src={article.author.avatar}
+                                        width={52}
+                                        height={52}
+                                        alt={article.author.name || ""}
+                                        className="rounded-full ring-2 ring-teal-100"
+                                    />
+                                ) : (
+                                    <div className="w-[52px] h-[52px] rounded-full bg-teal-100 flex items-center justify-center text-teal-700 font-bold text-lg">
+                                        {article.author.name?.charAt(0) || "A"}
+                                    </div>
+                                )}
+                                <div className="flex items-center gap-4">
+                                    <Link
+                                        href={`/author/${slugify(article.author.name)}`}
+                                        className="font-bold text-gray-900 hover:text-teal-600 transition-colors"
+                                    >
+                                        {article.author.name}
+                                    </Link>
+
+                                    <DateChip value={article.date} className="mt-0" />
+                                </div>
+                            </div>
+                        )}
 
                         {/* Featured Image */}
                         <div className="relative aspect-video mb-12 rounded-xl overflow-hidden shadow-lg shadow-black/10 group">
@@ -184,10 +196,10 @@ export default async function ArticlePage(props: any) {
 
                         {/* Article Body */}
                         <article className="relative">
-    {/* Decorative side line */}
-    {/* <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/80 via-black/40 to-transparent flex flex-col justify-end p-8 md:p-12" /> */}
+                            {/* Decorative side line */}
+                            {/* <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/80 via-black/40 to-transparent flex flex-col justify-end p-8 md:p-12" /> */}
 
-    <div className="prose prose-lg max-w-none font-serif text-[18px] leading-[1.95] text-gray-800
+                            <div className="prose prose-lg max-w-none font-serif text-[18px] leading-[1.95] text-gray-800
         prose-headings:font-bold prose-headings:text-gray-900 prose-headings:tracking-tight
         prose-h2:text-[32px] prose-h2:mt-12 prose-h2:mb-6 prose-h2:border-b prose-h2:border-gray-100 prose-h2:pb-3
         prose-h3:text-[26px] prose-h3:mt-10 prose-h3:mb-4
@@ -200,10 +212,10 @@ export default async function ArticlePage(props: any) {
         prose-figcaption:text-center prose-figcaption:text-[14px] prose-figcaption:text-gray-500 prose-figcaption:mt-3 prose-figcaption:italic prose-figcaption:font-sans
         prose-li:marker:text-teal-500
         first:prose-p:first-letter:text-6xl first:prose-p:first-letter:font-serif first:prose-p:first-letter:font-bold first:prose-p:first-letter:float-left first:prose-p:first-letter:mr-3 first:prose-p:first-letter:mt-1 first:prose-p:first-letter:text-teal-700"
-    >
-        <BlocksRenderer content={article.content} />
-    </div>
-</article>
+                            >
+                                <ArticleBody content={article.content} />
+                            </div>
+                        </article>
 
                         {/* Tags */}
                         {tags.length > 0 && (

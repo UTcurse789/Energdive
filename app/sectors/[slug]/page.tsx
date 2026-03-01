@@ -3,7 +3,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, ChevronRight, Clock, ArrowUpRight, Play } from "lucide-react";
+import { Search, ChevronRight, Clock, ArrowUpRight, Play, Printer } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Header } from "@/components/layout/header";
 import { AdBanner } from "@/components/ads/AdBanner";
@@ -378,7 +378,16 @@ export default function SectorIntelligencePage() {
                         <motion.div
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
+                            className="flex items-center gap-2"
                         >
+                            <button
+                                onClick={() => window.print()}
+                                className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/5 px-4 py-2 text-[10px] font-black text-white hover:bg-white/10 uppercase tracking-[0.2em] backdrop-blur-sm transition-colors"
+                                title="Print this page"
+                            >
+                                <Printer size={12} />
+                                Print
+                            </button>
                             <ShareButton
                                 title={sectorMeta.title}
                                 text={sectorMeta.description}
