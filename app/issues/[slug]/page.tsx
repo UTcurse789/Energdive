@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import IssueDetailClient from "@/components/issue-detail-client";
 import { Issue } from "@/types";
+import { getRoutePrefix, extractContentTypeName } from "@/lib/content-routes";
 
 const STRAPI_URL = "http://206.189.132.187:1337";
 
@@ -24,29 +25,8 @@ function parseSlug(slug: string): { month: string; year: number } | null {
 
 /** Map type_of_content name → URL prefix */
 function getContentRoute(typeOfContent: any): string {
-    const name = (
-        typeOfContent?.[0]?.Name ??
-        typeOfContent?.[0]?.name ??
-        typeOfContent?.Name ??
-        typeOfContent?.name ??
-        "news"
-    ).toLowerCase();
-
-    const routeMap: Record<string, string> = {
-        "opinion": "opinion",
-        "news": "news",
-        "report": "reports",
-        "reports": "reports",
-        "editorial": "opinion",
-        "analysis": "news",
-        "feature": "news",
-        "articles": "articles",
-        "cover story": "articles",
-        "interview": "opinion",
-        "case study": "articles",
-    };
-
-    return routeMap[name] ?? "news";
+    const name = extractContentTypeName(typeOfContent);
+    return getRoutePrefix(name);
 }
 async function getIssue(slug: string) {
     const parsed = parseSlug(slug);
