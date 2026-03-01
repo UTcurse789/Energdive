@@ -5,6 +5,10 @@ import { Mail, ArrowRight } from "lucide-react";
 import { SubscribeModal } from "@/components/subscribe-modal";
 
 export function SidebarSubscribe() {
+    // HIDDEN — uncomment below to re-enable
+    return null;
+
+    /* eslint-disable no-unreachable */
     const [open, setOpen] = useState(false);
 
     return (
@@ -48,4 +52,5 @@ export function SidebarSubscribe() {
             <SubscribeModal isOpen={open} onClose={() => setOpen(false)} />
         </>
     );
+    /* eslint-enable no-unreachable */
 }

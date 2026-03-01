@@ -627,10 +627,11 @@ export function Header() {
                                         <div>
                                             <h4 className="text-[12px] font-bold uppercase text-gray-400 border-b pb-3 mb-6 tracking-widest">Latest Videos</h4>
                                             <div className="grid grid-cols-3 gap-5">
-                                                {realEvents.length > 0 ? realEvents.slice(0, 3).map((video: any) => {
-                                                    const thumbUrl = video.thumbnail?.url
-                                                        ? `${baseUrl}${video.thumbnail.url}`
-                                                        : `https://img.youtube.com/vi/${video.youtubeId}/mqdefault.jpg`;
+                                                {realVideos.length > 0 ? realVideos.slice(0, 3).map((video: any) => {
+                                                    const rawThumb = video.thumbnail?.url || null;
+                                                    const thumbUrl = rawThumb
+                                                        ? (rawThumb.startsWith("http") ? rawThumb : `${baseUrl}${rawThumb}`)
+                                                        : (video.youtubeId ? `https://img.youtube.com/vi/${video.youtubeId}/mqdefault.jpg` : "/magazine-default.jpg");
                                                     return (
                                                         <Link key={video.id} href={`/videos/${video.slug}`} onClick={closeMenus} className="group cursor-pointer block">
                                                             <div className="relative w-full aspect-video bg-gray-100 rounded-xl overflow-hidden mb-3">

@@ -9,41 +9,39 @@ export function EnergClubHeader() {
     return (
         <header className="fixed top-0 inset-x-0 z-50 bg-black/90 backdrop-blur-md border-b border-[#E5B866]/20 transition-all duration-300">
             {/* Added 'relative' here so the absolute center element positions itself to this container */}
-            <div className="container mx-auto px-6 lg:px-12 h-[80px] flex items-center justify-between relative">
+            <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-8 lg:px-16 h-[70px] sm:h-[85px] lg:h-[100px] flex items-center justify-between relative">
 
-                {/* LEFT CORNER: EnergClub Logo */}
-                <div className="flex items-center z-10">
-                    <Link href="/energclub" className="flex items-center group">
+                {/* LEFT SIDE: Brand Logos */}
+                <div className="flex items-center gap-3 sm:gap-0 z-10 w-full md:w-auto overflow-hidden">
+                    {/* EnergClub Logo - hidden on mobile */}
+                    <Link href="/energclub" className="hidden sm:flex items-center group shrink-0">
                         <Image
                             src="/energclub.png"
                             alt="EnergClub"
                             width={160}
                             height={60}
-                            className="w-auto h-8 sm:h-10 object-contain" // Keeps it scaled cleanly inside the 80px height
+                            className="w-auto h-6 sm:h-8 lg:h-10 object-contain"
                         />
                     </Link>
-                </div>
 
-                {/* ABSOLUTE CENTER: Energdive Logo */}
-                {/* Added top-1/2 and -translate-y-1/2 to perfectly center it vertically as well */}
-                <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center z-10">
-                    <Link href="/" className="flex items-center group">
+                    {/* Energdive Logo (absolute center on all screens) */}
+                    <Link href="/" className="flex items-center group shrink-0 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
                         <Image
                             src="/logo2-removebg-preview.png"
                             alt="Energdive"
                             width={160}
                             height={60}
-                            className="w-auto h-8 sm:h-10 object-contain"
-                            priority // Forces Next.js to load this immediately (best practice for headers)
+                            className="w-auto h-6 sm:h-8 lg:h-10 object-contain"
+                            priority
                         />
                     </Link>
                 </div>
 
                 {/* RIGHT ACTIONS: Navigation & Auth */}
-                <div className="flex items-center gap-6 sm:gap-8 z-10">
+                <div className="flex items-center gap-4 sm:gap-6 lg:gap-8 z-10 shrink-0">
                     <Link href="/" className="hidden md:flex items-center gap-2 text-zinc-400 hover:text-white text-sm font-bold uppercase tracking-wider transition-colors">
                         <ArrowLeft size={16} />
-                        Back to EnergDive
+                        Back
                     </Link>
 
                     <SignedIn>

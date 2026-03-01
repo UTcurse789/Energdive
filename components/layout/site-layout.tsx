@@ -22,14 +22,7 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
         <>
             {isEnergClub ? <EnergClubHeader /> : <Header />}
 
-            {/* Global Header Ad Banner */}
-            {!isEnergClub && (
-                <div className="pt-[120px] md:pt-[140px]">
-                    <AdBanner placement="header_banner" variant="banner" className="py-3 bg-white" />
-                </div>
-            )}
-
-            <main className={isEnergClub ? "pt-[80px]" : ""}>
+            <main className={isEnergClub ? "pt-[70px] sm:pt-[85px] lg:pt-[100px]" : "pt-[120px] md:pt-[140px]"}>
                 {children}
             </main>
 
