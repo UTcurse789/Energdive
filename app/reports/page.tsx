@@ -7,7 +7,7 @@ import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion"
 import { ArrowUpRight, Clock, Search } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Header } from "@/components/layout/header";
-
+import { AdBanner } from "@/components/ads/AdBanner";
 const STRAPI = process.env.NEXT_PUBLIC_STRAPI_URL;
 
 async function fetchReports() {
@@ -128,6 +128,11 @@ export default function ReportsPage() {
           </div>
         </section>
 
+        {/* Reports Hero Ad Banner */}
+        <div className="container mx-auto px-6 lg:px-12 max-w-[1400px] pt-8">
+          <AdBanner placement="reports_hero" variant="banner" className="flex justify-center" />
+        </div>
+
         {/* SEARCH & FILTER AREA */}
         <div className="container mx-auto px-6 lg:px-12 max-w-[1400px] mt-16 mb-20">
           <div className="flex flex-col md:flex-row justify-between items-center gap-8 pt-20 pb-12">
@@ -141,7 +146,7 @@ export default function ReportsPage() {
             </div>
 
             <div className="flex gap-8 items-center text-[10px] font-bold uppercase tracking-widest text-zinc-400">
-              
+
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 w-4 h-4" />
               <input
                 type="text"
@@ -149,7 +154,7 @@ export default function ReportsPage() {
                 className="w-full pl-12 pr-4 py-3 bg-zinc-100 rounded-full text-sm focus:outline-none focus:ring-1 focus:ring-[#00A651] transition-all"
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
-              
+
             </div>
           </div>
         </div>

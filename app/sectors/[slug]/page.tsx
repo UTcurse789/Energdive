@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Search, ChevronRight, Clock, ArrowUpRight, Play } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Header } from "@/components/layout/header";
+import { AdBanner } from "@/components/ads/AdBanner";
 import Image from "next/image";
 import Link from "next/link";
 import { TagBadge } from "@/components/ui/tag-badge";
@@ -437,6 +438,13 @@ export default function SectorIntelligencePage() {
                 <div className="absolute left-0 right-0 bottom-0 h-16 bg-linear-to-t from-[#fafafa] to-transparent" />
             </section>
 
+            {/* Sector Hero Ad Banner */}
+            <div className="bg-[#fafafa]">
+                <div className="container mx-auto px-6 lg:px-16 max-w-[1400px] py-4">
+                    <AdBanner placement="sector_hero" sectorSlug={slug} variant="banner" className="flex justify-center" />
+                </div>
+            </div>
+
             {/* STICKY NAVIGATION & FILTER */}
             <section className="sticky top-[74px] z-10 bg-white/95 backdrop-blur-xl border-y border-gray-100 py-5 shadow-[0_6px_20px_rgba(15,23,42,0.06)]">
                 <div className="container mx-auto px-6 lg:px-16 max-w-[1400px] flex flex-col lg:flex-row gap-8 justify-between items-center">
@@ -474,6 +482,16 @@ export default function SectorIntelligencePage() {
             <section className="container mx-auto px-6 lg:px-16 max-w-[1400px] py-24 min-h-[40vh] mb-10">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-10 gap-y-16 mt-15 mb-15">
                     <AnimatePresence mode="popLayout">
+                        {/* In-grid Ad Card */}
+                        <motion.div
+                            key="ad-card"
+                            layout
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                        >
+                            <AdBanner placement="sector_hero" sectorSlug={slug} variant="card" />
+                        </motion.div>
+
                         {filteredReports.map((report, idx) => (
                             <motion.div
                                 key={report.id}
@@ -546,51 +564,51 @@ export default function SectorIntelligencePage() {
 
             {/* VIDEOS SECTION */}
             {videos.length > 0 && (
-    <section className="border-t border-gray-200 bg-white pb-30">
-        <div className="container mx-auto px-6 lg:px-16 max-w-[1400px] py-20">
-            
-            {/* Section Heading */}
-            <div className="mb-12">
-                <h2 className="text-3xl font-bold tracking-tight text-gray-900 pt-10">
-                    Videos
-                </h2>
-                <div className="w-16 h-1 bg-[#00A651] mt-3"></div>
-            </div>
+                <section className="border-t border-gray-200 bg-white pb-30">
+                    <div className="container mx-auto px-6 lg:px-16 max-w-[1400px] py-20">
 
-            {filteredVideos.length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-                    {filteredVideos.map((video) => (
-                        <Link key={video.id} href={`/videos/${video.slug}`} className="group block">
-                            <div className="relative aspect-video rounded-xl overflow-hidden mb-3 bg-gray-200">
-                                <Image
-                                    src={video.thumbnail}
-                                    alt={video.title}
-                                    fill
-                                    className="object-cover"
-                                />
-                                <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
-                                    <div className="w-12 h-12 bg-white/90 rounded-full flex items-center justify-center pl-1 opacity-80 group-hover:opacity-100 transition-all">
-                                        <Play size={18} className="text-red-600 fill-red-600" />
-                                    </div>
-                                </div>
+                        {/* Section Heading */}
+                        <div className="mb-12">
+                            <h2 className="text-3xl font-bold tracking-tight text-gray-900 pt-10">
+                                Videos
+                            </h2>
+                            <div className="w-16 h-1 bg-[#00A651] mt-3"></div>
+                        </div>
+
+                        {filteredVideos.length > 0 ? (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                                {filteredVideos.map((video) => (
+                                    <Link key={video.id} href={`/videos/${video.slug}`} className="group block">
+                                        <div className="relative aspect-video rounded-xl overflow-hidden mb-3 bg-gray-200">
+                                            <Image
+                                                src={video.thumbnail}
+                                                alt={video.title}
+                                                fill
+                                                className="object-cover"
+                                            />
+                                            <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
+                                                <div className="w-12 h-12 bg-white/90 rounded-full flex items-center justify-center pl-1 opacity-80 group-hover:opacity-100 transition-all">
+                                                    <Play size={18} className="text-red-600 fill-red-600" />
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <h3 className="text-sm font-bold group-hover:text-[#00A651] transition-colors line-clamp-2">
+                                            {video.title}
+                                        </h3>
+                                        <DateChip value={video.date} className="text-[10px] mt-1" />
+                                    </Link>
+                                ))}
                             </div>
-                            <h3 className="text-sm font-bold group-hover:text-[#00A651] transition-colors line-clamp-2">
-                                {video.title}
-                            </h3>
-                            <DateChip value={video.date} className="text-[10px] mt-1" />
-                        </Link>
-                    ))}
-                </div>
-            ) : (
-                <div className="rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 px-6 py-10 text-center">
-                    <p className="text-sm text-zinc-500">
-                        No Video Found
-                    </p>
-                </div>
+                        ) : (
+                            <div className="rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 px-6 py-10 text-center">
+                                <p className="text-sm text-zinc-500">
+                                    No Video Found
+                                </p>
+                            </div>
+                        )}
+                    </div>
+                </section>
             )}
-        </div>
-    </section>
-)}
 
 
         </div>
