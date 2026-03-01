@@ -98,6 +98,7 @@ export interface Issue {
     id: number | string;
     slug: string;
     title: string;
+    subTitle?: string;
     description: string;
     date: string;
     month: string;

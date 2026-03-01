@@ -2,6 +2,8 @@
 
 import { BlocksRenderer } from "@strapi/blocks-react-renderer";
 
+const STRAPI_BASE_URL = process.env.NEXT_PUBLIC_STRAPI_URL || "https://cms.energdive.com";
+
 function isImageBlock(block: any): boolean {
     return block?.type === "image";
 }
@@ -11,6 +13,13 @@ function isNonEmptyParagraph(block: any): boolean {
     return block?.children?.some(
         (child: any) => typeof child?.text === "string" && child.text.trim().length > 0
     );
+}
+
+/** Ensure image URL is absolute — prepend Strapi base URL for relative paths */
+function resolveImageUrl(url: string | undefined | null): string {
+    if (!url) return "";
+    if (url.startsWith("http://") || url.startsWith("https://")) return url;
+    return `${STRAPI_BASE_URL}${url.startsWith("/") ? "" : "/"}${url}`;
 }
 
 export default function ArticleBody({ content }: { content: any }) {
@@ -52,6 +61,41 @@ export default function ArticleBody({ content }: { content: any }) {
                     <BlocksRenderer
                         key={i}
                         content={[block]}
+                        blocks={{
+                            image: ({ image }: any) => {
+                                const src = resolveImageUrl(image?.url);
+                                const alt = image?.alternativeText || image?.name || "";
+                                const caption = image?.caption || "";
+                                return (
+                                    <figure style={{ margin: "2rem 0" }}>
+                                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                                        <img
+                                            src={src}
+                                            alt={alt}
+                                            style={{
+                                                width: "100%",
+                                                height: "auto",
+                                                borderRadius: "0.5rem",
+                                            }}
+                                        />
+                                        {caption && (
+                                            <figcaption
+                                                style={{
+                                                    fontSize: "0.875rem",
+                                                    color: "#6b7280",
+                                                    fontStyle: "italic",
+                                                    textAlign: "center",
+                                                    marginTop: "0.5rem",
+                                                    fontFamily: "Georgia, serif",
+                                                }}
+                                            >
+                                                {caption}
+                                            </figcaption>
+                                        )}
+                                    </figure>
+                                );
+                            },
+                        }}
                         modifiers={{
                             italic: ({ children }) => (
                                 <em

@@ -16,6 +16,7 @@ type MagazineIssue = {
     id: number | string;
     slug: string;
     title: string;
+    subTitle: string;
     description: string;
     month: string;
     year: string;
@@ -39,8 +40,10 @@ type StrapiIssueResponseItem = {
     Month?: string;
     Year?: number | string;
     Title?: string;
+    sub_title?: string;
     Description?: unknown;
     description?: unknown;
+    Discription?: unknown;
     Volume?: number | string;
     IssueNumber?: number | string;
     Date?: string;
@@ -131,7 +134,8 @@ function normalizeIssue(item: StrapiIssueResponseItem, baseUrl: string): Magazin
 
     const titleFromApi = typeof item?.Title === "string" ? item.Title.trim() : "";
     const title = titleFromApi || [month, year].filter(Boolean).join(" ").trim() || "Latest Issue";
-    const description = getIssueDescriptionText(item?.Description ?? item?.description);
+    const description = getIssueDescriptionText(item?.Discription ?? item?.Description ?? item?.description);
+    const subTitle = typeof item?.sub_title === "string" ? item.sub_title.trim() : "";
 
     const monthIndex = getMonthIndex(month);
     const yearNumber = Number.parseInt(year, 10);
@@ -145,6 +149,7 @@ function normalizeIssue(item: StrapiIssueResponseItem, baseUrl: string): Magazin
         id: item?.id ?? slug,
         slug,
         title,
+        subTitle,
         description,
         month,
         year,
@@ -485,9 +490,14 @@ export function Header() {
                                     <div className="flex-1 p-12 flex items-center justify-center gap-12">
                                         <div className="max-w-md">
                                             <h4 className="text-[12px] font-bold uppercase text-gray-400 mb-4 tracking-widest">Latest Issue</h4>
-                                            <h5 className="text-2xl font-bold text-zinc-900 mb-3 leading-tight">
+                                            <h5 className="text-2xl font-bold text-zinc-900 mb-2 leading-tight">
                                                 {latestIssue?.title ?? "Issue archive will appear here"}
                                             </h5>
+                                            {latestIssue?.subTitle && (
+                                                <p className="text-base font-serif italic text-gray-500 mb-3">
+                                                    {latestIssue.subTitle}
+                                                </p>
+                                            )}
                                             <p className="text-gray-600 text-[14px] leading-relaxed">
                                                 {latestIssueDescription}
                                             </p>
@@ -533,9 +543,19 @@ export function Header() {
                                                                     className="object-cover transition-transform duration-500 group-hover:scale-105"
                                                                 />
                                                             </div>
-                                                            <p className="mt-3 text-[13px] font-bold text-gray-800 group-hover:text-[#00A651] transition-colors line-clamp-2">
+                                                            <p className="mt-3 text-[13px] font-bold text-gray-800 group-hover:text-[#00A651] transition-colors line-clamp-1">
                                                                 {issue.title}
                                                             </p>
+                                                            {issue.subTitle && (
+                                                                <p className="text-[11px] font-serif italic text-gray-500 mt-0.5 line-clamp-1">
+                                                                    {issue.subTitle}
+                                                                </p>
+                                                            )}
+                                                            {issue.description && (
+                                                                <p className="text-[10px] text-gray-400 mt-1 line-clamp-2 leading-snug">
+                                                                    {issue.description}
+                                                                </p>
+                                                            )}
                                                         </Link>
                                                     ))}
                                                 </div>

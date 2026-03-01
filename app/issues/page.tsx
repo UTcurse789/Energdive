@@ -11,6 +11,8 @@ interface Issue {
     id: number;
     slug: string;
     title: string;
+    subTitle: string;
+    description: string;
     month: string;
     year: string;
     volume: string;
@@ -64,10 +66,18 @@ export default function IssuesPage() {
                             : STRAPI_URL + rawUrl
                         : "/Energdive-Logo.png";
 
+                    // Extract sub_title
+                    const subTitle = dataObj.sub_title || dataObj.Sub_Title || dataObj.subTitle || item.sub_title || "";
+
+                    // Extract description (note: Strapi field is "Discription" — typo in CMS)
+                    const description = dataObj.Discription || dataObj.Description || dataObj.description || item.Discription || item.Description || item.description || "";
+
                     return {
                         id: item.id,
                         slug: finalSlug,
                         title: dataObj.Title || dataObj.title || `${month} ${year}` || "Untitled Issue",
+                        subTitle: typeof subTitle === "string" ? subTitle : "",
+                        description: typeof description === "string" ? description : "",
                         month: String(month),
                         year: String(year),
                         volume: (dataObj.Volume || dataObj.volume || "")?.toString(),
@@ -142,9 +152,21 @@ export default function IssuesPage() {
                                     {issue.month} {issue.year}
                                 </h3>
 
-                                <p className="text-xs uppercase text-gray-400">
+                                {issue.subTitle && (
+                                    <p className="text-sm font-serif italic text-gray-600 mt-1">
+                                        {issue.subTitle}
+                                    </p>
+                                )}
+
+                                <p className="text-xs uppercase text-gray-400 mt-1">
                                     Volume {issue.volume}, Number {issue.number}
                                 </p>
+
+                                {issue.description && (
+                                    <p className="text-sm text-gray-500 mt-2 line-clamp-2">
+                                        {issue.description}
+                                    </p>
+                                )}
                             </Link>
                         ))}
                     </div>
