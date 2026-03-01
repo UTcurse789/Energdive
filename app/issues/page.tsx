@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { AdBanner } from "@/components/ads/AdBanner";
 
 const STRAPI_URL = "http://206.189.132.187:1337";
 
@@ -110,6 +111,11 @@ export default function IssuesPage() {
                         placeholder="Search by year, title..."
                         className="border px-6 py-2 w-full max-w-xl"
                     />
+                </div>
+
+                {/* Magazine Hero Ad Banner */}
+                <div className="mb-8">
+                    <AdBanner placement="magazine_hero" variant="banner" className="flex justify-center" />
                 </div>
 
                 {/* GRID */}

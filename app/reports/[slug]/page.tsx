@@ -338,8 +338,7 @@ function RenderBlocks({ blocks }: { blocks: any[] }) {
             case "heading":
                 const Tag = (`h${block.level || 2}` as any);
                 return (
-                    <Tag key={i} className="font-sans font-black uppercase tracking-tighter text-zinc-900 mt-20 mb-6 text-2xl md:text-3xl border-b border-zinc-100 pb-4">
-                        <span className="text-[#00A651] mr-3 text-lg">▸</span>
+                    <Tag key={i} className="font-serif font-bold tracking-tight text-zinc-900 mt-14 mb-5 leading-tight text-2xl md:text-3xl">
                         {renderInlineChildren(block.children)}
                     </Tag>
                 );
@@ -395,7 +394,7 @@ export default async function IntelligenceReportPage({ params }: { params: Promi
                             className="group inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 hover:text-[#00A651] transition-colors duration-200"
                         >
                             <ChevronLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform duration-200" />
-                            Intelligence Index
+                            Report
                         </Link>
                     </div>
 
@@ -419,7 +418,7 @@ export default async function IntelligenceReportPage({ params }: { params: Promi
                                     <div className="inline-flex items-center gap-2 bg-[#00A651]/10 border border-[#00A651]/25 rounded-full px-3.5 py-1.5 mb-7">
                                         <span className="w-1.5 h-1.5 rounded-full bg-[#00A651] animate-pulse" />
                                         <span className="text-[9px] font-black uppercase tracking-[0.18em] text-[#00A651]">
-                                            Official Publication
+                                             Publication
                                         </span>
                                     </div>
 
@@ -428,12 +427,12 @@ export default async function IntelligenceReportPage({ params }: { params: Promi
                                         <FileText className="w-6 h-6 text-[#00A651]" />
                                     </div>
 
-                                    <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-1">Full Report</p>
-                                    <h4 className="text-white font-black text-base leading-snug mb-3">
-                                        Technical<br />Whitepaper
+                                    
+                                    <h4 className="text-white font-black text-base leading-snug mb-3 mt-4">
+                                        Access the Full Report
                                     </h4>
                                     <p className="text-[11px] text-zinc-500 font-serif italic leading-relaxed mb-8">
-                                        Verified data models, methodology &amp; complete analysis included.
+                                        Download the comprehensive analysis trusted by policymakers, industry leaders, and investors.
                                     </p>
 
                                     {/* Download button */}
@@ -441,13 +440,11 @@ export default async function IntelligenceReportPage({ params }: { params: Promi
                                         <button className="w-full group bg-[#00A651] hover:bg-white rounded-2xl py-4 transition-all duration-300">
                                             <span className="flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest text-white group-hover:text-zinc-900 transition-colors duration-300">
                                                 <Download className="w-3.5 h-3.5" />
-                                                Download PDF
+                                                Download Report
                                             </span>
                                         </button>
                                     </a>
-                                    <p className="text-center text-[9px] text-zinc-600 uppercase tracking-widest">
-                                        Free Access · PDF
-                                    </p>
+                                    
                                 </div>
                             </div>
 
@@ -480,10 +477,7 @@ export default async function IntelligenceReportPage({ params }: { params: Promi
                                     <Clock size={13} className="text-[#00A651]" />
                                     12 min read
                                 </div>
-                                <div className="flex items-center gap-3 text-[11px] font-bold text-[#00A651]">
-                                    <ShieldCheck size={13} />
-                                    ENCIS Verified
-                                </div>
+                                
                             </div>
 
                         </aside>
@@ -495,7 +489,7 @@ export default async function IntelligenceReportPage({ params }: { params: Promi
 
                             {/* Title block */}
                             <header className="mb-14">
-                                <h1 className="text-4xl md:text-6xl font-black uppercase tracking-tighter leading-[0.9] mb-10 text-zinc-900">
+                                <h1 className="text-3xl md:text-5xl font-black uppercase tracking-tighter leading-[0.9] mb-10 text-zinc-900">
                                     {article.Title}
                                 </h1>
 
@@ -505,10 +499,6 @@ export default async function IntelligenceReportPage({ params }: { params: Promi
                                     <span className="flex items-center gap-2">
                                         <Clock size={11} className="text-[#00A651]" />
                                         12 min read
-                                    </span>
-                                    <span className="flex items-center gap-2 text-[#00A651]">
-                                        <ShieldCheck size={11} />
-                                        ENCIS Verified
                                     </span>
                                 </div>
                             </header>
@@ -523,11 +513,9 @@ export default async function IntelligenceReportPage({ params }: { params: Promi
 
                             {/* Excerpt callout */}
                             {excerpt && (
-                                <div className="aspect-16/10 relative overflow-hidden rounded-3xl bg-zinc-950 p-8 md:p-10">
+                                <div className="relative overflow-hidden rounded-3xl bg-zinc-950 p-8 md:p-10 mb-10">
                                     <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-[#00A651] via-emerald-300 to-transparent" />
-                                    <div className="absolute top-4 right-4 bg-linear-to-r from-[#00A651] to-emerald-400 text-white text-[8px] font-black italic px-3 py-1 rounded-full shadow-lg z-10">
-                                        <span className="relative z-10">Verified</span>
-                                    </div>
+                                    
                                     <div className="absolute -bottom-12 -right-12 w-40 h-40 bg-[#00A651]/10 rounded-full blur-3xl pointer-events-none" />
                                     <p className="text-[10px] font-black uppercase tracking-widest text-[#00A651] mb-4 relative z-10">
                                         Core Mission
@@ -539,9 +527,156 @@ export default async function IntelligenceReportPage({ params }: { params: Promi
                             )}
 
                             {/* Body content */}
-                            <div className="mb-20">
-                                <RenderBlocks blocks={article.Content} />
-                            </div>
+                                <div className="mb-20">
+                                    <div className="prose prose-lg max-w-none
+
+                                                /* Base Typography */
+                                                font-serif text-gray-800 leading-relaxed
+
+                                                /* Headings - Clean & Minimal */
+                                                prose-headings:font-sans
+                                                prose-headings:font-bold
+                                                prose-headings:text-gray-900
+                                                prose-headings:tracking-tight
+
+                                                /* H1 */
+                                                prose-h1:text-4xl
+                                                prose-h1:mt-12
+                                                prose-h1:mb-6
+
+                                                /* H2 */
+                                                prose-h2:text-3xl
+                                                prose-h2:mt-10
+                                                prose-h2:mb-5
+
+                                                /* H3 */
+                                                prose-h3:text-2xl
+                                                prose-h3:mt-8
+                                                prose-h3:mb-4
+
+                                                /* H4 */
+                                                prose-h4:text-xl
+                                                prose-h4:mt-6
+                                                prose-h4:mb-3
+
+                                                /* Paragraphs */
+                                                prose-p:text-lg
+                                                prose-p:leading-[1.9]
+                                                prose-p:mb-6
+                                                prose-p:text-gray-700
+
+                                                /* Links */
+                                                prose-a:text-teal-600
+                                                prose-a:font-medium
+                                                prose-a:no-underline
+                                                prose-a:border-b
+                                                prose-a:border-teal-300
+                                                hover:prose-a:text-teal-800
+                                                hover:prose-a:border-teal-600
+                                                prose-a:transition-colors
+
+                                                /* Strong/Bold */
+                                                prose-strong:text-gray-900
+                                                prose-strong:font-bold
+
+                                                /* Blockquotes */
+                                                prose-blockquote:border-l-4
+                                                prose-blockquote:border-teal-500
+                                                prose-blockquote:bg-teal-50/40
+                                                prose-blockquote:py-4
+                                                prose-blockquote:px-6
+                                                prose-blockquote:my-8
+                                                prose-blockquote:rounded-r-lg
+                                                prose-blockquote:italic
+                                                prose-blockquote:text-gray-700
+
+                                                /* Lists */
+                                                prose-ul:my-6
+                                                prose-ul:space-y-2
+                                                prose-ul:pl-6
+
+                                                prose-ol:my-6
+                                                prose-ol:space-y-2
+                                                prose-ol:pl-6
+
+                                                prose-li:text-lg
+                                                prose-li:leading-relaxed
+                                                prose-li:text-gray-700
+
+                                                prose-li:marker:text-teal-600
+                                                prose-li:marker:font-bold
+
+                                                /* Images */
+                                                prose-img:rounded-xl
+                                                prose-img:shadow-lg
+                                                prose-img:my-12
+                                                prose-img:border
+                                                prose-img:border-gray-200
+
+                                                /* Captions */
+                                                prose-figcaption:text-center
+                                                prose-figcaption:text-sm
+                                                prose-figcaption:text-gray-500
+                                                prose-figcaption:mt-4
+                                                prose-figcaption:italic
+                                                prose-figcaption:font-sans
+
+                                                /* Tables */
+                                                prose-table:my-8
+                                                prose-table:border-collapse
+                                                prose-table:w-full
+                                                prose-table:shadow-md
+                                                prose-table:rounded-lg
+                                                prose-table:overflow-hidden
+
+                                                prose-thead:bg-teal-600
+                                                prose-thead:text-white
+
+                                                prose-th:py-3
+                                                prose-th:px-4
+                                                prose-th:text-left
+                                                prose-th:font-semibold
+                                                prose-th:text-sm
+                                                prose-th:uppercase
+                                                prose-th:tracking-wide
+
+                                                prose-td:py-3
+                                                prose-td:px-4
+                                                prose-td:border-b
+                                                prose-td:border-gray-200
+
+                                                prose-tr:even:bg-gray-50
+                                                hover:prose-tr:bg-teal-50/30
+                                                prose-tr:transition-colors
+
+                                                /* Inline Code */
+                                                prose-code:bg-gray-100
+                                                prose-code:text-teal-700
+                                                prose-code:px-2
+                                                prose-code:py-0.5
+                                                prose-code:rounded
+                                                prose-code:text-sm
+                                                prose-code:font-mono
+                                                prose-code:before:content-none
+                                                prose-code:after:content-none
+
+                                                /* Code Blocks */
+                                                prose-pre:bg-gray-900
+                                                prose-pre:text-gray-100
+                                                prose-pre:rounded-lg
+                                                prose-pre:p-6
+                                                prose-pre:my-8
+                                                prose-pre:shadow-lg
+                                                prose-pre:overflow-x-auto
+
+                                                /* Horizontal Rule */
+                                                prose-hr:my-12
+                                                prose-hr:border-gray-300
+                                                "
+                                            >
+                                                <RenderBlocks blocks={article.Content} />
+                                            </div>
+                                            </div>
 
                             {/* Bottom CTA */}
                             {/* <div className="border-t border-zinc-200 pt-12 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
@@ -585,7 +720,7 @@ export default async function IntelligenceReportPage({ params }: { params: Promi
                                     </div>
 
                                     <div className="p-5">
-                                        <p className="text-[9px] font-black uppercase tracking-widest text-[#00A651] mb-2">Technical Brief</p>
+                                        <p className="text-[9px] font-black uppercase tracking-widest text-[#00A651] mb-2">Report</p>
                                         <h5 className="font-black text-sm leading-snug text-zinc-900 mb-5 group-hover:text-[#00A651] transition-colors duration-200 line-clamp-3">
                                             {trending[0].Title}
                                         </h5>
@@ -605,7 +740,7 @@ export default async function IntelligenceReportPage({ params }: { params: Promi
                                     <div className="px-5 py-4 border-b border-zinc-100">
                                         <p className="text-[9px] font-black uppercase tracking-[0.22em] text-zinc-400 flex items-center gap-2">
                                             <span className="w-3 h-px bg-zinc-300 inline-block" />
-                                            Related Briefings
+                                            Related Reports
                                         </p>
                                     </div>
 
@@ -630,7 +765,7 @@ export default async function IntelligenceReportPage({ params }: { params: Promi
                                             {/* Text */}
                                             <div className="flex-1 min-w-0">
                                                 <p className="text-[9px] font-black uppercase tracking-widest text-[#00A651] mb-1">
-                                                    Brief 0{idx + 2}
+                                                    Report {idx + 2}
                                                 </p>
                                                 <p className="text-xs font-bold text-zinc-800 leading-snug group-hover:text-[#00A651] transition-colors duration-200 line-clamp-2">
                                                     {item.Title}
@@ -651,14 +786,14 @@ export default async function IntelligenceReportPage({ params }: { params: Promi
                                 <div className="h-[2px] absolute top-0 left-0 right-0 bg-gradient-to-r from-[#00A651] via-emerald-300 to-transparent" />
                                 <div className="absolute -bottom-8 -right-8 w-32 h-32 bg-[#00A651]/10 rounded-full blur-2xl pointer-events-none" />
                                 <p className="text-[9px] font-black uppercase tracking-widest text-[#00A651] mb-3 relative z-10">
-                                    Intel Digest
+                                    Stay Ahead of the Curve
                                 </p>
                                 <p className="text-white font-black text-sm leading-snug mb-5 relative z-10">
-                                    Get weekly intelligence briefings in your inbox.
+                                    Get exclusive energy insights, market analysis, and expert commentary delivered to your inbox.
                                 </p>
-                                <SubscribeFreeButton className="relative z-10 w-full bg-[#00A651] hover:bg-white rounded-xl py-3 text-[10px] font-black uppercase tracking-widest text-white hover:text-zinc-900 transition-all duration-300">
-                                    Subscribe Free
-                                </SubscribeFreeButton>
+                                <button className="relative z-10 w-full bg-[#00A651] hover:bg-white rounded-xl py-3 text-[10px] font-black uppercase tracking-widest text-white hover:text-zinc-900 transition-all duration-300">
+                                    Subscribe Now
+                                </button>
                             </div>
 
                         </aside>
@@ -666,6 +801,9 @@ export default async function IntelligenceReportPage({ params }: { params: Promi
                     </div>
                 </div>
             </main>
+
+           
         </div>
     );
 }
+
