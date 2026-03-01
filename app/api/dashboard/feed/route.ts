@@ -5,15 +5,6 @@ import { getUserProfile } from "@/lib/queries";
 const STRAPI = process.env.NEXT_PUBLIC_STRAPI_URL || "http://localhost:1337";
 const TOKEN = process.env.STRAPI_API_TOKEN || "";
 
-/** Slugify a community name → Strapi sector slug */
-function slugify(name: string): string {
-    return name
-        .toLowerCase()
-        .replace(/&/g, "and")
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/(^-|-$)/g, "");
-}
-
 /**
  * GET /api/dashboard/feed
  *
@@ -39,15 +30,14 @@ export async function GET(request: Request) {
         const earlyAccess = searchParams.get("earlyAccess");
         const singleSector = searchParams.get("sector"); // filter by one specific sector slug
 
-        // Build sector slug filters using $or
+        // Build sector name filters using $or with $containsi for robust matching
         let sectorFilter = "";
         if (singleSector) {
             // Single sector filter (for tab-based pages)
-            sectorFilter = `&filters[sectors][slug][$eq]=${encodeURIComponent(slugify(singleSector))}`;
+            sectorFilter = `&filters[sectors][name][$containsi]=${encodeURIComponent(singleSector)}`;
         } else if (communityNames.length > 0) {
             const parts = communityNames.map((name, i) => {
-                const slug = slugify(name);
-                return `filters[$or][${i}][sectors][slug][$eq]=${encodeURIComponent(slug)}`;
+                return `filters[$or][${i}][sectors][name][$containsi]=${encodeURIComponent(name)}`;
             });
             sectorFilter = `&${parts.join("&")}`;
         }
@@ -73,7 +63,7 @@ export async function GET(request: Request) {
 
         const res = await fetch(url, {
             headers: { Authorization: `Bearer ${TOKEN}` },
-            next: { revalidate: 60 },
+            cache: "no-store",
         });
 
         if (!res.ok) {
@@ -129,17 +119,12 @@ export async function GET(request: Request) {
             };
         });
 
-        const response = NextResponse.json({
+        return NextResponse.json({
             items: feedItems,
             pagination: json?.meta?.pagination || { page, pageSize, total: feedItems.length },
             sectors: communityNames,
             totalContent: json?.meta?.pagination?.total || 0,
         });
-        response.headers.set(
-            "Cache-Control",
-            "public, s-maxage=60, stale-while-revalidate=120"
-        );
-        return response;
     } catch (error) {
         console.error("[DASHBOARD_FEED]", error);
         return NextResponse.json({ error: "Internal server error" }, { status: 500 });

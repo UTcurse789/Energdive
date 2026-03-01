@@ -462,7 +462,7 @@ export function TrendsSidebar() {
     useEffect(() => {
         async function fetchTrending() {
             try {
-                const res = await fetch("/api/dashboard/feed?pageSize=5&type=News");
+                const res = await fetch(`/api/dashboard/feed?pageSize=5&type=News&_t=${feedKey}`);
                 if (!res.ok) throw new Error("Failed");
                 const data = await res.json();
                 setTrending(
