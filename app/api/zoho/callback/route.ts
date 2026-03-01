@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
             code,
             client_id: process.env.ZOHO_CLIENT_ID || "",
             client_secret: process.env.ZOHO_CLIENT_SECRET || "",
-            redirect_uri: process.env.redirect_uri || "http://localhost:3000/api/zoho/callback",
+            redirect_uri: process.env.redirect_uri || "https://www.energdive.com/api/zoho/callback",
             grant_type: "authorization_code",
         });
 
