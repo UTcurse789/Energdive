@@ -15,7 +15,7 @@ import ArticleBody from "@/components/ArticleBody";
 export default function EventsPage() {
     const [events, setEvents] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
-    const BASE_URL = "http://206.189.132.187:1337";
+    const BASE_URL = "https://cms.energdive.com";
     const [activeTab, setActiveTab] = useState("upcoming");
 
     useEffect(() => {

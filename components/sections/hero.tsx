@@ -14,7 +14,7 @@ function slugify(text: string): string {
     return text.toLowerCase().trim().replace(/[^\w\s-]/g, "").replace(/[\s_]+/g, "-").replace(/-+/g, "-").replace(/^-+|-+$/g, "");
 }
 
-const STRAPI_BASE = "http://206.189.132.187:1337";
+const STRAPI_BASE = "https://cms.energdive.com";
 
 function getImageUrl(article: any): string {
     const img = article.FeaturedImage;

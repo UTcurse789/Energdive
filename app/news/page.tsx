@@ -10,7 +10,7 @@ import { DateChip } from "@/components/ui/date-chip";
 import { formatContentDate } from "@/lib/date";
 import { Skeleton } from "@/components/ui/skeleton";
 
-const STRAPI_BASE_URL = "http://206.189.132.187:1337";
+const STRAPI_BASE_URL = "https://cms.energdive.com";
 
 export default function ArchitectEditorialPage() {
     const [articles, setArticles] = useState<any[]>([]);

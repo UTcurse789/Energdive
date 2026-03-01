@@ -1,7 +1,7 @@
 import { SectionHeading } from "@/components/ui/section-heading";
 import { EventCard } from "../ui/event-card";
 
-const STRAPI_BASE = "http://206.189.132.187:1337";
+const STRAPI_BASE = "https://cms.energdive.com";
 
 async function getEvents() {
     try {

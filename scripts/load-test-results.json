@@ -1,7 +1,7 @@
 [
   {
     "endpoint": "Homepage",
-    "url": "http://206.189.132.187:3000/",
+    "url": "https://energdive.com/",
     "connections": 100,
     "duration": 5,
     "requests_total": 74,
@@ -21,7 +21,7 @@
   },
   {
     "endpoint": "Reports Page",
-    "url": "http://206.189.132.187:3000/reports",
+    "url": "https://energdive.com/reports",
     "connections": 100,
     "duration": 5,
     "requests_total": 112,
@@ -41,7 +41,7 @@
   },
   {
     "endpoint": "News Page",
-    "url": "http://206.189.132.187:3000/news",
+    "url": "https://energdive.com/news",
     "connections": 100,
     "duration": 5,
     "requests_total": 204,
@@ -61,7 +61,7 @@
   },
   {
     "endpoint": "About Page",
-    "url": "http://206.189.132.187:3000/about",
+    "url": "https://energdive.com/about",
     "connections": 100,
     "duration": 5,
     "requests_total": 184,
@@ -81,7 +81,7 @@
   },
   {
     "endpoint": "API /content",
-    "url": "http://206.189.132.187:3000/api/content?page=1",
+    "url": "https://energdive.com/api/content?page=1",
     "connections": 100,
     "duration": 5,
     "requests_total": 223,
@@ -101,7 +101,7 @@
   },
   {
     "endpoint": "Homepage",
-    "url": "http://206.189.132.187:3000/",
+    "url": "https://energdive.com/",
     "connections": 200,
     "duration": 5,
     "requests_total": 78,
@@ -121,7 +121,7 @@
   },
   {
     "endpoint": "Reports Page",
-    "url": "http://206.189.132.187:3000/reports",
+    "url": "https://energdive.com/reports",
     "connections": 200,
     "duration": 5,
     "requests_total": 0,
@@ -137,7 +137,7 @@
   },
   {
     "endpoint": "News Page",
-    "url": "http://206.189.132.187:3000/news",
+    "url": "https://energdive.com/news",
     "connections": 200,
     "duration": 5,
     "requests_total": 25,
@@ -157,7 +157,7 @@
   },
   {
     "endpoint": "About Page",
-    "url": "http://206.189.132.187:3000/about",
+    "url": "https://energdive.com/about",
     "connections": 200,
     "duration": 5,
     "requests_total": 97,
@@ -177,7 +177,7 @@
   },
   {
     "endpoint": "API /content",
-    "url": "http://206.189.132.187:3000/api/content?page=1",
+    "url": "https://energdive.com/api/content?page=1",
     "connections": 200,
     "duration": 5,
     "requests_total": 124,

@@ -1,7 +1,7 @@
 const fetch = require('node-fetch');
 
 async function debugFetch() {
-    const url = "http://206.189.132.187:1337/api/contents?filters[$and][0][type_of_content][name][$eq]=News&pagination[pageSize]=1&populate=*";
+    const url = "https://cms.energdive.com/api/contents?filters[$and][0][type_of_content][name][$eq]=News&pagination[pageSize]=1&populate=*";
     try {
         const res = await fetch(url);
         const json = await res.json();

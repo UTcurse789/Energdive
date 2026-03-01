@@ -62,6 +62,16 @@ const nextConfig: NextConfig = {
 
       // ✅ STRAPI IMAGES (IMPORTANT)
       {
+        protocol: 'https',
+        hostname: 'cms.energdive.com',
+        pathname: '/uploads/**',
+      },
+      {
+        protocol: 'http',
+        hostname: 'cms.energdive.com',
+        pathname: '/uploads/**',
+      },
+      {
         protocol: 'http',
         hostname: '206.189.132.187',
         port: '1337',

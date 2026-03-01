@@ -5,7 +5,7 @@ import MagicBento from '../MagicBento';
 import { cn } from "@/lib/utils";
 import { buildContentUrl } from "@/lib/content-routes";
 
-const STRAPI_BASE = "http://206.189.132.187:1337";
+const STRAPI_BASE = "https://cms.energdive.com";
 const API_URL =
     `${STRAPI_BASE}/api/contents` +
     `?filters[$and][0][type_of_content][name][$eq]=News` +
