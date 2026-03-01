@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import { BlocksRenderer } from "@strapi/blocks-react-renderer";
 import { DateChip } from "@/components/ui/date-chip";
 import { Skeleton } from "@/components/ui/skeleton";
+import ArticleBody from "@/components/ArticleBody";
 
 export default function EventsPage() {
     const [events, setEvents] = useState<any[]>([]);
@@ -168,7 +169,7 @@ export default function EventsPage() {
                                             </h3>
 
                                             <div className="text-sm text-zinc-500 font-serif italic leading-relaxed mb-8 line-clamp-3">
-                                                <BlocksRenderer content={event.description} />
+                                                <ArticleBody content={event.description} />
                                             </div>
 
                                             <div className="mt-auto space-y-4">

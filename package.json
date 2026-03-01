@@ -16,7 +16,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "dotenv": "^17.3.1",
-    "framer-motion": "^12.34.0",
+    "framer-motion": "^12.34.3",
     "gsap": "^3.14.2",
     "lucide-react": "^0.563.0",
     "motion": "^12.34.0",
@@ -33,6 +33,7 @@
     "tailwind-merge": "^3.4.0",
     "tailwindcss-animate": "^1.0.7",
     "three": "^0.167.1",
+    "use-debounce": "^10.1.0",
     "zod": "^4.3.6"
   },
   "devDependencies": {
