@@ -14,7 +14,7 @@ import { Article } from "@/types";
 import { formatContentDate } from "@/lib/date";
 import { Publication2 } from "@/components/sections/publication2";
 
-const STRAPI_BASE = "http://206.189.132.187:1337";
+const STRAPI_BASE = "https://cms.energdive.com";
 
 const ALLOWED_SECTORS = ["Oil & Gas", "Power Generation", "New Energies", "Sustainability & Safety"];
 

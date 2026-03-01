@@ -1,4 +1,4 @@
-const STRAPI_BASE = process.env.NEXT_PUBLIC_STRAPI_URL || "http://206.189.132.187:1337";
+const STRAPI_BASE = process.env.NEXT_PUBLIC_STRAPI_URL || "https://cms.energdive.com";
 const STRAPI_TOKEN = process.env.STRAPI_API_TOKEN || "";
 
 export interface Advertisement {

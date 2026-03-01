@@ -30,7 +30,7 @@ void automation.portal_provision(Int leadId)
 	// 2. Call provision webhook
 	resp = invokeurl
 	[
-		url: "http://206.189.132.187:3000/api/zoho/provision"
+		url: "https://energdive.com/api/zoho/provision"
 		type: POST
 		parameters: payload
 		headers: {"Content-Type":"application/json","x-webhook-secret":"my_super_secret_123"}

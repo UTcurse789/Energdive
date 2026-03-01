@@ -12,7 +12,7 @@ import { ISSUES } from "@/data/dummy";
 import { ArrowRight, Calendar, ChevronRight } from "lucide-react";
 import { formatContentDate } from "@/lib/date";
 
-const STRAPI_BASE_URL = process.env.NEXT_PUBLIC_STRAPI_URL || "http://206.189.132.187:1337";
+const STRAPI_BASE_URL = process.env.NEXT_PUBLIC_STRAPI_URL || "https://cms.energdive.com";
 
 function slugify(text: string): string {
     return text.toLowerCase().trim().replace(/[^\w\s-]/g, "").replace(/[\s_]+/g, "-").replace(/-+/g, "-").replace(/^-+|-+$/g, "");

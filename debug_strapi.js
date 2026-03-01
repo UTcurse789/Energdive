@@ -1,4 +1,4 @@
-const STRAPI_BASE_URL = "http://206.189.132.187:1337";
+const STRAPI_BASE_URL = "https://cms.energdive.com";
 
 const fs = require('fs');
 

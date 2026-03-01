@@ -1,6 +1,6 @@
 // import fetch from 'node-fetch'; // fetch is global in Node 18+
 
-const STRAPI_BASE_URL = "http://206.189.132.187:1337";
+const STRAPI_BASE_URL = "https://cms.energdive.com";
 
 async function checkStructure() {
     // Fetch one news item to see the keys
