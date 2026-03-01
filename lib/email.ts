@@ -197,12 +197,6 @@ export async function sendWelcomeEmail(
                                 </ul>
                             </div>
 
-                            <div style="text-align:center;margin-bottom:24px;">
-                                <a href="${dashboardUrl}"
-                                   style="display:inline-block;background:#09B697;color:#ffffff;font-size:16px;font-weight:700;text-decoration:none;padding:16px 40px;border-radius:10px;box-shadow:0 4px 12px rgba(9,182,151,0.3);">
-                                    Go to Your Dashboard &rarr;
-                                </a>
-                            </div>
 
                             <p style="margin:0;color:#6B7280;font-size:14px;line-height:1.6;">
                                 If you have any questions, simply reply to this email — we'd love to hear from you.
