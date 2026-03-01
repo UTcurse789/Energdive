@@ -21,7 +21,7 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
         <>
             {isEnergClub ? <EnergClubHeader /> : <Header />}
 
-            <main className={isEnergClub ? "pt-[80px]" : "pt-[120px] md:pt-[140px]"}>
+            <main className={isEnergClub ? "pt-[70px] sm:pt-[85px] lg:pt-[100px]" : "pt-[120px] md:pt-[140px]"}>
                 {children}
             </main>
 

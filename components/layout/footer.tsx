@@ -77,8 +77,8 @@ export function Footer() {
 
             <div className="container mx-auto px-6 lg:px-12 max-w-[1400px]">
 
-                {/* ─── Newsletter Banner ─── */}
-                <div className="py-10 border-b border-white/[0.06]">
+                {/* ─── Newsletter Banner — HIDDEN (uncomment to re-enable) ─── */}
+                {/* <div className="py-10 border-b border-white/[0.06]">
                     <div className="flex flex-col md:flex-row items-center justify-between gap-6">
                         <div className="flex items-center gap-4">
                             <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0" style={{ background: brandGreen }}>
@@ -99,7 +99,7 @@ export function Footer() {
                     </div>
                 </div>
 
-                <SubscribeModal isOpen={subscribeOpen} onClose={() => setSubscribeOpen(false)} />
+                <SubscribeModal isOpen={subscribeOpen} onClose={() => setSubscribeOpen(false)} /> */}
 
                 {/* ─── Main Footer Grid ─── */}
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 py-14">
@@ -117,7 +117,7 @@ export function Footer() {
                                     priority
                                 />
                             </div>
-                         </Link>
+                        </Link>
                         <p className="text-gray-500 text-[13px] leading-relaxed mb-7 max-w-sm">
                             India&apos;s premier energy intelligence platform delivering in-depth coverage, analysis, and insights across Oil &amp; Gas, Power, Renewables, and the evolving energy landscape.
                         </p>
