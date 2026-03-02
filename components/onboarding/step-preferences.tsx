@@ -15,12 +15,11 @@ const FREQUENCIES = [
 ] as const;
 
 const FORMATS = [
-    "News",
-    "Newsletter",
+    "Insights",
     "Opinion",
-    "Interview",
-    "White Paper",
-    "Technical Paper",
+    "News Briefing",
+    "Upcoming Events",
+    "Case Study & Technical Papers",
 ] as const;
 
 // ── Schema ────────────────────────────────────────────────────────
@@ -114,8 +113,8 @@ export default function StepPreferences({
                                     type="button"
                                     onClick={() => selectFrequency(freq.value)}
                                     className={`relative px-4 py-3 rounded-xl text-sm font-semibold border-2 transition-all ${isActive
-                                            ? "bg-[#0AB996]/10 border-[#0AB996] text-[#0AB996] shadow-sm"
-                                            : "bg-white border-zinc-200 text-zinc-600 hover:border-zinc-300"
+                                        ? "bg-[#0AB996]/10 border-[#0AB996] text-[#0AB996] shadow-sm"
+                                        : "bg-white border-zinc-200 text-zinc-600 hover:border-zinc-300"
                                         }`}
                                 >
                                     <div className="flex items-center gap-2 justify-center">
@@ -155,8 +154,8 @@ export default function StepPreferences({
                                     type="button"
                                     onClick={() => toggleFormat(format)}
                                     className={`px-4 py-2 rounded-full text-sm font-medium border transition-all flex items-center gap-2 ${isActive
-                                            ? "bg-[#0AB996]/10 border-[#0AB996] text-[#0AB996]"
-                                            : "bg-white border-zinc-200 text-zinc-600 hover:border-zinc-300"
+                                        ? "bg-[#0AB996]/10 border-[#0AB996] text-[#0AB996]"
+                                        : "bg-white border-zinc-200 text-zinc-600 hover:border-zinc-300"
                                         }`}
                                 >
                                     {isActive && <Check className="w-3.5 h-3.5" />}

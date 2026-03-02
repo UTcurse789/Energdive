@@ -98,8 +98,10 @@ export async function POST(req: Request) {
         return NextResponse.json({ success: true, userId: dbUserId });
     } catch (error) {
         console.error("[ONBOARDING_SUBMIT]", error);
+        const message = error instanceof Error ? error.message : String(error);
+        const stack = error instanceof Error ? error.stack : undefined;
         return NextResponse.json(
-            { error: "Internal server error" },
+            { error: "Internal server error", detail: message, stack },
             { status: 500 }
         );
     }
