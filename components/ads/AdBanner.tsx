@@ -201,7 +201,7 @@ function CardAd({ ad, className }: { ad: Ad; className: string }) {
                 />
             </div>
             <span className="absolute top-3 left-3 text-[9px] font-bold uppercase tracking-[0.15em] text-white/80 bg-black/25 backdrop-blur-md px-2.5 py-1 rounded-full">
-                Partner
+                Sponsored
             </span>
         </div>
     );
@@ -239,8 +239,8 @@ function HeroBannerAd({ ad, className }: { ad: Ad; className: string }) {
                     className="object-cover transition-transform duration-500 group-hover:scale-[1.015]"
                 />
             </div>
-            <span className="absolute top-3 right-3 text-[9px] font-bold uppercase tracking-[0.15em] text-white/70 bg-black/30 backdrop-blur-md px-2.5 py-1 rounded-full">
-                Partner
+            <span className="absolute top-3 left-3 text-[9px] font-bold uppercase tracking-[0.15em] text-white/80 bg-black/25 backdrop-blur-md px-2.5 py-1 rounded-full">
+                Sponsored
             </span>
         </div>
     );
@@ -291,12 +291,11 @@ function VerticalBannerAd({ ad, className }: { ad: Ad; className: string }) {
                     </div>
                 )}
                 <div className="flex-1 min-w-0">
-                    <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-teal-300">Industry Partner</p>
                     <p className="text-sm font-semibold text-white truncate">{ad.partner_name || ad.title}</p>
                 </div>
             </div>
             <span className="absolute top-3 left-3 text-[9px] font-bold uppercase tracking-[0.15em] text-white/80 bg-black/25 backdrop-blur-md px-2.5 py-1 rounded-full">
-                Partner
+                Sponsored
             </span>
         </div>
     );
@@ -333,7 +332,7 @@ function NativeBannerAd({ ad, className }: { ad: Ad; className: string }) {
                     </div>
                 )}
                 <div className="flex-1 min-w-0">
-                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-teal-600 mb-1">Industry Partner</p>
+
                     <p className="text-lg font-bold text-gray-900 group-hover:text-teal-700 transition-colors truncate">{ad.partner_name || ad.title}</p>
                 </div>
                 <div className="shrink-0 hidden sm:flex items-center gap-2 px-5 py-2.5 bg-teal-600 text-white text-xs font-bold uppercase tracking-wider rounded-full group-hover:bg-teal-700 transition-colors shadow-sm">
