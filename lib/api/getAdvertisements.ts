@@ -45,30 +45,24 @@ export async function getAdvertisements({
     sectorSlug,
 }: GetAdvertisementsOptions): Promise<Advertisement[]> {
     try {
-        const now = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
+        // Use local date string to avoid UTC timezone mismatch
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, "0");
+        const day = String(now.getDate()).padStart(2, "0");
+        const today = `${year}-${month}-${day}`; // YYYY-MM-DD in local time
 
-        // Build filters
-        const filters: Record<string, any> = {
-            placement: { $eq: placement },
-            is_active: { $eq: true },
-            start_date: { $lte: now },
-            end_date: { $gte: now },
-        };
+        // Build URL — don't filter dates in Strapi (they may be null = always active)
+        const url = buildUrl({}, placement, sectorSlug, today);
 
-        // If sector slug provided, try sector-specific first
-        if (sectorSlug) {
-            filters.sectors = { slug: { $eq: sectorSlug } };
-        }
-
-        const params = new URLSearchParams();
-        // We'll build the query manually for nested filters
-        const url = buildUrl(filters, placement, sectorSlug, now);
+        console.log(`[Ads] Fetching: placement=${placement}, sector=${sectorSlug || "none"}, today=${today}`);
+        console.log(`[Ads] URL: ${url}`);
 
         const res = await fetch(url, {
             headers: {
                 ...(STRAPI_TOKEN ? { Authorization: `Bearer ${STRAPI_TOKEN}` } : {}),
             },
-            next: { revalidate: 300 },
+            next: { revalidate: 60 },
         });
 
         if (!res.ok) {
@@ -79,15 +73,20 @@ export async function getAdvertisements({
         const json = await res.json();
         let ads: Advertisement[] = json.data || [];
 
-        // Filter by date in code (null dates = always active)
+        console.log(`[Ads] Raw ads from Strapi: ${ads.length} for placement "${placement}"`);
+
+        // Filter by date in code (null/empty dates = always active)
         ads = ads.filter((ad) => {
-            if (ad.start_date && ad.start_date > now) return false;
-            if (ad.end_date && ad.end_date < now) return false;
+            if (ad.start_date && ad.start_date > today) return false;
+            if (ad.end_date && ad.end_date < today) return false;
             return true;
         });
 
+        console.log(`[Ads] After date filter: ${ads.length} ads remaining`);
+
         // If sector-specific query returned nothing, fallback to placement-only
         if (ads.length === 0 && sectorSlug) {
+            console.log(`[Ads] No sector-specific ads, falling back to placement-only`);
             return getAdvertisements({ placement });
         }
 

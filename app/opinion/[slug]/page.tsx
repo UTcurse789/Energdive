@@ -146,7 +146,7 @@ async function getOpinion(slug: string) {
 
 async function getRecommended(currentSlug: string) {
   const res = await fetch(
-    `${STRAPI}/api/contents?filters[type_of_content][name][$eq]=Opinion&populate[author][populate]=avatar&populate=FeaturedImage&pagination[limit]=3`,
+    `${STRAPI}/api/contents?filters[type_of_content][name][$eq]=Opinion&populate[author][populate]=avatar&populate=FeaturedImage&pagination[limit]=3&sort=Date:desc`,
     { next: { revalidate: 3600 } }
   );
   const json = await res.json();

@@ -34,7 +34,7 @@ async function fetchSectorWithChildren(slug: string) {
 
 async function fetchSectorArticles(slug: string) {
     try {
-        const url = `${STRAPI}/api/contents?filters[type_of_content][name][$eq]=Articles&filters[sectors][slug][$eq]=${slug}&populate=*`;
+        const url = `${STRAPI}/api/contents?filters[type_of_content][name][$eq]=Articles&filters[sectors][slug][$eq]=${slug}&populate=*&sort=Date:desc`;
         const res = await fetch(url, { next: { revalidate: 120 } });
         const json = await res.json();
         return json?.data || [];

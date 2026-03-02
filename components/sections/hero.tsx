@@ -44,7 +44,7 @@ export function Hero({ topStories: propTopStories }: HeroProps) {
 
     useEffect(() => {
         // Cover stories for carousel
-        fetch(`${STRAPI_BASE}/api/contents?filters[type_of_content][name][$contains]=Cover&populate=*&pagination[pageSize]=10`)
+        fetch(`${STRAPI_BASE}/api/contents?filters[type_of_content][name][$contains]=Cover&populate=*&pagination[pageSize]=10&sort=Date:desc`)
             .then((res) => res.json())
             .then((data) => setCoverStories(data?.data || []))
             .catch(console.error)
