@@ -23,19 +23,15 @@ function createPool(): Pool {
         },
 
         // Pool tuning — conservative for managed DB with limited connections
-        max: 5,                          // keep low for DigitalOcean managed DB
-        idleTimeoutMillis: 10_000,       // close idle clients after 10s
+        max: 3,                          // keep very low for DigitalOcean managed DB
+        idleTimeoutMillis: 5_000,        // close idle clients after 5s
         connectionTimeoutMillis: 5_000,  // fail fast if DB unreachable
+        allowExitOnIdle: true,           // let Node exit even if pool has idle clients
     });
 
     // Error handling to prevent "Error: Connection terminated unexpectedly" crashing the app
-    pool.on('error', (err, client) => {
+    pool.on('error', (err) => {
         console.error('Unexpected error on idle client', err);
-        // process.exit(-1); // Don't exit in Next.js, just log
-    });
-
-    pool.on('connect', (client) => {
-        // console.log('New client connected to pool');
     });
 
     return pool;
@@ -47,6 +43,18 @@ const pool: Pool = globalForPg.pool ?? createPool();
 if (process.env.NODE_ENV !== "production") {
     globalForPg.pool = pool;
 }
+
+// Graceful shutdown — release all connections when PM2 restarts
+const shutdown = async () => {
+    try {
+        await pool.end();
+    } catch (_) {
+        // ignore
+    }
+    process.exit(0);
+};
+process.on("SIGINT", shutdown);
+process.on("SIGTERM", shutdown);
 
 // ---------------------------------------------------------------------------
 // Helpers
