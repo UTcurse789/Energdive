@@ -80,7 +80,7 @@ export async function GET(request: NextRequest) {
         });
 
         // 6. Redirect to our accept-invite page (NOT Clerk's hosted page)
-        const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://www.energdive.com";
         const redirectUrl = new URL("/accept-invite", appUrl);
         redirectUrl.searchParams.set("ticket", signInToken.token);
         return NextResponse.redirect(redirectUrl.toString());

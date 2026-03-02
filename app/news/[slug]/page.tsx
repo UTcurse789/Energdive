@@ -4,12 +4,12 @@ import { Header } from "@/components/layout/header";
 import { notFound } from "next/navigation";
 import { BlocksRenderer } from "@strapi/blocks-react-renderer";
 import { SidebarSubscribe } from "@/components/sidebar-subscribe";
-import { AdRenderer } from "@/components/ads/AdRenderer";
+import { AdBanner } from "@/components/ads/AdBanner";
 import { TagBadge } from "@/components/ui/tag-badge";
 import { ScrollProgress } from "@/components/ui/scroll-progress";
 import { DateChip } from "@/components/ui/date-chip";
 import { ShareButton } from "@/components/ui/share-button";
-import { ISSUES } from "@/data/dummy";
+import { getLatestIssue } from "@/lib/api/getLatestIssue";
 import { ArrowRight, Calendar, ChevronRight, Printer } from "lucide-react";
 import { formatContentDate } from "@/lib/date";
 import ArticleBody from "@/components/ArticleBody";
@@ -99,8 +99,7 @@ export default async function NewsDetailPage({
 
     const author = attrs.author?.data?.attributes || attrs.author;
 
-    // Get latest issue from dummy data
-    const latestIssue = ISSUES[0];
+    const latestIssue = await getLatestIssue();
 
     const article = {
         title: attrs.Title,
@@ -266,7 +265,7 @@ first:prose-p:first-letter:text-6xl first:prose-p:first-letter:font-serif first:
                         )}
 
                         {/* Industry Partner Ad */}
-                        <AdRenderer
+                        <AdBanner
                             placement="article_partner_end"
                             sectorSlug={sectorSlug}
                             variant="native"

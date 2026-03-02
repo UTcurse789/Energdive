@@ -15,11 +15,22 @@ function isNonEmptyParagraph(block: any): boolean {
     );
 }
 
-/** Ensure image URL is absolute — prepend Strapi base URL for relative paths */
+/** Ensure image URL is absolute and HTTPS — prepend Strapi base URL for relative paths */
 function resolveImageUrl(url: string | undefined | null): string {
     if (!url) return "";
-    if (url.startsWith("http://") || url.startsWith("https://")) return url;
-    return `${STRAPI_BASE_URL}${url.startsWith("/") ? "" : "/"}${url}`;
+    let resolved = url;
+
+    // Rewrite old Strapi IP-based URLs to the proper domain
+    resolved = resolved.replace(
+        /^https?:\/\/206\.189\.132\.187(?::1337)?/,
+        "https://cms.energdive.com"
+    );
+
+    if (!resolved.startsWith("http://") && !resolved.startsWith("https://")) {
+        resolved = `${STRAPI_BASE_URL}${resolved.startsWith("/") ? "" : "/"}${resolved}`;
+    }
+    // Force HTTPS to prevent Mixed Content errors
+    return resolved.replace("http://", "https://");
 }
 
 export default function ArticleBody({ content }: { content: any }) {
