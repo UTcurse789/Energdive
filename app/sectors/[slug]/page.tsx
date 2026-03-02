@@ -224,7 +224,7 @@ export default function SectorIntelligencePage() {
                 id: item.id,
                 title: item.Title,
                 slug: item.slug,
-                date: item.publishedAt || item.Date,
+                date: item.Date || item.publishedAt || item.createdAt,
                 sectors: extractNames(item.sectors),
                 tags: extractTagObjects(item.tags),
                 image: item?.FeaturedImage?.url ? `${STRAPI}${item.FeaturedImage.url}` : "/placeholder.jpg",

@@ -20,6 +20,7 @@ export interface BentoItem {
     id: string | number;
     title: string;
     category: string;
+    contentType?: string;
     image: string;
     slug: string;
     excerpt: string;

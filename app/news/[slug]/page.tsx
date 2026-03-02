@@ -326,7 +326,7 @@ first:prose-p:first-letter:text-6xl first:prose-p:first-letter:font-serif first:
                                                 ? `${STRAPI_BASE_URL}${r.FeaturedImage.url}`
                                                 : "/magazine-default.jpg";
 
-                                            const itemDate = formatContentDate(r.publishedAt || item.publishedAt);
+                                            const itemDate = formatContentDate(r.Date || r.publishedAt || item.publishedAt);
 
                                             return (
                                                 <Link

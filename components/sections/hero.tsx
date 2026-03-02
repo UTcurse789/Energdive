@@ -43,8 +43,8 @@ export function Hero({ topStories: propTopStories }: HeroProps) {
     const autoPlayRef = useRef<NodeJS.Timeout | null>(null);
 
     useEffect(() => {
-        // Cover stories for carousel
-        fetch(`${STRAPI_BASE}/api/contents?filters[type_of_content][name][$contains]=Cover&populate=*&pagination[pageSize]=10&sort=Date:desc`)
+        // Hero banner content for carousel
+        fetch(`${STRAPI_BASE}/api/contents?filters[show_hero_banner][$eq]=true&populate=*&pagination[pageSize]=10&sort=publishedAt:desc`)
             .then((res) => res.json())
             .then((data) => setCoverStories(data?.data || []))
             .catch(console.error)
@@ -154,10 +154,12 @@ export function Hero({ topStories: propTopStories }: HeroProps) {
                                             {featured.sectors[0].name}
                                         </span>
                                     )}
-                                    {/* Cover Story badge */}
-                                    <span className="px-3 py-1.5 bg-[#09B697] text-white text-[10px] font-black uppercase tracking-widest rounded-md">
-                                        Cover Story
-                                    </span>
+                                    {/* Content type badge */}
+                                    {featured.type_of_content?.name && (
+                                        <span className="px-3 py-1.5 bg-[#09B697] text-white text-[10px] font-black uppercase tracking-widest rounded-md">
+                                            {featured.type_of_content.name}
+                                        </span>
+                                    )}
                                 </div>
 
                                 <Link href={buildContentUrl({ slug: featured.slug, type_of_content: featured.type_of_content })} className="block group/title">
