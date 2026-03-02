@@ -6,8 +6,8 @@
 BEGIN;
 
 -- Clear existing data using CASCADE to handle FK references from user profiles
-TRUNCATE TABLE sub_industries CASCADE;
-TRUNCATE TABLE industry CASCADE;
+TRUNCATE TABLE sub_industries RESTART IDENTITY CASCADE;
+TRUNCATE TABLE industry RESTART IDENTITY CASCADE;
 
 -- ── Insert Industries ──
 INSERT INTO industry (name) VALUES
