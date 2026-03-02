@@ -218,7 +218,7 @@ export default function OpinionContent({ opinion, recommended }: any) {
             <footer className="mt-40 bg-zinc-50 py-24 border-t border-zinc-100">
                 <div className="container mx-auto px-4 max-w-7xl">
                     <div className="flex justify-between items-end mb-16">
-                        <h4 className="text-5xl font-black uppercase italic tracking-tighter">Further <br /> Opinions.</h4>
+                        <h4 className="text-5xl font-black uppercase italic tracking-tighter">More Opinion <br /> & Analysis.</h4>
                         <Link href="/opinion" className="text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2 hover:text-[#00A651]">
                             Explore All <ArrowRight size={14} />
                         </Link>
