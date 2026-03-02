@@ -82,7 +82,7 @@ export async function sendPortalAccessEmail(
                         <td style="background:#0a2e1f;padding:40px 40px 32px;text-align:center;border-bottom:4px solid #09B697;">
                             ${logoUrl
             ? `<img src="${logoUrl}" alt="EnergDive Logo" width="180" style="display:block;margin:0 auto;max-width:200px;height:auto;" />`
-            : `<h1 style="color:#ffffff;margin:0;font-size:24px;">EnergDive</h1>`
+            : `<h1 style="color:#ffffff;margin:0;font-size:24px;">ENERGDive</h1>`
         }
                         </td>
                     </tr>
@@ -149,7 +149,7 @@ export async function sendWelcomeEmail(
     to: string,
     firstName: string
 ): Promise<void> {
-    const subject = "Welcome to ENERGDIVE! 🎉";
+    const subject = "Welcome to ENERGDIVE!";
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://www.energdive.com";
     const logoUrl = `${appUrl}/logo2-removebg-preview.png`;

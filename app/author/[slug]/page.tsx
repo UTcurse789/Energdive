@@ -173,7 +173,7 @@ export default async function AuthorPage({
                         <div className="min-w-0">
                             <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/5 px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-emerald-300 mb-6 mt-6">
                                 <Tag size={12} />
-                                Author Intelligence Desk
+                                Author Desk
                             </div>
                             <h1 className="text-4xl md:text-6xl font-serif font-bold tracking-tight text-white mb-3">
                                 {authorName}
