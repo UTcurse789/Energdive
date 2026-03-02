@@ -61,6 +61,7 @@ function HeroAd({ ad }: { ad: Advertisement }) {
                     alt={ad.title || "Industry Partner"}
                     fill
                     loading="lazy"
+                    unoptimized
                     className="object-cover transition-transform duration-500 group-hover:scale-[1.015]"
                 />
             </div>
@@ -102,6 +103,7 @@ function VerticalAd({ ad }: { ad: Advertisement }) {
                     alt={ad.title || "Industry Partner"}
                     fill
                     loading="lazy"
+                    unoptimized
                     className="object-cover transition-transform duration-700 group-hover:scale-[1.02]"
                 />
                 {/* Gradient overlay at bottom */}
@@ -116,6 +118,7 @@ function VerticalAd({ ad }: { ad: Advertisement }) {
                             src={logoUrl}
                             alt={ad.partner_name || ""}
                             fill
+                            unoptimized
                             className="object-contain p-0.5"
                         />
                     </div>
@@ -165,6 +168,7 @@ function NativeAd({ ad }: { ad: Advertisement }) {
                             alt={ad.partner_name || ""}
                             fill
                             loading="lazy"
+                            unoptimized
                             className="object-contain p-1.5"
                         />
                     </div>

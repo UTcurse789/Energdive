@@ -4,7 +4,7 @@ import { Header } from "@/components/layout/header";
 import { notFound } from "next/navigation";
 import { BlocksRenderer } from "@strapi/blocks-react-renderer";
 import { SidebarSubscribe } from "@/components/sidebar-subscribe";
-import { AdRenderer } from "@/components/ads/AdRenderer";
+import { AdBanner } from "@/components/ads/AdBanner";
 import { TagBadge } from "@/components/ui/tag-badge";
 import { ScrollProgress } from "@/components/ui/scroll-progress";
 import { DateChip } from "@/components/ui/date-chip";
@@ -266,7 +266,7 @@ first:prose-p:first-letter:text-6xl first:prose-p:first-letter:font-serif first:
                         )}
 
                         {/* Industry Partner Ad */}
-                        <AdRenderer
+                        <AdBanner
                             placement="article_partner_end"
                             sectorSlug={sectorSlug}
                             variant="native"

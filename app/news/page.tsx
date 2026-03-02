@@ -21,7 +21,7 @@ export default function ArchitectEditorialPage() {
         async function fetchData() {
             try {
                 // FIXED: Added pagination[pageSize]=100 to get all 34 entries
-                const url = `${STRAPI_BASE_URL}/api/contents?filters[type_of_content][name][$eq]=News&populate=*&pagination[pageSize]=100`;
+                const url = `${STRAPI_BASE_URL}/api/contents?filters[type_of_content][name][$eq]=News&populate=*&pagination[pageSize]=100&sort=Date:desc`;
                 const res = await fetch(url);
                 const json = await res.json();
 

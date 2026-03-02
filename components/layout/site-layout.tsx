@@ -22,6 +22,13 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
         <>
             {isEnergClub ? <EnergClubHeader /> : <Header />}
 
+            {/* Header Banner Ad — 728×90 below navigation on all pages */}
+            {!isEnergClub && (
+                <div className="w-full flex justify-center py-3 bg-white">
+                    <AdBanner placement="header_banner" variant="banner" />
+                </div>
+            )}
+
             <main className={isEnergClub ? "pt-[70px] sm:pt-[85px] lg:pt-[100px]" : "pt-[120px] md:pt-[140px]"}>
                 {children}
             </main>
