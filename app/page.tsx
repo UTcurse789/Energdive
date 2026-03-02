@@ -123,42 +123,72 @@ export default async function Home() {
       .slice(0, 6)
     : [];
 
-  // ── Sectors: group by allowed sectors — Featured first, then fill with dynamic ──
-  const sectorsWithArticles = allContents
-    ? ALLOWED_SECTORS.map((sectorName) => {
-      // All articles in this sector
-      const sectorArticles = allContents.filter(
-        (article: any) =>
-          article.sectors?.some((s: any) => s.name === sectorName) &&
-          article.type_of_content?.name === "Articles"
-      );
+  // ── Sectors: Fetch articles PER SECTOR directly from Strapi ──
+  // Track IDs already used in hero & bento to avoid repeating them in sectors
+  const usedArticleIds = new Set<number>();
+  if (allContents) {
+    heroTopStories.forEach((a: any) => usedArticleIds.add(a.id));
+    allContents
+      .filter((a: any) => a.featured === true)
+      .slice(0, 6)
+      .forEach((a: any) => usedArticleIds.add(a.id));
+  }
 
-      // Featured articles first
-      const featured = sectorArticles.filter(
-        (article: any) => article.featured_in_sector === true
-      );
+  // Fetch articles for each sector in parallel directly from Strapi
+  const sectorFetchResults = await Promise.all(
+    ALLOWED_SECTORS.map(async (sectorName) => {
+      try {
+        const res = await fetch(
+          `${STRAPI_BASE}/api/contents?filters[type_of_content][name][$eq]=Articles&filters[sectors][name][$eq]=${encodeURIComponent(sectorName)}&populate=*&sort=Date:desc&pagination[pageSize]=20`,
+          { next: { revalidate: 60 } }
+        );
+        if (!res.ok) return [];
+        const json = await res.json();
+        return json.data || [];
+      } catch {
+        return [];
+      }
+    })
+  );
 
-      // Non-featured articles sorted by date (newest first) to fill remaining slots
-      const nonFeatured = sectorArticles
-        .filter((article: any) => article.featured_in_sector !== true)
-        .sort((a: any, b: any) => {
-          const aDate = Date.parse(a.Date || a.publishedAt || a.createdAt || "") || 0;
-          const bDate = Date.parse(b.Date || b.publishedAt || b.createdAt || "") || 0;
-          return bDate - aDate;
-        });
+  const sectorsWithArticles = ALLOWED_SECTORS.map((sectorName, idx) => {
+    const sectorArticles = sectorFetchResults[idx];
 
-      // Combine: featured first, then fill up to 4 with non-featured
-      const remaining = 4 - featured.length;
-      const combined = [...featured, ...nonFeatured.slice(0, Math.max(0, remaining))];
-      const articles = combined.slice(0, 4).map((article: any) => mapArticle(article, sectorName));
+    // Filter out already-used articles
+    const available = sectorArticles.filter(
+      (article: any) => !usedArticleIds.has(article.id)
+    );
 
-      return {
-        title: sectorName,
-        slug: sectorName.toLowerCase().replace(/ & /g, "-and-").replace(/ /g, "-"),
-        articles,
-      };
-    }).filter((s) => s.articles.length > 0)
-    : [];
+    // Featured-in-sector articles first
+    const featured = available.filter(
+      (article: any) => article.featured_in_sector === true
+    );
+
+    // Non-featured sorted by date (newest first) to fill remaining slots
+    const nonFeatured = available
+      .filter((article: any) => article.featured_in_sector !== true)
+      .sort((a: any, b: any) => {
+        const aDate = Date.parse(a.Date || a.publishedAt || a.createdAt || "") || 0;
+        const bDate = Date.parse(b.Date || b.publishedAt || b.createdAt || "") || 0;
+        return bDate - aDate;
+      });
+
+    // Combine: featured first, then fill up to 4
+    const remaining = 4 - featured.length;
+    const combined = [...featured, ...nonFeatured.slice(0, Math.max(0, remaining))];
+    const finalArticles = combined.slice(0, 4);
+
+    // Mark these as used so next sector won't pick them
+    finalArticles.forEach((article: any) => usedArticleIds.add(article.id));
+
+    const articles = finalArticles.map((article: any) => mapArticle(article, sectorName));
+
+    return {
+      title: sectorName,
+      slug: sectorName.toLowerCase().replace(/ & /g, "-and-").replace(/ /g, "-"),
+      articles,
+    };
+  }).filter((s) => s.articles.length > 0);
 
   return (
     <>
