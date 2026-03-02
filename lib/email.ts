@@ -149,7 +149,7 @@ export async function sendWelcomeEmail(
     to: string,
     firstName: string
 ): Promise<void> {
-    const subject = "Welcome to EnergDive! 🎉";
+    const subject = "Welcome to ENERGDIVE! 🎉";
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://www.energdive.com";
     const logoUrl = `${appUrl}/logo2-removebg-preview.png`;
@@ -173,7 +173,7 @@ export async function sendWelcomeEmail(
                         <td style="background:#0a2e1f;padding:40px 40px 32px;text-align:center;border-bottom:4px solid #09B697;">
                             ${logoUrl
             ? `<img src="${logoUrl}" alt="EnergDive Logo" width="180" style="display:block;margin:0 auto;max-width:200px;height:auto;" />`
-            : `<h1 style="color:#ffffff;margin:0;font-size:24px;">EnergDive</h1>`
+            : `<h1 style="color:#ffffff;margin:0;font-size:24px;">ENERGDIVE</h1>`
         }
                         </td>
                     </tr>
@@ -181,19 +181,19 @@ export async function sendWelcomeEmail(
                     <tr>
                         <td style="padding:48px 40px;">
                             <h2 style="margin:0 0 16px;color:#111827;font-size:26px;font-weight:800;letter-spacing:-0.5px;line-height:1.2;">
-                                Welcome aboard, ${firstName}! 🎉
+                                Welcome aboard, ${firstName}! 
                             </h2>
                             <p style="margin:0 0 24px;color:#4B5563;font-size:16px;line-height:1.7;">
-                                Your <strong>EnergDive Intelligence Portal</strong> account is all set up. You now have access to curated energy industry insights, reports, and analysis tailored to your interests.
+                                Welcome to <strong> ENERGClub — the member community of ENERGDIVE.</strong> Your registration is now confirmed, and you can begin exploring insights, analysis, and perspectives shaping India’s energy transition and the broader global energy ecosystem.
                             </p>
 
                             <div style="background-color:#F0FDF9;border:1px solid #09B697;border-radius:12px;padding:24px;margin-bottom:24px;">
                                 <p style="margin:0 0 8px;color:#065F46;font-size:14px;font-weight:700;">Here's what you can do:</p>
                                 <ul style="margin:0;padding-left:20px;color:#4B5563;font-size:14px;line-height:2;">
-                                    <li>Browse latest intelligence reports and analysis</li>
-                                    <li>Get content personalized to your industry &amp; community</li>
-                                    <li>Receive updates at your preferred frequency</li>
-                                    <li>Access sector-specific insights and white papers</li>
+                                    <li>You can update your Community, Sub-Community, and communication preferences anytime by logging into your account and managing your profile settings.</li>
+                                    <li>We will also be introducing several new features within ENERGClub in the coming months — including deeper research access, enhanced community engagement tools, and additional member benefits. We look forward to bringing you more value as the platform evolves./li>
+                                    <li>To stay informed about the latest updates, insights, and announcements, we encourage you to follow ENERGDIVE on our social media channels.</li>
+                                    <li>If you need any assistance our team will be glad to support you.</li>
                                 </ul>
                             </div>
 

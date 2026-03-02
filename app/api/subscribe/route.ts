@@ -11,12 +11,11 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const VALID_FREQUENCIES = ["Daily", "Weekly", "Monthly"];
 
 const VALID_PREFERENCES = [
-    "News",
-    "Newsletter",
+    "Insights",
     "Opinion",
-    "Interview",
-    "White Paper",
-    "Technical Paper",
+    "News Briefing",
+    "Upcoming Events",
+    "Case Study & Technical Papers",
 ];
 
 const VALID_SECTORS: Record<string, string[]> = {

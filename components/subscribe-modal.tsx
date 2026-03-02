@@ -39,12 +39,11 @@ const FREQUENCIES = [
 ];
 
 const PREFERENCES = [
-    "News",
-    "Newsletter",
+    "Insights",
     "Opinion",
-    "Interview",
-    "White Paper",
-    "Technical Paper",
+    "News Briefing",
+    "Upcoming Events",
+    "Case Study & Technical Papers",
 ];
 
 /* ─── Animation Variants ───────────────────────────────── */
