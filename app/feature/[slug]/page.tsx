@@ -9,7 +9,7 @@ import { TagBadge } from "@/components/ui/tag-badge";
 import { ScrollProgress } from "@/components/ui/scroll-progress";
 import { DateChip } from "@/components/ui/date-chip";
 import { ShareButton } from "@/components/ui/share-button";
-import { ISSUES } from "@/data/dummy";
+import { getLatestIssue } from "@/lib/api/getLatestIssue";
 import { ArrowRight, Calendar, ChevronRight } from "lucide-react";
 import { formatContentDate } from "@/lib/date";
 
@@ -55,7 +55,7 @@ export default async function FeatureDetailPage({ params }: { params: Promise<{ 
     const normalizedTags = Array.isArray(tagsData) ? tagsData.map((t: any) => normalizeTag(t)).filter(Boolean) : [];
     const relatedArticles = await getRelated(slug);
     const author = attrs.author?.data?.attributes || attrs.author;
-    const latestIssue = ISSUES[0];
+    const latestIssue = await getLatestIssue();
 
     const article = {
         title: attrs.Title,

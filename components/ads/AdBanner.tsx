@@ -54,7 +54,13 @@ export function AdBanner({
     useEffect(() => {
         async function fetchAd() {
             try {
-                const now = new Date().toISOString().split("T")[0];
+                // Use local date to avoid UTC timezone mismatch
+                const nowDate = new Date();
+                const year = nowDate.getFullYear();
+                const month = String(nowDate.getMonth() + 1).padStart(2, "0");
+                const day = String(nowDate.getDate()).padStart(2, "0");
+                const now = `${year}-${month}-${day}`;
+
                 let url =
                     `${STRAPI_BASE}/api/advertisements` +
                     `?filters[placement][$eq]=${encodeURIComponent(placement)}` +
@@ -66,20 +72,30 @@ export function AdBanner({
                     url += `&filters[sectors][slug][$eq]=${encodeURIComponent(sectorSlug)}`;
                 }
 
+                console.log(`[AdBanner] Fetching: placement=${placement}, today=${now}`);
+
                 const res = await fetch(url);
-                if (!res.ok) return;
+                if (!res.ok) {
+                    console.error(`[AdBanner] Strapi error: ${res.status}`);
+                    return;
+                }
                 const json = await res.json();
                 let ads: Ad[] = json.data || [];
 
-                // Filter by date in code (null dates = always active)
+                console.log(`[AdBanner] Raw ads: ${ads.length} for "${placement}"`);
+
+                // Filter by date in code (null/empty dates = always active)
                 ads = ads.filter((ad) => {
                     if (ad.start_date && ad.start_date > now) return false;
                     if (ad.end_date && ad.end_date < now) return false;
                     return true;
                 });
 
+                console.log(`[AdBanner] After date filter: ${ads.length} ads`);
+
                 // Fallback to placement-only if no sector match
                 if (ads.length === 0 && sectorSlug) {
+                    console.log(`[AdBanner] No sector-specific ads, falling back`);
                     const fallbackUrl =
                         `${STRAPI_BASE}/api/advertisements` +
                         `?filters[placement][$eq]=${encodeURIComponent(placement)}` +
@@ -143,6 +159,7 @@ function BannerAd({ ad, className }: { ad: Ad; className: string }) {
                         alt={ad.title || "Advertisement"}
                         fill
                         loading="lazy"
+                        unoptimized
                         className="object-cover"
                     />
                 </div>
@@ -179,6 +196,7 @@ function CardAd({ ad, className }: { ad: Ad; className: string }) {
                     alt={ad.title || "Industry Partner"}
                     fill
                     loading="lazy"
+                    unoptimized
                     className="object-cover transition-transform duration-500 group-hover:scale-[1.02]"
                 />
             </div>
@@ -217,6 +235,7 @@ function HeroBannerAd({ ad, className }: { ad: Ad; className: string }) {
                     alt={ad.title || "Industry Partner"}
                     fill
                     loading="lazy"
+                    unoptimized
                     className="object-cover transition-transform duration-500 group-hover:scale-[1.015]"
                 />
             </div>
@@ -260,6 +279,7 @@ function VerticalBannerAd({ ad, className }: { ad: Ad; className: string }) {
                     alt={ad.title || "Industry Partner"}
                     fill
                     loading="lazy"
+                    unoptimized
                     className="object-cover transition-transform duration-700 group-hover:scale-[1.02]"
                 />
                 <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/60 to-transparent" />
@@ -267,7 +287,7 @@ function VerticalBannerAd({ ad, className }: { ad: Ad; className: string }) {
             <div className="absolute bottom-0 inset-x-0 p-4 flex items-center gap-3">
                 {logoUrl && (
                     <div className="relative w-8 h-8 shrink-0 rounded-full overflow-hidden bg-white/90 shadow-sm ring-1 ring-white/30">
-                        <Image src={logoUrl} alt={ad.partner_name || ""} fill className="object-contain p-0.5" />
+                        <Image src={logoUrl} alt={ad.partner_name || ""} fill unoptimized className="object-contain p-0.5" />
                     </div>
                 )}
                 <div className="flex-1 min-w-0">
@@ -305,7 +325,7 @@ function NativeBannerAd({ ad, className }: { ad: Ad; className: string }) {
             <div className="flex items-center gap-5">
                 {logoUrl ? (
                     <div className="relative w-14 h-14 sm:w-16 sm:h-16 shrink-0 rounded-xl overflow-hidden bg-white shadow-sm ring-1 ring-gray-100">
-                        <Image src={logoUrl} alt={ad.partner_name || ""} fill loading="lazy" className="object-contain p-1.5" />
+                        <Image src={logoUrl} alt={ad.partner_name || ""} fill loading="lazy" unoptimized className="object-contain p-1.5" />
                     </div>
                 ) : (
                     <div className="w-14 h-14 sm:w-16 sm:h-16 shrink-0 rounded-xl bg-teal-50 flex items-center justify-center text-teal-600 font-bold text-xl">

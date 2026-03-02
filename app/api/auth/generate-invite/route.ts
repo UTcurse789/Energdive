@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
         const { token, expiresAt } = generateMagicToken(email);
 
         // 3. Construct invite URL
-        const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://www.energdive.com";
         const inviteUrl = `${appUrl}/api/auth/invite?email=${encodeURIComponent(email)}&token=${encodeURIComponent(token)}`;
 
         console.log(`[INVITE] Generated magic link for ${email}, expires: ${expiresAt}`);

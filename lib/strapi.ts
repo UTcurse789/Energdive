@@ -161,18 +161,29 @@ export async function fetchTags(): Promise<StrapiCollection<Tag>> {
 }
 
 /**
- * Helper to get absolute image URL
+ * Convert any HTTP URL to HTTPS to prevent Mixed Content errors
+ * when the site is served over HTTPS.
+ */
+export function ensureHttps(url: string): string {
+    if (url.startsWith("http://")) {
+        return url.replace("http://", "https://");
+    }
+    return url;
+}
+
+/**
+ * Helper to get absolute image URL (always HTTPS)
  */
 export function getStrapiMedia(url: string | null) {
     if (url == null) {
         return null;
     }
 
-    // Return URL as is if it's external (s3, cloudinary, etc)
+    // Return URL as is if it's external (s3, cloudinary, etc) — but enforce HTTPS
     if (url.startsWith("http") || url.startsWith("//")) {
-        return url;
+        return ensureHttps(url);
     }
 
     // Otherwise prepend Strapi URL
-    return `${STRAPI_URL}${url}`;
+    return ensureHttps(`${STRAPI_URL}${url}`);
 }

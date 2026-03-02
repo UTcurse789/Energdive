@@ -1,5 +1,5 @@
 import { Hero } from "@/components/sections/hero";
-import { AdRenderer } from "@/components/ads/AdRenderer";
+import { AdBanner } from "@/components/ads/AdBanner";
 // import { SpotlightSection } from "@/components/sections/spotlight-section";
 import { BentoGrid } from "@/components/ui/bento-grid";
 import { SectorBlock } from "@/components/ui/sector-block";
@@ -13,6 +13,7 @@ import { MarketTicker } from "@/components/features/ticker";
 import { Article } from "@/types";
 import { formatContentDate } from "@/lib/date";
 import { Publication2 } from "@/components/sections/publication2";
+import { getLatestIssue } from "@/lib/api/getLatestIssue";
 
 const STRAPI_BASE = "https://cms.energdive.com";
 
@@ -66,7 +67,7 @@ function mapArticle(article: any, sectorName: string): Article {
 async function getAllContents() {
   try {
     const res = await fetch(
-      `${STRAPI_BASE}/api/contents?pagination[pageSize]=100&populate=*`,
+      `${STRAPI_BASE}/api/contents?pagination[pageSize]=100&populate=*&sort=Date:desc`,
       { next: { revalidate: 60 } }
     );
     if (!res.ok) return null;
@@ -80,14 +81,15 @@ async function getAllContents() {
 
 export default async function Home() {
   const allContents = await getAllContents();
+  const latestIssue = await getLatestIssue();
 
   // ── Bento: Random 6 from Featured Contents (Swapped from Hero Sidebar) ──
   const finalBentoItems = allContents
     ? allContents
       .filter((a: any) => a.featured === true)
       .sort((a: any, b: any) => {
-        const aDate = Date.parse(a.publishedAt || a.createdAt || "") || 0;
-        const bDate = Date.parse(b.publishedAt || b.createdAt || "") || 0;
+        const aDate = Date.parse(a.Date || a.publishedAt || a.createdAt || "") || 0;
+        const bDate = Date.parse(b.Date || b.publishedAt || b.createdAt || "") || 0;
         return bDate - aDate;
       })
       .map((article: any) => ({
@@ -114,8 +116,8 @@ export default async function Home() {
     ? allContents
       .filter((a: any) => a.type_of_content?.name === "News")
       .sort((a: any, b: any) => {
-        const aDate = Date.parse(a.publishedAt || a.createdAt || "") || 0;
-        const bDate = Date.parse(b.publishedAt || b.createdAt || "") || 0;
+        const aDate = Date.parse(a.Date || a.publishedAt || a.createdAt || "") || 0;
+        const bDate = Date.parse(b.Date || b.publishedAt || b.createdAt || "") || 0;
         return bDate - aDate;
       })
       .slice(0, 6)
@@ -161,7 +163,7 @@ export default async function Home() {
   return (
     <>
       {/* Homepage Hero Ad Banner */}
-      <AdRenderer placement="home_platform_hero" variant="hero" />
+      <AdBanner placement="home_platform_hero" variant="hero" />
 
       {/* Cover Story (left) + Trending (right) — the original Hero */}
       <Hero topStories={heroTopStories} />
@@ -185,7 +187,7 @@ export default async function Home() {
             <div className="flex-1 min-w-0">
               <BentoGrid items={finalBentoItems} />
             </div>
-            <AdRenderer
+            <AdBanner
               placement="home_featured_partner"
               variant="vertical"
             />
@@ -222,7 +224,7 @@ export default async function Home() {
 
 
       <HomepageVideos />
-      <Publication2 variant="compact" />
+      <Publication2 variant="compact" latestCoverImage={latestIssue?.coverImage} latestIssueSlug={latestIssue?.slug} />
       <EventsSection />
     </>
   );
