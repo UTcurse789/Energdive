@@ -94,6 +94,7 @@ export default async function Home() {
         id: article.id,
         title: article.Title || "",
         category: article.sectors?.[0]?.name || "Energy",
+        contentType: article.type_of_content?.name || "News",
         image: extractImageUrl(article),
         slug: article.slug || "",
         excerpt: extractExcerpt(article),

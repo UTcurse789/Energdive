@@ -169,7 +169,7 @@ export default async function CoverStoryDetailPage({
                                         {relatedArticles.map((item: any) => {
                                             const r = item.attributes || item;
                                             const imgUrl = r.FeaturedImage?.url ? `${STRAPI_BASE_URL}${r.FeaturedImage.url}` : "/magazine-default.jpg";
-                                            const itemDate = formatContentDate(r.publishedAt || item.publishedAt);
+                                            const itemDate = formatContentDate(r.Date || r.publishedAt || item.publishedAt);
                                             return (
                                                 <Link key={item.id} href={`/cover-story/${r.slug}`} className="group flex gap-4 rounded-lg p-2 -mx-2 transition-colors hover:bg-gray-50">
                                                     <div className="relative w-24 h-20 shrink-0 overflow-hidden rounded-lg bg-gray-100">
