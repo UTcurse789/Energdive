@@ -121,17 +121,34 @@ export default async function Home() {
       .slice(0, 6)
     : [];
 
-  // ── Sectors: group by allowed sectors — ONLY Articles ──
+  // ── Sectors: group by allowed sectors — Featured first, then fill with dynamic ──
   const sectorsWithArticles = allContents
     ? ALLOWED_SECTORS.map((sectorName) => {
-      const articles = allContents
-        .filter((article: any) =>
+      // All articles in this sector
+      const sectorArticles = allContents.filter(
+        (article: any) =>
           article.sectors?.some((s: any) => s.name === sectorName) &&
-          article.type_of_content?.name === "Articles" &&
-          article.featured_in_sector === true
-        )
-        .slice(0, 4)
-        .map((article: any) => mapArticle(article, sectorName));
+          article.type_of_content?.name === "Articles"
+      );
+
+      // Featured articles first
+      const featured = sectorArticles.filter(
+        (article: any) => article.featured_in_sector === true
+      );
+
+      // Non-featured articles sorted by date (newest first) to fill remaining slots
+      const nonFeatured = sectorArticles
+        .filter((article: any) => article.featured_in_sector !== true)
+        .sort((a: any, b: any) => {
+          const aDate = Date.parse(a.Date || a.publishedAt || a.createdAt || "") || 0;
+          const bDate = Date.parse(b.Date || b.publishedAt || b.createdAt || "") || 0;
+          return bDate - aDate;
+        });
+
+      // Combine: featured first, then fill up to 4 with non-featured
+      const remaining = 4 - featured.length;
+      const combined = [...featured, ...nonFeatured.slice(0, Math.max(0, remaining))];
+      const articles = combined.slice(0, 4).map((article: any) => mapArticle(article, sectorName));
 
       return {
         title: sectorName,

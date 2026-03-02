@@ -43,23 +43,40 @@ function resolveImage(item: any) {
 
     const imageAttrs = readAttrs(imageSource);
     const url =
+        imageAttrs?.formats?.large?.url ||
         imageAttrs?.formats?.medium?.url ||
         imageAttrs?.formats?.small?.url ||
-        imageAttrs?.formats?.thumbnail?.url ||
         imageAttrs?.url;
     return toAbsoluteUrl(url) || "/magazine-default.jpg";
 }
 
 async function fetchTagContent(tagSlug: string) {
     try {
-        const res = await fetch(
-            `${STRAPI_BASE}/api/contents?filters[tags][slug][$eq]=${encodeURIComponent(tagSlug)}&populate=*&sort=publishedAt:desc&pagination[pageSize]=50`,
+        // Try slug-based filter first
+        let res = await fetch(
+            `${STRAPI_BASE}/api/contents?filters[tags][slug][$eq]=${encodeURIComponent(tagSlug)}&populate=*&sort=Date:desc&pagination[pageSize]=50`,
             { next: { revalidate: 120 } }
         );
         if (!res.ok) return { articles: [], tagName: tagSlug };
 
-        const json = await res.json();
-        const rawData = json.data || [];
+        let json = await res.json();
+        let rawData = json.data || [];
+
+        // Fallback: if slug filter returned nothing, try matching by tag name
+        if (rawData.length === 0) {
+            const tagNameFromSlug = tagSlug
+                .replace(/-/g, " ")
+                .replace(/\b\w/g, (c: string) => c.toUpperCase());
+
+            const nameRes = await fetch(
+                `${STRAPI_BASE}/api/contents?filters[tags][name][$containsi]=${encodeURIComponent(tagNameFromSlug)}&populate=*&sort=Date:desc&pagination[pageSize]=50`,
+                { next: { revalidate: 120 } }
+            );
+            if (nameRes.ok) {
+                const nameJson = await nameRes.json();
+                rawData = nameJson.data || [];
+            }
+        }
 
         const fallbackTagName = tagSlug
             .replace(/-/g, " ")
@@ -91,7 +108,7 @@ async function fetchTagContent(tagSlug: string) {
                     title: attrs.Title || attrs.title || "",
                     slug: attrs.slug || "",
                     image: resolveImage(entry),
-                    date: formatContentDate(attrs.publishedAt || attrs.createdAt || attrs.date || attrs.Date),
+                    date: formatContentDate(attrs.Date || attrs.date || attrs.publishedAt || attrs.createdAt),
                     excerpt,
                     contentType:
                         attrs.type_of_content?.name ||
@@ -138,7 +155,7 @@ async function fetchTagVideos(tagSlug: string) {
                     thumbnail:
                         toAbsoluteUrl(thumbnailUrl) ||
                         `https://img.youtube.com/vi/${attrs.youtubeId}/mqdefault.jpg`,
-                    date: formatContentDate(attrs.date || attrs.createdAt),
+                    date: formatContentDate(attrs.Date || attrs.date || attrs.createdAt),
                 };
             })
             .filter((video: any) => video.slug);
@@ -199,7 +216,8 @@ export default async function TagPage({ params }: { params: Promise<{ slug: stri
                                             src={item.image}
                                             alt={item.title}
                                             fill
-                                            className="object-cover group-hover:scale-110 transition-transform duration-500"
+                                            sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 33vw"
+                                            className="object-cover object-center group-hover:scale-110 transition-transform duration-500"
                                         />
                                         <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-transparent" />
                                         <div className="absolute top-4 right-4 rounded-full bg-white/90 p-2 opacity-0 translate-y-1 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300">
