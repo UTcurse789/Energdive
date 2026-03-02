@@ -510,12 +510,13 @@ export function Header() {
                                             </Link>
                                         </div>
                                         <Link href={latestIssueHref} onClick={closeMenus} className="block">
-                                            <div className="relative w-64 h-80 bg-gray-100 shadow-2xl overflow-hidden border">
+                                            <div className="relative w-64 h-80 bg-white shadow-2xl overflow-hidden border">
                                                 <Image
                                                     src={latestIssue?.coverImage ?? "/magazine-default.jpg"}
                                                     alt={latestIssue?.title ?? "Latest issue"}
                                                     fill
-                                                    className="object-cover transition-all duration-500"
+                                                    sizes="256px"
+                                                    className="object-contain"
                                                 />
                                             </div>
                                         </Link>
@@ -535,12 +536,13 @@ export function Header() {
                                                             onClick={closeMenus}
                                                             className="group"
                                                         >
-                                                            <div className="relative aspect-[3/4] bg-gray-100 border shadow-sm overflow-hidden">
+                                                            <div className="relative aspect-3/4 bg-white border shadow-sm overflow-hidden">
                                                                 <Image
                                                                     src={issue.coverImage}
                                                                     alt={issue.title}
                                                                     fill
-                                                                    className="object-cover transition-transform duration-500 group-hover:scale-105"
+                                                                    sizes="200px"
+                                                                    className="object-contain"
                                                                 />
                                                             </div>
                                                             <p className="mt-3 text-[13px] font-bold text-gray-800 group-hover:text-[#00A651] transition-colors line-clamp-1">
