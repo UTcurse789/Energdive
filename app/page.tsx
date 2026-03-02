@@ -13,6 +13,7 @@ import { MarketTicker } from "@/components/features/ticker";
 import { Article } from "@/types";
 import { formatContentDate } from "@/lib/date";
 import { Publication2 } from "@/components/sections/publication2";
+import { getLatestIssue } from "@/lib/api/getLatestIssue";
 
 const STRAPI_BASE = "https://cms.energdive.com";
 
@@ -80,6 +81,7 @@ async function getAllContents() {
 
 export default async function Home() {
   const allContents = await getAllContents();
+  const latestIssue = await getLatestIssue();
 
   // ── Bento: Random 6 from Featured Contents (Swapped from Hero Sidebar) ──
   const finalBentoItems = allContents
@@ -204,7 +206,7 @@ export default async function Home() {
 
 
       <HomepageVideos />
-      <Publication2 variant="compact" />
+      <Publication2 variant="compact" latestCoverImage={latestIssue?.coverImage} latestIssueSlug={latestIssue?.slug} />
       <EventsSection />
     </>
   );

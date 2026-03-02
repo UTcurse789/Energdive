@@ -61,7 +61,7 @@ const itemVariants: Variants = {
     visible: { y: 0, opacity: 1, transition: { type: "spring", stiffness: 100 } },
 };
 
-export function Publication2({ variant = "full" }: { variant?: "full" | "compact" }) {
+export function Publication2({ variant = "full", latestCoverImage, latestIssueSlug }: { variant?: "full" | "compact"; latestCoverImage?: string; latestIssueSlug?: string }) {
     return (
         <section className="container mx-auto px-6 lg:px-12 py-16 max-w-[1400px]">
 
@@ -94,13 +94,13 @@ export function Publication2({ variant = "full" }: { variant?: "full" | "compact
 
                     {/* Right: Magazine (Occupies 4 columns) */}
                     <Link
-                        href="/issues"
+                        href={latestIssueSlug ? `/issues/${latestIssueSlug}` : "/issues"}
                         className="lg:col-span-4 flex justify-center lg:justify-end group relative"
                     >
                         <div className="relative">
 
                             <TiltedCard
-                                imageSrc="/current-magazine.jpg"
+                                imageSrc={latestCoverImage || "/current-magazine.jpg"}
                                 altText="ENERGDIVE Cover"
                                 containerHeight="320px"
                                 containerWidth="240px"
