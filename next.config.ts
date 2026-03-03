@@ -1,6 +1,17 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Turbopack dev server config (required by Next.js 16+)
+  turbopack: {},
+
+  // Webpack (production build) — alias canvas to false for pdfjs-dist
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      config.resolve.alias.canvas = false;
+    }
+    return config;
+  },
+
   // Enable gzip compression for all responses
   compress: true,
 
