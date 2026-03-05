@@ -18,16 +18,9 @@ import {
 import { Button } from "@/components/ui/buttons";
 import { ScrollProgress } from "@/components/ui/scroll-progress";
 import { ShareButton } from "@/components/ui/share-button";
+import { slugify } from "@/lib/utils";
 
-/* ---------- Helper: Title Case Function ---------- */
-function toTitleCase(str: string) {
-    if (!str) return "";
-    return str
-        .toLowerCase()
-        .split(' ')
-        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(' ');
-}
+
 
 /* ---------- Strapi Rich Text Renderer ---------- */
 function renderInlineChildren(children: any[]) {
@@ -82,9 +75,9 @@ export default function OpinionContent({ opinion, recommended }: any) {
                                 {opinion.category}
                             </span>
 
-                            {/* Main Heading: Title Case + Optimized Size */}
-                            <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight text-zinc-900 leading-[1.1] mb-8">
-                                {toTitleCase(opinion.title)}
+                            {/* Main Heading: Matches Opinion Component Style */}
+                            <h1 className="font-serif text-3xl md:text-5xl lg:text-6xl font-bold leading-[1.15] tracking-tight text-zinc-900 mb-8">
+                                &ldquo;{opinion.title}&rdquo;
                             </h1>
 
                             <p className="text-xl md:text-2xl text-zinc-500 font-serif italic leading-relaxed border-l-4 border-[#00A651] pl-8">
@@ -92,17 +85,16 @@ export default function OpinionContent({ opinion, recommended }: any) {
                             </p>
 
                             <div className="flex items-center gap-6 pt-10">
-                                <div className="flex items-center gap-3">
-                                    <div className="relative w-10 h-10 rounded-full overflow-hidden grayscale">
+                                <Link href={`/author/${slugify(opinion.author?.name || "")}`} className="flex items-center gap-3 group/author hover:opacity-80 transition-opacity">
+                                    <div className="relative w-10 h-10 rounded-full overflow-hidden grayscale group-hover/author:grayscale-0 transition-all">
                                         {opinion.author?.avatar && (
                                             <Image src={opinion.author.avatar} alt={opinion.author.name} fill className="object-cover" />
                                         )}
                                     </div>
                                     <div>
-                                        <p className="text-[11px] font-black uppercase tracking-widest text-zinc-900">{opinion.author?.name}</p>
-                                        {/* <p className="text-[10px] text-zinc-400 uppercase tracking-widest">{opinion.author?.role}</p> */}
+                                        <p className="text-[11px] font-black uppercase tracking-widest text-zinc-900 group-hover/author:text-[#00A651] transition-colors">{opinion.author?.name}</p>
                                     </div>
-                                </div>
+                                </Link>
                                 <div className="h-4 w-px bg-zinc-200" />
                                 <div className="flex items-center gap-2 text-[10px] font-bold text-zinc-400 uppercase tracking-widest">
                                     <Clock className="w-3 h-3" /> {opinion.readTime}
