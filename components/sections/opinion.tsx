@@ -20,6 +20,7 @@ interface OpinionItem {
     authorAvatar: string;
     authorRole: string;
     date: string;
+    imageCaption?: string;
 }
 
 export function OpinionSection() {
@@ -45,6 +46,7 @@ export function OpinionSection() {
                 const mapped = data.map((item: any) => {
                     const img = item.FeaturedImage;
                     let imageUrl = "/magazine-default.jpg";
+                    let imageCaption = "";
                     if (img) {
                         const url = img.formats?.large?.url || img.formats?.medium?.url || img.url;
                         if (url) imageUrl = url.startsWith("http") ? url : `${STRAPI_BASE}${url}`;
@@ -60,6 +62,7 @@ export function OpinionSection() {
                             ).filter(Boolean).join(" ").trim()
                             : "",
                         image: imageUrl,
+                        imageCaption: img?.caption || "",
                         authorName: item.author?.name || "Staff Writer",
                         authorAvatar: item.author?.avatar?.url
                             ? `${STRAPI_BASE}${item.author.avatar.url}`
@@ -101,16 +104,32 @@ export function OpinionSection() {
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-20 items-center mt-12 group">
                     {/* Image Column */}
                     <div className="lg:col-span-4 flex justify-center lg:justify-start">
-                        <div className="relative w-full h-[320px] sm:h-[400px] lg:h-[500px] max-w-[400px] border border-zinc-800 p-2 bg-white transition-transform duration-500 group-hover:scale-[1.02]">
-                            <div className="relative w-full h-full overflow-hidden border border-zinc-200">
-                                <Image
-                                    src={current.image}
-                                    alt={current.authorName}
-                                    fill
-                                    className="object-cover grayscale group-hover:grayscale-0 transition-all duration-1000"
-                                />
+                        <Link href={`/opinion/${current.slug}`} className="relative w-full max-w-[400px] block cursor-pointer group/image">
+                            <div className="relative w-full h-[320px] sm:h-[400px] lg:h-[500px] border border-zinc-800 p-2 bg-white transition-transform duration-500 group-hover/image:scale-[1.02]">
+                                <div className="relative w-full h-full overflow-hidden border border-zinc-200">
+                                    <Image
+                                        src={current.image}
+                                        alt={current.authorName}
+                                        fill
+                                        className="object-cover grayscale group-hover/image:grayscale-0 transition-all duration-1000"
+                                    />
+                                    <div className="absolute bottom-4 right-4 bg-white/90 backdrop-blur-md p-3 rounded-full opacity-0 translate-y-2 group-hover/image:opacity-100 group-hover/image:translate-y-0 transition-all duration-300 shadow-lg">
+                                        <ArrowUpRight size={20} className="text-black" />
+                                    </div>
+                                </div>
                             </div>
-                        </div>
+                            <div className="mt-3 text-center lg:text-left pl-1">
+                                {current.imageCaption ? (
+                                    <span className="text-[13px] md:text-sm font-serif italic text-zinc-500 group-hover/image:text-zinc-800 transition-colors">
+                                        {current.imageCaption}
+                                    </span>
+                                ) : (
+                                    <span className="text-[13px] md:text-sm font-serif italic text-zinc-500 group-hover/image:text-zinc-800 transition-colors">
+                                        {current.authorName}
+                                    </span>
+                                )}
+                            </div>
+                        </Link>
                     </div>
 
                     {/* Content Column */}
