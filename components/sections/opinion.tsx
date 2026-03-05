@@ -135,9 +135,6 @@ export function OpinionSection() {
                     {/* Content Column */}
                     <div className="lg:col-span-8">
                         <div className="flex flex-col items-start">
-                            <span className="bg-[#00A651] text-white text-[9px] font-black uppercase px-2 py-1 tracking-[2px] mb-8">
-                                Featured Insight
-                            </span>
 
                             <Link href={`/opinion/${current.slug}`} className="block mb-8">
                                 <h3 className="font-serif text-2xl md:text-3xl lg:text-4xl font-bold leading-[1.15] tracking-tight text-zinc-900 group-hover:text-[#00A651] transition-colors duration-300">

@@ -140,6 +140,17 @@ export function AdBanner({
     }
 }
 
+/** Wraps content in a clickable link if target_url is present */
+function wrapWithLink(targetUrl: string | null | undefined, content: React.ReactNode) {
+    const url = (targetUrl || "").trim();
+    if (!url) return <>{content}</>;
+    return (
+        <a href={url} target="_blank" rel="noopener noreferrer sponsored" className="block">
+            {content}
+        </a>
+    );
+}
+
 /* ═══════════════════════════════════════════
    BANNER — 728×90 / 900×90 header-style
    ═══════════════════════════════════════════ */
@@ -167,15 +178,7 @@ function BannerAd({ ad, className }: { ad: Ad; className: string }) {
         </div>
     );
 
-    if (ad.target_url) {
-        return (
-            <a href={ad.target_url} target="_blank" rel="noopener noreferrer sponsored" className="block">
-                {content}
-            </a>
-        );
-    }
-
-    return content;
+    return wrapWithLink(ad.target_url, content);
 }
 
 /* ═══════════════════════════════════════════
@@ -206,15 +209,7 @@ function CardAd({ ad, className }: { ad: Ad; className: string }) {
         </div>
     );
 
-    if (ad.target_url) {
-        return (
-            <a href={ad.target_url} target="_blank" rel="noopener noreferrer sponsored" className="block">
-                {inner}
-            </a>
-        );
-    }
-
-    return inner;
+    return wrapWithLink(ad.target_url, inner);
 }
 
 /* ═══════════════════════════════════════════
@@ -232,28 +227,20 @@ function HeroBannerAd({ ad, className }: { ad: Ad; className: string }) {
             <div className="relative w-full" style={{ aspectRatio: "21/6" }}>
                 <Image
                     src={imageUrl}
-                    alt={ad.title || "Industry Partner"}
+                    alt={ad.title || "Advertisement"}
                     fill
                     loading="lazy"
                     unoptimized
                     className="object-cover transition-transform duration-500 group-hover:scale-[1.015]"
                 />
             </div>
-            <span className="absolute top-3 left-3 text-[9px] font-bold uppercase tracking-[0.15em] text-white/80 bg-black/25 backdrop-blur-md px-2.5 py-1 rounded-full">
+            <span className="absolute top-3 right-3 text-[9px] font-bold uppercase tracking-[0.15em] text-white/80 bg-black/25 backdrop-blur-md px-2.5 py-1 rounded-full">
                 Sponsored
             </span>
         </div>
     );
 
-    if (ad.target_url) {
-        return (
-            <a href={ad.target_url} target="_blank" rel="noopener noreferrer sponsored" className="block">
-                {inner}
-            </a>
-        );
-    }
-
-    return inner;
+    return wrapWithLink(ad.target_url, inner);
 }
 
 /* ═══════════════════════════════════════════
@@ -270,13 +257,12 @@ function VerticalBannerAd({ ad, className }: { ad: Ad; className: string }) {
 
     const inner = (
         <div
-            className={`relative overflow-hidden rounded-2xl border border-gray-100/60 bg-white shadow-sm hover:shadow-xl transition-all duration-500 group ${className}`}
-            style={{ width: "100%", maxWidth: 320 }}
+            className={`relative overflow-hidden rounded-2xl border border-gray-100/60 bg-white shadow-sm hover:shadow-xl transition-all duration-500 group w-[300px] shrink-0 ${className}`}
         >
             <div className="relative w-full" style={{ aspectRatio: "300/600" }}>
                 <Image
                     src={imageUrl}
-                    alt={ad.title || "Industry Partner"}
+                    alt={ad.title || "Advertisement"}
                     fill
                     loading="lazy"
                     unoptimized
@@ -300,15 +286,7 @@ function VerticalBannerAd({ ad, className }: { ad: Ad; className: string }) {
         </div>
     );
 
-    if (ad.target_url) {
-        return (
-            <a href={ad.target_url} target="_blank" rel="noopener noreferrer sponsored" className="block">
-                {inner}
-            </a>
-        );
-    }
-
-    return inner;
+    return wrapWithLink(ad.target_url, inner);
 }
 
 /* ═══════════════════════════════════════════
@@ -320,7 +298,10 @@ function NativeBannerAd({ ad, className }: { ad: Ad; className: string }) {
     const logoUrl = getImageUrl(logoMedia);
 
     const inner = (
-        <div className={`rounded-2xl border border-gray-100 bg-gradient-to-br from-gray-50 to-white p-6 sm:p-8 group hover:border-teal-200 hover:shadow-lg hover:shadow-teal-500/5 transition-all duration-500 ${className}`}>
+        <div className={`relative rounded-2xl border border-gray-100 bg-gradient-to-br from-gray-50 to-white p-6 sm:p-8 group hover:border-teal-200 hover:shadow-lg hover:shadow-teal-500/5 transition-all duration-500 ${className}`}>
+            <span className="absolute top-3 right-3 text-[9px] font-bold uppercase tracking-[0.15em] text-gray-400 bg-gray-100 px-2.5 py-1 rounded-full">
+                Sponsored
+            </span>
             <div className="flex items-center gap-5">
                 {logoUrl ? (
                     <div className="relative w-14 h-14 sm:w-16 sm:h-16 shrink-0 rounded-xl overflow-hidden bg-white shadow-sm ring-1 ring-gray-100">
@@ -332,7 +313,6 @@ function NativeBannerAd({ ad, className }: { ad: Ad; className: string }) {
                     </div>
                 )}
                 <div className="flex-1 min-w-0">
-
                     <p className="text-lg font-bold text-gray-900 group-hover:text-teal-700 transition-colors truncate">{ad.partner_name || ad.title}</p>
                 </div>
                 <div className="shrink-0 hidden sm:flex items-center gap-2 px-5 py-2.5 bg-teal-600 text-white text-xs font-bold uppercase tracking-wider rounded-full group-hover:bg-teal-700 transition-colors shadow-sm">
@@ -346,13 +326,5 @@ function NativeBannerAd({ ad, className }: { ad: Ad; className: string }) {
         </div>
     );
 
-    if (ad.target_url) {
-        return (
-            <a href={ad.target_url} target="_blank" rel="noopener noreferrer sponsored" className="block">
-                {inner}
-            </a>
-        );
-    }
-
-    return inner;
+    return wrapWithLink(ad.target_url, inner);
 }

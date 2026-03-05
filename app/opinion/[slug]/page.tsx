@@ -168,7 +168,7 @@ export default async function OpinionDetailPage({ params }: { params: Promise<{ 
     title: article.Title || article.attributes?.Title,
     excerpt: article?.Excerpt?.[0]?.children?.[0]?.text || article.attributes?.Excerpt?.[0]?.children?.[0]?.text || "",
     content: article?.Content || article.attributes?.Content || [],
-    category: "Strategic Opinion",
+    category: "Opinion",
     readTime: "6 min read",
     featuredImage: (article.FeaturedImage?.url || article.attributes?.FeaturedImage?.data?.attributes?.url)
       ? `${STRAPI}${article.FeaturedImage?.url || article.attributes?.FeaturedImage?.data?.attributes?.url}`
@@ -186,7 +186,7 @@ export default async function OpinionDetailPage({ params }: { params: Promise<{ 
     id: item.id,
     slug: item.slug,
     title: item.Title,
-    category: "Insight",
+    category: "Opinion",
     featuredImage: item?.FeaturedImage?.url ? `${STRAPI}${item.FeaturedImage.url}` : "/placeholder.jpg",
     author: { name: item?.author?.name }
   }));
