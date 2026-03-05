@@ -183,9 +183,12 @@ export default async function Home() {
 
     const articles = finalArticles.map((article: any) => mapArticle(article, sectorName));
 
+    let slug = sectorName.toLowerCase().replace(/ & /g, "-and-").replace(/ /g, "-");
+    if (slug === "oil-and-gas") slug = "oil-gas";
+
     return {
       title: sectorName,
-      slug: sectorName.toLowerCase().replace(/ & /g, "-and-").replace(/ /g, "-"),
+      slug,
       articles,
     };
   }).filter((s) => s.articles.length > 0);

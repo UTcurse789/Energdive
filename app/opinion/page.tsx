@@ -196,9 +196,9 @@ export default function OpinionPage() {
                 {/* TEXT */}
                 <div className="flex flex-col grow">
                   <div className="flex items-center justify-between gap-4 mb-4">
-                    <span className="text-[9px] font-black text-[#00A651] uppercase tracking-widest">
+                    {/* <span className="text-[9px] font-black text-[#00A651] uppercase tracking-widest">
                       {String(opinion.sector || opinion.category || "OPINION").toUpperCase()}
-                    </span>
+                    </span> */}
                     <span className="text-[8px] font-bold uppercase text-zinc-400 tracking-wider">
                       <DateChip value={opinion.date} />
                     </span>

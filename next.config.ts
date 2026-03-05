@@ -64,12 +64,10 @@ const nextConfig: NextConfig = {
       {
         protocol: 'https',
         hostname: 'cms.energdive.com',
-        pathname: '/uploads/**',
       },
       {
         protocol: 'http',
         hostname: 'cms.energdive.com',
-        pathname: '/uploads/**',
       },
       {
         protocol: 'http',
