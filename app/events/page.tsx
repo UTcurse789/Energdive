@@ -42,7 +42,50 @@ export default function EventsPage() {
     ];
 
     const filteredEvents = useMemo(() => {
-        return events.filter(event => event.occurrence?.toLowerCase() === activeTab);
+        const filtered = events.filter(event => event.occurrence?.toLowerCase() === activeTab);
+
+        // Helper to parse dates like "01st - 03rd September 2026" or "26 February 2026"
+        const parseEventDate = (dateString?: string) => {
+            if (!dateString) return 0;
+            const str = String(dateString).toLowerCase();
+
+            const months = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
+            let monthIndex = 0;
+            for (let i = 0; i < months.length; i++) {
+                if (str.includes(months[i])) {
+                    monthIndex = i;
+                    break;
+                }
+            }
+
+            let year = new Date().getFullYear();
+            const yearMatch = str.match(/\b(20\d\d)\b/);
+            if (yearMatch) {
+                year = parseInt(yearMatch[1], 10);
+            }
+
+            let day = 1;
+            const dayMatch = str.match(/(\d{1,2})/);
+            if (dayMatch) {
+                day = parseInt(dayMatch[1], 10);
+            }
+
+            return new Date(year, monthIndex, day).getTime();
+        };
+
+        // Sort chronologically by extracted date
+        return filtered.sort((a, b) => {
+            const timeA = parseEventDate(a.date);
+            const timeB = parseEventDate(b.date);
+
+            if (activeTab === "upcoming") {
+                // Soonest events first (ascending order)
+                return timeA - timeB;
+            } else {
+                // Most recent past events first (descending order)
+                return timeB - timeA;
+            }
+        });
     }, [activeTab, events]);
 
     if (loading) {
