@@ -6,7 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { formatContentDate } from "@/lib/date";
-import { Search, ChevronDown, Facebook, Twitter, Linkedin, Megaphone, ChevronRight, Zap, Menu, X, MapPin, Mail, Phone, Play, Calendar, Globe, ArrowRight } from "lucide-react";
+import { Search, ChevronDown, Facebook, Twitter, Linkedin, Megaphone, ChevronRight, Zap, Menu, X, MapPin, Mail, Phone, Play, Calendar, Globe, ArrowRight, Youtube, Instagram } from "lucide-react";
 import { SECTORS } from "@/data/dummy";
 import { motion, AnimatePresence } from "framer-motion";
 import { SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
@@ -261,15 +261,32 @@ export function Header() {
     const defaultMagazineDescription = "Get deep-dive insights into the global energy transition, policy updates, and exclusive interviews with industry leaders.";
     const latestIssueDescription = latestIssue?.description || defaultMagazineDescription;
 
+    const SOCIAL_ICONS = [
+        { Icon: Linkedin, href: "https://www.linkedin.com/company/energdive/", label: "LinkedIn" },
+        { Icon: X, href: "https://x.com/energdive", label: "Twitter" },
+        { Icon: Youtube, href: "https://www.youtube.com/@energdive", label: "YouTube" },
+        { Icon: Instagram, href: "https://www.instagram.com/energdiveindia", label: "Instagram" },
+        { Icon: Facebook, href: "https://www.facebook.com/energdive/", label: "Facebook" },
+    ];
+
     return (
         <>
             <header className="fixed top-0 inset-x-0 z-50 transition-all duration-300 font-sans bg-white" onMouseLeave={closeMenus}>
                 {/* 1. TOP BLACK BAR */}
                 <div className="bg-black text-white py-1.5 px-4 md:px-12 flex justify-between items-center text-[10px] md:text-[11px] font-semibold tracking-wider">
                     <div className="flex gap-4 items-center">
-                        <Facebook className="w-3.5 h-3.5 hover:opacity-70 cursor-pointer" />
-                        <Twitter className="w-3.5 h-3.5 hover:opacity-70 cursor-pointer" />
-                        <Linkedin className="w-3.5 h-3.5 hover:opacity-70 cursor-pointer" />
+                        {SOCIAL_ICONS.map(({ Icon, href, label }) => (
+                            <a
+                                key={label}
+                                href={href}
+                                aria-label={label}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="hover:opacity-70 transition-opacity"
+                            >
+                                <Icon className="w-3.5 h-3.5 cursor-pointer" />
+                            </a>
+                        ))}
                     </div>
                     <Link href="/advertise" className="flex items-center gap-2 uppercase cursor-pointer hover:text-gray-300 transition-colors">
                         <Megaphone className="w-3.5 h-3.5" />
