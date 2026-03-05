@@ -79,21 +79,38 @@ async function getAllContents() {
   }
 }
 
-export default async function Home() {
-  const allContents = await getAllContents();
-  const latestIssue = await getLatestIssue();
+async function getFeaturedContents() {
+  try {
+    const res = await fetch(
+      `${STRAPI_BASE}/api/contents?filters[featured][$eq]=true&populate=*&sort=Date:desc&pagination[pageSize]=10`,
+      { next: { revalidate: 60 } }
+    );
+    if (!res.ok) return [];
+    const json = await res.json();
+    return json.data || [];
+  } catch (err) {
+    console.error("Featured contents fetch error:", err);
+    return [];
+  }
+}
 
-  // ── Bento: Random 6 from Featured Contents (Swapped from Hero Sidebar) ──
-  const finalBentoItems = allContents
-    ? allContents
-      .filter((a: any) => a.featured === true)
+export default async function Home() {
+  const [allContents, featuredContents, latestIssue] = await Promise.all([
+    getAllContents(),
+    getFeaturedContents(),
+    getLatestIssue(),
+  ]);
+
+  // ── Bento: Featured articles fetched directly from Strapi ──
+  const finalBentoItems = featuredContents.length > 0
+    ? featuredContents
       .sort((a: any, b: any) => {
         const aDate = Date.parse(a.Date || a.publishedAt || a.createdAt || "") || 0;
         const bDate = Date.parse(b.Date || b.publishedAt || b.createdAt || "") || 0;
         return bDate - aDate;
       })
       .map((article: any) => ({
-        id: article.id,
+        id: article.id || article.documentId,
         title: article.Title || "",
         category: article.sectors?.[0]?.name || "Energy",
         contentType: article.type_of_content?.name || "News",

@@ -42,11 +42,11 @@ export function DashboardHeader() {
                 className="relative flex items-center justify-between px-6 py-3 h-[70px]"
                 style={{ borderBottom: "1px solid var(--dash-border-subtle)" }}
             >
-                {/* Left Side: Original Logo */}
-                <div className="flex-shrink-0">
+                {/* Left Side: Energdive Logo — hidden on mobile */}
+                <div className="flex-shrink-0 hidden sm:block">
                     <Image
                         src="/logo2-removebg-preview.png"
-                        alt="ENERGClub"
+                        alt="Energdive"
                         width={150}
                         height={50}
                         className="object-contain"
@@ -54,12 +54,12 @@ export function DashboardHeader() {
                     />
                 </div>
 
-                {/* Centre Side: New Logo */}
-                <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+                {/* Centre / Left on mobile: EnergClub Logo */}
+                <div className="flex-shrink-0 sm:absolute sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2">
                     <Image
                         src="/energclub.png"
-                        alt="EnergDive"
-                        width={150} // Size aap adjust kar sakte ho
+                        alt="EnergClub"
+                        width={150}
                         height={50}
                         className="object-contain"
                     />
