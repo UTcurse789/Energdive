@@ -66,7 +66,7 @@ export function Publication2({ variant = "full", latestCoverImage, latestIssueSl
         <section className="container mx-auto px-6 lg:px-12 py-16 max-w-[1400px]">
 
             {/* 1. COMPACT HERO SECTION */}
-            <div className="bg-zinc-900 rounded-[2.5rem] p-8 md:p-14 border border-zinc-800 text-white relative overflow-hidden shadow-2xl mb-16">
+            <div className="bg-zinc-900 rounded-[1.5rem] md:rounded-[2.5rem] p-6 sm:p-8 md:p-14 border border-zinc-800 text-white relative overflow-hidden shadow-2xl mb-16">
 
                 <div className="absolute top-0 right-0 w-full h-full opacity-10 pointer-events-none"
                     style={{ background: 'radial-gradient(circle at 70% 30%, #00A651 0%, transparent 60%)' }}
@@ -79,9 +79,9 @@ export function Publication2({ variant = "full", latestCoverImage, latestIssueSl
                         <span className="inline-block px-3 py-1 border border-zinc-700 rounded-full text-[9px] font-black uppercase tracking-[0.2em] text-[#00A651] mb-6">
                             The Publication
                         </span>
-                        <h2 className="text-4xl md:text-5xl font-black uppercase tracking-tighter text-white leading-tight mb-8">
-                            ENERGDIVE Insights and  <br />
-                            Market <span className="text-[#00A651] italic"> Intelligence.</span>
+                        <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black uppercase tracking-tighter text-white leading-tight mb-6 sm:mb-8">
+                            ENERGDIVE Insights and <br className="hidden md:inline" />
+                            Market <span className="text-[#00A651] italic">Intelligence.</span>
                         </h2>
 
                         {/* Two Column Text for space efficiency */}

@@ -89,7 +89,7 @@ export function OpinionSection() {
     const current = opinions[currentIndex];
 
     return (
-        <section className="py-20 bg-white border-b border-zinc-100">
+        <section className="py-12 md:py-20 bg-white border-b border-zinc-100">
             <div className="container mx-auto px-4 md:px-8 max-w-[1400px]">
                 <SectionHeading
                     title="Opinion"
@@ -101,7 +101,7 @@ export function OpinionSection() {
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-20 items-center mt-12 group">
                     {/* Image Column */}
                     <div className="lg:col-span-4 flex justify-center lg:justify-start">
-                        <div className="relative w-full h-[500px] max-w-[400px] border border-zinc-800 p-2 bg-white transition-transform duration-500 group-hover:scale-[1.02]">
+                        <div className="relative w-full h-[320px] sm:h-[400px] lg:h-[500px] max-w-[400px] border border-zinc-800 p-2 bg-white transition-transform duration-500 group-hover:scale-[1.02]">
                             <div className="relative w-full h-full overflow-hidden border border-zinc-200">
                                 <Image
                                     src={current.image}
@@ -134,7 +134,7 @@ export function OpinionSection() {
 
                             <div className="flex items-center justify-between w-full">
                                 <Link href={`/author/${slugify(current.authorName)}`} className="flex flex-col hover:opacity-80 transition-opacity">
-                                    <span className="font-black text-lg uppercase tracking-widest text-zinc-900">
+                                    <span className="font-black text-base sm:text-lg uppercase tracking-wider sm:tracking-widest text-zinc-900 overflow-wrap-break-word">
                                         {current.authorName}
                                     </span>
                                     <span className="text-[10px] font-bold text-[#00A651] uppercase tracking-[3px] mt-1">
