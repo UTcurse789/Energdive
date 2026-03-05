@@ -362,36 +362,38 @@ export default function SectorIntelligencePage() {
                 />
 
                 <div className="container mx-auto px-6 lg:px-16 max-w-[1400px] relative z-10">
-                    <div className="flex justify-between items-start mb-10 mt-10">
+                    <div className="flex justify-between items-center w-full gap-2 my-6 sm:my-10">
                         <motion.nav
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
-                            className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/5 px-4 py-2 text-[10px] font-black text-[#00C6A7] uppercase tracking-[0.2em] backdrop-blur-sm"
+                            className="inline-flex items-center gap-1.5 sm:gap-2 rounded-full border border-white/20 bg-white/5 px-3 sm:px-4 py-1.5 sm:py-2 text-[9px] sm:text-[10px] font-black text-[#00C6A7] uppercase tracking-[0.15em] sm:tracking-[0.2em] backdrop-blur-sm shrink-0 max-w-[65%]"
                         >
-                            <Link href="/" className="hover:text-white transition">EnergDive</Link>
-                            <ChevronRight size={10} className="text-white/40" />
-                            <span className="text-white/60">Articles & Videos</span>
-                            <ChevronRight size={10} className="text-white/40" />
-                            <span className="text-white">{sectorMeta.breadcrumbLabel}</span>
+                            <Link href="/" className="hover:text-white transition shrink-0">EnergDive</Link>
+                            <ChevronRight size={10} className="text-white/40 shrink-0" />
+                            <span className="text-white/60 hidden sm:inline shrink-0">Articles & Videos</span>
+                            <ChevronRight size={10} className="text-white/40 hidden sm:inline shrink-0" />
+                            <span className="text-white truncate">{sectorMeta.breadcrumbLabel}</span>
                         </motion.nav>
 
                         <motion.div
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
-                            className="flex items-center gap-2"
+                            className="flex items-center gap-2 shrink-0"
                         >
                             <button
                                 onClick={() => window.print()}
-                                className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/5 px-4 py-2 text-[10px] font-black text-white hover:bg-white/10 uppercase tracking-[0.2em] backdrop-blur-sm transition-colors"
+                                className="inline-flex items-center justify-center gap-1.5 sm:gap-2 rounded-full border border-white/20 bg-white/5 w-8 h-8 sm:w-auto sm:h-auto sm:px-4 sm:py-2 text-[10px] font-black text-white hover:bg-white/10 uppercase tracking-[0.2em] backdrop-blur-sm transition-colors"
                                 title="Print this page"
                             >
-                                <Printer size={12} />
-                                Print
+                                <Printer size={13} className="shrink-0" />
+                                <span className="hidden sm:inline">Print</span>
                             </button>
                             <ShareButton
                                 title={sectorMeta.title}
                                 text={sectorMeta.description}
-                                className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/5 px-4 py-2 text-[10px] font-black text-white hover:bg-white/10 uppercase tracking-[0.2em] backdrop-blur-sm transition-colors"
+                                className="inline-flex items-center justify-center gap-1.5 sm:gap-2 rounded-full border border-white/20 bg-white/5 w-8 h-8 sm:w-auto sm:h-auto sm:px-4 sm:py-2 text-[10px] font-black text-white hover:bg-white/10 uppercase tracking-[0.2em] backdrop-blur-sm transition-colors"
+                                iconClassName="w-[13px] h-[13px] text-white shrink-0"
+                                textClassName="hidden sm:inline"
                             />
                         </motion.div>
                     </div>
@@ -399,7 +401,7 @@ export default function SectorIntelligencePage() {
                     <motion.h1
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
-                        className="text-5xl md:text-[108px] font-black uppercase leading-[0.86] tracking-tighter text-white mb-7"
+                        className="text-3xl sm:text-5xl md:text-[108px] font-black uppercase leading-[0.86] tracking-tighter text-white mb-7"
                     >
                         {sectorMeta.title}
                     </motion.h1>

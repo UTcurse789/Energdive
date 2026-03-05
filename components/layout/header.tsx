@@ -372,7 +372,13 @@ export function Header() {
                                     </motion.div>
                                 </SignedOut>
                             </div>
-                            <Search onClick={() => setIsSearchOpen(true)} className="w-4 h-4 md:w-5 md:h-5 cursor-pointer hover:text-[#00A651] shrink-0" />
+                            <button
+                                onClick={() => setIsSearchOpen(true)}
+                                className="flex items-center justify-center w-10 h-10 -mr-2 rounded-full hover:bg-gray-100 transition-colors shrink-0"
+                                aria-label="Open search"
+                            >
+                                <Search className="w-4 h-4 md:w-5 md:h-5 hover:text-[#00A651]" />
+                            </button>
                         </div>
                     </div>
                 </div>

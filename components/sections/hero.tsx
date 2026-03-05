@@ -129,16 +129,16 @@ export function Hero({ topStories: propTopStories }: HeroProps) {
                             </div>
 
                             {/* Nav Arrows */}
-                            <div className="absolute inset-y-0 left-0 right-0 flex justify-between items-center px-6 opacity-0 group-hover/img:opacity-100 transition-opacity">
+                            <div className="absolute inset-y-0 left-0 right-0 flex justify-between items-center px-3 md:px-6 opacity-100 lg:opacity-0 group-hover/img:opacity-100 transition-opacity">
                                 <button
                                     onClick={() => goToSlide((currentSlide - 1 + carouselArticles.length) % carouselArticles.length)}
-                                    className="p-3 bg-white/20 backdrop-blur-lg rounded-full text-white hover:bg-white hover:text-black transition-all"
+                                    className="p-2 md:p-3 bg-white/30 md:bg-white/20 backdrop-blur-lg rounded-full text-white hover:bg-white hover:text-black transition-all"
                                 >
                                     <ChevronLeft size={24} />
                                 </button>
                                 <button
                                     onClick={nextSlide}
-                                    className="p-3 bg-white/20 backdrop-blur-lg rounded-full text-white hover:bg-white hover:text-black transition-all"
+                                    className="p-2 md:p-3 bg-white/30 md:bg-white/20 backdrop-blur-lg rounded-full text-white hover:bg-white hover:text-black transition-all"
                                 >
                                     <ChevronRight size={24} />
                                 </button>
@@ -163,7 +163,7 @@ export function Hero({ topStories: propTopStories }: HeroProps) {
                                 </div>
 
                                 <Link href={buildContentUrl({ slug: featured.slug, type_of_content: featured.type_of_content })} className="block group/title">
-                                    <h1 className="text-3xl md:text-5xl font-serif font-bold leading-[1.15] text-[#1a1a1a] transition-colors duration-300 group-hover/title:text-[#09B697]">
+                                    <h1 className="text-2xl sm:text-3xl md:text-5xl font-serif font-bold leading-[1.15] text-[#1a1a1a] transition-colors duration-300 group-hover/title:text-[#09B697]">
                                         {featured.Title}
                                     </h1>
                                 </Link>
@@ -174,7 +174,7 @@ export function Hero({ topStories: propTopStories }: HeroProps) {
                             </div>
 
                             {/* Metadata Sidebar */}
-                            <div className="md:col-span-1 border-l border-slate-100 pl-8 space-y-8">
+                            <div className="md:col-span-1 md:border-l border-slate-100 md:pl-8 space-y-4 md:space-y-8">
                                 {/* <div className="space-y-3">
                                     <p className="text-[10px] font-black uppercase tracking-tighter text-slate-400">Author</p>
                                     <div className="flex items-center gap-3">

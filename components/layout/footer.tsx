@@ -75,7 +75,7 @@ export function Footer() {
             {/* Decorative top accent */}
             <div className="h-[2px] w-full" style={{ background: `linear-gradient(90deg, transparent 5%, ${brandGreen} 50%, transparent 95%)` }} />
 
-            <div className="container mx-auto px-6 lg:px-12 max-w-[1400px]">
+            <div className="container mx-auto px-4 sm:px-6 lg:px-12 max-w-[1400px]">
 
                 {/* ─── Newsletter Banner — HIDDEN (uncomment to re-enable) ─── */}
                 {/* <div className="py-10 border-b border-white/[0.06]">
@@ -102,10 +102,10 @@ export function Footer() {
                 <SubscribeModal isOpen={subscribeOpen} onClose={() => setSubscribeOpen(false)} /> */}
 
                 {/* ─── Main Footer Grid ─── */}
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 py-14">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-8 sm:gap-10 lg:gap-12 py-10 sm:py-14">
 
                     {/* Brand Column */}
-                    <div className="lg:col-span-4">
+                    <div className="sm:col-span-2 lg:col-span-4">
                         <Link href="/" className="inline-block mb-6 group">
                             <div className="h-11">
                                 <NextImage

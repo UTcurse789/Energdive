@@ -9,10 +9,11 @@ interface ShareButtonProps {
     url?: string;
     className?: string;
     iconClassName?: string;
+    textClassName?: string;
     hideTextIcon?: boolean;
 }
 
-export function ShareButton({ title, text, url, className = "", iconClassName = "w-4 h-4", hideTextIcon = false }: ShareButtonProps) {
+export function ShareButton({ title, text, url, className = "", iconClassName = "w-4 h-4", textClassName = "", hideTextIcon = false }: ShareButtonProps) {
     const [isOpen, setIsOpen] = useState(false);
     const [copied, setCopied] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
@@ -107,7 +108,7 @@ export function ShareButton({ title, text, url, className = "", iconClassName = 
                 title="Share"
             >
                 <Share2 className={iconClassName || "w-4 h-4 text-inherit"} />
-                {!hideTextIcon ? <span>Share</span> : null}
+                {!hideTextIcon ? <span className={textClassName}>Share</span> : null}
             </button>
 
             {isOpen && (

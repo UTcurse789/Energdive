@@ -168,6 +168,7 @@ export function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.96, y: -8 }}
                             transition={{ type: "spring", stiffness: 420, damping: 32 }}
+                            className="search-modal-card"
                             style={{
                                 position: "relative",
                                 width: "100%",
@@ -316,13 +317,15 @@ export function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
                             </div>
 
                             {/* ── Footer ── */}
-                            <div style={{
-                                padding: "10px 20px",
+                            <div className="search-modal-footer" style={{
+                                padding: "10px 16px",
                                 borderTop: "1px solid #f3f4f6",
                                 background: "#f9fafb",
                                 display: "flex",
                                 alignItems: "center",
                                 justifyContent: "space-between",
+                                flexWrap: "wrap",
+                                gap: "6px",
                                 fontSize: "11px",
                                 color: "#9ca3af",
                                 fontWeight: 500,
@@ -341,7 +344,7 @@ export function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
                                     to close
                                 </span>
 
-                                <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                                <span className="hidden sm:flex" style={{ display: undefined, alignItems: "center", gap: "6px" }}>
                                     <kbd style={{
                                         padding: "2px 6px",
                                         borderRadius: "4px",
@@ -355,14 +358,21 @@ export function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
                                 </span>
                                 <span>
                                     Powered by{" "}
-                                    <strong style={{ color: "#00A651" }}>ENERGDIVE Intelligence</strong>
+                                    <strong style={{ color: "#00A651" }}>ENERGDIVE</strong>
+                                    <span className="hidden sm:inline"> Intelligence</span>
                                 </span>
                             </div>
                         </motion.div>
                     </div>
 
-                    {/* Spin keyframe injected once */}
-                    <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+                    {/* Spin keyframe + mobile overrides injected once */}
+                    <style>{`
+                        @keyframes spin { to { transform: rotate(360deg); } }
+                        @media (max-width: 480px) {
+                            .search-modal-card { border-radius: 12px !important; }
+                            .search-modal-footer { font-size: 10px !important; padding: 8px 12px !important; }
+                        }
+                    `}</style>
                 </>
             )}
         </AnimatePresence>

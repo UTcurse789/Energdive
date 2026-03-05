@@ -167,6 +167,12 @@
   --radius-4xl: calc(var(--radius) + 16px);
 }
 
+html,
+body {
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
 body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
@@ -187,6 +193,12 @@ h6 {
   max-width: 1400px;
   margin: 0 auto;
   padding: 0 1.5rem;
+}
+
+@media (max-width: 640px) {
+  .container {
+    padding: 0 1rem;
+  }
 }
 
 @keyframes marquee {
