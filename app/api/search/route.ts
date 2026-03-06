@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { formatContentDate } from "@/lib/date";
 
-const STRAPI_BASE = process.env.NEXT_PUBLIC_STRAPI_URL || "http://206.189.132.187:1337";
+const STRAPI_BASE = process.env.NEXT_PUBLIC_STRAPI_URL || "https://cms.energdive.com";
 
-function extractExcerpt(article: any): string {
-    const excerpt = article.Excerpt || article.description;
+function extractExcerpt(item: any): string {
+    const excerpt = item.Excerpt || item.description || item.Description;
 
     if (typeof excerpt === "string") return excerpt;
 
@@ -28,63 +28,121 @@ export async function GET(request: Request) {
     }
 
     try {
-        // Query both Title and Excerpt for matches, and only fetch Articles or Opinion
-        const apiUrl = new URL(`${STRAPI_BASE}/api/contents`);
+        // ─── 1. Search ALL contents (articles, news, opinion, cover story, etc.) ───
+        const contentsUrl = new URL(`${STRAPI_BASE}/api/contents`);
+        // Search by Title (contains)
+        contentsUrl.searchParams.append("filters[$or][0][Title][$containsi]", query);
+        // Also search by slug (for keyword matches)
+        contentsUrl.searchParams.append("filters[$or][1][slug][$containsi]", query);
+        // Populate content type info
+        contentsUrl.searchParams.append("populate", "type_of_content");
+        contentsUrl.searchParams.append("pagination[limit]", "20");
+        contentsUrl.searchParams.append("sort", "Date:desc");
 
-        // Filter by type: Articles or Opinion
-        apiUrl.searchParams.append("filters[$or][0][type_of_content][name][$eq]", "Articles");
-        apiUrl.searchParams.append("filters[$or][1][type_of_content][name][$eq]", "Opinion");
-        apiUrl.searchParams.append("filters[$or][2][type_of_content][name][$eq]", "News");
+        // ─── 2. Search videos ───
+        const videosUrl = new URL(`${STRAPI_BASE}/api/videos`);
+        videosUrl.searchParams.append("filters[$or][0][title][$containsi]", query);
+        videosUrl.searchParams.append("filters[$or][1][slug][$containsi]", query);
+        videosUrl.searchParams.append("pagination[limit]", "5");
+        videosUrl.searchParams.append("sort", "createdAt:desc");
 
-        // Filter by text match in Title or Excerpt
-        apiUrl.searchParams.append("filters[$and][0][$or][0][Title][$contains]", query);
-        // Note: Filtering rich text blocks directly in Strapi REST API can be tricky depending on the setup. 
-        // We will rely heavily on Title containing the query for backend filtering to be safe, 
-        // but can try excerpt matching if Strapi supports it for this field.
+        // ─── 3. Search events ───
+        const eventsUrl = new URL(`${STRAPI_BASE}/api/events`);
+        eventsUrl.searchParams.append("filters[$or][0][title][$containsi]", query);
+        eventsUrl.searchParams.append("filters[$or][1][slug][$containsi]", query);
+        eventsUrl.searchParams.append("pagination[limit]", "5");
+        eventsUrl.searchParams.append("sort", "createdAt:desc");
 
-        // Populate necessary fields
-        apiUrl.searchParams.append("populate", "type_of_content");
-        apiUrl.searchParams.append("pagination[limit]", "15"); // Limit to top 15 results for performance
+        // ─── 4. Search reports ───
+        const reportsUrl = new URL(`${STRAPI_BASE}/api/reports`);
+        reportsUrl.searchParams.append("filters[$or][0][Title][$containsi]", query);
+        reportsUrl.searchParams.append("filters[$or][1][slug][$containsi]", query);
+        reportsUrl.searchParams.append("pagination[limit]", "5");
+        reportsUrl.searchParams.append("sort", "createdAt:desc");
 
-        const response = await fetch(apiUrl.toString(), {
-            headers: {
-                "Content-Type": "application/json",
-            },
-            next: { revalidate: 60 }
-        });
+        const [contentsRes, videosRes, eventsRes, reportsRes] = await Promise.all([
+            fetch(contentsUrl.toString(), { next: { revalidate: 60 } }).catch(() => null),
+            fetch(videosUrl.toString(), { next: { revalidate: 60 } }).catch(() => null),
+            fetch(eventsUrl.toString(), { next: { revalidate: 60 } }).catch(() => null),
+            fetch(reportsUrl.toString(), { next: { revalidate: 60 } }).catch(() => null),
+        ]);
 
-        if (!response.ok) {
-            console.error(`Strapi API error: ${response.status} ${response.statusText}`);
-            return NextResponse.json({ error: "Failed to fetch from CMS" }, { status: 500 });
+        const allResults: any[] = [];
+
+        // ── Process contents ──
+        if (contentsRes?.ok) {
+            const data = await contentsRes.json();
+            if (data.data) {
+                for (const item of data.data) {
+                    const rawType = item.type_of_content?.name || "Article";
+                    // Normalize display type
+                    let displayType = rawType;
+                    if (rawType.toLowerCase() === "articles") displayType = "Article";
+
+                    allResults.push({
+                        id: `content-${item.id}`,
+                        title: item.Title || "Untitled",
+                        slug: item.slug || "",
+                        type: displayType,
+                        excerpt: extractExcerpt(item),
+                        date: formatContentDate(item.Date || item.publishedAt || item.createdAt),
+                    });
+                }
+            }
         }
 
-        const data = await response.json();
-
-        if (!data.data) {
-            return NextResponse.json({ results: [] });
+        // ── Process videos ──
+        if (videosRes?.ok) {
+            const data = await videosRes.json();
+            if (data.data) {
+                for (const item of data.data) {
+                    allResults.push({
+                        id: `video-${item.id}`,
+                        title: item.title || item.Title || "Untitled",
+                        slug: item.slug || "",
+                        type: "Video",
+                        excerpt: extractExcerpt(item) || "",
+                        date: formatContentDate(item.date || item.publishedAt || item.createdAt),
+                    });
+                }
+            }
         }
 
-        const fallbackType = "Article";
+        // ── Process events ──
+        if (eventsRes?.ok) {
+            const data = await eventsRes.json();
+            if (data.data) {
+                for (const item of data.data) {
+                    allResults.push({
+                        id: `event-${item.id}`,
+                        title: item.title || item.Title || "Untitled",
+                        slug: item.slug || "",
+                        type: "Event",
+                        excerpt: item.venue || item.location || extractExcerpt(item) || "",
+                        date: formatContentDate(item.date || item.publishedAt || item.createdAt),
+                    });
+                }
+            }
+        }
 
-        const formattedResults = data.data.map((item: any) => {
-            const rawType = item.type_of_content?.name || fallbackType;
-            let displayType = rawType;
-            // Standardize display type badge names
-            if (rawType.toLowerCase() === "articles") displayType = "Article";
-            if (rawType.toLowerCase() === "opinion") displayType = "Opinion";
-            if (rawType.toLowerCase() === "news") displayType = "News";
+        // ── Process reports ──
+        if (reportsRes?.ok) {
+            const data = await reportsRes.json();
+            if (data.data) {
+                for (const item of data.data) {
+                    allResults.push({
+                        id: `report-${item.id}`,
+                        title: item.Title || item.title || "Untitled",
+                        slug: item.slug || "",
+                        type: "Report",
+                        excerpt: extractExcerpt(item) || "",
+                        date: formatContentDate(item.Date || item.publishedAt || item.createdAt),
+                    });
+                }
+            }
+        }
 
-            return {
-                id: String(item.id),
-                title: item.Title || "Untitled",
-                slug: item.slug || "",
-                type: displayType,
-                excerpt: extractExcerpt(item),
-                date: formatContentDate(item.Date || item.publishedAt || item.createdAt)
-            };
-        });
-
-        return NextResponse.json({ results: formattedResults });
+        return NextResponse.json({ results: allResults });
 
     } catch (error) {
         console.error("Global Search API Error:", error);
