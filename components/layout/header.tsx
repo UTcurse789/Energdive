@@ -845,7 +845,7 @@ export function Header() {
                                                         </div>
                                                         <div>
                                                             <p className="text-[12px] font-bold text-gray-400 uppercase tracking-wider">Email</p>
-                                                            <p className="text-[14px] text-gray-700 font-medium">contact@energdive.com</p>
+                                                            <p className="text-[14px] text-gray-700 font-medium">info@energdive.com</p>
                                                         </div>
                                                     </div>
                                                     <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl border border-gray-100 hover:border-[#00A651]/30 transition-colors">
