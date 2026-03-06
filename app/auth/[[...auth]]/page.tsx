@@ -502,7 +502,7 @@ export default function UnifiedAuthPage() {
                                             onKeyDown={(e) =>
                                                 e.key === "Enter" && handleSubmit()
                                             }
-                                            placeholder="sankalp@energdive.com or +91 98765 43210"
+                                            placeholder="Enter email ID or mobile number"
                                             className="w-full h-11 px-4 pr-10 rounded-xl border border-zinc-200 bg-zinc-50/50 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all duration-200"
                                             autoFocus
                                         />

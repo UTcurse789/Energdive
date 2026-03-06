@@ -89,7 +89,7 @@ export default function StepPersonal({ defaultValues, onNext }: StepPersonalProp
                     <input
                         {...register("state")}
                         className="w-full px-4 py-2 border border-zinc-200 rounded-lg focus:ring-2 focus:ring-[#0AB996] outline-none transition-all"
-                        placeholder="New Delhi"
+                        placeholder="State"
                     />
                     {errors.state && <p className="text-red-500 text-xs">{errors.state.message}</p>}
                 </div>
