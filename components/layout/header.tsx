@@ -171,6 +171,7 @@ export function Header() {
     const [hoveredMoreItem, setHoveredMoreItem] = useState<string | null>(null);
     const [realVideos, setRealVideos] = useState<any[]>([]);
     const [realEvents, setRealEvents] = useState<any[]>([]);
+    const [realSectors, setRealSectors] = useState<any[] | null>(null);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [mobileExpanded, setMobileExpanded] = useState<string | null>(null); // 'sectors' | 'magazine' | 'more'
     const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -188,10 +189,11 @@ export function Header() {
     useEffect(() => {
         async function fetchMenuData() {
             try {
-                const [videosRes, eventsRes, issuesRes] = await Promise.all([
+                const [videosRes, eventsRes, issuesRes, sectorsRes] = await Promise.all([
                     fetch(`${baseUrl}/api/videos?populate[0]=thumbnail&populate[1]=author.avatar&pagination[limit]=3&sort=createdAt:desc`),
                     fetch(`${baseUrl}/api/events?populate=*&pagination[limit]=3&sort=createdAt:desc`),
                     fetch(`${baseUrl}/api/issues?populate=CoverImage&pagination[limit]=12`),
+                    fetch(`${baseUrl}/api/sectors?populate=children&pagination[pageSize]=100`),
                 ]);
                 if (videosRes.ok) {
                     const vData = await videosRes.json();
@@ -211,6 +213,34 @@ export function Header() {
 
                     normalizedIssues.sort((a, b) => b.sortDate - a.sortDate);
                     setMagazineIssues(normalizedIssues);
+                }
+                if (sectorsRes.ok) {
+                    const sData = await sectorsRes.json();
+                    const allSectors = sData.data || [];
+                    // Only keep parent sectors (those that have children or match the known parent slugs)
+                    const PARENT_SLUGS = SECTORS.map(s => s.slug);
+                    const parentSectors = allSectors
+                        .filter((s: any) => PARENT_SLUGS.includes(s.slug))
+                        .map((s: any) => {
+                            const children = Array.isArray(s.children)
+                                ? s.children
+                                : Array.isArray(s.children?.data)
+                                    ? s.children.data.map((c: any) => c?.attributes ? { ...c.attributes, id: c.id } : c)
+                                    : [];
+                            const dummySector = SECTORS.find(ds => ds.slug === s.slug);
+                            return {
+                                title: s.name || s.title || s.Title || dummySector?.title || '',
+                                slug: s.slug,
+                                description: dummySector?.description || '',
+                                heroImage: dummySector?.heroImage || '',
+                                subSectors: children.map((c: any) => c.name?.trim()).filter(Boolean),
+                            };
+                        })
+                        // Sort to match the original dummy order
+                        .sort((a: any, b: any) => PARENT_SLUGS.indexOf(a.slug) - PARENT_SLUGS.indexOf(b.slug));
+                    if (parentSectors.length > 0) {
+                        setRealSectors(parentSectors);
+                    }
                 }
             } catch (e) {
                 console.error("Failed to fetch menu data", e);
@@ -253,8 +283,10 @@ export function Header() {
         return () => window.removeEventListener("keydown", handleKeyDown);
     }, []);
 
+    // Use real (Strapi) sectors if available, else fallback to dummy
+    const displaySectors = realSectors || SECTORS;
     // Get the currently hovered sector data
-    const activeSector = SECTORS.find(s => s.slug === hoveredSector);
+    const activeSector = displaySectors.find(s => s.slug === hoveredSector);
     const latestIssue = magazineIssues[0] ?? null;
     const pastIssues = magazineIssues.slice(1, 5);
     const latestIssueHref = latestIssue ? `/issues/${latestIssue.slug}` : "/issues";
@@ -414,7 +446,7 @@ export function Header() {
                                 <div className="w-1/4 bg-[#f8f8f8] border-r p-8">
                                     <h3 className="text-[10px] font-black text-gray-400 uppercase mb-6 tracking-widest">Industry Sectors</h3>
                                     <div className="flex flex-col gap-1">
-                                        {SECTORS.map((sector) => (
+                                        {displaySectors.map((sector) => (
                                             <Link
                                                 key={sector.slug}
                                                 href={`/sectors/${sector.slug}`}
@@ -884,7 +916,7 @@ export function Header() {
                                                 transition={{ duration: 0.2 }}
                                                 className="overflow-hidden bg-gray-50"
                                             >
-                                                {SECTORS.map((sector) => (
+                                                {displaySectors.map((sector) => (
                                                     <Link
                                                         key={sector.slug}
                                                         href={`/sectors/${sector.slug}`}

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, X, FileText, FileSignature, Newspaper, Terminal } from "lucide-react";
+import { Search, X, FileText, FileSignature, Newspaper, Terminal, Play, Calendar, BookOpen, Mic, Pen, BarChart3, Star } from "lucide-react";
 import { useSearch, SearchResult } from "@/hooks/use-search";
 
 interface GlobalSearchProps {
@@ -93,12 +93,21 @@ export function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
     const handleResultClick = (result: SearchResult) => {
         const routeType = result.type.toLowerCase();
         const routes: Record<string, string> = {
-            "case study": `/reports/${result.slug}`,
-            "event": `/events/${result.slug}`,
+            "article": `/articles/${result.slug}`,
+            "articles": `/articles/${result.slug}`,
             "news": `/news/${result.slug}`,
             "opinion": `/opinion/${result.slug}`,
+            "cover story": `/cover-story/${result.slug}`,
+            "case study": `/case-study/${result.slug}`,
+            "interview": `/interview/${result.slug}`,
+            "editorial": `/editorial/${result.slug}`,
+            "feature": `/feature/${result.slug}`,
+            "analysis": `/analysis/${result.slug}`,
+            "video": `/videos/${result.slug}`,
+            "event": `/events/${result.slug}`,
+            "report": `/reports/${result.slug}`,
         };
-        const finalPath = routes[routeType] ?? `/${routeType}s/${result.slug}`;
+        const finalPath = routes[routeType] ?? `/${routeType}/${result.slug}`;
         onClose();
         setTimeout(() => setQuery(""), 200);
         router.push(finalPath);
@@ -106,9 +115,19 @@ export function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
 
     const getIconForType = (type: string) => {
         switch (type.toLowerCase()) {
-            case "article": return <FileText size={14} className="text-blue-500" />;
+            case "article":
+            case "articles": return <FileText size={14} className="text-blue-500" />;
             case "opinion": return <FileSignature size={14} className="text-emerald-500" />;
             case "news": return <Newspaper size={14} className="text-amber-500" />;
+            case "cover story": return <Star size={14} className="text-purple-500" />;
+            case "case study": return <BookOpen size={14} className="text-indigo-500" />;
+            case "interview": return <Mic size={14} className="text-pink-500" />;
+            case "editorial": return <Pen size={14} className="text-orange-500" />;
+            case "feature": return <FileText size={14} className="text-teal-500" />;
+            case "analysis": return <BarChart3 size={14} className="text-cyan-500" />;
+            case "video": return <Play size={14} className="text-red-500" />;
+            case "event": return <Calendar size={14} className="text-violet-500" />;
+            case "report": return <BookOpen size={14} className="text-emerald-600" />;
             default: return <Terminal size={14} className="text-gray-500" />;
         }
     };
