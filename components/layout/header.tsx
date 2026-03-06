@@ -473,7 +473,7 @@ export function Header() {
                                                 {activeSector.title} — Sub-Sectors
                                             </h4>
                                             <div className="grid grid-cols-2 gap-4">
-                                                {activeSector.subSectors?.map((sub) => (
+                                                {activeSector.subSectors?.map((sub: string) => (
                                                     <Link
                                                         key={sub}
                                                         href={`/sectors/${activeSector.slug}?sub=${encodeURIComponent(sub.toLowerCase().replace(/\s+/g, "-"))}`}
