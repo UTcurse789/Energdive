@@ -1,12 +1,30 @@
+import { notFound } from "next/navigation";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { ArticleCard } from "@/components/ui/article-card";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { ARTICLES } from "@/data/dummy";
 
+// Paths that have their own dedicated pages and should NOT be caught by this dynamic route
+const RESERVED_PATHS = [
+    "index", "about", "access", "advertise", "advertisement-enquiry",
+    "analysis", "api", "articles", "auth", "author", "case-study",
+    "contact", "cookies", "cover-story", "dashboard", "download-media-kit",
+    "editorial", "energclub", "energclub-info", "events", "feature",
+    "interview", "issues", "login", "market", "news", "onboarding",
+    "opinion", "print", "privacy", "register", "reports", "search",
+    "sectors", "subscribe", "tags", "terms", "videos", "accept-invite",
+];
+
 export default async function CategoryPage({ params }: { params: Promise<{ category: string }> }) {
     const { category } = await params;
-    const categoryTitle = category ? category.replace(/-/g, " ") : "News";
+
+    // Block reserved paths — they have their own dedicated pages
+    if (!category || RESERVED_PATHS.includes(category.toLowerCase())) {
+        notFound();
+    }
+
+    const categoryTitle = category.replace(/-/g, " ");
     const categoryArticles = ARTICLES; // Mock data
 
     return (
