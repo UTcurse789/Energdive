@@ -45,6 +45,61 @@ async function getRelated(currentSlug: string) {
     return json.data || [];
 }
 
+import type { Metadata } from "next";
+
+/* ================= METADATA (OG tags for WhatsApp / social) ================= */
+
+export async function generateMetadata({
+    params,
+}: {
+    params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+    const { slug } = await params;
+    const articleData = await getArticle(slug);
+
+    if (!articleData) {
+        return { title: "Case Study | Energdive" };
+    }
+
+    const attrs = articleData.attributes || articleData;
+    const title = attrs.Title || "Case Study | Energdive";
+    const excerptBlock = attrs.Excerpt;
+    const description =
+        (Array.isArray(excerptBlock)
+            ? excerptBlock[0]?.children?.[0]?.text
+            : null) || "Read energy case studies on Energdive.";
+
+    const imageUrl = attrs.FeaturedImage?.url
+        ? `${STRAPI_BASE_URL}${attrs.FeaturedImage.url}`
+        : "https://energdive.com/fav.jpg";
+
+    return {
+        title,
+        description,
+        openGraph: {
+            title,
+            description,
+            url: `https://energdive.com/case-study/${slug}`,
+            siteName: "Energdive",
+            images: [
+                {
+                    url: imageUrl,
+                    width: 1200,
+                    height: 630,
+                    alt: title,
+                },
+            ],
+            type: "article",
+        },
+        twitter: {
+            card: "summary_large_image",
+            title,
+            description,
+            images: [imageUrl],
+        },
+    };
+}
+
 export default async function CaseStudyDetailPage({ params }: { params: Promise<{ slug: string }> }) {
     const { slug } = await params;
     const articleData = await getArticle(slug);

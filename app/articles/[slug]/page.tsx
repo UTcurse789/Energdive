@@ -50,6 +50,57 @@ async function getRelated(slug: string) {
     const json = await res.json();
     return json?.data || [];
 }
+import type { Metadata } from "next";
+
+/* ================= METADATA (OG tags for WhatsApp / social) ================= */
+
+export async function generateMetadata({
+    params,
+}: {
+    params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+    const { slug } = await (params as any);
+    const articleData = await getArticle(slug);
+
+    if (!articleData) {
+        return { title: "Articles | Energdive" };
+    }
+
+    const title = articleData.Title || "Articles | Energdive";
+    const description =
+        articleData.Excerpt?.[0]?.children?.[0]?.text ||
+        "Read in-depth energy articles on Energdive.";
+
+    const imageUrl = articleData.FeaturedImage?.url
+        ? `${STRAPI}${articleData.FeaturedImage.url}`
+        : "https://energdive.com/fav.jpg";
+
+    return {
+        title,
+        description,
+        openGraph: {
+            title,
+            description,
+            url: `https://energdive.com/articles/${slug}`,
+            siteName: "Energdive",
+            images: [
+                {
+                    url: imageUrl,
+                    width: 1200,
+                    height: 630,
+                    alt: title,
+                },
+            ],
+            type: "article",
+        },
+        twitter: {
+            card: "summary_large_image",
+            title,
+            description,
+            images: [imageUrl],
+        },
+    };
+}
 
 /* ================= PAGE ================= */
 
