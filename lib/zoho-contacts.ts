@@ -12,7 +12,7 @@ export interface ZohoContactData {
     Industry_Category?: string;
     Industry_Sub_Category?: string;
     Community?: string;
-    Sub_Community?: string;
+    SubCommunity?: string[];
     Query_Type?: string;
 }
 

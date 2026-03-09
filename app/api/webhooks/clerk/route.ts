@@ -95,7 +95,7 @@ export async function POST(req: Request) {
                     Industry_Category: user.industries?.find((i: string | null) => !!i) || undefined,
                     Industry_Sub_Category: user.sub_industries?.find((i: string | null) => !!i) || undefined,
                     Community: user.communities?.find((c: string | null) => !!c) || undefined,
-                    Sub_Community: user.sub_communities?.find((s: string | null) => !!s) || undefined,
+                    SubCommunity: user.sub_communities?.filter((s: string | null) => !!s) || undefined,
                     Query_Type: "EnergClub",
                 };
 
