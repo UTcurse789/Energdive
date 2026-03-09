@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import syncUserToBrevo from "@/lib/brevoSync";
 import db from "@/lib/db";
 import { getFullUserProfile } from "@/lib/getFullUserProfile";
+import { upsertZohoContact } from "@/lib/zoho-contacts";
 
 export async function POST(req: Request) {
     try {
@@ -80,6 +81,31 @@ export async function POST(req: Request) {
             } catch (brevoErr) {
                 console.error("❌ Brevo sync failed:", brevoErr);
                 // We DO NOT fail webhook if Brevo fails
+            }
+
+            // Sync to Zoho Contacts
+            try {
+                const primaryCommunity = user.communities?.[0];
+
+                const contactData = {
+                    First_Name: user.first_name || "Unknown",
+                    Last_Name: user.last_name || "Unknown",
+                    Email: user.email,
+                    Phone: user.phone || undefined,
+                    Company: user.organization || undefined,
+                    Lead_Source: "Website Registration",
+                    Industry: user.industry_name || undefined,
+                    Sub_Industry: user.sub_industry_name || undefined,
+                    Community: primaryCommunity?.community_name || undefined,
+                    Sub_Community: primaryCommunity?.sub_community_name || undefined,
+                    Query_Type: "EnergClub",
+                };
+
+                await upsertZohoContact(contactData);
+                console.log("✅ Synced to Zoho Contacts:", email);
+            } catch (zohoErr: any) {
+                console.error("❌ Zoho Contact sync failed:", zohoErr.message);
+                // We DO NOT fail webhook if Zoho sync fails
             }
         }
 

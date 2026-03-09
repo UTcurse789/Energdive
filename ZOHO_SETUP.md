@@ -65,3 +65,16 @@ ZOHO_REFRESH_TOKEN=...
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=...
 CLERK_SECRET_KEY=...
 ```
+
+## 5. Contacts Module Setup
+
+Create the following custom fields in the **Contacts** module for website registration sync:
+
+| Field Label | API Name | Type | Description |
+| :--- | :--- | :--- | :--- |
+| Sub Industry | `Sub_Industry` | Single Line Text | Secondary industry classification |
+| Community | `Community` | Single Line Text | User community group |
+| Sub Community | `Sub_Community` | Single Line Text | Specific user community group |
+| Query Type | `Query_Type` | Single Line Text | Triggers specific views (e.g. EnergClub) |
+
+Note: `Industry` and `Company` are usually built-in standard fields, but `Sub_Industry`, `Community`, `Sub_Community`, and `Query_Type` will need to be created as custom fields if they don't already exist.
