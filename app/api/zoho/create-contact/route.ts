@@ -22,6 +22,7 @@ const createContactSchema = z.object({
     Sub_Industry: z.string().optional(), // Fallback alias
     Community: stringOrArray,
     SubCommunity: stringOrArray,
+    community_portal: stringOrArray,
     Query_Type: z.string().default("EnergClub"),
 }).transform((data) => {
     // Alias mappings
