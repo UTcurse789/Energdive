@@ -85,6 +85,13 @@ export async function POST(req: Request) {
 
             // Sync to Zoho Contacts
             try {
+                // Helper: return non-empty array or undefined
+                const toArray = (arr: any[] | undefined) => {
+                    if (!arr) return undefined;
+                    const filtered = arr.filter((v: any) => v !== null && v !== undefined && v !== '');
+                    return filtered.length > 0 ? filtered : undefined;
+                };
+
                 const contactData = {
                     First_Name: user.first_name || "Unknown",
                     Last_Name: user.last_name || "Unknown",
@@ -94,8 +101,8 @@ export async function POST(req: Request) {
                     Lead_Source: "Website Registration",
                     Industry_Category: user.industries?.find((i: string | null) => !!i) || undefined,
                     Industry_Sub_Category: user.sub_industries?.find((i: string | null) => !!i) || undefined,
-                    Community: user.communities?.filter((c: string | null) => !!c) || undefined,
-                    SubCommunity: user.sub_communities?.filter((s: string | null) => !!s) || undefined,
+                    Community: toArray(user.communities),
+                    SubCommunity: toArray(user.sub_communities),
                     Query_Type: "EnergClub",
                 };
 
