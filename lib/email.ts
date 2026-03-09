@@ -8,7 +8,7 @@
 const BREVO_API_KEY = process.env.BREVO_API_KEY || "";
 const BREVO_API_URL = "https://api.brevo.com/v3/smtp/email";
 const FROM_EMAIL = process.env.FROM_EMAIL || "no-reply@info.energdive.com";
-const FROM_NAME = process.env.FROM_NAME || "EnergDive";
+const FROM_NAME = process.env.FROM_NAME || "ENERGDIVE";
 import fs from 'fs';
 import path from 'path';
 
@@ -207,16 +207,14 @@ export async function sendWelcomeEmail(
                             </div>
                             ` : ''}
 
-                            <p style="margin:0;color:#6B7280;font-size:14px;line-height:1.6;">
-                                If you have any questions, simply reply to this email — we'd love to hear from you.
-                            </p>
+                        
                         </td>
                     </tr>
 
                     <tr>
                         <td style="background-color:#F9FAFB;padding:32px 40px;text-align:center;border-top:1px solid #F3F4F6;">
                             <p style="margin:0 0 8px;color:#111827;font-size:13px;font-weight:700;">
-                                EnergDive Intelligence
+                                ENERGDIVE Intelligence
                             </p>
                             <p style="margin:0;color:#9CA3AF;font-size:11px;">
                                 &copy; ${new Date().getFullYear()} ENERGDIVE. All rights reserved.

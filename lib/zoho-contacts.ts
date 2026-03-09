@@ -9,8 +9,8 @@ export interface ZohoContactData {
     Phone?: string;
     Company?: string;
     Lead_Source?: string;
-    Industry?: string;
-    Sub_Industry?: string;
+    Industry_Category?: string;
+    Industry_Sub_Category?: string;
     Community?: string;
     Sub_Community?: string;
     Query_Type?: string;
