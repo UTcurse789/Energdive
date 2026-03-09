@@ -1,0 +1,25 @@
+{
+  "id": 125,
+  "email": "sankalp@itenmedia.in",
+  "first_name": "Sankalp",
+  "last_name": "Gupta",
+  "phone": null,
+  "job_title": "Developer",
+  "organization": "ITEN",
+  "preferred_frequency": "daily",
+  "preferred_formats": [
+    "Upcoming Events"
+  ],
+  "communities": [
+    "Distribution"
+  ],
+  "sub_communities": [
+    "Distribution-Smart Meters & AMI"
+  ],
+  "industries": [
+    "Aviation"
+  ],
+  "sub_industries": [
+    "Defence, Aerospace"
+  ]
+}

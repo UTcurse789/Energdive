@@ -13,7 +13,7 @@ const createContactSchema = z.object({
     Industry_Category: z.string().optional(),
     Industry_Sub_Category: z.string().optional(),
     Community: z.string().optional(),
-    sub_community: z.string().optional(),
+    Sub_Community: z.string().optional(),
     Query_Type: z.string().default("EnergClub"),
 });
 
