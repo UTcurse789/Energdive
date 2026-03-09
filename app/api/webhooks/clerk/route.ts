@@ -99,6 +99,7 @@ export async function POST(req: Request) {
                     Query_Type: "EnergClub",
                 };
 
+                console.log("📋 [ZOHO_CONTACTS] Payload being sent:", JSON.stringify(contactData, null, 2));
                 await upsertZohoContact(contactData);
                 console.log("✅ Synced to Zoho Contacts:", email);
             } catch (zohoErr: any) {

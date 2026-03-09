@@ -84,6 +84,9 @@ export async function upsertZohoContact(
         const method = existingContact ? "PUT" : "POST";
         const url = `${ZOHO_API_URL}/Contacts`;
 
+        const bodyStr = JSON.stringify(payload);
+        console.log(`[ZOHO_CONTACTS] ${method} ${url} — Body:`, bodyStr);
+
         // 3. Send request
         const response = await fetch(url, {
             method,
@@ -91,7 +94,7 @@ export async function upsertZohoContact(
                 Authorization: `Zoho-oauthtoken ${token}`,
                 "Content-Type": "application/json",
             },
-            body: JSON.stringify(payload),
+            body: bodyStr,
         });
 
         if (!response.ok) {
@@ -120,6 +123,7 @@ export async function upsertZohoContact(
         }
 
         // 4. Handle success response from Zoho
+        console.log(`[ZOHO_CONTACTS] Full Zoho API response:`, text);
         if (data.data && data.data[0] && data.data[0].code === "SUCCESS") {
             return {
                 id: data.data[0].details.id,
