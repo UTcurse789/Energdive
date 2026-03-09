@@ -82,16 +82,17 @@ export function ShareButton({ title, text, url, className = "", iconClassName = 
         e.preventDefault();
         e.stopPropagation();
 
-        const shareUrl = encodeURIComponent(url || window.location.href);
-        const shareTitle = encodeURIComponent(title || text || '');
+        const currentUrl = url || window.location.href;
+        const currentTitle = title || text || '';
 
         let shareLink = '';
         if (platform === 'facebook') {
-            shareLink = `https://www.facebook.com/sharer/sharer.php?u=${shareUrl}`;
+            shareLink = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(currentUrl)}`;
         } else if (platform === 'twitter') {
-            shareLink = `https://twitter.com/intent/tweet?url=${shareUrl}&text=${shareTitle}`;
+            const tweetText = `--> ${currentTitle} ${currentUrl} via @energdive`;
+            shareLink = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`;
         } else if (platform === 'linkedin') {
-            shareLink = `https://www.linkedin.com/sharing/share-offsite/?url=${shareUrl}`;
+            shareLink = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(currentUrl)}`;
         }
 
         if (shareLink) {
