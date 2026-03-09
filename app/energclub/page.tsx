@@ -66,7 +66,7 @@ const ecosystemItems = [
     { title: "New Energies", img: "https://images.unsplash.com/photo-1532601224476-15c79f2f7a51?auto=format&fit=crop&q=80&w=800" },
     { title: "Energy Storage", img: "https://images.unsplash.com/photo-1620714223084-8fcacc6dfd8d?auto=format&fit=crop&q=80&w=800" },
     { title: "Sustainability & Safety", img: "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&q=80&w=800" }
-     
+
 ];
 
 export default function EnergClubPage() {
@@ -217,7 +217,7 @@ export default function EnergClubPage() {
                         An integrated digital platform for India's energy professionals. All figures, power, generation, markets, storage, policy, and one goal: To Access Insights, Fuel Innovation, and Sustain Power for a better ecosystem.
                     </p>
                     <Link href="/auth" className="bg-[#E5B866] text-black px-10 py-4 rounded-full font-bold uppercase tracking-widest hover:bg-white transition-colors duration-300 shadow-[0_0_20px_rgba(229,184,102,0.3)] inline-block">
-                        Join Nowx
+                        Join Now
                     </Link>
                 </div>
             </section>
