@@ -11,7 +11,7 @@ export interface ZohoContactData {
     Lead_Source?: string;
     Industry_Category?: string;
     Industry_Sub_Category?: string;
-    Community?: string;
+    Community?: string[];
     SubCommunity?: string[];
     Query_Type?: string;
 }

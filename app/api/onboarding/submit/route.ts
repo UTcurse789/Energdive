@@ -109,7 +109,7 @@ export async function POST(req: Request) {
                 Lead_Source: "Website Registration",
                 Industry_Category: fullUser.industries?.find((i: string | null) => !!i) || undefined,
                 Industry_Sub_Category: fullUser.sub_industries?.find((i: string | null) => !!i) || undefined,
-                Community: fullUser.communities?.find((c: string | null) => !!c) || undefined,
+                Community: fullUser.communities?.filter((c: string | null) => !!c) || undefined,
                 SubCommunity: fullUser.sub_communities?.filter((s: string | null) => !!s) || undefined,
                 Query_Type: "EnergClub",
             };

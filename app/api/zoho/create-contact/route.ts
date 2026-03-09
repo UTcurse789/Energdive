@@ -2,6 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { upsertZohoContact, ZohoContactData } from "@/lib/zoho-contacts";
 
+// Helper: accept both "value" and ["value"] — coerce string to array
+const stringOrArray = z.preprocess(
+    (val) => (typeof val === "string" ? [val] : val),
+    z.array(z.string())
+).optional();
+
 // Define the schema for incoming contact data
 const createContactSchema = z.object({
     First_Name: z.string().min(1, "First Name is required"),
@@ -12,9 +18,18 @@ const createContactSchema = z.object({
     Lead_Source: z.string().default("Website Registration"),
     Industry_Category: z.string().optional(),
     Industry_Sub_Category: z.string().optional(),
-    Community: z.string().optional(),
-    SubCommunity: z.array(z.string()).optional(),
+    Industry: z.string().optional(), // Fallback alias
+    Sub_Industry: z.string().optional(), // Fallback alias
+    Community: stringOrArray,
+    SubCommunity: stringOrArray,
     Query_Type: z.string().default("EnergClub"),
+}).transform((data) => {
+    // Alias mappings
+    if (data.Industry && !data.Industry_Category) data.Industry_Category = data.Industry;
+    if (data.Sub_Industry && !data.Industry_Sub_Category) data.Industry_Sub_Category = data.Sub_Industry;
+    delete (data as any).Industry;
+    delete (data as any).Sub_Industry;
+    return data;
 });
 
 /**
