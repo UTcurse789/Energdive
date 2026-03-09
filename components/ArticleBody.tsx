@@ -1,6 +1,7 @@
 "use client";
 
 import { BlocksRenderer } from "@strapi/blocks-react-renderer";
+import { ShareButton } from "./ui/share-button";
 
 const STRAPI_BASE_URL = process.env.NEXT_PUBLIC_STRAPI_URL || "https://cms.energdive.com";
 
@@ -33,7 +34,7 @@ function resolveImageUrl(url: string | undefined | null): string {
     return resolved.replace("http://", "https://");
 }
 
-export default function ArticleBody({ content }: { content: any }) {
+export default function ArticleBody({ content, enableSectionSharing = false }: { content: any; enableSectionSharing?: boolean }) {
     if (!Array.isArray(content)) return null;
 
     return (
@@ -106,6 +107,35 @@ export default function ArticleBody({ content }: { content: any }) {
                                     </figure>
                                 );
                             },
+                            ...(enableSectionSharing ? {
+                                heading: ({ children, level }: any) => {
+                                    const extractText = (node: any): string => {
+                                        if (typeof node === 'string') return node;
+                                        if (Array.isArray(node)) return node.map(extractText).join('');
+                                        if (node && node.props && node.props.children) return extractText(node.props.children);
+                                        return '';
+                                    };
+                                    const text = extractText(children);
+                                    const sectionId = text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+                                    const HeadingTag = `h${level}` as any;
+
+                                    return (
+                                        <div id={sectionId} className="group relative flex items-start gap-4">
+                                            <div className="hidden sm:block absolute -left-6 top-2 w-3 h-3 bg-red-500 rounded-full shadow-[0_0_8px_rgba(239,68,68,0.6)]"></div>
+                                            <HeadingTag style={{ margin: 0, fontWeight: 'bold', color: '#18181b', flex: 1 }}>
+                                                {children}
+                                            </HeadingTag>
+                                            <ShareButton
+                                                title={text}
+                                                url={typeof window !== "undefined" ? `${window.location.origin}${window.location.pathname}#${sectionId}` : ""}
+                                                className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 hover:bg-zinc-100 rounded-full"
+                                                iconClassName="w-3.5 h-3.5 text-zinc-400 hover:text-red-500"
+                                                hideTextIcon={true}
+                                            />
+                                        </div>
+                                    );
+                                },
+                            } : {}),
                         }}
                         modifiers={{
                             italic: ({ children }) => (

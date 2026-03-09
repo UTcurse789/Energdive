@@ -60,8 +60,15 @@ export default function ArchitectEditorialPage() {
                                 "Energy"
                             ),
                             date: formatContentDate(attrs.Date || attrs.publishedAt || attrs.createdAt),
+                            rawDate: attrs.Date || attrs.publishedAt || attrs.createdAt,
                         };
                     });
+
+                    // Explicitly sort articles by raw date descending
+                    formattedData.sort((a: any, b: any) => {
+                        return new Date(b.rawDate).getTime() - new Date(a.rawDate).getTime();
+                    });
+
                     setArticles(formattedData);
                 }
             } catch (error) {
@@ -150,6 +157,9 @@ export default function ArchitectEditorialPage() {
                                         <ArrowUpRight size={28} />
                                     </div>
                                     <div className="absolute inset-0 bg-linear-to-t from-black/90 via-transparent to-transparent flex flex-col justify-end p-6 md:p-10">
+                                        <div className="mb-4">
+                                            <DateChip value={heroArticle.date} className="text-[10px] md:text-sm bg-black/40 backdrop-blur-sm text-white border border-white/20 inline-flex" />
+                                        </div>
                                         <h2 className="text-3xl md:text-5xl lg:text-6xl font-black text-white tracking-tighter leading-[0.9]">
                                             {heroArticle.title}
                                         </h2>
