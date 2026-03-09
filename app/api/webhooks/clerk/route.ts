@@ -92,10 +92,10 @@ export async function POST(req: Request) {
                     Phone: user.phone || undefined,
                     Company: user.organization || undefined,
                     Lead_Source: "Website Registration",
-                    Industry_Category: (user.industries && user.industries.length > 0) ? user.industries[0] : undefined,
-                    Industry_Sub_Category: (user.sub_industries && user.sub_industries.length > 0) ? user.sub_industries[0] : undefined,
-                    Community: (user.communities && user.communities.length > 0) ? user.communities[0] : undefined,
-                    Sub_Community: (user.sub_communities && user.sub_communities.length > 0) ? user.sub_communities[0] : undefined,
+                    Industry_Category: user.industries?.find((i: string | null) => !!i) || undefined,
+                    Industry_Sub_Category: user.sub_industries?.find((i: string | null) => !!i) || undefined,
+                    Community: user.communities?.find((c: string | null) => !!c) || undefined,
+                    sub_community: user.sub_communities?.find((s: string | null) => !!s) || undefined,
                     Query_Type: "EnergClub",
                 };
 
