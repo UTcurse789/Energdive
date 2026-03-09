@@ -84,10 +84,12 @@ export async function getAdvertisements({
 
         console.log(`[Ads] After date filter: ${ads.length} ads remaining`);
 
-        // If sector-specific query returned nothing, fallback to placement-only
+        // If sector-specific query returned nothing, fallback to global (no-sector) ads only
         if (ads.length === 0 && sectorSlug) {
-            console.log(`[Ads] No sector-specific ads, falling back to placement-only`);
-            return getAdvertisements({ placement });
+            console.log(`[Ads] No sector-specific ads, falling back to global ads only`);
+            const globalAds = await getAdvertisements({ placement });
+            // Only keep ads that have NO sectors assigned (global/untargeted ads)
+            return globalAds.filter((a) => !a.sectors || a.sectors.length === 0);
         }
 
         // Sort by priority DESC (higher priority first), nulls last
