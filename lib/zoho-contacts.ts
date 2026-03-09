@@ -1,4 +1,4 @@
-import { getZohoAccessToken } from "./zoho";
+import { getZohoAccessToken, getLeadByEmail } from "./zoho";
 
 const ZOHO_API_URL = `${process.env.ZOHO_API_DOMAIN || "https://www.zohoapis.in"}/crm/v2`;
 
@@ -15,6 +15,97 @@ export interface ZohoContactData {
     SubCommunity?: string[];
     community_portal?: string[];
     Query_Type?: string;
+}
+
+/**
+ * Convert a Zoho Lead to a Contact using the Convert Lead API.
+ * Returns the new Contact ID, or null if conversion fails.
+ */
+export async function convertLeadToContact(
+    leadId: string,
+    additionalContactData?: Partial<ZohoContactData>
+): Promise<{ contactId: string } | null> {
+    const token = await getZohoAccessToken();
+
+    const payload: any = {
+        data: [
+            {
+                overwrite: true,
+                notify_lead_owner: false,
+                notify_new_entity_owner: false,
+            },
+        ],
+    };
+
+    console.log(`[ZOHO_CONTACTS] Converting Lead ${leadId} to Contact...`);
+
+    const response = await fetch(`${ZOHO_API_URL}/Leads/${leadId}/actions/convert`, {
+        method: "POST",
+        headers: {
+            Authorization: `Zoho-oauthtoken ${token}`,
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+    });
+
+    const text = await response.text();
+    console.log(`[ZOHO_CONTACTS] Convert Lead response (${response.status}):`, text);
+
+    if (!response.ok) {
+        console.error(`[ZOHO_CONTACTS] Lead conversion failed: ${response.status} — ${text}`);
+        return null;
+    }
+
+    try {
+        const data = JSON.parse(text);
+        const contactId = data?.data?.[0]?.Contacts;
+
+        if (!contactId) {
+            console.error(`[ZOHO_CONTACTS] No Contact ID in conversion response:`, text);
+            return null;
+        }
+
+        console.log(`[ZOHO_CONTACTS] Lead ${leadId} converted to Contact ${contactId}`);
+
+        // If we have additional data, update the newly created Contact
+        if (additionalContactData && Object.keys(additionalContactData).length > 0) {
+            await updateContact(contactId, additionalContactData);
+        }
+
+        return { contactId };
+    } catch (err) {
+        console.error(`[ZOHO_CONTACTS] Failed to parse conversion response:`, text);
+        return null;
+    }
+}
+
+/**
+ * Update an existing Contact by its Zoho record ID.
+ */
+async function updateContact(contactId: string, data: Partial<ZohoContactData>): Promise<void> {
+    const token = await getZohoAccessToken();
+
+    const payload = {
+        data: [{ id: contactId, ...data }],
+    };
+
+    console.log(`[ZOHO_CONTACTS] Updating Contact ${contactId} with:`, JSON.stringify(data));
+
+    const response = await fetch(`${ZOHO_API_URL}/Contacts`, {
+        method: "PUT",
+        headers: {
+            Authorization: `Zoho-oauthtoken ${token}`,
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+    });
+
+    const text = await response.text();
+    if (!response.ok) {
+        console.error(`[ZOHO_CONTACTS] Contact update failed: ${response.status} — ${text}`);
+    } else {
+        console.log(`[ZOHO_CONTACTS] Contact ${contactId} updated successfully`);
+    }
 }
 
 /**

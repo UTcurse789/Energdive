@@ -4,7 +4,8 @@ import { saveOnboardingProfile } from "@/lib/queries";
 import { getFullUserProfile } from "@/lib/getFullUserProfile";
 import syncUserToBrevo from "@/lib/brevoSync";
 import { sendWelcomeEmail } from "@/lib/email";
-import { upsertZohoContact } from "@/lib/zoho-contacts";
+import { upsertZohoContact, convertLeadToContact } from "@/lib/zoho-contacts";
+import { getLeadByEmail } from "@/lib/zoho";
 
 /**
  * POST /api/onboarding/submit
@@ -122,8 +123,26 @@ export async function POST(req: Request) {
                 Query_Type: "EnergClub",
             };
             console.log("📋 [ZOHO_CONTACTS] Onboarding sync payload:", JSON.stringify(contactData, null, 2));
-            const zohoResult = await upsertZohoContact(contactData);
-            console.log("✅ Synced to Zoho Contacts:", fullUser.email, zohoResult);
+
+            // Check if a Lead already exists for this email
+            const existingLead = await getLeadByEmail(fullUser.email);
+
+            if (existingLead) {
+                // Convert the Lead to a Contact instead of creating a duplicate
+                console.log(`📋 [ZOHO] Found existing Lead ${existingLead.id} for ${fullUser.email}. Converting to Contact...`);
+                const conversionResult = await convertLeadToContact(existingLead.id, contactData);
+                if (conversionResult) {
+                    console.log(`✅ Lead ${existingLead.id} converted to Contact ${conversionResult.contactId}`);
+                } else {
+                    // Conversion failed — fall back to creating/updating Contact directly
+                    console.warn(`⚠️ Lead conversion failed, falling back to upsert for ${fullUser.email}`);
+                    await upsertZohoContact(contactData);
+                }
+            } else {
+                // No existing Lead — create/update Contact directly
+                const zohoResult = await upsertZohoContact(contactData);
+                console.log("✅ Synced to Zoho Contacts:", fullUser.email, zohoResult);
+            }
         } catch (zohoErr: any) {
             // Non-fatal — don't block onboarding if Zoho fails
             console.error("⚠️ Zoho Contact sync failed:", zohoErr.message);

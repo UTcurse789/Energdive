@@ -4,7 +4,8 @@ import { NextResponse } from "next/server";
 import syncUserToBrevo from "@/lib/brevoSync";
 import db from "@/lib/db";
 import { getFullUserProfile } from "@/lib/getFullUserProfile";
-import { upsertZohoContact } from "@/lib/zoho-contacts";
+import { upsertZohoContact, convertLeadToContact } from "@/lib/zoho-contacts";
+import { getLeadByEmail } from "@/lib/zoho";
 
 export async function POST(req: Request) {
     try {
@@ -83,7 +84,7 @@ export async function POST(req: Request) {
                 // We DO NOT fail webhook if Brevo fails
             }
 
-            // Sync to Zoho Contacts
+            // Sync to Zoho Contacts (with Lead conversion if applicable)
             try {
                 // Helper: return non-empty array or undefined
                 const toArray = (arr: any[] | undefined) => {
@@ -107,8 +108,25 @@ export async function POST(req: Request) {
                     Query_Type: "EnergClub",
                 };
 
-                console.log("📋 [ZOHO_CONTACTS] Payload being sent:", JSON.stringify(contactData, null, 2));
-                await upsertZohoContact(contactData);
+                // Check if a Lead already exists for this email
+                const existingLead = await getLeadByEmail(email);
+
+                if (existingLead) {
+                    // Convert the Lead to a Contact instead of creating a duplicate
+                    console.log(`📋 [ZOHO] Found existing Lead ${existingLead.id} for ${email}. Converting to Contact...`);
+                    const conversionResult = await convertLeadToContact(existingLead.id, contactData);
+                    if (conversionResult) {
+                        console.log(`✅ Lead ${existingLead.id} converted to Contact ${conversionResult.contactId}`);
+                    } else {
+                        // Conversion failed — fall back to creating/updating Contact directly
+                        console.warn(`⚠️ Lead conversion failed, falling back to upsert for ${email}`);
+                        await upsertZohoContact(contactData);
+                    }
+                } else {
+                    // No existing Lead — create/update Contact directly
+                    console.log("📋 [ZOHO_CONTACTS] No Lead found, upserting Contact:", JSON.stringify(contactData, null, 2));
+                    await upsertZohoContact(contactData);
+                }
                 console.log("✅ Synced to Zoho Contacts:", email);
             } catch (zohoErr: any) {
                 console.error("❌ Zoho Contact sync failed:", zohoErr.message);
