@@ -93,9 +93,9 @@ export function AdBanner({
 
                 console.log(`[AdBanner] After date filter: ${ads.length} ads`);
 
-                // Fallback to placement-only if no sector match
+                // Fallback to global (no-sector) ads if no sector match
                 if (ads.length === 0 && sectorSlug) {
-                    console.log(`[AdBanner] No sector-specific ads, falling back`);
+                    console.log(`[AdBanner] No sector-specific ads, falling back to global ads only`);
                     const fallbackUrl =
                         `${STRAPI_BASE}/api/advertisements` +
                         `?filters[placement][$eq]=${encodeURIComponent(placement)}` +
@@ -105,7 +105,9 @@ export function AdBanner({
                     const fallbackRes = await fetch(fallbackUrl);
                     if (fallbackRes.ok) {
                         const fallbackJson = await fallbackRes.json();
-                        ads = fallbackJson.data || [];
+                        const allAds: Ad[] = fallbackJson.data || [];
+                        // Only keep ads that have NO sectors assigned (global/untargeted ads)
+                        ads = allAds.filter((a) => !a.sectors || a.sectors.length === 0);
                     }
                 }
 
