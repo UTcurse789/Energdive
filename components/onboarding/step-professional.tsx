@@ -54,7 +54,7 @@ export default function StepProfessional({ defaultValues, onBack, onNext }: Step
                     <input
                         {...register("organization")}
                         className="w-full px-4 py-2 border border-zinc-200 rounded-lg focus:ring-2 focus:ring-[#0AB996] focus:border-transparent outline-none transition-all"
-                        placeholder="e.g. organisation name"
+                        placeholder="e.g. Organisation Name"
                     />
                     {errors.organization && <p className="text-red-500 text-xs">{errors.organization.message}</p>}
                 </div>

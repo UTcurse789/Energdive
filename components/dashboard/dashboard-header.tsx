@@ -11,7 +11,7 @@ import { UserButton, useUser } from "@clerk/nextjs";
 import { useDashboard } from "./dashboard-shell";
 
 const NAV_ITEMS = [
-    { label: "Main Site", href: "/", icon: Home },
+    { label: "ENERGDIVE", href: "/", icon: Home },
     { label: "My Feed", href: "/dashboard", icon: LayoutGrid },
     // { label: "Intelligence", href: "/dashboard/feed", icon: BrainCircuit },
     // { label: "Community", href: "/dashboard/community", icon: Users },
@@ -43,7 +43,7 @@ export function DashboardHeader() {
                 style={{ borderBottom: "1px solid var(--dash-border-subtle)" }}
             >
                 {/* Left Side: Energdive Logo — hidden on mobile */}
-                <div className="flex-shrink-0 hidden sm:block">
+                <Link href="/" className="flex-shrink-0 hidden sm:block">
                     <Image
                         src="/logo2-removebg-preview.png"
                         alt="Energdive"
@@ -52,10 +52,10 @@ export function DashboardHeader() {
                         className="object-contain"
                         priority
                     />
-                </div>
+                </Link>
 
                 {/* Centre / Left on mobile: EnergClub Logo */}
-                <div className="flex-shrink-0 sm:absolute sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2">
+                <Link href="/dashboard" className="flex-shrink-0 sm:absolute sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2">
                     <Image
                         src="/energclub.png"
                         alt="EnergClub"
@@ -63,20 +63,10 @@ export function DashboardHeader() {
                         height={50}
                         className="object-contain"
                     />
-                </div>
+                </Link>
 
                 {/* Right Actions */}
                 <div className="flex items-center gap-5">
-                    <button
-                        className="relative transition-colors"
-                        style={{ color: "var(--dash-text-dim)" }}
-                    >
-                        <Bell size={20} />
-                        <span className="absolute top-0 right-0 w-2 h-2 bg-var(--dash-accent) rounded-full border-2"
-                            style={{ borderColor: "var(--dash-surface)" }}
-                        />
-                    </button>
-
                     <div
                         className="flex items-center gap-3 pl-5"
                         style={{ borderLeft: "1px solid var(--dash-border)" }}
@@ -103,39 +93,55 @@ export function DashboardHeader() {
 
             {/* ── Navigation ── */}
             <div
-                className="flex items-center gap-1 px-6 h-[50px] overflow-x-auto"
+                className="flex items-center justify-between px-6 h-[50px] overflow-x-auto"
                 style={{ scrollbarWidth: "none" }}
             >
-                {NAV_ITEMS.map((item) => {
-                    const isActive =
-                        item.href === "/"
-                            ? pathname === "/"
-                            : item.href === "/dashboard"
-                                ? pathname === "/dashboard"
-                                : pathname.startsWith(item.href);
-                    const Icon = item.icon;
+                {/* ENERGDIVE link on the left */}
+                {(() => {
+                    const homeItem = NAV_ITEMS[0];
+                    const Icon = homeItem.icon;
+                    const isActive = pathname === homeItem.href;
                     return (
                         <Link
-                            key={item.label}
-                            href={item.href}
+                            href={homeItem.href}
                             className="flex items-center gap-2 px-4 h-full text-sm font-medium transition-all whitespace-nowrap border-b-2"
                             style={
                                 isActive
-                                    ? {
-                                        color: "var(--dash-accent)",
-                                        borderBottomColor: "var(--dash-accent)",
-                                    }
-                                    : {
-                                        color: "var(--dash-text-muted)",
-                                        borderBottomColor: "transparent",
-                                    }
+                                    ? { color: "var(--dash-accent)", borderBottomColor: "var(--dash-accent)" }
+                                    : { color: "var(--dash-text-muted)", borderBottomColor: "transparent" }
                             }
                         >
                             <Icon size={15} />
-                            {item.label}
+                            {homeItem.label}
                         </Link>
                     );
-                })}
+                })()}
+
+                {/* Rest of nav items centered */}
+                <div className="flex items-center gap-1 mx-auto">
+                    {NAV_ITEMS.slice(1).map((item) => {
+                        const isActive =
+                            item.href === "/dashboard"
+                                ? pathname === "/dashboard"
+                                : pathname.startsWith(item.href);
+                        const Icon = item.icon;
+                        return (
+                            <Link
+                                key={item.label}
+                                href={item.href}
+                                className="flex items-center gap-2 px-4 h-full text-sm font-medium transition-all whitespace-nowrap"
+                                style={
+                                    isActive
+                                        ? { color: "var(--dash-accent)", borderBottomColor: "var(--dash-accent)" }
+                                        : { color: "var(--dash-text-muted)", borderBottomColor: "transparent" }
+                                }
+                            >
+                                <Icon size={15} />
+                                {item.label}
+                            </Link>
+                        );
+                    })}
+                </div>
             </div>
         </header>
     );

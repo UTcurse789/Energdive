@@ -96,7 +96,7 @@ export default async function OnboardingPage() {
             </div>
 
             <div className="relative z-10 mt-8 text-center text-xs text-zinc-400">
-                <p>&copy; {new Date().getFullYear()} Energdive. All rights reserved.</p>
+                <p>&copy; {new Date().getFullYear()} ENERGDIVE. All rights reserved.</p>
             </div>
         </div>
     );

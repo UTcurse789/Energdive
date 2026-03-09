@@ -212,14 +212,15 @@ export default function StepInterests({
                         Industry & Interests
                     </h2>
                     <p className="text-zinc-500 mt-1">
-                        Personalize your feed with relevant content.
+                        Join the ENERGClub relevant Communities and Sub-Communities
                     </p>
                 </div>
 
-                {/* ── Communities Multi-Select ─────────────────────── */}
-                <div className="space-y-3">
-                    <label className="block text-sm font-medium text-zinc-700">
-                        Choose Communities and Sub-Communities
+                {/* ── Communities Multi-Select (Primary / Highlighted) ─── */}
+                <div className="space-y-3 rounded-xl border-2 border-[#0AB996]/30 bg-[#0AB996]/[0.04] p-4">
+                    <label className="block text-base font-semibold text-[#0AB996]">
+                        Choose ENERGClub Communities and Sub-Communities
+                        (You can select multiple)
                     </label>
 
                     {/* Chips */}
@@ -294,53 +295,58 @@ export default function StepInterests({
                         </p>
                     )}
                 </div>
-                {/* ── Industry Select ──────────────────────────────── */}
-                <div className="space-y-1">
-                    <label className="block text-sm font-medium text-zinc-700">
-                        Industry
-                    </label>
-                    <div className="relative">
-                        <select
-                            {...register("industryId", { valueAsNumber: true })}
-                            className="w-full px-4 py-2.5 border border-zinc-200 rounded-lg focus:ring-2 focus:ring-[#0AB996] focus:border-transparent outline-none transition-all bg-white appearance-none pr-10"
-                        >
-                            <option value={0}>Select your industry</option>
-                            {industries.map((ind) => (
-                                <option key={ind.id} value={ind.id}>
-                                    {ind.name}
-                                </option>
-                            ))}
-                        </select>
-                        <ChevronDown className="absolute right-3 top-3 w-4 h-4 text-zinc-400 pointer-events-none" />
-                    </div>
-                    {errors.industryId && (
-                        <p className="text-red-500 text-xs">{errors.industryId.message}</p>
-                    )}
-                </div>
+                {/* ── Industry & Sub-Industry (Secondary) ─────────── */}
+                <div className="space-y-4 pt-2">
+                    <p className="text-xs font-medium text-zinc-400 uppercase tracking-wider">Your professional background</p>
 
-                {/* ── Sub-Industry (cascaded) ──────────────────────── */}
-                <div className="space-y-1">
-                    <label className="block text-sm font-medium text-zinc-700">
-                        Sub-Industry
-                    </label>
-                    <div className="relative">
-                        <select
-                            {...register("subIndustryId", { valueAsNumber: true })}
-                            disabled={!selectedIndustryId}
-                            className="w-full px-4 py-2.5 border border-zinc-200 rounded-lg focus:ring-2 focus:ring-[#0AB996] focus:border-transparent outline-none transition-all bg-white disabled:bg-zinc-100 disabled:text-zinc-400 appearance-none pr-10"
-                        >
-                            <option value={0}>Select sub-industry</option>
-                            {currentSubIndustries.map((sub) => (
-                                <option key={sub.id} value={sub.id}>
-                                    {sub.name}
-                                </option>
-                            ))}
-                        </select>
-                        <ChevronDown className="absolute right-3 top-3 w-4 h-4 text-zinc-400 pointer-events-none" />
+                    {/* Industry Select */}
+                    <div className="space-y-1">
+                        <label className="block text-sm font-medium text-zinc-500">
+                            Industry
+                        </label>
+                        <div className="relative">
+                            <select
+                                {...register("industryId", { valueAsNumber: true })}
+                                className="w-full px-4 py-2.5 border border-zinc-200 rounded-lg focus:ring-2 focus:ring-[#0AB996] focus:border-transparent outline-none transition-all bg-white appearance-none pr-10"
+                            >
+                                <option value={0}>Select your industry</option>
+                                {industries.map((ind) => (
+                                    <option key={ind.id} value={ind.id}>
+                                        {ind.name}
+                                    </option>
+                                ))}
+                            </select>
+                            <ChevronDown className="absolute right-3 top-3 w-4 h-4 text-zinc-400 pointer-events-none" />
+                        </div>
+                        {errors.industryId && (
+                            <p className="text-red-500 text-xs">{errors.industryId.message}</p>
+                        )}
                     </div>
-                    {errors.subIndustryId && (
-                        <p className="text-red-500 text-xs">{errors.subIndustryId.message}</p>
-                    )}
+
+                    {/* Sub-Industry */}
+                    <div className="space-y-1">
+                        <label className="block text-sm font-medium text-zinc-500">
+                            Sub-Industry
+                        </label>
+                        <div className="relative">
+                            <select
+                                {...register("subIndustryId", { valueAsNumber: true })}
+                                disabled={!selectedIndustryId}
+                                className="w-full px-4 py-2.5 border border-zinc-200 rounded-lg focus:ring-2 focus:ring-[#0AB996] focus:border-transparent outline-none transition-all bg-white disabled:bg-zinc-100 disabled:text-zinc-400 appearance-none pr-10"
+                            >
+                                <option value={0}>Select sub-industry</option>
+                                {currentSubIndustries.map((sub) => (
+                                    <option key={sub.id} value={sub.id}>
+                                        {sub.name}
+                                    </option>
+                                ))}
+                            </select>
+                            <ChevronDown className="absolute right-3 top-3 w-4 h-4 text-zinc-400 pointer-events-none" />
+                        </div>
+                        {errors.subIndustryId && (
+                            <p className="text-red-500 text-xs">{errors.subIndustryId.message}</p>
+                        )}
+                    </div>
                 </div>
 
 
