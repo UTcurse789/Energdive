@@ -2,9 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { upsertZohoContact, ZohoContactData } from "@/lib/zoho-contacts";
 
-// Helper: accept both "value" and ["value"] — coerce string to array
+// Helper: accept both "value", ["value"], and "value1, value2" strings — coerce to array
 const stringOrArray = z.preprocess(
-    (val) => (typeof val === "string" ? [val] : val),
+    (val) => {
+        if (typeof val === "string") {
+            // Split by comma and trim whitespace, then filter out empty strings
+            return val.split(",").map(s => s.trim()).filter(Boolean);
+        }
+        return val;
+    },
     z.array(z.string())
 ).optional();
 
