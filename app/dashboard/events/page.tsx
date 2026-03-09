@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import Image from "next/image";
 import {
     Calendar, MapPin, Clock, ExternalLink, Loader2, AlertCircle,
@@ -23,7 +23,7 @@ interface EventItem {
 }
 
 export default function EventsPage() {
-    const [events, setEvents] = useState<EventItem[]>([]);
+    const [rawEvents, setRawEvents] = useState<EventItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [tab, setTab] = useState<"upcoming" | "past">("upcoming");
@@ -33,10 +33,11 @@ export default function EventsPage() {
             try {
                 setLoading(true);
                 setError(null);
-                const res = await fetch(`/api/dashboard/events?occurrence=${tab}&pageSize=20`);
+                // Fetch all events for the current tab without relying on server-side createdAt sorting
+                const res = await fetch(`/api/dashboard/events?occurrence=${tab}&pageSize=100`);
                 if (!res.ok) throw new Error(`Failed (${res.status})`);
                 const data = await res.json();
-                setEvents(data.events || []);
+                setRawEvents(data.events || []);
             } catch (err) {
                 setError(err instanceof Error ? err.message : "Failed to load");
             } finally {
@@ -45,6 +46,51 @@ export default function EventsPage() {
         }
         fetchEvents();
     }, [tab]);
+
+    // Apply the exact same date parsing and sorting logic used on the main website
+    const events = useMemo(() => {
+        const parseEventDate = (dateString?: string) => {
+            if (!dateString) return 0;
+            const str = String(dateString).toLowerCase();
+
+            const months = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
+            let monthIndex = 0;
+            for (let i = 0; i < months.length; i++) {
+                if (str.includes(months[i])) {
+                    monthIndex = i;
+                    break;
+                }
+            }
+
+            let year = new Date().getFullYear();
+            const yearMatch = str.match(/\b(20\d\d)\b/);
+            if (yearMatch) {
+                year = parseInt(yearMatch[1], 10);
+            }
+
+            let day = 1;
+            const dayMatch = str.match(/(\d{1,2})/);
+            if (dayMatch) {
+                day = parseInt(dayMatch[1], 10);
+            }
+
+            return new Date(year, monthIndex, day).getTime();
+        };
+
+        // Sort chronologically by extracted date
+        return [...rawEvents].sort((a, b) => {
+            const timeA = parseEventDate(a.date);
+            const timeB = parseEventDate(b.date);
+
+            if (tab === "upcoming") {
+                // Soonest events first (ascending order)
+                return timeA - timeB;
+            } else {
+                // Most recent past events first (descending order)
+                return timeB - timeA;
+            }
+        });
+    }, [tab, rawEvents]);
 
     return (
         <div className="animate-fade-in-up">
