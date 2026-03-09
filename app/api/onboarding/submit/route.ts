@@ -4,6 +4,7 @@ import { saveOnboardingProfile } from "@/lib/queries";
 import { getFullUserProfile } from "@/lib/getFullUserProfile";
 import syncUserToBrevo from "@/lib/brevoSync";
 import { sendWelcomeEmail } from "@/lib/email";
+import { upsertZohoContact } from "@/lib/zoho-contacts";
 
 /**
  * POST /api/onboarding/submit
@@ -95,6 +96,29 @@ export async function POST(req: Request) {
         } catch (emailErr) {
             // Non-fatal — don't block onboarding if email fails
             console.error("⚠️ Welcome email failed:", emailErr);
+        }
+
+        // ── Sync to Zoho CRM Contacts ──────────────────────
+        try {
+            const contactData = {
+                First_Name: fullUser.first_name || body.firstName,
+                Last_Name: fullUser.last_name || body.lastName,
+                Email: fullUser.email,
+                Phone: fullUser.phone || undefined,
+                Company: fullUser.organization || body.organization || undefined,
+                Lead_Source: "Website Registration",
+                Industry_Category: fullUser.industries?.find((i: string | null) => !!i) || undefined,
+                Industry_Sub_Category: fullUser.sub_industries?.find((i: string | null) => !!i) || undefined,
+                Community: fullUser.communities?.find((c: string | null) => !!c) || undefined,
+                Sub_Community: fullUser.sub_communities?.find((s: string | null) => !!s) || undefined,
+                Query_Type: "EnergClub",
+            };
+            console.log("📋 [ZOHO_CONTACTS] Onboarding sync payload:", JSON.stringify(contactData, null, 2));
+            const zohoResult = await upsertZohoContact(contactData);
+            console.log("✅ Synced to Zoho Contacts:", fullUser.email, zohoResult);
+        } catch (zohoErr: any) {
+            // Non-fatal — don't block onboarding if Zoho fails
+            console.error("⚠️ Zoho Contact sync failed:", zohoErr.message);
         }
 
         return NextResponse.json({ success: true, userId: dbUserId });
