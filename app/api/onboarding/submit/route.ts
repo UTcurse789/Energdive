@@ -87,7 +87,9 @@ export async function POST(req: Request) {
         try {
             await sendWelcomeEmail(
                 fullUser.email,
-                fullUser.first_name || body.firstName
+                fullUser.first_name || body.firstName,
+                fullUser.preferred_frequency || body.preferredFrequency,
+                fullUser.preferred_formats || body.preferredFormats
             );
             console.log("✅ Welcome email sent to:", fullUser.email);
         } catch (emailErr) {

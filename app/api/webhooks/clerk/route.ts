@@ -85,8 +85,6 @@ export async function POST(req: Request) {
 
             // Sync to Zoho Contacts
             try {
-                const primaryCommunity = user.communities?.[0];
-
                 const contactData = {
                     First_Name: user.first_name || "Unknown",
                     Last_Name: user.last_name || "Unknown",
@@ -94,10 +92,10 @@ export async function POST(req: Request) {
                     Phone: user.phone || undefined,
                     Company: user.organization || undefined,
                     Lead_Source: "Website Registration",
-                    Industry: user.industry_name || undefined,
-                    Sub_Industry: user.sub_industry_name || undefined,
-                    Community: primaryCommunity?.community_name || undefined,
-                    Sub_Community: primaryCommunity?.sub_community_name || undefined,
+                    Industry: (user.industries && user.industries.length > 0) ? user.industries[0] : undefined,
+                    Sub_Industry: (user.sub_industries && user.sub_industries.length > 0) ? user.sub_industries[0] : undefined,
+                    Community: (user.communities && user.communities.length > 0) ? user.communities[0] : undefined,
+                    Sub_Community: (user.sub_communities && user.sub_communities.length > 0) ? user.sub_communities[0] : undefined,
                     Query_Type: "EnergClub",
                 };
 

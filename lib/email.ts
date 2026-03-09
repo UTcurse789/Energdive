@@ -147,7 +147,9 @@ export async function sendPortalAccessEmail(
  */
 export async function sendWelcomeEmail(
     to: string,
-    firstName: string
+    firstName: string,
+    frequency?: string,
+    preferences?: string[]
 ): Promise<void> {
     const subject = "Welcome to ENERGDIVE!";
 
@@ -197,6 +199,13 @@ export async function sendWelcomeEmail(
                                 </ul>
                             </div>
 
+                            ${(frequency || (preferences && preferences.length > 0)) ? `
+                            <div style="background-color:#F9FAFB;border:1px solid #E5E7EB;border-radius:12px;padding:24px;margin-bottom:24px;">
+                                <p style="margin:0 0 12px;color:#374151;font-size:15px;font-weight:700;">Your Subscription Preferences:</p>
+                                ${frequency ? `<p style="margin:0 0 8px;color:#4B5563;font-size:14px;"><strong>Frequency:</strong> <span style="text-transform: capitalize;">${frequency}</span></p>` : ''}
+                                ${preferences && preferences.length > 0 ? `<p style="margin:0;color:#4B5563;font-size:14px;"><strong>Content:</strong> ${preferences.join(', ')}</p>` : ''}
+                            </div>
+                            ` : ''}
 
                             <p style="margin:0;color:#6B7280;font-size:14px;line-height:1.6;">
                                 If you have any questions, simply reply to this email — we'd love to hear from you.
