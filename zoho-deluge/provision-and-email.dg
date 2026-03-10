@@ -11,28 +11,31 @@ void automation.portal_provision(Int leadId)
 		return;
 	}
 	
-	// 1. Build payload
-	payload = Map();
-	payload.put("lead_id", leadId.toString());
-	payload.put("email", email);
-	payload.put("first_name", firstName);
-	payload.put("last_name", ifnull(leadDetails.get("Last_Name"), ""));
-	payload.put("phone", ifnull(leadDetails.get("Phone"), ""));
-	payload.put("company", ifnull(leadDetails.get("Company"), ""));
-	payload.put("designation", ifnull(leadDetails.get("Designation"), ""));
-	payload.put("country", ifnull(leadDetails.get("Country"), ""));
-	payload.put("state", ifnull(leadDetails.get("State"), ""));
-	payload.put("industry", ifnull(leadDetails.get("Industry"), ""));
-	payload.put("sub_industry", ifnull(leadDetails.get("Sub_Industry"), ""));
-	payload.put("community", ifnull(leadDetails.get("Community"), ""));
-	payload.put("sub_community", ifnull(leadDetails.get("Sub_Community"), ""));
+	// 1. Build JSON payload
+	jsonPayload = Map();
+	jsonPayload.put("lead_id", leadId.toString());
+	jsonPayload.put("email", email);
+	jsonPayload.put("first_name", firstName);
+	jsonPayload.put("last_name", ifnull(leadDetails.get("Last_Name"), ""));
+	jsonPayload.put("phone", ifnull(leadDetails.get("Phone"), ""));
+	jsonPayload.put("company", ifnull(leadDetails.get("Company"), ""));
+	jsonPayload.put("designation", ifnull(leadDetails.get("Designation"), ""));
+	jsonPayload.put("country", ifnull(leadDetails.get("Country"), ""));
+	jsonPayload.put("state", ifnull(leadDetails.get("State"), ""));
+	jsonPayload.put("industry", ifnull(leadDetails.get("Industry"), ""));
+	jsonPayload.put("sub_industry", ifnull(leadDetails.get("Sub_Industry"), ""));
+	jsonPayload.put("community", ifnull(leadDetails.get("Community"), ""));
+	jsonPayload.put("sub_community", ifnull(leadDetails.get("Sub_Community"), ""));
 	
-	// 2. Call provision webhook
+	// Convert Map to JSON string for the request body
+	jsonBody = jsonPayload.toString();
+	
+	// 2. Call provision webhook with JSON body (not form-encoded)
 	resp = invokeurl
 	[
 		url: "https://energdive.com/api/zoho/provision"
 		type: POST
-		parameters: payload
+		parameters: jsonBody
 		headers: {"Content-Type":"application/json","x-webhook-secret":"my_super_secret_123"}
 	];
 	

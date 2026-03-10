@@ -295,7 +295,7 @@ prose-li:marker:text-teal-500
 
 first:prose-p:first-letter:text-6xl first:prose-p:first-letter:font-serif first:prose-p:first-letter:font-bold first:prose-p:first-letter:float-left first:prose-p:first-letter:mr-3 first:prose-p:first-letter:mt-1 first:prose-p:first-letter:text-teal-700"
                             >
-                                <ArticleBody content={article.content} />
+                                <ArticleBody content={article.content} enableSectionSharing={true} />
                             </div>
                         </article>
 

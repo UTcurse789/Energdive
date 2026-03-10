@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import syncUserToBrevo from "@/lib/brevoSync";
 import db from "@/lib/db";
 import { getFullUserProfile } from "@/lib/getFullUserProfile";
+import { upsertZohoLead } from "@/lib/zoho-leads";
 
 export async function POST(req: Request) {
     try {
@@ -37,7 +38,7 @@ export async function POST(req: Request) {
         console.log("🔥 Webhook received:", event.type);
 
         // ---------------------------------------------------
-        // USER CREATED
+        // USER CREATED / UPDATED
         // ---------------------------------------------------
         if (event.type === "user.created" || event.type === "user.updated") {
             const { id, first_name, last_name } = event.data;
@@ -80,6 +81,37 @@ export async function POST(req: Request) {
             } catch (brevoErr) {
                 console.error("❌ Brevo sync failed:", brevoErr);
                 // We DO NOT fail webhook if Brevo fails
+            }
+
+            // Sync to Zoho as a Lead (NOT Contact — preserves Lead records for Magic Link flow)
+            try {
+                // Helper: return non-empty array or undefined
+                const toArray = (arr: any[] | undefined) => {
+                    if (!arr) return undefined;
+                    const filtered = arr.filter((v: any) => v !== null && v !== undefined && v !== '');
+                    return filtered.length > 0 ? filtered : undefined;
+                };
+
+                const leadData = {
+                    First_Name: user.first_name || "Unknown",
+                    Last_Name: user.last_name || "Unknown",
+                    Email: user.email,
+                    Phone: user.phone || undefined,
+                    Company: user.organization || undefined,
+                    Lead_Source: "Website Registration",
+                    Industry: user.industries?.find((i: string | null) => !!i) || undefined,
+                    Sub_Industry: user.sub_industries?.find((i: string | null) => !!i) || undefined,
+                    Community: toArray(user.communities),
+                    Sub_Community: toArray(user.sub_communities),
+                    Query_Type: "EnergClub",
+                };
+
+                console.log("📋 [ZOHO_LEADS] Webhook sync payload:", JSON.stringify(leadData, null, 2));
+                const zohoResult = await upsertZohoLead(leadData);
+                console.log("✅ Synced to Zoho Leads:", email, zohoResult);
+            } catch (zohoErr: any) {
+                console.error("❌ Zoho Lead sync failed:", zohoErr.message);
+                // We DO NOT fail webhook if Zoho sync fails
             }
         }
 

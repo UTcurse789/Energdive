@@ -8,7 +8,7 @@
 const BREVO_API_KEY = process.env.BREVO_API_KEY || "";
 const BREVO_API_URL = "https://api.brevo.com/v3/smtp/email";
 const FROM_EMAIL = process.env.FROM_EMAIL || "no-reply@info.energdive.com";
-const FROM_NAME = process.env.FROM_NAME || "EnergDive";
+const FROM_NAME = process.env.FROM_NAME || "ENERGDIVE";
 import fs from 'fs';
 import path from 'path';
 
@@ -147,7 +147,9 @@ export async function sendPortalAccessEmail(
  */
 export async function sendWelcomeEmail(
     to: string,
-    firstName: string
+    firstName: string,
+    frequency?: string,
+    preferences?: string[]
 ): Promise<void> {
     const subject = "Welcome to ENERGDIVE!";
 
@@ -197,17 +199,22 @@ export async function sendWelcomeEmail(
                                 </ul>
                             </div>
 
+                            ${(frequency || (preferences && preferences.length > 0)) ? `
+                            <div style="background-color:#F9FAFB;border:1px solid #E5E7EB;border-radius:12px;padding:24px;margin-bottom:24px;">
+                                <p style="margin:0 0 12px;color:#374151;font-size:15px;font-weight:700;">Your Subscription Preferences:</p>
+                                ${frequency ? `<p style="margin:0 0 8px;color:#4B5563;font-size:14px;"><strong>Frequency:</strong> <span style="text-transform: capitalize;">${frequency}</span></p>` : ''}
+                                ${preferences && preferences.length > 0 ? `<p style="margin:0;color:#4B5563;font-size:14px;"><strong>Content:</strong> ${preferences.join(', ')}</p>` : ''}
+                            </div>
+                            ` : ''}
 
-                            <p style="margin:0;color:#6B7280;font-size:14px;line-height:1.6;">
-                                If you have any questions, simply reply to this email — we'd love to hear from you.
-                            </p>
+                        
                         </td>
                     </tr>
 
                     <tr>
                         <td style="background-color:#F9FAFB;padding:32px 40px;text-align:center;border-top:1px solid #F3F4F6;">
                             <p style="margin:0 0 8px;color:#111827;font-size:13px;font-weight:700;">
-                                EnergDive Intelligence
+                                ENERGDIVE Intelligence
                             </p>
                             <p style="margin:0;color:#9CA3AF;font-size:11px;">
                                 &copy; ${new Date().getFullYear()} ENERGDIVE. All rights reserved.

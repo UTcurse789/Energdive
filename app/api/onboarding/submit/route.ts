@@ -4,6 +4,7 @@ import { saveOnboardingProfile } from "@/lib/queries";
 import { getFullUserProfile } from "@/lib/getFullUserProfile";
 import syncUserToBrevo from "@/lib/brevoSync";
 import { sendWelcomeEmail } from "@/lib/email";
+import { upsertZohoLead } from "@/lib/zoho-leads";
 
 /**
  * POST /api/onboarding/submit
@@ -63,7 +64,7 @@ export async function POST(req: Request) {
             preferredFormats: body.preferredFormats,
         });
 
-        // ── Update Clerk metadata and profile (so middleware can gate, and UI shows name) ──────────
+        // ── Update Clerk metadata and profile ──────────────────────
         await (await clerkClient()).users.updateUser(userId, {
             firstName: body.firstName,
             lastName: body.lastName,
@@ -87,12 +88,45 @@ export async function POST(req: Request) {
         try {
             await sendWelcomeEmail(
                 fullUser.email,
-                fullUser.first_name || body.firstName
+                fullUser.first_name || body.firstName,
+                fullUser.preferred_frequency || body.preferredFrequency,
+                fullUser.preferred_formats || body.preferredFormats
             );
             console.log("✅ Welcome email sent to:", fullUser.email);
         } catch (emailErr) {
             // Non-fatal — don't block onboarding if email fails
             console.error("⚠️ Welcome email failed:", emailErr);
+        }
+
+        // ── Sync to Zoho CRM as Lead (NOT Contact) ─────────────────
+        try {
+            // Helper: return non-empty array or undefined
+            const toArray = (arr: any[] | undefined) => {
+                if (!arr) return undefined;
+                const filtered = arr.filter((v: any) => v !== null && v !== undefined && v !== '');
+                return filtered.length > 0 ? filtered : undefined;
+            };
+
+            const leadData = {
+                First_Name: fullUser.first_name || body.firstName,
+                Last_Name: fullUser.last_name || body.lastName,
+                Email: fullUser.email,
+                Phone: fullUser.phone || undefined,
+                Company: fullUser.organization || body.organization || undefined,
+                Lead_Source: "Website Registration",
+                Industry: fullUser.industries?.find((i: string | null) => !!i) || undefined,
+                Sub_Industry: fullUser.sub_industries?.find((i: string | null) => !!i) || undefined,
+                Community: toArray(fullUser.communities),
+                Sub_Community: toArray(fullUser.sub_communities),
+                Query_Type: "EnergClub",
+            };
+            console.log("📋 [ZOHO_LEADS] Onboarding sync payload:", JSON.stringify(leadData, null, 2));
+
+            const zohoResult = await upsertZohoLead(leadData);
+            console.log("✅ Synced to Zoho Leads:", fullUser.email, zohoResult);
+        } catch (zohoErr: any) {
+            // Non-fatal — don't block onboarding if Zoho fails
+            console.error("⚠️ Zoho Lead sync failed:", zohoErr.message);
         }
 
         return NextResponse.json({ success: true, userId: dbUserId });
