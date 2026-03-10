@@ -118,6 +118,7 @@ export async function POST(req: Request) {
                 Sub_Industry: fullUser.sub_industries?.find((i: string | null) => !!i) || undefined,
                 Community: toArray(fullUser.communities),
                 Sub_Community: toArray(fullUser.sub_communities),
+                community_portal: toArray(fullUser.sub_communities),
                 Query_Type: "EnergClub",
             };
             console.log("📋 [ZOHO_LEADS] Onboarding sync payload:", JSON.stringify(leadData, null, 2));

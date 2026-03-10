@@ -103,6 +103,7 @@ export async function POST(req: Request) {
                     Sub_Industry: user.sub_industries?.find((i: string | null) => !!i) || undefined,
                     Community: toArray(user.communities),
                     Sub_Community: toArray(user.sub_communities),
+                    community_portal: toArray(user.sub_communities),
                     Query_Type: "EnergClub",
                 };
 

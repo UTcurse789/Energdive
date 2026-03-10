@@ -21,6 +21,7 @@ const createLeadSchema = z.object({
     Sub_Industry: z.string().optional(),
     Community: stringOrArray,
     Sub_Community: stringOrArray,
+    community_portal: stringOrArray,
     Query_Type: z.string().default("EnergClub"),
 });
 
