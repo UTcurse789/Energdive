@@ -6,13 +6,44 @@ const STRAPI_BASE = "https://cms.energdive.com";
 async function getEvents() {
     try {
         const res = await fetch(`${STRAPI_BASE}/api/events?populate=*`, {
-            next: { revalidate: 3600 }, // 1 hour ISR
+            cache: 'no-store',
         });
         if (!res.ok) return [];
         const json = await res.json();
         const data = json.data || [];
 
-        return data.map((event: any) => {
+        // Filter only upcoming events (same as events page default)
+        const upcomingEvents = data.filter(
+            (event: any) => event.occurrence?.toLowerCase() === "upcoming"
+        );
+
+        // Parse date strings like "01st - 03rd September 2026" or "26 February 2026"
+        const parseEventDate = (dateString?: string) => {
+            if (!dateString) return 0;
+            const str = String(dateString).toLowerCase();
+            const months = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
+            let monthIndex = 0;
+            for (let i = 0; i < months.length; i++) {
+                if (str.includes(months[i])) {
+                    monthIndex = i;
+                    break;
+                }
+            }
+            let year = new Date().getFullYear();
+            const yearMatch = str.match(/\b(20\d\d)\b/);
+            if (yearMatch) year = parseInt(yearMatch[1], 10);
+            let day = 1;
+            const dayMatch = str.match(/(\d{1,2})/);
+            if (dayMatch) day = parseInt(dayMatch[1], 10);
+            return new Date(year, monthIndex, day).getTime();
+        };
+
+        // Sort by date — soonest first
+        const sortedEvents = upcomingEvents.sort((a: any, b: any) => {
+            return parseEventDate(a.date) - parseEventDate(b.date);
+        });
+
+        return sortedEvents.map((event: any) => {
             // image is an ARRAY in this Strapi schema
             const imgArray = Array.isArray(event.image) ? event.image : [];
             const img = imgArray[0];
