@@ -64,7 +64,7 @@ function extractText(field: any): string {
 async function getAllAuthors() {
     const res = await fetch(
         `${STRAPI_BASE}/api/authors?populate=avatar&pagination[pageSize]=100`,
-        { next: { revalidate: 120 } }
+        { next: { revalidate: 3600 } }
     );
     if (!res.ok) return [];
     const json = await res.json();
@@ -84,7 +84,7 @@ async function getContentByAuthor(authorName: string) {
     const encodedName = encodeURIComponent(authorName);
     const res = await fetch(
         `${STRAPI_BASE}/api/contents?filters[author][name][$eq]=${encodedName}&populate[0]=FeaturedImage&populate[1]=author.avatar&populate[2]=sectors&populate[3]=type_of_content&pagination[pageSize]=50&sort=createdAt:desc`,
-        { next: { revalidate: 120 } }
+        { next: { revalidate: 3600 } }
     );
     if (!res.ok) return [];
     const json = await res.json();

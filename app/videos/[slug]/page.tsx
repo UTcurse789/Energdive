@@ -21,7 +21,7 @@ async function getVideoData(slug: string) {
         // CORRECTED: Added ${slug} to the template literal
         const res = await fetch(
             `${baseUrl}/api/videos?filters[slug][$eq]=${slug}&populate[0]=thumbnail&populate[1]=author.avatar&populate[2]=sectors`,
-            { next: { revalidate: 60 } }
+            { next: { revalidate: 3600 } }
         );
 
         const json = await res.json();

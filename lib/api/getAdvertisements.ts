@@ -62,7 +62,7 @@ export async function getAdvertisements({
             headers: {
                 ...(STRAPI_TOKEN ? { Authorization: `Bearer ${STRAPI_TOKEN}` } : {}),
             },
-            next: { revalidate: 60 },
+            next: { revalidate: 3600 }, // 1 hour ISR
         });
 
         if (!res.ok) {
