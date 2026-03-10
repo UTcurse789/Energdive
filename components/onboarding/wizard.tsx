@@ -1,15 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useUser, useSession } from "@clerk/nextjs";
 import { motion, AnimatePresence } from "framer-motion";
 import StepPersonal from "./step-personal";
+import StepVerify from "./step-verify";
 import StepProfessional from "./step-professional";
 import StepInterests from "./step-interests";
 import StepPreferences from "./step-preferences";
 
-const TOTAL_STEPS = 4;
+const TOTAL_STEPS = 5;
 
 export default function OnboardingWizard() {
     const router = useRouter();
@@ -17,6 +18,17 @@ export default function OnboardingWizard() {
     const { session } = useSession();
     const [step, setStep] = useState(1);
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    // Determine which contact method was used for initial registration.
+    // If registrationMethod is "phone", user needs email verification at Step 2.
+    // If registrationMethod is "email" (or unknown), user needs phone verification at Step 2.
+    const registrationMethod =
+        (user?.publicMetadata?.isPhoneUser ? "phone" : null) ||
+        (user?.publicMetadata?.registrationMethod as string) ||
+        "email";
+
+    const needsVerification: "email" | "phone" =
+        registrationMethod === "phone" ? "email" : "phone";
 
     // Centralized State
     const [formData, setFormData] = useState({
@@ -26,14 +38,14 @@ export default function OnboardingWizard() {
         phone: "",
         country: "",
         state: "",
-        // Step 2
+        // Step 3
         jobTitle: "",
         organization: "",
-        // Step 3
+        // Step 4
         industryId: 0,
         subIndustryId: 0,
         communitySelections: [] as { communityId: number; subCommunityId: number }[],
-        // Step 4
+        // Step 5
         preferredFrequency: "daily",
         preferredFormats: [] as string[],
     });
@@ -45,6 +57,11 @@ export default function OnboardingWizard() {
 
     const handleBack = () => {
         setStep((prev) => prev - 1);
+    };
+
+    const handleVerified = () => {
+        // Move to step 3 after second verification completes
+        setStep(3);
     };
 
     const handleFinalSubmit = async (finalStepData: Record<string, unknown>) => {
@@ -80,7 +97,7 @@ export default function OnboardingWizard() {
             <div className="h-1.5 bg-zinc-100 w-full">
                 <motion.div
                     className="h-full bg-[#0AB996]"
-                    initial={{ width: "25%" }}
+                    initial={{ width: "20%" }}
                     animate={{ width: `${(step / TOTAL_STEPS) * 100}%` }}
                     transition={{ duration: 0.3 }}
                 />
@@ -102,25 +119,33 @@ export default function OnboardingWizard() {
                         />
                     )}
                     {step === 2 && (
-                        <StepProfessional
+                        <StepVerify
                             key="step2"
+                            verifyType={needsVerification}
+                            onBack={handleBack}
+                            onVerified={handleVerified}
+                        />
+                    )}
+                    {step === 3 && (
+                        <StepProfessional
+                            key="step3"
                             defaultValues={formData}
                             onBack={handleBack}
                             onNext={handleNext}
                         />
                     )}
-                    {step === 3 && (
+                    {step === 4 && (
                         <StepInterests
-                            key="step3"
+                            key="step4"
                             defaultValues={formData}
                             onBack={handleBack}
                             onNext={handleNext}
                             isSubmitting={false}
                         />
                     )}
-                    {step === 4 && (
+                    {step === 5 && (
                         <StepPreferences
-                            key="step4"
+                            key="step5"
                             defaultValues={formData}
                             onBack={handleBack}
                             onSubmit={handleFinalSubmit}

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { clerkClient } from "@clerk/nextjs/server";
 import { getLeadByEmail } from "@/lib/zoho";
 import { verifyMagicToken } from "@/lib/magic-token";
+import { query } from "@/lib/db";
 
 export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
@@ -43,12 +44,14 @@ export async function GET(request: NextRequest) {
         // 3. Fetch lead details for user creation (best-effort)
         let leadFirstName: string | undefined;
         let leadLastName: string | undefined;
+        let leadPhone: string | undefined;
 
         try {
             const lead = await getLeadByEmail(email);
             if (lead) {
                 leadFirstName = lead.First_Name || undefined;
                 leadLastName = lead.Last_Name || undefined;
+                leadPhone = lead.Phone || lead.Mobile || undefined;
             }
         } catch (zohoError: any) {
             console.warn(`[AUTH] Zoho lookup failed: ${zohoError.message}`);
@@ -73,16 +76,49 @@ export async function GET(request: NextRequest) {
             console.log(`[AUTH] Created Clerk user for ${email}: ${user.id}`);
         }
 
-        // 5. Generate Sign-In Token
-        const signInToken = await client.signInTokens.createSignInToken({
-            userId: user.id,
-            expiresInSeconds: 600,
-        });
+        // 5. Get phone number from DB (more reliable than Zoho)
+        let phone = leadPhone || "";
+        try {
+            const dbResult = await query(
+                `SELECT id, phone FROM users WHERE clerk_id = $1 LIMIT 1`,
+                [user.id]
+            );
+            if (dbResult.rows[0]?.phone) {
+                phone = dbResult.rows[0].phone;
+            }
+        } catch (dbErr: any) {
+            console.warn(`[AUTH] DB phone lookup failed: ${dbErr.message}`);
+        }
 
-        // 6. Redirect to our accept-invite page (NOT Clerk's hosted page)
+        // 6. Get internal user ID for OTP verification flow
+        let internalUserId = "";
+        try {
+            const dbResult = await query(
+                `SELECT id FROM users WHERE clerk_id = $1 LIMIT 1`,
+                [user.id]
+            );
+            internalUserId = dbResult.rows[0]?.id?.toString() || "";
+        } catch (dbErr: any) {
+            console.warn(`[AUTH] DB user lookup failed: ${dbErr.message}`);
+        }
+
+        // 7. Redirect to OTP verification page (NOT accept-invite)
         const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://www.energdive.com";
-        const redirectUrl = new URL("/accept-invite", appUrl);
-        redirectUrl.searchParams.set("ticket", signInToken.token);
+        const redirectUrl = new URL("/verify-access", appUrl);
+        redirectUrl.searchParams.set("userId", internalUserId);
+        redirectUrl.searchParams.set("email", email);
+        if (leadFirstName) redirectUrl.searchParams.set("name", leadFirstName);
+
+        if (phone) {
+            const cleanPhone = phone.replace(/[^0-9]/g, "");
+            const masked =
+                "•".repeat(Math.max(0, cleanPhone.length - 4)) +
+                cleanPhone.slice(-4);
+            redirectUrl.searchParams.set("maskedPhone", masked);
+            redirectUrl.searchParams.set("phone", cleanPhone);
+        }
+
+        console.log(`[AUTH] Redirecting ${email} to OTP verification page`);
         return NextResponse.redirect(redirectUrl.toString());
 
     } catch (error: any) {

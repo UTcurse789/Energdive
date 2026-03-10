@@ -2,6 +2,12 @@ import axios from "axios";
 
 export default async function syncUserToBrevo(user: any) {
     try {
+        // Safety: never push dummy/placeholder emails to Brevo
+        if (!user.email || user.email.endsWith("@phone.energdive.com")) {
+            console.warn("⚠️ Brevo sync skipped — dummy or missing email:", user.email);
+            return;
+        }
+
         await axios.post(
             "https://api.brevo.com/v3/contacts",
             {

@@ -2,6 +2,7 @@ import { auth, clerkClient } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { saveOnboardingProfile } from "@/lib/queries";
 import { getFullUserProfile } from "@/lib/getFullUserProfile";
+import { getVerificationStatus } from "@/lib/queries/users";
 import syncUserToBrevo from "@/lib/brevoSync";
 import { sendWelcomeEmail, sendNewUserNotification } from "@/lib/email";
 import { upsertZohoLead } from "@/lib/zoho-leads";
@@ -74,77 +75,87 @@ export async function POST(req: Request) {
         // ── Fetch FULL profile ─────────────────────────────
         const fullUser = await getFullUserProfile(userId);
 
-        // ── Sync to Brevo ──────────────────────────────────
-        console.log("📋 Brevo sync payload:", {
-            email: fullUser.email,
-            preferred_frequency: fullUser.preferred_frequency,
-            preferred_formats: fullUser.preferred_formats,
-        });
-        await syncUserToBrevo(fullUser);
-
-        console.log("✅ Full profile synced to Brevo");
-
-        // ── Send Welcome Email ─────────────────────────────
+        // ── Check verification status before external sync ──────────
+        let bothVerified = false;
         try {
-            await sendWelcomeEmail(
-                fullUser.email,
-                fullUser.first_name || body.firstName,
-                fullUser.preferred_frequency || body.preferredFrequency,
-                fullUser.preferred_formats || body.preferredFormats
-            );
-            console.log("✅ Welcome email sent to:", fullUser.email);
-        } catch (emailErr) {
-            // Non-fatal — don't block onboarding if email fails
-            console.error("⚠️ Welcome email failed:", emailErr);
+            const verification = await getVerificationStatus(userId);
+            bothVerified = !!(verification?.email_verified && verification?.phone_verified);
+            console.log(`[ONBOARDING] Verification status: email=${verification?.email_verified}, phone=${verification?.phone_verified}`);
+        } catch (verErr: any) {
+            console.warn(`[ONBOARDING] Could not check verification status: ${verErr.message}`);
         }
 
-        // ── Admin Notification Email ────────────────────────
-        try {
-            await sendNewUserNotification(
-                body.firstName,
-                body.lastName,
-                body.email
-            );
-            console.log("✅ Admin notification sent for:", body.email);
-        } catch (notifyErr) {
-            // Non-fatal — don't block onboarding if admin notification fails
-            console.error("⚠️ Admin notification email failed:", notifyErr);
+        // Reject dummy emails from ever reaching external systems
+        const isDummyEmail = fullUser.email?.endsWith('@phone.energdive.com');
+        const canSyncExternally = bothVerified && !isDummyEmail;
+
+        if (!canSyncExternally) {
+            console.warn(`[ONBOARDING] Skipping Brevo/Zoho sync — bothVerified=${bothVerified}, isDummyEmail=${isDummyEmail}`);
         }
 
-        // ── Sync to Zoho CRM as Lead (NOT Contact) ─────────────────
-        try {
-            // Helper: return non-empty array or undefined
-            const toArray = (arr: any[] | undefined) => {
-                if (!arr) return undefined;
-                const filtered = arr.filter((v: any) => v !== null && v !== undefined && v !== '');
-                return filtered.length > 0 ? filtered : undefined;
-            };
+        // ── Sync to Brevo (only if both verified + real email) ──────
+        if (canSyncExternally) {
+            console.log("📋 Brevo sync payload:", {
+                email: fullUser.email,
+                preferred_frequency: fullUser.preferred_frequency,
+                preferred_formats: fullUser.preferred_formats,
+            });
+            await syncUserToBrevo(fullUser);
+            console.log("✅ Full profile synced to Brevo");
+        }
 
-            // DB sub_communities are in "Community-SubPart" format (e.g. "Distribution-Data Centres")
-            // which is the Community_Portal format. Pass them as Community_Portal and let
-            // upsertZohoLead's parseCommunityPortal derive Community/Sub_Community correctly.
-            const leadData = {
-                First_Name: fullUser.first_name || body.firstName,
-                Last_Name: fullUser.last_name || body.lastName,
-                Email: fullUser.email,
-                Phone: fullUser.phone || undefined,
-                Company: fullUser.organization || body.organization || undefined,
-                Designation: fullUser.job_title || body.jobTitle || undefined,
-                Lead_Source: "Website Registration",
-                Industry: fullUser.industries?.find((i: string | null) => !!i) || undefined,
-                Industry_Sub_Category: fullUser.sub_industries?.find((i: string | null) => !!i) || undefined,
-                Community_Portal: toArray(fullUser.sub_communities),
-                Query_Type: "EnergClub",
-                City: fullUser.state || body.state || undefined,
-                Country: fullUser.country || body.country || undefined,
-            };
-            console.log("📋 [ZOHO_LEADS] Onboarding sync payload:", JSON.stringify(leadData, null, 2));
+        // ── Send Welcome Email (only if real email) ────────────────
+        if (!isDummyEmail) {
+            try {
+                await sendWelcomeEmail(
+                    fullUser.email,
+                    fullUser.first_name || body.firstName,
+                    fullUser.preferred_frequency || body.preferredFrequency,
+                    fullUser.preferred_formats || body.preferredFormats
+                );
+                console.log("✅ Welcome email sent to:", fullUser.email);
+            } catch (emailErr) {
+                // Non-fatal — don't block onboarding if email fails
+                console.error("⚠️ Welcome email failed:", emailErr);
+            }
+        }
 
-            const zohoResult = await upsertZohoLead(leadData);
-            console.log("✅ Synced to Zoho Leads:", fullUser.email, zohoResult);
-        } catch (zohoErr: any) {
-            // Non-fatal — don't block onboarding if Zoho fails
-            console.error("⚠️ Zoho Lead sync failed:", zohoErr.message);
+        // ── Sync to Zoho CRM as Lead (only if both verified) ─────────
+        if (canSyncExternally) {
+            try {
+                // Helper: return non-empty array or undefined
+                const toArray = (arr: any[] | undefined) => {
+                    if (!arr) return undefined;
+                    const filtered = arr.filter((v: any) => v !== null && v !== undefined && v !== '');
+                    return filtered.length > 0 ? filtered : undefined;
+                };
+
+                // DB sub_communities are in "Community-SubPart" format (e.g. "Distribution-Data Centres")
+                // which is the Community_Portal format. Pass them as Community_Portal and let
+                // upsertZohoLead's parseCommunityPortal derive Community/Sub_Community correctly.
+                const leadData = {
+                    First_Name: fullUser.first_name || body.firstName,
+                    Last_Name: fullUser.last_name || body.lastName,
+                    Email: fullUser.email,
+                    Phone: fullUser.phone || undefined,
+                    Company: fullUser.organization || body.organization || undefined,
+                    Designation: fullUser.job_title || body.jobTitle || undefined,
+                    Lead_Source: "Website Registration",
+                    Industry: fullUser.industries?.find((i: string | null) => !!i) || undefined,
+                    Industry_Sub_Category: fullUser.sub_industries?.find((i: string | null) => !!i) || undefined,
+                    Community_Portal: toArray(fullUser.sub_communities),
+                    Query_Type: "EnergClub",
+                    City: fullUser.state || body.state || undefined,
+                    Country: fullUser.country || body.country || undefined,
+                };
+                console.log("📋 [ZOHO_LEADS] Onboarding sync payload:", JSON.stringify(leadData, null, 2));
+
+                const zohoResult = await upsertZohoLead(leadData);
+                console.log("✅ Synced to Zoho Leads:", fullUser.email, zohoResult);
+            } catch (zohoErr: any) {
+                // Non-fatal — don't block onboarding if Zoho fails
+                console.error("⚠️ Zoho Lead sync failed:", zohoErr.message);
+            }
         }
 
         return NextResponse.json({ success: true, userId: dbUserId });
