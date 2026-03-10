@@ -152,9 +152,10 @@ export async function upsertZohoLead(
             );
         }
 
-        // 3. Convert array fields to Zoho semicolon-separated format
-        //    Zoho CRM multiselect fields expect "Value1;Value2" NOT ["Value1","Value2"]
-        const toZohoMultiselect = (arr?: string[]): string | undefined => {
+        // 3. Convert fields to match Zoho CRM field types:
+        //    - Community, Sub_Community → "text" type (semicolon-separated string)
+        //    - Community_Portal → "jsonarray" type (keep as array)
+        const toZohoText = (arr?: string[]): string | undefined => {
             if (!arr || arr.length === 0) return undefined;
             return arr.filter(v => v).join(";");
         };
@@ -169,9 +170,11 @@ export async function upsertZohoLead(
             Lead_Source: enrichedData.Lead_Source || null,
             Industry: enrichedData.Industry || null,
             Industry_Sub_Category: enrichedData.Industry_Sub_Category || null,
-            Community: toZohoMultiselect(enrichedData.Community) || null,
-            Sub_Community: toZohoMultiselect(enrichedData.Sub_Community) || null,
-            Community_Portal: toZohoMultiselect(enrichedData.Community_Portal) || null,
+            Community: toZohoText(enrichedData.Community) || null,
+            Sub_Community: toZohoText(enrichedData.Sub_Community) || null,
+            Community_Portal: enrichedData.Community_Portal && enrichedData.Community_Portal.length > 0
+                ? enrichedData.Community_Portal
+                : null,
             Query_Type: enrichedData.Query_Type || null,
         };
 
