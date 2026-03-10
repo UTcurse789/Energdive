@@ -1,0 +1,1 @@
+import { getClient } from './lib/db'; async function test() { const client = await getClient(); try { const res = await client.query('SELECT * FROM user_communities ORDER BY id DESC LIMIT 5'); console.log(res.rows); } finally { client.release(); process.exit(0); } } test();

@@ -152,11 +152,43 @@ export async function upsertZohoLead(
             );
         }
 
-        // 3. Prepare payload
+        // 3. Convert array fields to Zoho semicolon-separated format
+        //    Zoho CRM multiselect fields expect "Value1;Value2" NOT ["Value1","Value2"]
+        const toZohoMultiselect = (arr?: string[]): string | undefined => {
+            if (!arr || arr.length === 0) return undefined;
+            return arr.filter(v => v).join(";");
+        };
+
+        const zohoRecord: Record<string, any> = {
+            First_Name: enrichedData.First_Name,
+            Last_Name: enrichedData.Last_Name,
+            Email: enrichedData.Email,
+            Phone: enrichedData.Phone || null,
+            Company: enrichedData.Company || null,
+            Designation: enrichedData.Designation || null,
+            Lead_Source: enrichedData.Lead_Source || null,
+            Industry: enrichedData.Industry || null,
+            Industry_Sub_Category: enrichedData.Industry_Sub_Category || null,
+            Community: toZohoMultiselect(enrichedData.Community) || null,
+            Sub_Community: toZohoMultiselect(enrichedData.Sub_Community) || null,
+            Community_Portal: toZohoMultiselect(enrichedData.Community_Portal) || null,
+            Query_Type: enrichedData.Query_Type || null,
+        };
+
+        // Remove null/undefined fields so we don't overwrite with blanks on UPDATE
+        if (existingLead) {
+            for (const key of Object.keys(zohoRecord)) {
+                if (zohoRecord[key] === null || zohoRecord[key] === undefined) {
+                    delete zohoRecord[key];
+                }
+            }
+        }
+
+        // 4. Prepare payload
         const payload = {
             data: [
                 {
-                    ...enrichedData,
+                    ...zohoRecord,
                     ...(existingLead ? { id: existingLead.id } : {}),
                 },
             ],
