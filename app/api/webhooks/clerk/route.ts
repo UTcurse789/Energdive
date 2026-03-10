@@ -98,12 +98,12 @@ export async function POST(req: Request) {
                     Email: user.email,
                     Phone: user.phone || undefined,
                     Company: user.organization || undefined,
+                    Designation: user.job_title || undefined,
                     Lead_Source: "Website Registration",
                     Industry: user.industries?.find((i: string | null) => !!i) || undefined,
-                    Sub_Industry: user.sub_industries?.find((i: string | null) => !!i) || undefined,
+                    Industry_Sub_Category: user.sub_industries?.find((i: string | null) => !!i) || undefined,
                     Community: toArray(user.communities),
                     Sub_Community: toArray(user.sub_communities),
-                    community_portal: toArray(user.sub_communities),
                     Query_Type: "EnergClub",
                 };
 

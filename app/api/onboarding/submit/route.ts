@@ -113,12 +113,12 @@ export async function POST(req: Request) {
                 Email: fullUser.email,
                 Phone: fullUser.phone || undefined,
                 Company: fullUser.organization || body.organization || undefined,
+                Designation: fullUser.job_title || body.jobTitle || undefined,
                 Lead_Source: "Website Registration",
                 Industry: fullUser.industries?.find((i: string | null) => !!i) || undefined,
-                Sub_Industry: fullUser.sub_industries?.find((i: string | null) => !!i) || undefined,
+                Industry_Sub_Category: fullUser.sub_industries?.find((i: string | null) => !!i) || undefined,
                 Community: toArray(fullUser.communities),
                 Sub_Community: toArray(fullUser.sub_communities),
-                community_portal: toArray(fullUser.sub_communities),
                 Query_Type: "EnergClub",
             };
             console.log("📋 [ZOHO_LEADS] Onboarding sync payload:", JSON.stringify(leadData, null, 2));

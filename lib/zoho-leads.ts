@@ -11,10 +11,10 @@ export interface ZohoLeadData {
     Designation?: string;
     Lead_Source?: string;
     Industry?: string;
-    Sub_Industry?: string;
+    Industry_Sub_Category?: string;
     Community?: string[];
     Sub_Community?: string[];
-    community_portal?: string[];
+    Community_Portal?: string[];
     Query_Type?: string;
 }
 
@@ -50,6 +50,26 @@ export function parseCommunityPortal(portalValues: string[]): {
         communities: Array.from(communitySet),
         subCommunities: Array.from(subCommunitySet),
     };
+}
+
+/**
+ * Reverse mapping: combine Community + Sub_Community arrays into
+ * Community_Portal values (e.g. "Oil & Gas" + "Upstream" → "Oil & Gas-Upstream").
+ * Pairs each community with each sub-community to create all combinations.
+ */
+export function generateCommunityPortal(
+    communities: string[],
+    subCommunities: string[]
+): string[] {
+    if (!communities.length || !subCommunities.length) return [];
+
+    const portalValues: string[] = [];
+    for (const comm of communities) {
+        for (const sub of subCommunities) {
+            portalValues.push(`${comm.trim()}-${sub.trim()}`);
+        }
+    }
+    return portalValues;
 }
 
 /**
@@ -106,16 +126,30 @@ export async function upsertZohoLead(
 
         const token = await getZohoAccessToken();
 
-        // 2. Auto-derive Community & Sub_Community from community_portal
+        // 2. Bidirectional Community_Portal ↔ Community/Sub_Community
         const enrichedData = { ...leadData };
-        if (enrichedData.community_portal && enrichedData.community_portal.length > 0) {
-            const parsed = parseCommunityPortal(enrichedData.community_portal);
+
+        // Forward: Zoho Form → parse Community_Portal into Community + Sub_Community
+        if (enrichedData.Community_Portal && enrichedData.Community_Portal.length > 0) {
+            const parsed = parseCommunityPortal(enrichedData.Community_Portal);
             if (parsed.communities.length > 0) {
                 enrichedData.Community = parsed.communities;
             }
             if (parsed.subCommunities.length > 0) {
                 enrichedData.Sub_Community = parsed.subCommunities;
             }
+        }
+
+        // Reverse: Website → generate Community_Portal from Community + Sub_Community
+        if (
+            (!enrichedData.Community_Portal || enrichedData.Community_Portal.length === 0) &&
+            enrichedData.Community && enrichedData.Community.length > 0 &&
+            enrichedData.Sub_Community && enrichedData.Sub_Community.length > 0
+        ) {
+            enrichedData.Community_Portal = generateCommunityPortal(
+                enrichedData.Community,
+                enrichedData.Sub_Community
+            );
         }
 
         // 3. Prepare payload
