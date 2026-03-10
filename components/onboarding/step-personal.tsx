@@ -53,7 +53,7 @@ export default function StepPersonal({ defaultValues, onNext }: StepPersonalProp
                         <input
                             {...register("firstName")}
                             className="w-full px-4 py-2 border border-zinc-200 rounded-lg focus:ring-2 focus:ring-[#0AB996] outline-none transition-all"
-                            placeholder="Utkarsh"
+                            placeholder="First Name"
                         />
                         {errors.firstName && <p className="text-red-500 text-xs">{errors.firstName.message}</p>}
                     </div>
@@ -62,7 +62,7 @@ export default function StepPersonal({ defaultValues, onNext }: StepPersonalProp
                         <input
                             {...register("lastName")}
                             className="w-full px-4 py-2 border border-zinc-200 rounded-lg focus:ring-2 focus:ring-[#0AB996] outline-none transition-all"
-                            placeholder="Kumar"
+                            placeholder="Last Name"
                         />
                         {errors.lastName && <p className="text-red-500 text-xs">{errors.lastName.message}</p>}
                     </div>

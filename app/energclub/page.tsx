@@ -66,7 +66,7 @@ const ecosystemItems = [
     { title: "New Energies", img: "https://images.unsplash.com/photo-1532601224476-15c79f2f7a51?auto=format&fit=crop&q=80&w=800" },
     { title: "Energy Storage", img: "https://images.unsplash.com/photo-1620714223084-8fcacc6dfd8d?auto=format&fit=crop&q=80&w=800" },
     { title: "Sustainability & Safety", img: "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&q=80&w=800" }
-     
+
 ];
 
 export default function EnergClubPage() {
@@ -398,7 +398,7 @@ export default function EnergClubPage() {
                                 className="m-8"
                             />
                             <p className="text-xs text-zinc-700 uppercase tracking-widest mt-4">
-                                © 2026 EnergDive. All Rights Reserved.
+                                © 2026 ENERGDIVE. All Rights Reserved.
                             </p>
                         </div>
                     </div>

@@ -325,10 +325,10 @@ export default function SettingsPage() {
                                                             className="text-xs flex items-center gap-1 px-2 py-1 rounded"
                                                             style={{ color: "var(--dash-accent)" }}
                                                         >
-                                                        Sub <ChevronDown size={11} className={`transition-transform ${isExpanded ? "rotate-180" : ""}`} />
-                                                    </button>
-                                                )}
-                                            </div>
+                                                            Sub <ChevronDown size={11} className={`transition-transform ${isExpanded ? "rotate-180" : ""}`} />
+                                                        </button>
+                                                    )}
+                                                </div>
                                                 {mc.sub_communities && isExpanded && (
                                                     <div className="pl-10 pt-2 flex flex-wrap gap-2">
                                                         {mc.sub_communities.map((sc) => {
@@ -436,7 +436,7 @@ export default function SettingsPage() {
                                 {/* Sub-industry */}
                                 {selectedIndustryId > 0 && subIndustries.length > 0 && (
                                     <div className="mb-5">
-                                        <p className="text-[10px] font-bold uppercase tracking-wider mb-3" style={{ color: "var(--dash-text-dim)" }}>Specialization</p>
+                                        <p className="text-[10px] font-bold uppercase tracking-wider mb-3" style={{ color: "var(--dash-text-dim)" }}>Sub - Industry</p>
                                         <div className="flex flex-wrap gap-2">
                                             {subIndustries.map((sub) => (
                                                 <button
@@ -487,11 +487,11 @@ export default function SettingsPage() {
                             <h2 className="text-lg font-bold" style={{ color: "var(--dash-text)" }}>Security</h2>
                         </div>
                         <p className="text-sm mb-4" style={{ color: "var(--dash-text-dim)" }}>
-                            Your account security is managed by Clerk. Use the profile button in the header to manage password and 2FA settings.
+                            Your account security is managed by ENERGClub. Use the profile button in the header to manage password and 2FA settings.
                         </p>
                         <div className="flex items-center gap-2 p-3 rounded-lg" style={{ background: "rgba(76,175,80,0.08)", border: "1px solid rgba(76,175,80,0.2)" }}>
                             <Check size={14} style={{ color: "#4CAF50" }} />
-                            <span className="text-xs font-medium" style={{ color: "#4CAF50" }}>Account secured via Clerk authentication</span>
+                            <span className="text-xs font-medium" style={{ color: "#4CAF50" }}>Your Account is end to end encrypted with ENERGClub</span>
                         </div>
                     </div>
                 </section>

@@ -40,15 +40,15 @@ export default function DashboardPage() {
                             <div className="flex items-center gap-2.5">
                                 <div className="w-1 h-5 rounded-full" style={{ background: "var(--dash-accent)" }} />
                                 <h2 className="text-base font-bold" style={{ color: "var(--dash-text)" }}>
-                                    Intelligence Feed
+                                    Feed
                                 </h2>
                             </div>
-                            <span
+                            {/* <span
                                 className="text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded"
                                 style={{ background: "var(--dash-accent-dim)", color: "var(--dash-accent)" }}
                             >
                                 Live
-                            </span>
+                            </span> */}
                         </div>
 
                         <IntelligenceFeed />

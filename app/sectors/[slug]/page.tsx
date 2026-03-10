@@ -449,12 +449,8 @@ export default function SectorIntelligencePage() {
                 <div className="absolute left-0 right-0 bottom-0 h-16 bg-linear-to-t from-[#fafafa] to-transparent" />
             </section>
 
-            {/* Sector Hero Ad Banner */}
-            <div className="bg-[#fafafa]">
-                <div className="container mx-auto px-6 lg:px-16 max-w-[1400px] py-4">
-                    <AdBanner placement="sector_hero" sectorSlug={slug} variant="banner" className="flex justify-center" />
-                </div>
-            </div>
+            {/* Sector Hero Ad Banner — no wrapper, so no empty space when ad is absent */}
+            <AdBanner placement="sector_hero" sectorSlug={slug} variant="banner" className="flex justify-center bg-[#fafafa] py-4 container mx-auto px-6 lg:px-16 max-w-[1400px]" />
 
             {/* STICKY NAVIGATION & FILTER */}
             <section className="sticky top-[74px] z-10 bg-white/95 backdrop-blur-xl border-y border-gray-100 py-5 shadow-[0_6px_20px_rgba(15,23,42,0.06)]">
@@ -493,15 +489,8 @@ export default function SectorIntelligencePage() {
             <section className="container mx-auto px-6 lg:px-16 max-w-[1400px] py-24 min-h-[40vh] mb-10">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-10 gap-y-16 mt-15 mb-15">
                     <AnimatePresence mode="popLayout">
-                        {/* In-grid Ad Card */}
-                        <motion.div
-                            key="ad-card"
-                            layout
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                        >
-                            <AdBanner placement="sector_hero" sectorSlug={slug} variant="card" />
-                        </motion.div>
+                        {/* In-grid Ad Card — no wrapper so no empty space when ad is absent */}
+                        <AdBanner placement="sector_hero" sectorSlug={slug} variant="card" />
 
                         {filteredReports.map((report, idx) => (
                             <motion.div
