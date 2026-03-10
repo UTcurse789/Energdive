@@ -16,6 +16,8 @@ export interface ZohoLeadData {
     Sub_Community?: string[];
     Community_Portal?: string[];
     Query_Type?: string;
+    City?: string;
+    Country?: string;
 }
 
 /**
@@ -176,6 +178,8 @@ export async function upsertZohoLead(
                 ? enrichedData.Community_Portal
                 : null,
             Query_Type: enrichedData.Query_Type || null,
+            City: enrichedData.City || null,
+            Country: enrichedData.Country || null,
         };
 
         // Remove null/undefined fields so we don't overwrite with blanks on UPDATE
