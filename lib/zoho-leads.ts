@@ -155,11 +155,10 @@ export async function upsertZohoLead(
         }
 
         // 3. Convert fields to match Zoho CRM field types:
-        //    - Community, Sub_Community → "text" type (semicolon-separated string)
-        //    - Community_Portal → "jsonarray" type (keep as array)
-        const toZohoText = (arr?: string[]): string | undefined => {
-            if (!arr || arr.length === 0) return undefined;
-            return arr.filter(v => v).join(";");
+        //    - Community, Sub_Community, Community_Portal → all "jsonarray" (multi-select picklist)
+        const toZohoArray = (arr?: string[]): string[] | null => {
+            if (!arr || arr.length === 0) return null;
+            return arr.filter(v => v);
         };
 
         const zohoRecord: Record<string, any> = {
@@ -172,11 +171,9 @@ export async function upsertZohoLead(
             Lead_Source: enrichedData.Lead_Source || null,
             Industry: enrichedData.Industry || null,
             Industry_Sub_Category: enrichedData.Industry_Sub_Category || null,
-            Community: toZohoText(enrichedData.Community) || null,
-            Sub_Community: toZohoText(enrichedData.Sub_Community) || null,
-            Community_Portal: enrichedData.Community_Portal && enrichedData.Community_Portal.length > 0
-                ? enrichedData.Community_Portal
-                : null,
+            Community: toZohoArray(enrichedData.Community),
+            Sub_Community: toZohoArray(enrichedData.Sub_Community),
+            Community_Portal: toZohoArray(enrichedData.Community_Portal),
             Query_Type: enrichedData.Query_Type || null,
             City: enrichedData.City || null,
             Country: enrichedData.Country || null,
