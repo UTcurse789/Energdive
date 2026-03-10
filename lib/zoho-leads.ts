@@ -14,7 +14,42 @@ export interface ZohoLeadData {
     Sub_Industry?: string;
     Community?: string[];
     Sub_Community?: string[];
+    community_portal?: string[];
     Query_Type?: string;
+}
+
+/**
+ * Parse community_portal values (e.g. "Oil & Gas-Upstream") into
+ * Community (before first hyphen) and Sub_Community (after first hyphen).
+ * Also keeps the original community_portal values intact.
+ */
+export function parseCommunityPortal(portalValues: string[]): {
+    communities: string[];
+    subCommunities: string[];
+} {
+    const communitySet = new Set<string>();
+    const subCommunitySet = new Set<string>();
+
+    for (const value of portalValues) {
+        const trimmed = value.trim();
+        if (!trimmed) continue;
+
+        const hyphenIndex = trimmed.indexOf("-");
+        if (hyphenIndex > 0) {
+            const community = trimmed.substring(0, hyphenIndex).trim();
+            const subCommunity = trimmed.substring(hyphenIndex + 1).trim();
+            if (community) communitySet.add(community);
+            if (subCommunity) subCommunitySet.add(subCommunity);
+        } else {
+            // No hyphen — treat the whole value as a community
+            communitySet.add(trimmed);
+        }
+    }
+
+    return {
+        communities: Array.from(communitySet),
+        subCommunities: Array.from(subCommunitySet),
+    };
 }
 
 /**
@@ -71,11 +106,23 @@ export async function upsertZohoLead(
 
         const token = await getZohoAccessToken();
 
-        // 2. Prepare payload
+        // 2. Auto-derive Community & Sub_Community from community_portal
+        const enrichedData = { ...leadData };
+        if (enrichedData.community_portal && enrichedData.community_portal.length > 0) {
+            const parsed = parseCommunityPortal(enrichedData.community_portal);
+            if (parsed.communities.length > 0) {
+                enrichedData.Community = parsed.communities;
+            }
+            if (parsed.subCommunities.length > 0) {
+                enrichedData.Sub_Community = parsed.subCommunities;
+            }
+        }
+
+        // 3. Prepare payload
         const payload = {
             data: [
                 {
-                    ...leadData,
+                    ...enrichedData,
                     ...(existingLead ? { id: existingLead.id } : {}),
                 },
             ],
