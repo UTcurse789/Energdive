@@ -9,6 +9,8 @@ export async function getFullUserProfile(clerkId: string) {
       u.first_name,
       u.last_name,
       u.phone,
+      u.country,
+      u.state,
       u.job_title,
       u.organization,
       u.preferred_frequency,
@@ -22,8 +24,9 @@ export async function getFullUserProfile(clerkId: string) {
       ) AS communities,
 
       COALESCE(
-        (SELECT ARRAY_AGG(DISTINCT sc.name)
+        (SELECT ARRAY_AGG(DISTINCT c.name || '-' || sc.name)
          FROM user_communities uc
+         LEFT JOIN communities c ON c.id = uc.community_id
          LEFT JOIN sub_communities sc ON sc.id = uc.sub_community_id
          WHERE uc.user_id = u.id), '{}'
       ) AS sub_communities,
