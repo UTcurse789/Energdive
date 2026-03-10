@@ -36,7 +36,7 @@ function formatOpinionDate(value?: string) {
 async function fetchOpinions() {
   const res = await fetch(
     `${STRAPI}/api/contents?filters[type_of_content][name][$eq]=Opinion&populate[author][populate]=avatar&populate=FeaturedImage&sort=Date:desc`,
-    { next: { revalidate: 120 } }
+    { next: { revalidate: 3600 } }
   );
 
   const json = await res.json();

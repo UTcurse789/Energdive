@@ -14,7 +14,7 @@ const SITE_URL = "https://energdive.com";
 async function getArticle(slug: string) {
     const res = await fetch(
         `${STRAPI}/api/contents?filters[slug][$eq]=${slug}&populate=*`,
-        { next: { revalidate: 60 } }
+        { next: { revalidate: 3600 } }
     );
     if (!res.ok) return null;
     const json = await res.json();

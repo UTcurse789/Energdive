@@ -33,7 +33,7 @@ function normalizeTag(tag: any) {
 async function getArticle(slug: string) {
     const url = `${STRAPI_BASE_URL}/api/contents?filters[slug][$eq]=${slug}&populate=*`;
 
-    const res = await fetch(url, { next: { revalidate: 60 } });
+    const res = await fetch(url, { next: { revalidate: 3600 } });
     if (!res.ok) return null;
 
     const json = await res.json();
@@ -60,7 +60,7 @@ async function getRelated(tags: string[], currentSlug: string) {
 
     const url = `${STRAPI_BASE_URL}/api/contents?filters[type_of_content][name][$eq]=News&${tagFilters}&filters[slug][$ne]=${currentSlug}&populate=*&pagination[limit]=4`;
 
-    const res = await fetch(url, { next: { revalidate: 60 } });
+    const res = await fetch(url, { next: { revalidate: 3600 } });
     if (!res.ok) return [];
 
     const json = await res.json();
