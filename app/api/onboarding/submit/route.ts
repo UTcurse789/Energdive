@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { saveOnboardingProfile } from "@/lib/queries";
 import { getFullUserProfile } from "@/lib/getFullUserProfile";
 import syncUserToBrevo from "@/lib/brevoSync";
-import { sendWelcomeEmail } from "@/lib/email";
+import { sendWelcomeEmail, sendNewUserNotification } from "@/lib/email";
 import { upsertZohoLead } from "@/lib/zoho-leads";
 
 /**
@@ -96,6 +96,19 @@ export async function POST(req: Request) {
         } catch (emailErr) {
             // Non-fatal — don't block onboarding if email fails
             console.error("⚠️ Welcome email failed:", emailErr);
+        }
+
+        // ── Admin Notification Email ────────────────────────
+        try {
+            await sendNewUserNotification(
+                body.firstName,
+                body.lastName,
+                body.email
+            );
+            console.log("✅ Admin notification sent for:", body.email);
+        } catch (notifyErr) {
+            // Non-fatal — don't block onboarding if admin notification fails
+            console.error("⚠️ Admin notification email failed:", notifyErr);
         }
 
         // ── Sync to Zoho CRM as Lead (NOT Contact) ─────────────────
