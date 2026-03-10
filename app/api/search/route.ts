@@ -61,10 +61,10 @@ export async function GET(request: Request) {
         reportsUrl.searchParams.append("sort", "createdAt:desc");
 
         const [contentsRes, videosRes, eventsRes, reportsRes] = await Promise.all([
-            fetch(contentsUrl.toString(), { next: { revalidate: 60 } }).catch(() => null),
-            fetch(videosUrl.toString(), { next: { revalidate: 60 } }).catch(() => null),
-            fetch(eventsUrl.toString(), { next: { revalidate: 60 } }).catch(() => null),
-            fetch(reportsUrl.toString(), { next: { revalidate: 60 } }).catch(() => null),
+            fetch(contentsUrl.toString(), { next: { revalidate: 600 } }).catch(() => null),
+            fetch(videosUrl.toString(), { next: { revalidate: 600 } }).catch(() => null),
+            fetch(eventsUrl.toString(), { next: { revalidate: 600 } }).catch(() => null),
+            fetch(reportsUrl.toString(), { next: { revalidate: 600 } }).catch(() => null),
         ]);
 
         const allResults: any[] = [];

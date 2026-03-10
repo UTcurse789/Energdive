@@ -68,7 +68,7 @@ async function getAllContents() {
   try {
     const res = await fetch(
       `${STRAPI_BASE}/api/contents?pagination[pageSize]=100&populate=*&sort=Date:desc`,
-      { next: { revalidate: 60 } }
+      { next: { revalidate: 600 } } // 10 min ISR
     );
     if (!res.ok) return null;
     const json = await res.json();
@@ -83,7 +83,7 @@ async function getFeaturedContents() {
   try {
     const res = await fetch(
       `${STRAPI_BASE}/api/contents?filters[featured][$eq]=true&populate=*&sort=Date:desc&pagination[pageSize]=10`,
-      { next: { revalidate: 60 } }
+      { next: { revalidate: 600 } } // 10 min ISR
     );
     if (!res.ok) return [];
     const json = await res.json();
@@ -157,7 +157,7 @@ export default async function Home() {
       try {
         const res = await fetch(
           `${STRAPI_BASE}/api/contents?filters[type_of_content][name][$eq]=Articles&filters[sectors][name][$eq]=${encodeURIComponent(sectorName)}&populate=*&sort=Date:desc&pagination[pageSize]=20`,
-          { next: { revalidate: 60 } }
+          { next: { revalidate: 3600 } } // 1 hour ISR for sector articles
         );
         if (!res.ok) return [];
         const json = await res.json();

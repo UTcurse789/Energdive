@@ -84,7 +84,7 @@ export async function fetchStrapi<T>(
             "Content-Type": "application/json",
             Authorization: `Bearer ${STRAPI_TOKEN}`,
         },
-        next: { revalidate: 60 }, // Default revalidation (ISR)
+        next: { revalidate: 600 }, // Default 10-minute ISR revalidation
         ...options,
     });
 

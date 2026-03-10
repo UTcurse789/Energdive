@@ -45,7 +45,7 @@ async function getReport(slug: string) {
         const res = await fetch(
             `${process.env.NEXT_PUBLIC_STRAPI_URL}/api/type-of-contents?filters[slug][$eq]=reports&populate[contents][populate]=*`,
             {
-                next: { revalidate: 120 },
+                next: { revalidate: 3600 },
                 headers: {
                     Authorization: `Bearer ${process.env.STRAPI_API_TOKEN}`,
                 },
@@ -193,7 +193,7 @@ export default async function ArticlePage(props: PageProps) {
                                 <Clock className="w-4 h-4 text-[#00A651]" />
                                 8 min read
                             </span>
-                          
+
                         </div>
                     </header>
 

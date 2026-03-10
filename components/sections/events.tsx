@@ -6,7 +6,7 @@ const STRAPI_BASE = "https://cms.energdive.com";
 async function getEvents() {
     try {
         const res = await fetch(`${STRAPI_BASE}/api/events?populate=*`, {
-            next: { revalidate: 120 },
+            next: { revalidate: 3600 }, // 1 hour ISR
         });
         if (!res.ok) return [];
         const json = await res.json();

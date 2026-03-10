@@ -295,7 +295,7 @@ async function getReport(slug: string) {
     try {
         const res = await fetch(
             `${STRAPI}/api/contents?filters[slug][$eq]=${slug}&filters[type_of_content][name][$eq]=Reports&populate=*`,
-            { next: { revalidate: 120 } }
+            { next: { revalidate: 3600 } }
         );
         const json = await res.json();
         return json?.data?.[0] ?? null;
@@ -309,7 +309,7 @@ async function getTrending() {
     try {
         const res = await fetch(
             `${STRAPI}/api/contents?filters[type_of_content][name][$eq]=Reports&pagination[limit]=3&populate=*`,
-            { next: { revalidate: 120 } }
+            { next: { revalidate: 3600 } }
         );
         const json = await res.json();
         return json?.data ?? [];
@@ -418,7 +418,7 @@ export default async function IntelligenceReportPage({ params }: { params: Promi
                                     <div className="inline-flex items-center gap-2 bg-[#00A651]/10 border border-[#00A651]/25 rounded-full px-3.5 py-1.5 mb-7">
                                         <span className="w-1.5 h-1.5 rounded-full bg-[#00A651] animate-pulse" />
                                         <span className="text-[9px] font-black uppercase tracking-[0.18em] text-[#00A651]">
-                                             Publication
+                                            Publication
                                         </span>
                                     </div>
 
@@ -427,7 +427,7 @@ export default async function IntelligenceReportPage({ params }: { params: Promi
                                         <FileText className="w-6 h-6 text-[#00A651]" />
                                     </div>
 
-                                    
+
                                     <h4 className="text-white font-black text-base leading-snug mb-3 mt-4">
                                         Access the Full Report
                                     </h4>
@@ -444,7 +444,7 @@ export default async function IntelligenceReportPage({ params }: { params: Promi
                                             </span>
                                         </button>
                                     </a>
-                                    
+
                                 </div>
                             </div>
 
@@ -477,7 +477,7 @@ export default async function IntelligenceReportPage({ params }: { params: Promi
                                     <Clock size={13} className="text-[#00A651]" />
                                     12 min read
                                 </div>
-                                
+
                             </div>
 
                         </aside>
@@ -515,7 +515,7 @@ export default async function IntelligenceReportPage({ params }: { params: Promi
                             {excerpt && (
                                 <div className="relative overflow-hidden rounded-3xl bg-zinc-950 p-8 md:p-10 mb-10">
                                     <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-[#00A651] via-emerald-300 to-transparent" />
-                                    
+
                                     <div className="absolute -bottom-12 -right-12 w-40 h-40 bg-[#00A651]/10 rounded-full blur-3xl pointer-events-none" />
                                     <p className="text-[10px] font-black uppercase tracking-widest text-[#00A651] mb-4 relative z-10">
                                         Core Mission
@@ -527,8 +527,8 @@ export default async function IntelligenceReportPage({ params }: { params: Promi
                             )}
 
                             {/* Body content */}
-                                <div className="mb-20">
-                                    <div className="prose prose-lg max-w-none
+                            <div className="mb-20">
+                                <div className="prose prose-lg max-w-none
 
                                                 /* Base Typography */
                                                 font-serif text-gray-800 leading-relaxed
@@ -673,10 +673,10 @@ export default async function IntelligenceReportPage({ params }: { params: Promi
                                                 prose-hr:my-12
                                                 prose-hr:border-gray-300
                                                 "
-                                            >
-                                                <RenderBlocks blocks={article.Content} />
-                                            </div>
-                                            </div>
+                                >
+                                    <RenderBlocks blocks={article.Content} />
+                                </div>
+                            </div>
 
                             {/* Bottom CTA */}
                             {/* <div className="border-t border-zinc-200 pt-12 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
@@ -802,7 +802,7 @@ export default async function IntelligenceReportPage({ params }: { params: Promi
                 </div>
             </main>
 
-           
+
         </div>
     );
 }

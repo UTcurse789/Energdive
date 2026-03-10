@@ -138,7 +138,7 @@ const STRAPI = process.env.NEXT_PUBLIC_STRAPI_URL;
 async function getOpinion(slug: string) {
   const res = await fetch(
     `${STRAPI}/api/contents?filters[slug][$eq]=${slug}&populate[author][populate]=avatar&populate=FeaturedImage`,
-    { next: { revalidate: 60 } }
+    { next: { revalidate: 3600 } }
   );
   const json = await res.json();
   return json?.data?.[0] ?? null;
