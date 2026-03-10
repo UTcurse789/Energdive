@@ -107,6 +107,9 @@ export async function POST(req: Request) {
                 return filtered.length > 0 ? filtered : undefined;
             };
 
+            // DB sub_communities are in "Community-SubPart" format (e.g. "Distribution-Data Centres")
+            // which is the Community_Portal format. Pass them as Community_Portal and let
+            // upsertZohoLead's parseCommunityPortal derive Community/Sub_Community correctly.
             const leadData = {
                 First_Name: fullUser.first_name || body.firstName,
                 Last_Name: fullUser.last_name || body.lastName,
@@ -117,8 +120,7 @@ export async function POST(req: Request) {
                 Lead_Source: "Website Registration",
                 Industry: fullUser.industries?.find((i: string | null) => !!i) || undefined,
                 Industry_Sub_Category: fullUser.sub_industries?.find((i: string | null) => !!i) || undefined,
-                Community: toArray(fullUser.communities),
-                Sub_Community: toArray(fullUser.sub_communities),
+                Community_Portal: toArray(fullUser.sub_communities),
                 Query_Type: "EnergClub",
             };
             console.log("📋 [ZOHO_LEADS] Onboarding sync payload:", JSON.stringify(leadData, null, 2));
