@@ -18,10 +18,10 @@ const createLeadSchema = z.object({
     Designation: z.string().optional(),
     Lead_Source: z.string().default("Website Registration"),
     Industry: z.string().optional(),
-    Sub_Industry: z.string().optional(),
+    Industry_Sub_Category: z.string().optional(),
     Community: stringOrArray,
     Sub_Community: stringOrArray,
-    community_portal: stringOrArray,
+    Community_Portal: stringOrArray,
     Query_Type: z.string().default("EnergClub"),
 });
 
