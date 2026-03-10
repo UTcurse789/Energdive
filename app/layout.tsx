@@ -68,7 +68,7 @@ const serif = Merriweather({
 export const metadata: Metadata = {
   title: {
     template: "%s | Energdive",
-    default: "Energdive | Premium Energy & Business News",
+    default: "Energdive | Insights and Market Intelligence",
   },
   description: "Analysis, news, and insights on Energy, Power, Oil & Gas, and Renewables.",
   metadataBase: new URL("https://energdive.com"),

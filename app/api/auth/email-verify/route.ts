@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClerkClient } from "@clerk/nextjs/server";
+import { updateVerificationStatus } from "@/lib/queries/users";
 
 const clerk = createClerkClient({
     secretKey: process.env.CLERK_SECRET_KEY!,
@@ -44,7 +45,20 @@ export async function POST(req: Request) {
             console.log(`[Auth Email] Created new user: ${clerkUser.id}`);
         }
 
-        // Step 2: Generate sign-in token
+        // Step 2: Update verification state in DB
+        try {
+            await updateVerificationStatus(clerkUser.id, {
+                emailVerified: true,
+                registrationMethod: 'email',
+                email,
+            });
+            console.log(`[Auth Email] Verification status updated for: ${clerkUser.id}`);
+        } catch (dbErr: any) {
+            // Non-fatal — user row might not exist yet (created via Clerk webhook)
+            console.warn(`[Auth Email] DB verification update failed (non-fatal): ${dbErr.message}`);
+        }
+
+        // Step 3: Generate sign-in token
         const signInToken = await clerk.signInTokens.createSignInToken({
             userId: clerkUser.id,
             expiresInSeconds: 60,
@@ -56,6 +70,7 @@ export async function POST(req: Request) {
             success: true,
             token: signInToken.token,
             isNewUser: isNew,
+            registrationMethod: 'email',
         });
     } catch (error: any) {
         console.error("[Auth Email] Error:", error);

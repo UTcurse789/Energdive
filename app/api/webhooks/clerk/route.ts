@@ -75,12 +75,18 @@ export async function POST(req: Request) {
             const fullUser = await getFullUserProfile(id);
             const user = fullUser || result.rows[0];
 
-            try {
-                await syncUserToBrevo(user);
-                console.log("✅ Synced to Brevo:", email);
-            } catch (brevoErr) {
-                console.error("❌ Brevo sync failed:", brevoErr);
-                // We DO NOT fail webhook if Brevo fails
+            // Skip Brevo sync for dummy/placeholder emails
+            const isDummyEmail = email?.endsWith?.('@phone.energdive.com');
+            if (isDummyEmail) {
+                console.log("⚠️ Skipping Brevo sync — dummy email:", email);
+            } else {
+                try {
+                    await syncUserToBrevo(user);
+                    console.log("✅ Synced to Brevo:", email);
+                } catch (brevoErr) {
+                    console.error("❌ Brevo sync failed:", brevoErr);
+                    // We DO NOT fail webhook if Brevo fails
+                }
             }
 
             // Sync to Zoho as a Lead (NOT Contact — preserves Lead records for Magic Link flow)

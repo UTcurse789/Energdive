@@ -4,10 +4,9 @@ import { useSignIn, useAuth } from "@clerk/nextjs";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, useRef, Suspense } from "react";
 
-type Status = "loading" | "verifying" | "signing-in" | "redirecting" | "error";
+type Status = "loading" | "verifying" | "redirecting" | "error";
 
 function AccessContent() {
-    const { signIn, setActive } = useSignIn();
     const { isLoaded, isSignedIn } = useAuth();
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -36,11 +35,9 @@ function AccessContent() {
             return;
         }
 
-        if (!signIn) return;
-
         const authenticate = async () => {
             try {
-                // Step 1: Verify token server-side
+                // Step 1: Verify token server-side (does NOT create session)
                 setStatus("verifying");
                 const verifyRes = await fetch(
                     `/api/auth/access-verify?token=${encodeURIComponent(token)}`
@@ -53,33 +50,30 @@ function AccessContent() {
                     );
                 }
 
-                const { ticket } = await verifyRes.json();
+                const { userId, email, firstName, phone } =
+                    await verifyRes.json();
 
-                if (!ticket) {
-                    throw new Error("No sign-in ticket received");
+                if (!userId) {
+                    throw new Error("No user found for this token");
                 }
 
-                // Step 2: Consume Clerk sign-in ticket
-                setStatus("signing-in");
-                const result = await signIn.create({
-                    strategy: "ticket",
-                    ticket,
-                });
-
-                if (result.status === "complete" && result.createdSessionId) {
-                    setStatus("redirecting");
-                    await setActive({ session: result.createdSessionId });
-
-                    // The ultimate cache-busting Next.js nuke:
-                    // 1. replace() prevents them from hitting "back" into a broken state
-                    // 2. The timestamp prevents the browser from using a cached HTTP response
-                    // 3. We use a slight delay so Clerk's cookies have time to completely save to the browser
-                    setTimeout(() => {
-                        window.location.replace(`/dashboard?reload=${Date.now()}`);
-                    }, 300);
-                } else {
-                    throw new Error("Sign-in could not be completed");
+                // Step 2: Redirect to OTP verification page
+                setStatus("redirecting");
+                const params = new URLSearchParams();
+                params.set("userId", String(userId));
+                if (email) params.set("email", email);
+                if (firstName) params.set("name", firstName);
+                if (phone) {
+                    // Mask phone for display: show last 4 digits only
+                    const cleanPhone = phone.replace(/[^0-9]/g, "");
+                    const masked =
+                        "•".repeat(Math.max(0, cleanPhone.length - 4)) +
+                        cleanPhone.slice(-4);
+                    params.set("maskedPhone", masked);
+                    params.set("phone", cleanPhone);
                 }
+
+                router.push(`/verify-access?${params.toString()}`);
             } catch (err: any) {
                 console.error("[ACCESS]", err);
 
@@ -97,7 +91,7 @@ function AccessContent() {
         };
 
         authenticate();
-    }, [isLoaded, isSignedIn, signIn, setActive, router, searchParams]);
+    }, [isLoaded, isSignedIn, router, searchParams]);
 
     // ── Error State ──
     if (status === "error") {
@@ -105,8 +99,18 @@ function AccessContent() {
             <div className="min-h-screen flex flex-col items-center justify-center bg-[#FAFAFA] p-4">
                 <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md text-center border border-red-100">
                     <div className="w-14 h-14 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-5">
-                        <svg className="w-7 h-7 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                        <svg
+                            className="w-7 h-7 text-red-500"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z"
+                            />
                         </svg>
                     </div>
                     <h1 className="text-xl font-bold text-gray-900 mb-2">
@@ -116,7 +120,8 @@ function AccessContent() {
                         {error}
                     </p>
                     <p className="text-xs text-gray-400 mb-6">
-                        This link may have expired or already been used. Please contact your account manager for a new access link.
+                        This link may have expired or already been used. Please
+                        contact your account manager for a new access link.
                     </p>
                     <a
                         href="/auth"
@@ -133,8 +138,7 @@ function AccessContent() {
     const statusMessages: Record<Exclude<Status, "error">, string> = {
         loading: "Preparing your access...",
         verifying: "Verifying your access link...",
-        "signing-in": "Creating your session...",
-        redirecting: "Redirecting to your dashboard...",
+        redirecting: "Preparing identity verification...",
     };
 
     return (
@@ -158,7 +162,9 @@ export default function AccessPage() {
             fallback={
                 <div className="min-h-screen flex flex-col items-center justify-center bg-[#FAFAFA]">
                     <div className="w-10 h-10 border-4 border-[#0AB996]/30 border-t-[#0AB996] rounded-full animate-spin mb-4" />
-                    <p className="text-sm text-zinc-500 font-medium animate-pulse">Loading...</p>
+                    <p className="text-sm text-zinc-500 font-medium animate-pulse">
+                        Loading...
+                    </p>
                 </div>
             }
         >

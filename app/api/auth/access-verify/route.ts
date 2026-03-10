@@ -8,8 +8,10 @@ import { getUserByMagicToken, clearMagicToken } from "@/lib/queries";
  * Verifies a magic token from the provisioning pipeline:
  * 1. Looks up token in DB (must exist and not be expired)
  * 2. Clears token (one-time use)
- * 3. Creates a Clerk sign-in token
- * 4. Returns { ticket } for client-side session creation
+ * 3. Returns user info (including phone) for OTP verification step
+ *
+ * NOTE: Does NOT create a Clerk sign-in token anymore.
+ *       The sign-in token is created after OTP verification in /api/auth/magic-otp-verify.
  */
 export async function GET(req: NextRequest) {
     const token = req.nextUrl.searchParams.get("token");
@@ -33,26 +35,29 @@ export async function GET(req: NextRequest) {
             );
         }
 
-        console.log(`[ACCESS_VERIFY] Token valid for user: ${user.email} (clerk: ${user.clerk_id})`);
+        console.log(
+            `[ACCESS_VERIFY] Token valid for user: ${user.email} (clerk: ${user.clerk_id})`
+        );
 
         // 2. Clear the token (one-time use)
         await clearMagicToken(user.id);
 
-        // 3. Create Clerk sign-in token
-        const client = await clerkClient();
-        const signInToken = await client.signInTokens.createSignInToken({
-            userId: user.clerk_id,
-            expiresInSeconds: 300, // 5 minutes to consume
-        });
+        // 3. Look up phone number from DB for OTP step
+        // Import dynamically to avoid circular deps
+        const { query } = await import("@/lib/db");
+        const phoneResult = await query(
+            `SELECT phone FROM users WHERE id = $1 LIMIT 1`,
+            [user.id]
+        );
+        const phone = phoneResult.rows[0]?.phone || null;
 
-        console.log(`[ACCESS_VERIFY] Clerk sign-in token created for ${user.email}`);
-
-        // 4. Return ticket for client-side consumption
+        // 4. Return user info for OTP verification (NO sign-in token yet)
         return NextResponse.json({
             success: true,
-            ticket: signInToken.token,
+            userId: user.id,
             email: user.email,
             firstName: user.first_name,
+            phone, // Full phone for OTP sending (server-side only)
         });
     } catch (error: any) {
         console.error("[ACCESS_VERIFY] Error:", error);

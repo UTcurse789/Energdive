@@ -575,3 +575,88 @@ export async function clearMagicToken(userId: number): Promise<void> {
         [userId]
     );
 }
+
+// ─── Verification Status Tracking ────────────────────────────────────
+
+export interface VerificationStatus {
+    email_verified: boolean;
+    phone_verified: boolean;
+    registration_method: string | null;
+    email: string;
+    phone: string | null;
+}
+
+/**
+ * Update verification status for a user.
+ * Can set email_verified, phone_verified, registration_method, and optionally email/phone.
+ */
+export async function updateVerificationStatus(
+    clerkId: string,
+    updates: {
+        emailVerified?: boolean;
+        phoneVerified?: boolean;
+        registrationMethod?: string;
+        email?: string;
+        phone?: string;
+    }
+): Promise<void> {
+    const setClauses: string[] = [];
+    const values: unknown[] = [];
+    let idx = 1;
+
+    if (updates.emailVerified !== undefined) {
+        setClauses.push(`email_verified = $${idx++}`);
+        values.push(updates.emailVerified);
+    }
+    if (updates.phoneVerified !== undefined) {
+        setClauses.push(`phone_verified = $${idx++}`);
+        values.push(updates.phoneVerified);
+    }
+    if (updates.registrationMethod !== undefined) {
+        setClauses.push(`registration_method = $${idx++}`);
+        values.push(updates.registrationMethod);
+    }
+    if (updates.email !== undefined) {
+        setClauses.push(`email = $${idx++}`);
+        values.push(updates.email);
+    }
+    if (updates.phone !== undefined) {
+        setClauses.push(`phone = $${idx++}`);
+        values.push(updates.phone);
+    }
+
+    if (setClauses.length === 0) return;
+
+    values.push(clerkId);
+    await query(
+        `UPDATE users SET ${setClauses.join(", ")} WHERE clerk_id = $${idx}`,
+        values
+    );
+}
+
+/**
+ * Get verification status for a user by Clerk ID.
+ */
+export async function getVerificationStatus(
+    clerkId: string
+): Promise<VerificationStatus | null> {
+    const result = await query<VerificationStatus>(
+        `SELECT email_verified, phone_verified, registration_method, email, phone
+         FROM users WHERE clerk_id = $1 LIMIT 1`,
+        [clerkId]
+    );
+    return result.rows[0] || null;
+}
+
+/**
+ * Get user by internal DB id (for magic link OTP flow).
+ */
+export async function getUserByInternalId(
+    userId: number
+): Promise<{ id: number; clerk_id: string; email: string; phone: string | null; first_name: string | null } | null> {
+    const result = await query<{ id: number; clerk_id: string; email: string; phone: string | null; first_name: string | null }>(
+        `SELECT id, clerk_id, email, phone, first_name FROM users WHERE id = $1 LIMIT 1`,
+        [userId]
+    );
+    return result.rows[0] || null;
+}
