@@ -193,7 +193,7 @@ export async function sendWelcomeEmail(
                                 <p style="margin:0 0 8px;color:#065F46;font-size:14px;font-weight:700;">Here's what you can do:</p>
                                 <ul style="margin:0;padding-left:20px;color:#4B5563;font-size:14px;line-height:2;">
                                     <li>You can update your Community, Sub-Community, and communication preferences anytime by logging into your account and managing your profile settings.</li>
-                                    <li>We will also be introducing several new features within ENERGClub in the coming months — including deeper research access, enhanced community engagement tools, and additional member benefits. We look forward to bringing you more value as the platform evolves./li>
+                                    <li>We will also be introducing several new features within ENERGClub in the coming months — including deeper research access, enhanced community engagement tools, and additional member benefits. We look forward to bringing you more value as the platform evolves.</li>
                                     <li>To stay informed about the latest updates, insights, and announcements, we encourage you to follow ENERGDIVE on our social media channels.</li>
                                     <li>If you need any assistance our team will be glad to support you.</li>
                                 </ul>
