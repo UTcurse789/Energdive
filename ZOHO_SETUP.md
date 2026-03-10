@@ -1,80 +1,140 @@
 # Zoho CRM Setup Guide
 
-To enable the magic link authentication flow, you need to configure Zoho CRM with custom fields and a workflow rule that triggers a custom function.
+Complete configuration for the EnergDive ↔ Zoho CRM integration, covering both the **Magic Link** portal access flow and **Website Signup** lead tracking.
 
-## 1. Custom Fields
-Create the following custom fields in the **Leads** module:
+---
 
-| Field Label | API Name (Check API Names section) | Type | Description |
-| :--- | :--- | :--- | :--- |
-| Magic Token | `Magic_Token` | Single Line Text | Stores the generated UUID. |
-| Token Expiry | `Token_Expiry` | DateTime | Stores when the token expires. |
+## Architecture Overview
 
-> **Note**: Ensure the API Names match exactly what is used in `lib/zoho.ts`. You can verify this in **Setup > Developer Space > APIs > API Names**.
+```
+┌─────────────────────────────────────────────────────────────┐
+│  System A: Magic Link (Portal Access)                       │
+│                                                             │
+│  Zoho CRM: Create/Edit Lead (Portal_Access = Yes)           │
+│       ↓ Workflow Rule triggers Deluge function               │
+│  Deluge: POST /api/zoho/provision (JSON body)               │
+│       ↓ Creates Clerk user, generates magic token            │
+│  Brevo: Sends email with magic link                         │
+│       ↓ User clicks link → /access?token=XXX                │
+│  Next.js: Validates token → Clerk sign-in ticket → login    │
+└─────────────────────────────────────────────────────────────┘
 
-## 2. Workflow Rule
-1.  Go to **Setup > Automation > Workflow Rules**.
-2.  Create a new rule for **Leads**.
-3.  **When**: "Create" (or "Create / Edit" if you want to allow re-sending).
-4.  **Condition**: "Email is not empty" (and any other criteria like "Lead Source is Web").
-5.  **Action**: "Function" -> "New Function" -> "Write your own".
-
-## 3. Deluge Script (Custom Function)
-Paste the following code into the Deluge editor:
-
-```javascript
-// Inputs: leadId (Argument mapped to Lead Id), leadEmail (Argument mapped to Email)
-
-// 1. Generate Token and Expiry
-token = uuid(); // Zoho has a built-in uuid function? If not, use random number or simple hash
-// If UUID not available:
-token = (now.toLong() + leadId).toString().md5(); 
-
-// Set expiry to 10 minutes from now
-expiry = now.addMinutes(10).toString("yyyy-MM-dd'T'HH:mm:ss+00:00");
-
-// 2. Update Lead Record
-mp = Map();
-mp.put("Magic_Token", token);
-mp.put("Token_Expiry", expiry);
-update = zoho.crm.updateRecord("Leads", leadId, mp);
-
-// 3. Construct URL
-// REPLACE with your actual domain
-baseUrl = "https://your-domain.com";
-authUrl = baseUrl + "/api/auth/invite?email=" + zoho.encryption.urlEncode(leadEmail) + "&token=" + token;
-
-// 4. Send Email
-sendmail
-[
-    from: zoho.adminuserid,
-    to: leadEmail,
-    subject: "Welcome to EnergDive! Access your Dashboard",
-    message: "Click here to login: <a href='" + authUrl + "'>Access Dashboard</a> (Valid for 10 mins)",
-    content_type: "html"
-]
+┌─────────────────────────────────────────────────────────────┐
+│  System B: Website Signup → Zoho Lead                       │
+│                                                             │
+│  User signs up on website → Clerk creates user              │
+│       ↓ Clerk webhook fires (user.created)                  │
+│  Webhook: Upserts a LEAD in Zoho CRM (never a Contact)     │
+│       ↓ Lead record preserved for Magic Link flow           │
+│  Onboarding: Updates same Lead with full profile data       │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-## 4. Environment Variables (Next.js)
-Ensure your `.env` file has the following credentials to allow Next.js to validate the token:
+> [!IMPORTANT]
+> Website signups create **Leads** (not Contacts). This ensures that manually created Leads with `Portal_Access = Yes` are never destroyed by the Clerk webhook.
+
+---
+
+## 1. Leads Module — Custom Fields
+
+Create these custom fields in the **Leads** module:
+
+| Field Label     | API Name         | Type              | Description                          |
+| :-------------- | :--------------- | :---------------- | :----------------------------------- |
+| Portal Access   | `Portal_Access`  | Checkbox          | Triggers the Magic Link workflow     |
+| Magic Token     | `Magic_Token`    | Single Line Text  | Stores the generated magic token     |
+| Token Expiry    | `Token_Expiry`   | DateTime          | When the magic token expires         |
+| Sub Industry    | `Sub_Industry`   | Single Line Text  | Secondary industry classification    |
+| Community       | `Community`      | Multi Select      | User community groups                |
+| Sub Community   | `Sub_Community`  | Multi Select      | Specific user community groups       |
+| Query Type      | `Query_Type`     | Single Line Text  | Triggers specific views (EnergClub)  |
+
+> **Note**: `Industry`, `Company`, `Phone`, `Designation`, `Email` are standard Lead fields. Verify API names match in **Setup > Developer Space > APIs > API Names**.
+
+---
+
+## 2. Workflow Rule
+
+1. Go to **Setup > Automation > Workflow Rules**
+2. Create a new rule for the **Leads** module
+3. **When**: Create or Edit
+4. **Condition**: `Portal_Access` is `true` AND `Email` is not empty
+5. **Action**: Function → select the `portal_provision` Deluge function
+
+---
+
+## 3. Deluge Script (Custom Function)
+
+The Deluge script is located at `zoho-deluge/provision-and-email.dg`.
+
+**Key points:**
+- The function receives `leadId` as an argument (mapped to Lead ID in the workflow)
+- Payload is sent as **JSON** (not form-encoded)
+- The `x-webhook-secret` header must match `ZOHO_WEBHOOK_SECRET` in your `.env`
+- On success, it sends a styled HTML email with the magic link
+
+> [!WARNING]
+> Replace `my_super_secret_123` in the Deluge script with your actual `ZOHO_WEBHOOK_SECRET` value.
+
+---
+
+## 4. Environment Variables
 
 ```env
+# Zoho CRM OAuth
 ZOHO_CLIENT_ID=...
 ZOHO_CLIENT_SECRET=...
 ZOHO_REFRESH_TOKEN=...
+ZOHO_API_DOMAIN=https://www.zohoapis.in
+
+# Zoho Webhook Security
+ZOHO_WEBHOOK_SECRET=...
+
+# Clerk
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=...
 CLERK_SECRET_KEY=...
+CLERK_WEBHOOK_SECRET=...
+
+# App
+NEXT_PUBLIC_APP_URL=https://www.energdive.com
 ```
 
-## 5. Contacts Module Setup
+---
 
-Create the following custom fields in the **Contacts** module for website registration sync:
+## 5. End-to-End Flows
 
-| Field Label | API Name | Type | Description |
-| :--- | :--- | :--- | :--- |
-| Sub Industry | `Sub_Industry` | Single Line Text | Secondary industry classification |
-| Community | `Community` | Single Line Text | User community group |
-| Sub Community | `Sub_Community` | Single Line Text | Specific user community group |
-| Query Type | `Query_Type` | Single Line Text | Triggers specific views (e.g. EnergClub) |
+### Flow A: Magic Link Portal Access
 
-Note: `Industry` and `Company` are usually built-in standard fields, but `Sub_Industry`, `Community`, `Sub_Community`, and `Query_Type` will need to be created as custom fields if they don't already exist.
+1. Admin creates or edits a Lead in Zoho CRM, sets `Portal_Access = Yes`
+2. Workflow rule fires the `portal_provision` Deluge function
+3. Deluge calls `POST /api/zoho/provision` with Lead data as JSON
+4. Provision endpoint:
+   - Finds or creates a Clerk user
+   - Generates a magic token (stored in DB)
+   - Sends a Brevo email with the magic link
+5. User clicks link → `/access?token=XXX`
+6. Token is validated against DB → Clerk sign-in ticket issued → user is logged in
+
+### Flow B: Website Signup
+
+1. User signs up on the website → Clerk creates user
+2. Clerk `user.created` webhook fires → `POST /api/webhooks/clerk`
+3. Webhook handler:
+   - Upserts user in local DB
+   - Syncs to Brevo
+   - **Upserts a Lead** in Zoho CRM (deduped by email) — never creates a Contact
+4. User completes onboarding → `POST /api/onboarding/submit`
+5. Onboarding handler:
+   - Saves full profile to DB
+   - **Updates the same Lead** in Zoho CRM with industry, community, etc.
+
+---
+
+## 6. API Endpoints
+
+| Endpoint                    | Purpose                                      |
+| :-------------------------- | :------------------------------------------- |
+| `POST /api/zoho/provision`  | Called by Deluge to provision magic link user |
+| `POST /api/zoho/create-lead`| Create/update a Lead from the website         |
+| `POST /api/webhooks/clerk`  | Clerk webhook — upserts Lead in Zoho         |
+| `POST /api/onboarding/submit` | Full profile save — updates Lead in Zoho   |

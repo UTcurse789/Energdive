@@ -4,8 +4,7 @@ import { saveOnboardingProfile } from "@/lib/queries";
 import { getFullUserProfile } from "@/lib/getFullUserProfile";
 import syncUserToBrevo from "@/lib/brevoSync";
 import { sendWelcomeEmail } from "@/lib/email";
-import { upsertZohoContact, convertLeadToContact } from "@/lib/zoho-contacts";
-import { getLeadByEmail } from "@/lib/zoho";
+import { upsertZohoLead } from "@/lib/zoho-leads";
 
 /**
  * POST /api/onboarding/submit
@@ -65,7 +64,7 @@ export async function POST(req: Request) {
             preferredFormats: body.preferredFormats,
         });
 
-        // ── Update Clerk metadata and profile (so middleware can gate, and UI shows name) ──────────
+        // ── Update Clerk metadata and profile ──────────────────────
         await (await clerkClient()).users.updateUser(userId, {
             firstName: body.firstName,
             lastName: body.lastName,
@@ -99,7 +98,7 @@ export async function POST(req: Request) {
             console.error("⚠️ Welcome email failed:", emailErr);
         }
 
-        // ── Sync to Zoho CRM Contacts ──────────────────────
+        // ── Sync to Zoho CRM as Lead (NOT Contact) ─────────────────
         try {
             // Helper: return non-empty array or undefined
             const toArray = (arr: any[] | undefined) => {
@@ -108,44 +107,26 @@ export async function POST(req: Request) {
                 return filtered.length > 0 ? filtered : undefined;
             };
 
-            const contactData = {
+            const leadData = {
                 First_Name: fullUser.first_name || body.firstName,
                 Last_Name: fullUser.last_name || body.lastName,
                 Email: fullUser.email,
                 Phone: fullUser.phone || undefined,
                 Company: fullUser.organization || body.organization || undefined,
                 Lead_Source: "Website Registration",
-                Industry_Category: fullUser.industries?.find((i: string | null) => !!i) || undefined,
-                Industry_Sub_Category: fullUser.sub_industries?.find((i: string | null) => !!i) || undefined,
+                Industry: fullUser.industries?.find((i: string | null) => !!i) || undefined,
+                Sub_Industry: fullUser.sub_industries?.find((i: string | null) => !!i) || undefined,
                 Community: toArray(fullUser.communities),
-                SubCommunity: toArray(fullUser.sub_communities),
-                community_portal: toArray(fullUser.sub_communities),
+                Sub_Community: toArray(fullUser.sub_communities),
                 Query_Type: "EnergClub",
             };
-            console.log("📋 [ZOHO_CONTACTS] Onboarding sync payload:", JSON.stringify(contactData, null, 2));
+            console.log("📋 [ZOHO_LEADS] Onboarding sync payload:", JSON.stringify(leadData, null, 2));
 
-            // Check if a Lead already exists for this email
-            const existingLead = await getLeadByEmail(fullUser.email);
-
-            if (existingLead) {
-                // Convert the Lead to a Contact instead of creating a duplicate
-                console.log(`📋 [ZOHO] Found existing Lead ${existingLead.id} for ${fullUser.email}. Converting to Contact...`);
-                const conversionResult = await convertLeadToContact(existingLead.id, contactData);
-                if (conversionResult) {
-                    console.log(`✅ Lead ${existingLead.id} converted to Contact ${conversionResult.contactId}`);
-                } else {
-                    // Conversion failed — fall back to creating/updating Contact directly
-                    console.warn(`⚠️ Lead conversion failed, falling back to upsert for ${fullUser.email}`);
-                    await upsertZohoContact(contactData);
-                }
-            } else {
-                // No existing Lead — create/update Contact directly
-                const zohoResult = await upsertZohoContact(contactData);
-                console.log("✅ Synced to Zoho Contacts:", fullUser.email, zohoResult);
-            }
+            const zohoResult = await upsertZohoLead(leadData);
+            console.log("✅ Synced to Zoho Leads:", fullUser.email, zohoResult);
         } catch (zohoErr: any) {
             // Non-fatal — don't block onboarding if Zoho fails
-            console.error("⚠️ Zoho Contact sync failed:", zohoErr.message);
+            console.error("⚠️ Zoho Lead sync failed:", zohoErr.message);
         }
 
         return NextResponse.json({ success: true, userId: dbUserId });
