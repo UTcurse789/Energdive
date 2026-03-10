@@ -66,13 +66,13 @@ function normalizeIssue(item: StrapiIssueItem): LatestIssueData | null {
 
 /**
  * Fetch the latest (most recently published) issue from Strapi.
- * Server-side only — cached with 60s revalidation.
+ * Server-side only — cached with ISR (24h revalidation).
  */
 export async function getLatestIssue(): Promise<LatestIssueData | null> {
     try {
         const res = await fetch(
             `${STRAPI_BASE_URL}/api/issues?populate=CoverImage&sort=createdAt:desc&pagination[limit]=1`,
-            { next: { revalidate: 60 } }
+            { next: { revalidate: 86400 } } // 24 hour ISR — issues change monthly
         );
         if (!res.ok) return null;
 

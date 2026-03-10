@@ -107,6 +107,8 @@ export async function POST(req: Request) {
                     Industry_Sub_Category: user.sub_industries?.find((i: string | null) => !!i) || undefined,
                     Community_Portal: toArray(user.sub_communities),
                     Query_Type: "EnergClub",
+                    City: user.state || undefined,
+                    Country: user.country || undefined,
                 };
 
                 console.log("📋 [ZOHO_LEADS] Webhook sync payload:", JSON.stringify(leadData, null, 2));

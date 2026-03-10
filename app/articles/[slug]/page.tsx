@@ -35,7 +35,7 @@ async function getArticle(slug: string) {
         `filters[slug][$eq]=${slug}` +
         `&populate=*`;
 
-    const res = await fetch(url, { next: { revalidate: 60 } });
+    const res = await fetch(url, { next: { revalidate: 3600 } });
     const json = await res.json();
     return json?.data?.[0] ?? null;
 }

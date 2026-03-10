@@ -55,7 +55,7 @@ async function fetchTagContent(tagSlug: string) {
         // Try slug-based filter first
         let res = await fetch(
             `${STRAPI_BASE}/api/contents?filters[tags][slug][$eq]=${encodeURIComponent(tagSlug)}&populate=*&sort=Date:desc&pagination[pageSize]=50`,
-            { next: { revalidate: 120 } }
+            { next: { revalidate: 3600 } }
         );
         if (!res.ok) return { articles: [], tagName: tagSlug };
 
@@ -70,7 +70,7 @@ async function fetchTagContent(tagSlug: string) {
 
             const nameRes = await fetch(
                 `${STRAPI_BASE}/api/contents?filters[tags][name][$containsi]=${encodeURIComponent(tagNameFromSlug)}&populate=*&sort=Date:desc&pagination[pageSize]=50`,
-                { next: { revalidate: 120 } }
+                { next: { revalidate: 3600 } }
             );
             if (nameRes.ok) {
                 const nameJson = await nameRes.json();
@@ -132,7 +132,7 @@ async function fetchTagVideos(tagSlug: string) {
     try {
         const res = await fetch(
             `${STRAPI_BASE}/api/videos?filters[tags][slug][$eq]=${encodeURIComponent(tagSlug)}&populate=*&sort=createdAt:desc`,
-            { next: { revalidate: 120 } }
+            { next: { revalidate: 3600 } }
         );
         if (!res.ok) return [];
 

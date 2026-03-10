@@ -9,6 +9,8 @@ export async function getFullUserProfile(clerkId: string) {
       u.first_name,
       u.last_name,
       u.phone,
+      u.country,
+      u.state,
       u.job_title,
       u.organization,
       u.preferred_frequency,
