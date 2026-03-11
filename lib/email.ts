@@ -127,6 +127,9 @@ export async function sendPortalAccessEmail(
                             <p style="margin:0 0 8px;color:#111827;font-size:13px;font-weight:700;">
                                 EnergDive Intelligence
                             </p>
+                            <p style="margin:0 0 12px;color:#9CA3AF;font-size:12px;">
+                                <a href="https://energdive.com/unsubscribe?email=${encodeURIComponent(to)}" style="color:#9CA3AF;text-decoration:underline;">Unsubscribe</a>
+                            </p>
                             <p style="margin:0;color:#9CA3AF;font-size:11px;">
                                 &copy; ${new Date().getFullYear()} ENERGDIVE.
                             </p>
@@ -215,6 +218,9 @@ export async function sendWelcomeEmail(
                         <td style="background-color:#F9FAFB;padding:32px 40px;text-align:center;border-top:1px solid #F3F4F6;">
                             <p style="margin:0 0 8px;color:#111827;font-size:13px;font-weight:700;">
                                 ENERGDIVE Intelligence
+                            </p>
+                            <p style="margin:0 0 12px;color:#9CA3AF;font-size:12px;">
+                                <a href="https://energdive.com/unsubscribe?email=${encodeURIComponent(to)}" style="color:#9CA3AF;text-decoration:underline;">Unsubscribe</a>
                             </p>
                             <p style="margin:0;color:#9CA3AF;font-size:11px;">
                                 &copy; ${new Date().getFullYear()} ENERGDIVE. All rights reserved.
