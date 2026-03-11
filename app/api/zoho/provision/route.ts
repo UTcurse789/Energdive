@@ -118,21 +118,35 @@ export async function POST(req: NextRequest) {
             Date.now() + MAGIC_TOKEN_TTL_HOURS * 60 * 60 * 1000
         );
 
+        // Helper to extract first string from potentially array/multiselect fields
+        const getFirstString = (val: any): string | undefined => {
+            if (!val) return undefined;
+            if (Array.isArray(val)) {
+                const first = val[0];
+                return first ? String(first).trim() : undefined;
+            }
+            if (typeof val === "string") {
+                const trimmed = val.trim();
+                return trimmed || undefined;
+            }
+            return String(val).trim();
+        };
+
         // ── 5. Provision user in database ───────────────────────────
         const userId = await provisionUser({
             clerkId: clerkUserId,
             email,
             firstName,
             lastName,
-            phone: body.phone || undefined,
-            company: body.company || undefined,
-            designation: body.designation || undefined,
-            country: body.country || undefined,
-            state: body.state || undefined,
-            industryName: body.industry || undefined,
-            subIndustryName: body.sub_industry || undefined,
-            communityName: body.community || undefined,
-            subCommunityName: body.sub_community || undefined,
+            phone: getFirstString(body.phone),
+            company: getFirstString(body.company),
+            designation: getFirstString(body.designation),
+            country: getFirstString(body.country),
+            state: getFirstString(body.state),
+            industryName: getFirstString(body.industry),
+            subIndustryName: getFirstString(body.sub_industry),
+            communityName: getFirstString(body.community),
+            subCommunityName: getFirstString(body.sub_community),
             magicToken,
             magicTokenExpiresAt,
         });
