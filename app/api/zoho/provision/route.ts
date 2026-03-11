@@ -129,13 +129,17 @@ export async function POST(req: NextRequest) {
             if (!val) return undefined;
             if (Array.isArray(val)) {
                 const first = val[0];
-                return first ? String(first).trim() : undefined;
+                return first && first !== "undefined" && first !== "null" ? String(first).trim() : undefined;
             }
             if (typeof val === "string") {
                 const trimmed = val.trim();
-                return trimmed || undefined;
+                // Ignore literal "undefined" / "null" sent by Zoho's ifnull deluge script
+                if (trimmed === "undefined" || trimmed === "null" || trimmed === "") return undefined;
+                return trimmed;
             }
-            return String(val).trim();
+            const str = String(val).trim();
+            if (str === "undefined" || str === "null" || str === "") return undefined;
+            return str;
         };
 
         // ── 5. Provision user in database ───────────────────────────
