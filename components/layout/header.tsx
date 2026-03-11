@@ -79,6 +79,8 @@ const MONTH_TO_INDEX: Record<string, number> = {
     dec: 11,
 };
 
+const DEFAULT_STRAPI_BASE_URL = process.env.NEXT_PUBLIC_STRAPI_URL || "https://cms.energdive.com";
+
 function getMonthIndex(month: unknown): number {
     if (typeof month !== "string") return -1;
     const normalized = month.trim().toLowerCase();
@@ -175,9 +177,10 @@ export function Header() {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [mobileExpanded, setMobileExpanded] = useState<string | null>(null); // 'sectors' | 'magazine' | 'more'
     const [isSearchOpen, setIsSearchOpen] = useState(false);
+    const [strapiBaseUrl, setStrapiBaseUrl] = useState(DEFAULT_STRAPI_BASE_URL);
 
     const brandGreen = "#00A651";
-    const baseUrl = process.env.NEXT_PUBLIC_STRAPI_URL || "http://localhost:1337";
+    const baseUrl = strapiBaseUrl;
 
     useEffect(() => {
         const handleScroll = () => setIsScrolled(window.scrollY > 10);
@@ -187,36 +190,42 @@ export function Header() {
 
     // Fetch real videos and events from Strapi
     useEffect(() => {
+        let cancelled = false;
+
         async function fetchMenuData() {
             try {
-                const [videosRes, eventsRes, issuesRes, sectorsRes] = await Promise.all([
-                    fetch(`${baseUrl}/api/videos?populate[0]=thumbnail&populate[1]=author.avatar&pagination[limit]=3&sort=createdAt:desc`),
-                    fetch(`${baseUrl}/api/events?populate=*&pagination[limit]=3&sort=createdAt:desc`),
-                    fetch(`${baseUrl}/api/issues?populate=CoverImage&pagination[limit]=12`),
-                    fetch(`${baseUrl}/api/sectors?populate=children&pagination[pageSize]=100`),
-                ]);
-                if (videosRes.ok) {
-                    const vData = await videosRes.json();
-                    setRealVideos(vData.data || []);
-                }
-                if (eventsRes.ok) {
-                    const eData = await eventsRes.json();
-                    setRealEvents(eData.data || []);
-                }
-                if (issuesRes.ok) {
-                    const iData = (await issuesRes.json()) as { data?: StrapiIssueResponseItem[] };
-                    const normalizedIssues: MagazineIssue[] = Array.isArray(iData?.data)
-                        ? iData.data
-                            .map((item) => normalizeIssue(item, baseUrl))
-                            .filter((issue: MagazineIssue | null): issue is MagazineIssue => issue !== null)
-                        : [];
+                const res = await fetch("/api/menu");
+                if (!res.ok) return;
 
-                    normalizedIssues.sort((a, b) => b.sortDate - a.sortDate);
-                    setMagazineIssues(normalizedIssues);
-                }
-                if (sectorsRes.ok) {
-                    const sData = await sectorsRes.json();
-                    const allSectors = sData.data || [];
+                const menuData = await res.json() as {
+                    baseUrl?: string;
+                    videos?: any[];
+                    events?: any[];
+                    issues?: StrapiIssueResponseItem[];
+                    sectors?: any[];
+                };
+
+                if (cancelled) return;
+
+                const resolvedBaseUrl = typeof menuData.baseUrl === "string" && menuData.baseUrl.trim()
+                    ? menuData.baseUrl
+                    : DEFAULT_STRAPI_BASE_URL;
+
+                setStrapiBaseUrl(resolvedBaseUrl);
+                setRealVideos(Array.isArray(menuData.videos) ? menuData.videos : []);
+                setRealEvents(Array.isArray(menuData.events) ? menuData.events : []);
+
+                const normalizedIssues: MagazineIssue[] = Array.isArray(menuData?.issues)
+                    ? menuData.issues
+                            .map((item) => normalizeIssue(item, resolvedBaseUrl))
+                            .filter((issue: MagazineIssue | null): issue is MagazineIssue => issue !== null)
+                    : [];
+
+                normalizedIssues.sort((a, b) => b.sortDate - a.sortDate);
+                setMagazineIssues(normalizedIssues);
+
+                if (Array.isArray(menuData.sectors)) {
+                    const allSectors = menuData.sectors;
                     // Only keep parent sectors (those that have children or match the known parent slugs)
                     const PARENT_SLUGS = SECTORS.map(s => s.slug);
                     const parentSectors = allSectors
@@ -247,7 +256,10 @@ export function Header() {
             }
         }
         fetchMenuData();
-    }, [baseUrl]);
+        return () => {
+            cancelled = true;
+        };
+    }, []);
 
     const closeMenus = () => { setActiveMenu(null); setHoveredSector(null); setHoveredMoreItem(null); };
     const closeAll = () => { closeMenus(); setMobileMenuOpen(false); setMobileExpanded(null); };
