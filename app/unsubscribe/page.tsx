@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense } from "react";
 import Image from "next/image";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 
 const REASONS = [
     "Too many emails",
@@ -13,6 +13,7 @@ const REASONS = [
 
 function UnsubscribeForm() {
     const searchParams = useSearchParams();
+    const router = useRouter();
     const initialEmail = searchParams.get("email") || "";
 
     const [email, setEmail] = useState("");
@@ -45,6 +46,7 @@ function UnsubscribeForm() {
             if (res.ok) {
                 setStatus("success");
                 setMessage("You have been successfully unsubscribed.");
+                router.push("/");
             } else {
                 setStatus("error");
                 setMessage(data.error || "An error occurred.");
@@ -133,7 +135,7 @@ export default function UnsubscribePage() {
         <div className="min-h-screen bg-[#F1F3F6] text-slate-900 selection:bg-[#00A651]/20 font-sans flex flex-col items-center pt-24 pb-12 px-6">
             <div className="mb-12 text-center">
                 <Image
-                    src="/logo2-removebg-preview.png"
+                    src="/Energdive-Logo.png"
                     alt="ENERGDIVE Logo"
                     width={200}
                     height={50}
