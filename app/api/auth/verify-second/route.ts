@@ -5,6 +5,7 @@ import { verifyOtp } from "@/lib/otp-store";
 import { updateVerificationStatus, getVerificationStatus } from "@/lib/queries/users";
 import syncUserToBrevo from "@/lib/brevoSync";
 import { getFullUserProfile } from "@/lib/getFullUserProfile";
+import { upsertZohoLead } from "@/lib/zoho-leads";
 
 const clerk = createClerkClient({
     secretKey: process.env.CLERK_SECRET_KEY!,
@@ -74,7 +75,7 @@ export async function POST(req: Request) {
                 phone: e164Phone,
             });
 
-            // Update Clerk phone metadata
+            // Update Clerk: metadata + actual phone number
             try {
                 await clerk.users.updateUser(userId, {
                     publicMetadata: {
@@ -82,9 +83,25 @@ export async function POST(req: Request) {
                         phoneVerified: true,
                     },
                 });
+
+                // Also create the actual phone number in Clerk
+                try {
+                    const newPhone = await clerk.phoneNumbers.createPhoneNumber({
+                        userId,
+                        phoneNumber: e164Phone,
+                        verified: true,
+                        primary: true,
+                    });
+                    console.log(`[VERIFY_SECOND] Created phone in Clerk: ${e164Phone} (id: ${newPhone.id})`);
+                } catch (phoneErr: any) {
+                    // Might fail if phone already exists — that's OK
+                    if (!phoneErr.message?.includes('already')) {
+                        console.warn(`[VERIFY_SECOND] Clerk phone creation failed (non-fatal): ${phoneErr.message}`);
+                    }
+                }
             } catch (clerkErr: any) {
                 console.warn(
-                    `[VERIFY_SECOND] Clerk metadata update failed: ${clerkErr.message}`
+                    `[VERIFY_SECOND] Clerk update failed: ${clerkErr.message}`
                 );
             }
 
@@ -92,7 +109,7 @@ export async function POST(req: Request) {
                 `[VERIFY_SECOND] Phone verified for ${userId}: ${e164Phone}`
             );
 
-            // Check if both are now verified → sync to Brevo
+            // Sync to Brevo + Zoho immediately after phone verification
             await trySyncAfterVerification(userId);
 
             return NextResponse.json({
@@ -211,7 +228,7 @@ export async function POST(req: Request) {
 
 /**
  * After a verification step completes, check if both email and phone
- * are now verified. If so, sync user data to Brevo immediately.
+ * are now verified. If so, sync user data to Brevo and Zoho immediately.
  */
 async function trySyncAfterVerification(clerkId: string) {
     try {
@@ -222,16 +239,51 @@ async function trySyncAfterVerification(clerkId: string) {
         const isDummy = status.email?.endsWith("@phone.energdive.com");
 
         if (bothVerified && !isDummy) {
-            console.log(`[VERIFY_SECOND] Both verified — syncing to Brevo: ${status.email}`);
             const fullUser = await getFullUserProfile(clerkId);
-            if (fullUser) {
+            if (!fullUser) return;
+
+            // Sync to Brevo
+            try {
                 await syncUserToBrevo(fullUser);
                 console.log(`[VERIFY_SECOND] ✅ Synced to Brevo: ${status.email}`);
+            } catch (brevoErr: any) {
+                console.warn(`[VERIFY_SECOND] Brevo sync failed (non-fatal): ${brevoErr.message}`);
+            }
+
+            // Sync to Zoho
+            try {
+                const toArray = (arr: any[] | undefined) => {
+                    if (!arr) return undefined;
+                    const filtered = arr.filter((v: any) => v !== null && v !== undefined && v !== '');
+                    return filtered.length > 0 ? filtered : undefined;
+                };
+
+                const leadData = {
+                    First_Name: fullUser.first_name || "Unknown",
+                    Last_Name: fullUser.last_name || "Unknown",
+                    Email: fullUser.email,
+                    Phone: fullUser.phone || undefined,
+                    Company: fullUser.organization || undefined,
+                    Designation: fullUser.job_title || undefined,
+                    Lead_Source: "Website Registration",
+                    Industry: fullUser.industries?.find((i: string | null) => !!i) || undefined,
+                    Industry_Sub_Category: fullUser.sub_industries?.find((i: string | null) => !!i) || undefined,
+                    Community_Portal: toArray(fullUser.sub_communities),
+                    Query_Type: "EnergClub",
+                    City: fullUser.state || undefined,
+                    Country: fullUser.country || undefined,
+                };
+
+                await upsertZohoLead(leadData);
+                console.log(`[VERIFY_SECOND] ✅ Synced to Zoho: ${status.email}`);
+            } catch (zohoErr: any) {
+                console.warn(`[VERIFY_SECOND] Zoho sync failed (non-fatal): ${zohoErr.message}`);
             }
         } else {
-            console.log(`[VERIFY_SECOND] Not ready for Brevo sync — email_verified=${status.email_verified}, phone_verified=${status.phone_verified}, isDummy=${isDummy}`);
+            console.log(`[VERIFY_SECOND] Not ready for external sync — email_verified=${status.email_verified}, phone_verified=${status.phone_verified}, isDummy=${isDummy}`);
         }
     } catch (err: any) {
-        console.warn(`[VERIFY_SECOND] Brevo sync attempt failed (non-fatal): ${err.message}`);
+        console.warn(`[VERIFY_SECOND] Sync attempt failed (non-fatal): ${err.message}`);
     }
 }
+

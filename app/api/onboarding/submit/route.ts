@@ -69,7 +69,10 @@ export async function POST(req: Request) {
         await (await clerkClient()).users.updateUser(userId, {
             firstName: body.firstName,
             lastName: body.lastName,
-            publicMetadata: { onboarding_completed: true },
+            publicMetadata: {
+                onboarding_completed: true,
+                ...(body.phone ? { phone: body.phone } : {}),
+            },
         });
 
         // ── Fetch FULL profile ─────────────────────────────

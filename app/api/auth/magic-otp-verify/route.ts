@@ -8,30 +8,30 @@ import { getFullUserProfile } from "@/lib/getFullUserProfile";
 /**
  * POST /api/auth/magic-otp-verify
  *
- * Verifies the OTP during magic link login flow.
+ * Verifies the email OTP during magic link login flow.
  * On success, creates a Clerk sign-in token and syncs user to Brevo.
  *
- * Body: { phone: string, otp: string, userId: number }
+ * Body: { email: string, otp: string, userId: number }
  */
 export async function POST(req: Request) {
     try {
-        const { phone, otp, userId } = await req.json();
+        const { email, otp, userId } = await req.json();
 
-        if (!phone || !otp || !userId) {
+        if (!email || !otp || !userId) {
             return NextResponse.json(
-                { error: "phone, otp, and userId are required" },
+                { error: "email, otp, and userId are required" },
                 { status: 400 }
             );
         }
 
-        const mobile = phone.replace(/[^0-9]/g, "");
+        const normalizedEmail = email.trim().toLowerCase();
 
         console.log(
-            `[Magic OTP Verify] Verifying OTP for: ${mobile}, userId: ${userId}`
+            `[Magic OTP Verify] Verifying email OTP for: ${normalizedEmail}, userId: ${userId}`
         );
 
-        // Step 1: Verify OTP
-        const isValid = verifyOtp(mobile, otp);
+        // Step 1: Verify OTP (keyed by email)
+        const isValid = verifyOtp(normalizedEmail, otp);
         if (!isValid) {
             return NextResponse.json(
                 { error: "Invalid or expired OTP" },
@@ -39,7 +39,7 @@ export async function POST(req: Request) {
             );
         }
 
-        console.log(`[Magic OTP Verify] OTP verified for: ${mobile}`);
+        console.log(`[Magic OTP Verify] OTP verified for: ${normalizedEmail}`);
 
         // Step 2: Look up the user to get their Clerk ID
         const user = await getUserByInternalId(userId);
@@ -93,3 +93,4 @@ export async function POST(req: Request) {
         );
     }
 }
+
