@@ -185,7 +185,7 @@ export function Footer() {
                 {/* ─── Bottom Bar ─── */}
                 <div className="flex flex-col md:flex-row justify-between items-center gap-4 py-6 border-t border-white/[0.06]">
                     <p className="text-[11px] text-gray-600">
-                        &copy; <span>{year}</span> EnergDive. All rights reserved. Clarisector Technologies Pvt. Ltd.
+                        &copy; <span>{year}</span> ENERGDIVE. All rights reserved. Clarisector Technologies Pvt. Ltd.
                     </p>
                     <div className="flex items-center gap-5">
                         <Link href="/terms" className="text-[11px] text-gray-600 hover:text-gray-400 transition-colors">Terms</Link>

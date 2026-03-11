@@ -4,7 +4,7 @@ import { saveOnboardingProfile } from "@/lib/queries";
 import { getFullUserProfile } from "@/lib/getFullUserProfile";
 import { getVerificationStatus } from "@/lib/queries/users";
 import syncUserToBrevo from "@/lib/brevoSync";
-import { sendWelcomeEmail } from "@/lib/email";
+import { sendWelcomeEmail, sendNewUserNotification } from "@/lib/email";
 import { upsertZohoLead } from "@/lib/zoho-leads";
 
 /**

@@ -194,7 +194,7 @@ function CardAd({ ad, className }: { ad: Ad; className: string }) {
     if (!imageUrl) return null;
 
     const inner = (
-        <div className={`relative overflow-hidden rounded-2xl bg-white shadow-sm border border-gray-100/60 group ${className}`}>
+        <div className={`relative overflow-hidden rounded-2xl bg-white shadow-sm border border-gray-100/60 group h-fit ${className}`}>
             <div className="relative w-full" style={{ aspectRatio: "300/250" }}>
                 <Image
                     src={imageUrl}

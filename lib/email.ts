@@ -230,3 +230,106 @@ export async function sendWelcomeEmail(
 
     await sendEmail({ to, toName: firstName, subject, htmlContent });
 }
+
+/**
+ * Send an admin notification email to info@energdive.com
+ * when a new user completes the full onboarding.
+ */
+export async function sendNewUserNotification(
+    firstName: string,
+    lastName: string,
+    email: string
+): Promise<void> {
+    const ADMIN_EMAIL = "info@energdive.com";
+    const subject = `New User Registered — ${firstName} ${lastName}`;
+    const registeredAt = new Date().toLocaleString("en-IN", {
+        timeZone: "Asia/Kolkata",
+        dateStyle: "long",
+        timeStyle: "short",
+    });
+
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://www.energdive.com";
+    const logoUrl = `${appUrl}/logo2-removebg-preview.png`;
+
+    const htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>${subject}</title>
+</head>
+<body style="margin:0;padding:0;background-color:#0B0F19;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#0B0F19;padding:40px 20px;">
+        <tr>
+            <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 20px 40px rgba(0,0,0,0.3);">
+
+                    <tr>
+                        <td style="background:#0a2e1f;padding:40px 40px 32px;text-align:center;border-bottom:4px solid #09B697;">
+                            ${logoUrl
+            ? `<img src="${logoUrl}" alt="EnergDive Logo" width="180" style="display:block;margin:0 auto;max-width:200px;height:auto;" />`
+            : `<h1 style="color:#ffffff;margin:0;font-size:24px;">ENERGDIVE</h1>`
+        }
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td style="padding:48px 40px;">
+                            <h2 style="margin:0 0 8px;color:#111827;font-size:22px;font-weight:800;letter-spacing:-0.5px;line-height:1.2;">
+                                🎉 New User Registered
+                            </h2>
+                            <p style="margin:0 0 28px;color:#6B7280;font-size:14px;">
+                                A new user has completed onboarding on ENERGDIVE.
+                            </p>
+
+                            <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#F9FAFB;border:1px solid #E5E7EB;border-radius:12px;overflow:hidden;">
+                                <tr>
+                                    <td style="padding:16px 20px;border-bottom:1px solid #E5E7EB;">
+                                        <p style="margin:0 0 4px;color:#9CA3AF;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">First Name</p>
+                                        <p style="margin:0;color:#111827;font-size:16px;font-weight:600;">${firstName}</p>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding:16px 20px;border-bottom:1px solid #E5E7EB;">
+                                        <p style="margin:0 0 4px;color:#9CA3AF;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Last Name</p>
+                                        <p style="margin:0;color:#111827;font-size:16px;font-weight:600;">${lastName}</p>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding:16px 20px;border-bottom:1px solid #E5E7EB;">
+                                        <p style="margin:0 0 4px;color:#9CA3AF;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Email</p>
+                                        <p style="margin:0;color:#111827;font-size:16px;font-weight:600;">
+                                            <a href="mailto:${email}" style="color:#09B697;text-decoration:none;">${email}</a>
+                                        </p>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding:16px 20px;">
+                                        <p style="margin:0 0 4px;color:#9CA3AF;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Registered At</p>
+                                        <p style="margin:0;color:#111827;font-size:16px;font-weight:600;">${registeredAt}</p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td style="background-color:#F9FAFB;padding:32px 40px;text-align:center;border-top:1px solid #F3F4F6;">
+                            <p style="margin:0 0 8px;color:#111827;font-size:13px;font-weight:700;">
+                                ENERGDIVE Intelligence
+                            </p>
+                            <p style="margin:0;color:#9CA3AF;font-size:11px;">
+                                &copy; ${new Date().getFullYear()} ENERGDIVE. All rights reserved.
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>`;
+
+    await sendEmail({ to: ADMIN_EMAIL, toName: "ENERGDIVE Admin", subject, htmlContent });
+}

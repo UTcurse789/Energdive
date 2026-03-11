@@ -350,7 +350,7 @@ export default function EnergClubPage() {
                                 <div className="w-5 h-5 bg-zinc-800 rounded-full hover:bg-[#E5B866] transition-colors" />
                             </div>
                             <p className="text-xs text-zinc-700 uppercase tracking-widest mt-4">
-                                © 2026 EnergDive. All Rights Reserved.
+                                © 2026 ENERGDIVE. All Rights Reserved.
                             </p>
                         </div>
                     </div>
