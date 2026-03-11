@@ -14,7 +14,7 @@ export interface ZohoContactData {
     Community?: string[];
     SubCommunity?: string[];
     community_portal?: string[];
-    Query_Type?: string;
+    Invite_Source?: string;
 }
 
 /**

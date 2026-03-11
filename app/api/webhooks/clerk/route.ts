@@ -117,7 +117,7 @@ export async function POST(req: Request) {
                     Industry: user.industries?.find((i: string | null) => !!i) || undefined,
                     Industry_Sub_Category: user.sub_industries?.find((i: string | null) => !!i) || undefined,
                     Community_Portal: toArray(user.sub_communities),
-                    Query_Type: "EnergClub",
+                    Invite_Source: "EnergClub",
                     City: user.state || undefined,
                     Country: user.country || undefined,
                 };

@@ -269,7 +269,7 @@ async function trySyncAfterVerification(clerkId: string) {
                     Industry: fullUser.industries?.find((i: string | null) => !!i) || undefined,
                     Industry_Sub_Category: fullUser.sub_industries?.find((i: string | null) => !!i) || undefined,
                     Community_Portal: toArray(fullUser.sub_communities),
-                    Query_Type: "EnergClub",
+                    Invite_Source: "EnergClub",
                     City: fullUser.state || undefined,
                     Country: fullUser.country || undefined,
                 };

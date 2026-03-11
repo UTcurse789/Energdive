@@ -22,7 +22,7 @@ const createLeadSchema = z.object({
     Community: stringOrArray,
     Sub_Community: stringOrArray,
     Community_Portal: stringOrArray,
-    Query_Type: z.string().default("EnergClub"),
+    Invite_Source: z.string().default("EnergClub"),
 });
 
 /**

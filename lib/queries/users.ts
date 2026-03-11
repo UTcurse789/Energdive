@@ -72,7 +72,7 @@ export async function saveOnboardingProfile(
                 email               = EXCLUDED.email,
                 first_name          = EXCLUDED.first_name,
                 last_name           = EXCLUDED.last_name,
-                phone               = EXCLUDED.phone,
+                phone               = COALESCE(NULLIF(EXCLUDED.phone, ''), users.phone),
                 country             = EXCLUDED.country,
                 state               = EXCLUDED.state,
                 job_title           = EXCLUDED.job_title,

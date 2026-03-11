@@ -71,7 +71,7 @@ export async function POST(req: Request) {
             lastName: body.lastName,
             publicMetadata: {
                 onboarding_completed: true,
-                ...(body.phone ? { phone: body.phone } : {}),
+                ...(body.phone?.trim() ? { phone: body.phone.trim() } : {}),
             },
         });
 
@@ -147,7 +147,7 @@ export async function POST(req: Request) {
                     Industry: fullUser.industries?.find((i: string | null) => !!i) || undefined,
                     Industry_Sub_Category: fullUser.sub_industries?.find((i: string | null) => !!i) || undefined,
                     Community_Portal: toArray(fullUser.sub_communities),
-                    Query_Type: "EnergClub",
+                    Invite_Source: "EnergClub",
                     City: fullUser.state || body.state || undefined,
                     Country: fullUser.country || body.country || undefined,
                 };

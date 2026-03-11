@@ -15,7 +15,7 @@ export interface ZohoLeadData {
     Community?: string[];
     Sub_Community?: string[];
     Community_Portal?: string[];
-    Query_Type?: string;
+    Invite_Source?: string;
     City?: string;
     Country?: string;
 }
@@ -174,7 +174,7 @@ export async function upsertZohoLead(
             Community: toZohoArray(enrichedData.Community),
             Sub_Community: toZohoArray(enrichedData.Sub_Community),
             Community_Portal: toZohoArray(enrichedData.Community_Portal),
-            Query_Type: enrichedData.Query_Type || null,
+            Invite_Source: enrichedData.Invite_Source || null,
             City: enrichedData.City || null,
             Country: enrichedData.Country || null,
         };

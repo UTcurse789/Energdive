@@ -23,7 +23,7 @@ const createContactSchema = z.object({
     Community: stringOrArray,
     SubCommunity: stringOrArray,
     community_portal: stringOrArray,
-    Query_Type: z.string().default("EnergClub"),
+    Invite_Source: z.string().default("EnergClub"),
 }).transform((data) => {
     // Alias mappings
     if (data.Industry && !data.Industry_Category) data.Industry_Category = data.Industry;
