@@ -1,0 +1,88 @@
+/*
+ * split-community-portal.dg
+ *
+ * Zoho CRM Deluge Custom Function (Workflow)
+ * Module: Leads
+ * Trigger: On Create or Edit when Community_Portal is not empty
+ * Purpose: Automatically splits the Community_Portal multiselect values 
+ *          and populates the individual Community and Sub_Community fields.
+ */
+
+void automation.split_community_portal(Int leadId)
+{
+    // Retrieve the Lead Record
+    leadDetails = zoho.crm.getRecordById("Leads", leadId);
+    
+    // Get the Community_Portal multi-select values (returns a List of strings)
+    portalValues = leadDetails.get("Community_Portal");
+    
+    if (portalValues == null || portalValues.isEmpty())
+    {
+        info "Community_Portal is empty. No action needed.";
+        return;
+    }
+    
+    // Prepare Sets (as Lists to ensure unique values) for Community and Sub_Community
+    communities = List();
+    subCommunities = List();
+    
+    // Iterate through each selected value in Community_Portal
+    for each portalValue in portalValues
+    {
+        val = ifnull(portalValue, "");
+        if (val == "") {
+            continue;
+        }
+        
+        // Find the hyphen "-" to split Community from Sub_Community
+        hyphenIndex = val.indexOf("-");
+        
+        if (hyphenIndex > 0)
+        {
+            community = val.substring(0, hyphenIndex).trim();
+            subCommunity = val.substring(hyphenIndex + 1).trim();
+            
+            // Add unique communities
+            if (!communities.contains(community)) {
+                communities.add(community);
+            }
+            
+            // Add unique sub-communities
+            if (!subCommunities.contains(subCommunity)) {
+                subCommunities.add(subCommunity);
+            }
+        }
+        else
+        {
+            // If no hyphen exists, treat the whole string as a Community
+            if (!communities.contains(val.trim())) {
+                communities.add(val.trim());
+            }
+        }
+    }
+    
+    // Prepare the update map
+    updateMap = Map();
+    
+    // Zoho expects a List of strings for multi-select fields
+    if (communities.size() > 0)
+    {
+        updateMap.put("Community", communities);
+    }
+    
+    if (subCommunities.size() > 0)
+    {
+        updateMap.put("Sub_Community", subCommunities);
+    }
+    
+    // Update the Lead record
+    if (!updateMap.isEmpty())
+    {
+        resp = zoho.crm.updateRecord("Leads", leadId, updateMap);
+        info "Updated Lead " + leadId + " with split communities. Response: " + resp;
+    }
+    else
+    {
+        info "No valid communities to split for Lead " + leadId;
+    }
+}

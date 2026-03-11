@@ -97,6 +97,9 @@ export async function POST(req: NextRequest) {
                 await client.users.updateUser(clerkUserId, {
                     firstName: firstName || undefined,
                     lastName: lastName || undefined,
+                    publicMetadata: {
+                        ...(body.phone?.trim() ? { phone: body.phone.trim() } : {}),
+                    },
                 });
             } catch (updateErr: any) {
                 warn(`Clerk user update failed (non-fatal): ${updateErr.message}`);
@@ -107,6 +110,9 @@ export async function POST(req: NextRequest) {
                 firstName,
                 lastName,
                 skipPasswordRequirement: true,
+                publicMetadata: {
+                    ...(body.phone?.trim() ? { phone: body.phone.trim() } : {}),
+                },
             });
             clerkUserId = newUser.id;
             log(`Clerk user created: ${clerkUserId}`);
