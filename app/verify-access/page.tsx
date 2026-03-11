@@ -13,8 +13,6 @@ function VerifyAccessContent() {
     const userId = searchParams.get("userId");
     const email = searchParams.get("email") || "";
     const name = searchParams.get("name") || "";
-    const maskedPhone = searchParams.get("maskedPhone") || "";
-    const phone = searchParams.get("phone") || "";
 
     const [otp, setOtp] = useState("");
     const [otpSent, setOtpSent] = useState(false);
@@ -28,7 +26,7 @@ function VerifyAccessContent() {
         return null;
     }
 
-    if (!userId || !phone) {
+    if (!userId || !email) {
         return (
             <div className="min-h-screen flex flex-col items-center justify-center bg-[#FAFAFA] p-4">
                 <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md text-center border border-red-100">
@@ -47,16 +45,24 @@ function VerifyAccessContent() {
         );
     }
 
+    // Mask email: show first 2 chars + ***@domain
+    const maskedEmail = (() => {
+        const [local, domain] = email.split("@");
+        if (!domain) return email;
+        const visible = local.slice(0, 2);
+        return `${visible}${"•".repeat(Math.max(0, local.length - 2))}@${domain}`;
+    })();
+
     const handleSendOtp = async () => {
         setIsLoading(true);
         setError(null);
         setStatus("sending");
 
         try {
-            const res = await fetch("/api/auth/magic-otp-send", {
+            const res = await fetch("/api/auth/magic-email-otp-send", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ phone }),
+                body: JSON.stringify({ email }),
             });
             const data = await res.json();
 
@@ -85,7 +91,7 @@ function VerifyAccessContent() {
             const res = await fetch("/api/auth/magic-otp-verify", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ phone, otp, userId: Number(userId) }),
+                body: JSON.stringify({ email, otp, userId: Number(userId) }),
             });
             const data = await res.json();
 
@@ -145,7 +151,7 @@ function VerifyAccessContent() {
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
                                 strokeWidth={2}
-                                d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                                d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
                             />
                         </svg>
                     </div>
@@ -158,17 +164,17 @@ function VerifyAccessContent() {
                         </p>
                     )}
                     <p className="text-zinc-400 text-sm mt-2">
-                        We&apos;ll send a verification code to your registered phone number
+                        We&apos;ll send a verification code to your email address
                     </p>
                 </div>
 
-                {/* Phone display */}
+                {/* Email display */}
                 <div className="bg-zinc-50 rounded-lg p-4 mb-6 text-center">
                     <p className="text-xs text-zinc-400 uppercase tracking-wider mb-1">
-                        Phone Number
+                        Email Address
                     </p>
                     <p className="text-lg font-mono font-semibold text-zinc-800 tracking-wider">
-                        {maskedPhone || "••••••••••"}
+                        {maskedEmail}
                     </p>
                 </div>
 
@@ -200,6 +206,15 @@ function VerifyAccessContent() {
                 {/* OTP input & verify */}
                 {otpSent && status !== "signing-in" && (
                     <div className="space-y-4">
+                        <div className="flex items-center gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                            <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span className="text-sm text-blue-700">
+                                Verification code sent to your email
+                            </span>
+                        </div>
+
                         <div className="space-y-2">
                             <label className="block text-sm font-medium text-zinc-700">
                                 Enter 4-digit OTP
@@ -286,3 +301,4 @@ export default function VerifyAccessPage() {
         </Suspense>
     );
 }
+

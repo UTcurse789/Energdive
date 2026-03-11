@@ -51,24 +51,29 @@ export async function POST(req: Request) {
 
             const email = emailObj?.email_address;
 
+            // Extract phone number from Clerk user data
+            const phoneObj = event.data.phone_numbers?.[0];
+            const phone = phoneObj?.phone_number || null;
+
             if (!email) {
                 console.log("⚠️ No email found, skipping Brevo sync");
                 return NextResponse.json({ success: true });
             }
 
-            // UPSERT (idempotent)
+            // UPSERT (idempotent) — includes phone
             const result = await db.query(
                 `
-        INSERT INTO users (clerk_id, email, first_name, last_name)
-        VALUES ($1, $2, $3, $4)
+        INSERT INTO users (clerk_id, email, first_name, last_name, phone)
+        VALUES ($1, $2, $3, $4, $5)
         ON CONFLICT (clerk_id)
         DO UPDATE SET
           email = EXCLUDED.email,
           first_name = EXCLUDED.first_name,
-          last_name = EXCLUDED.last_name
+          last_name = EXCLUDED.last_name,
+          phone = COALESCE(EXCLUDED.phone, users.phone)
         RETURNING *;
         `,
-                [id, email, first_name, last_name]
+                [id, email, first_name, last_name, phone]
             );
 
             // Fetch full profile with community/industry data from join tables

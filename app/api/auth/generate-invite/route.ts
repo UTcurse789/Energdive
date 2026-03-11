@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getLeadByEmail } from "@/lib/zoho";
 import { generateMagicToken } from "@/lib/magic-token";
+import { sendPortalAccessEmail } from "@/lib/email";
 
 /**
  * POST /api/auth/generate-invite
  * Body: { email: string }
  *
- * Generates a self-verifying magic link.
+ * Generates a self-verifying magic link and sends it via email.
  * Attempts to verify the lead in Zoho first, but proceeds even if Zoho is unavailable.
  */
 export async function POST(request: NextRequest) {
@@ -23,10 +24,12 @@ export async function POST(request: NextRequest) {
 
         // 1. Try to verify lead exists in Zoho (best-effort)
         let leadId: string | null = null;
+        let leadFirstName = "there"; // fallback greeting
         try {
             const lead = await getLeadByEmail(email);
             if (lead) {
                 leadId = lead.id;
+                leadFirstName = lead.First_Name || "there";
                 console.log(`[INVITE] Zoho lead verified: ${leadId}`);
             } else {
                 console.warn(`[INVITE] No matching lead found in Zoho for ${email}`);
@@ -44,10 +47,20 @@ export async function POST(request: NextRequest) {
 
         console.log(`[INVITE] Generated magic link for ${email}, expires: ${expiresAt}`);
 
+        // 4. Send magic link email via Brevo
+        try {
+            await sendPortalAccessEmail(email, leadFirstName, inviteUrl);
+            console.log(`[INVITE] Magic link email sent to ${email}`);
+        } catch (emailErr: any) {
+            console.error(`[INVITE] Failed to send magic link email: ${emailErr.message}`);
+            // Don't fail the request — the link is still valid
+        }
+
         return NextResponse.json({
             success: true,
             inviteUrl,
             expiresAt,
+            emailSent: true,
             ...(leadId && { leadId }),
         });
     } catch (error: any) {
