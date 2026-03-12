@@ -164,13 +164,13 @@ export async function POST(req: NextRequest) {
 
         // ── 5. Log raw Zoho payload for debugging ───────────────────
         log(`Raw Zoho body keys: ${Object.keys(body).join(", ")}`);
-        log(`Raw body.phone=${body.phone}, body.Phone=${body.Phone}`);
+        log(`Raw body.phone=${body.phone}, body.Phone=${body.Phone}, body.Mobile=${body.Mobile}, body.mobile=${body.mobile}`);
         log(`Raw body.community=${body.community}, body.Community=${body.Community}`);
         log(`Raw body.sub_community=${body.sub_community}, body.Sub_Community=${body.Sub_Community}`);
         log(`Raw body.community_portal=${body.community_portal}, body.Community_Portal=${body.Community_Portal}`);
 
         // Handle case-insensitive field names from Zoho Deluge
-        const rawPhone = body.phone || body.Phone;
+        const rawPhone = body.phone || body.Phone || body.mobile || body.Mobile;
         const rawCompany = body.company || body.Company;
         const rawDesignation = body.designation || body.Designation;
         const rawCountry = body.country || body.Country;
