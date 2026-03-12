@@ -259,3 +259,127 @@ export async function upsertZohoLead(
         throw error;
     }
 }
+
+/**
+ * Creates a NEW Zoho CRM Lead every time (no dedup/upsert).
+ * Includes Community_Portal → Community + Sub_Community splitting.
+ * Used for Zoho Form submissions where each form submission = new lead.
+ */
+export async function createZohoLead(
+    leadData: ZohoLeadData,
+    attempt: number = 1
+): Promise<{ id: string; action: "created" }> {
+    const MAX_RETRIES = 3;
+
+    try {
+        const token = await getZohoAccessToken();
+
+        // 1. Bidirectional Community_Portal ↔ Community/Sub_Community
+        const enrichedData = { ...leadData };
+
+        // Forward: parse Community_Portal into Community + Sub_Community
+        if (enrichedData.Community_Portal && enrichedData.Community_Portal.length > 0) {
+            const parsed = parseCommunityPortal(enrichedData.Community_Portal);
+            if (parsed.communities.length > 0) {
+                enrichedData.Community = parsed.communities;
+            }
+            if (parsed.subCommunities.length > 0) {
+                enrichedData.Sub_Community = parsed.subCommunities;
+            }
+        }
+
+        // Reverse: generate Community_Portal from Community + Sub_Community
+        if (
+            (!enrichedData.Community_Portal || enrichedData.Community_Portal.length === 0) &&
+            enrichedData.Community && enrichedData.Community.length > 0 &&
+            enrichedData.Sub_Community && enrichedData.Sub_Community.length > 0
+        ) {
+            enrichedData.Community_Portal = generateCommunityPortal(
+                enrichedData.Community,
+                enrichedData.Sub_Community
+            );
+        }
+
+        // 2. Convert fields to match Zoho CRM field types
+        const toZohoArray = (arr?: string[]): string[] | null => {
+            if (!arr || arr.length === 0) return null;
+            return arr.filter(v => v);
+        };
+
+        const zohoRecord: Record<string, any> = {
+            First_Name: enrichedData.First_Name,
+            Last_Name: enrichedData.Last_Name,
+            Email: enrichedData.Email,
+            Phone: enrichedData.Phone || null,
+            Company: enrichedData.Company || null,
+            Designation: enrichedData.Designation || null,
+            Lead_Source: enrichedData.Lead_Source || null,
+            Industry: enrichedData.Industry || null,
+            Industry_Sub_Category: enrichedData.Industry_Sub_Category || null,
+            Community: toZohoArray(enrichedData.Community),
+            Sub_Community: toZohoArray(enrichedData.Sub_Community),
+            Community_Portal: toZohoArray(enrichedData.Community_Portal),
+            Invite_Source: enrichedData.Invite_Source || null,
+            City: enrichedData.City || null,
+            Country: enrichedData.Country || null,
+        };
+
+        // 3. Always POST (create new lead)
+        const payload = { data: [zohoRecord] };
+        const url = `${ZOHO_API_URL}/Leads`;
+        const bodyStr = JSON.stringify(payload);
+
+        console.log(`[ZOHO_LEADS] POST (create new) ${url} — Body:`, bodyStr);
+
+        const response = await fetch(url, {
+            method: "POST",
+            headers: {
+                Authorization: `Zoho-oauthtoken ${token}`,
+                "Content-Type": "application/json",
+            },
+            body: bodyStr,
+        });
+
+        if (!response.ok) {
+            const errorBody = await response.text();
+
+            if ((response.status === 429 || response.status >= 500) && attempt < MAX_RETRIES) {
+                console.warn(`[ZOHO_LEADS] Rate limit or server error (Status: ${response.status}). Retrying attempt ${attempt + 1}/${MAX_RETRIES}...`);
+                const backoff = (Math.pow(2, attempt) * 1000) + Math.floor(Math.random() * 500);
+                await new Promise(resolve => setTimeout(resolve, backoff));
+                return createZohoLead(leadData, attempt + 1);
+            }
+
+            console.error(`[ZOHO_LEADS] Failed to create lead: ${errorBody}`);
+            throw new Error(`Failed to create Zoho Lead: ${response.status} ${response.statusText}`);
+        }
+
+        const text = await response.text();
+        let data: any;
+        try {
+            data = text ? JSON.parse(text) : {};
+        } catch (err) {
+            console.error(`[ZOHO_LEADS] JSON parse failed for create API. Response text:`, text);
+            throw new Error("API returned invalid JSON");
+        }
+
+        console.log(`[ZOHO_LEADS] Full Zoho API response:`, text);
+        if (data.data && data.data[0] && data.data[0].code === "SUCCESS") {
+            return {
+                id: data.data[0].details.id,
+                action: "created",
+            };
+        } else {
+            console.error(`[ZOHO_LEADS] API returned error inside body:`, JSON.stringify(data));
+            throw new Error("API returned error inside Zoho response body");
+        }
+    } catch (error) {
+        if (attempt < MAX_RETRIES) {
+            console.warn(`[ZOHO_LEADS] Request failed. Retrying attempt ${attempt + 1}/${MAX_RETRIES}... Error: ${error}`);
+            const backoff = (Math.pow(2, attempt) * 1000) + Math.floor(Math.random() * 500);
+            await new Promise(resolve => setTimeout(resolve, backoff));
+            return createZohoLead(leadData, attempt + 1);
+        }
+        throw error;
+    }
+}
