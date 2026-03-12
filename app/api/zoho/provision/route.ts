@@ -142,6 +142,25 @@ export async function POST(req: NextRequest) {
             return str;
         };
 
+        // Helper to extract ALL strings from potentially array/multiselect/semicolon-separated fields
+        const getAllStrings = (val: any): string[] => {
+            if (!val) return [];
+            if (Array.isArray(val)) {
+                return val
+                    .map((v: any) => String(v).trim())
+                    .filter(v => v && v !== "undefined" && v !== "null");
+            }
+            if (typeof val === "string") {
+                // Zoho may send semicolon-separated values
+                return val.split(";")
+                    .map(v => v.trim())
+                    .filter(v => v && v !== "undefined" && v !== "null");
+            }
+            const str = String(val).trim();
+            if (str === "undefined" || str === "null" || str === "") return [];
+            return [str];
+        };
+
         // ── 5. Provision user in database ───────────────────────────
         const userId = await provisionUser({
             clerkId: clerkUserId,
@@ -155,8 +174,8 @@ export async function POST(req: NextRequest) {
             state: getFirstString(body.state),
             industryName: getFirstString(body.industry),
             subIndustryName: getFirstString(body.sub_industry),
-            communityName: getFirstString(body.community),
-            subCommunityName: getFirstString(body.sub_community),
+            communityNames: getAllStrings(body.community),
+            subCommunityNames: getAllStrings(body.sub_community),
             magicToken,
             magicTokenExpiresAt,
         });

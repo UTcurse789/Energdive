@@ -321,8 +321,12 @@ export interface ProvisionPayload {
     // Taxonomy names (matched case-insensitively against DB)
     industryName?: string;
     subIndustryName?: string;
+    // Single community (legacy — still supported)
     communityName?: string;
     subCommunityName?: string;
+    // Multiple communities (preferred — from Zoho multiselect fields)
+    communityNames?: string[];
+    subCommunityNames?: string[];
     // Magic token for one-click login
     magicToken: string;
     magicTokenExpiresAt: Date;
@@ -434,57 +438,88 @@ export async function provisionUser(payload: ProvisionPayload): Promise<number> 
         }
 
         // 3. Resolve community + sub-community by case-insensitive name
-        if (payload.communityName) {
-            const commResult = await client.query(
-                `SELECT id FROM communities WHERE LOWER(name) = LOWER($1) LIMIT 1`,
-                [payload.communityName.trim()]
+        //    Supports both single (communityName) and multi (communityNames) values
+        const communityList = payload.communityNames && payload.communityNames.length > 0
+            ? payload.communityNames
+            : payload.communityName ? [payload.communityName] : [];
+        const subCommunityList = payload.subCommunityNames && payload.subCommunityNames.length > 0
+            ? payload.subCommunityNames
+            : payload.subCommunityName ? [payload.subCommunityName] : [];
+
+        if (communityList.length > 0) {
+            // Clear old mappings
+            await client.query(
+                `DELETE FROM user_communities WHERE user_id = $1`,
+                [userId]
             );
 
-            if (commResult.rows.length > 0) {
-                const communityId = commResult.rows[0].id;
-                let subCommunityId: number | null = null;
+            const insertedPairs: string[] = [];
 
-                if (payload.subCommunityName) {
+            for (const commName of communityList) {
+                const commResult = await client.query(
+                    `SELECT id FROM communities WHERE LOWER(name) = LOWER($1) LIMIT 1`,
+                    [commName.trim()]
+                );
+
+                if (commResult.rows.length === 0) {
+                    console.warn(`[PROVISION] Community not found: "${commName}" — skipping`);
+                    continue;
+                }
+
+                const communityId = commResult.rows[0].id;
+
+                // Try to match each sub-community against this community
+                let matchedAnySub = false;
+                for (const subName of subCommunityList) {
                     const subResult = await client.query(
                         `SELECT id FROM sub_communities
                          WHERE community_id = $1
                            AND LOWER(name) = LOWER($2)
                          LIMIT 1`,
-                        [communityId, payload.subCommunityName.trim()]
+                        [communityId, subName.trim()]
                     );
-                    subCommunityId = subResult.rows[0]?.id ?? null;
+
+                    if (subResult.rows.length > 0) {
+                        const subCommunityId = subResult.rows[0].id;
+                        const pairKey = `${communityId}-${subCommunityId}`;
+                        if (!insertedPairs.includes(pairKey)) {
+                            await client.query(
+                                `INSERT INTO user_communities (user_id, community_id, sub_community_id)
+                                 VALUES ($1, $2, $3)`,
+                                [userId, communityId, subCommunityId]
+                            );
+                            insertedPairs.push(pairKey);
+                            console.log(`[PROVISION] Community matched: ${commName} → ${communityId}, sub ${subName} → ${subCommunityId}`);
+                            matchedAnySub = true;
+                        }
+                    }
                 }
 
-                // Fallback: if sub not matched, pick the first sub-community
-                if (!subCommunityId) {
+                // Fallback: if no sub-community matched, pick first sub-community
+                if (!matchedAnySub) {
                     const fallback = await client.query(
                         `SELECT id FROM sub_communities WHERE community_id = $1 ORDER BY id LIMIT 1`,
                         [communityId]
                     );
-                    subCommunityId = fallback.rows[0]?.id ?? null;
+                    const subCommunityId = fallback.rows[0]?.id ?? null;
                     if (subCommunityId) {
-                        console.warn(`[PROVISION] Sub-community "${payload.subCommunityName}" not found, using fallback id=${subCommunityId}`);
+                        const pairKey = `${communityId}-${subCommunityId}`;
+                        if (!insertedPairs.includes(pairKey)) {
+                            await client.query(
+                                `INSERT INTO user_communities (user_id, community_id, sub_community_id)
+                                 VALUES ($1, $2, $3)`,
+                                [userId, communityId, subCommunityId]
+                            );
+                            insertedPairs.push(pairKey);
+                            console.warn(`[PROVISION] No sub matched for "${commName}", using fallback sub_id=${subCommunityId}`);
+                        }
+                    } else {
+                        console.warn(`[PROVISION] No sub-communities exist for "${commName}" — skipping`);
                     }
                 }
-
-                // Only insert if we have a valid sub-community (NOT NULL constraint)
-                if (subCommunityId) {
-                    await client.query(
-                        `DELETE FROM user_communities WHERE user_id = $1`,
-                        [userId]
-                    );
-                    await client.query(
-                        `INSERT INTO user_communities (user_id, community_id, sub_community_id)
-                         VALUES ($1, $2, $3)`,
-                        [userId, communityId, subCommunityId]
-                    );
-                    console.log(`[PROVISION] Community matched: ${payload.communityName} → ${communityId}, sub → ${subCommunityId}`);
-                } else {
-                    console.warn(`[PROVISION] No sub-communities exist for "${payload.communityName}" — skipping community mapping`);
-                }
-            } else {
-                console.warn(`[PROVISION] Community not found: "${payload.communityName}" — skipping`);
             }
+
+            console.log(`[PROVISION] Total community pairs stored: ${insertedPairs.length}`);
         }
 
         await client.query("COMMIT");
