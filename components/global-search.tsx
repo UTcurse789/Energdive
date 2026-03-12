@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, X, FileText, FileSignature, Newspaper, Terminal, Play, Calendar, BookOpen, Mic, Pen, BarChart3, Star } from "lucide-react";
 import { useSearch, SearchResult } from "@/hooks/use-search";
+import { buildContentUrl } from "@/lib/content-routes";
 
 interface GlobalSearchProps {
     isOpen: boolean;
@@ -91,23 +92,22 @@ export function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
     }, [isOpen, onClose]);
 
     const handleResultClick = (result: SearchResult) => {
-        const routeType = result.type.toLowerCase();
-        const routes: Record<string, string> = {
-            "article": `/articles/${result.slug}`,
-            "articles": `/articles/${result.slug}`,
-            "news": `/news/${result.slug}`,
-            "opinion": `/opinion/${result.slug}`,
-            "cover story": `/cover-story/${result.slug}`,
-            "case study": `/case-study/${result.slug}`,
-            "interview": `/interview/${result.slug}`,
-            "editorial": `/editorial/${result.slug}`,
-            "feature": `/feature/${result.slug}`,
-            "analysis": `/analysis/${result.slug}`,
-            "video": `/videos/${result.slug}`,
-            "event": `/events/${result.slug}`,
-            "report": `/reports/${result.slug}`,
-        };
-        const finalPath = routes[routeType] ?? `/${routeType}/${result.slug}`;
+        let finalPath = "";
+
+        switch (result.type.toLowerCase()) {
+            case "video":
+                finalPath = `/videos/${result.slug}`;
+                break;
+            case "event":
+                finalPath = `/events/${result.slug}`;
+                break;
+            case "report":
+                finalPath = `/reports/${result.slug}`;
+                break;
+            default:
+                finalPath = buildContentUrl({ slug: result.slug, type_of_content: { name: result.type } });
+        }
+
         onClose();
         setTimeout(() => setQuery(""), 200);
         router.push(finalPath);

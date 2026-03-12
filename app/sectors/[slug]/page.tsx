@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useMemo, useEffect } from "react";
+import { buildContentUrl } from "@/lib/content-routes";
 import { useParams, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, ChevronRight, Clock, ArrowUpRight, Play, Printer } from "lucide-react";
@@ -34,7 +35,7 @@ async function fetchSectorWithChildren(slug: string) {
 
 async function fetchSectorArticles(slug: string) {
     try {
-        const url = `${STRAPI}/api/contents?filters[type_of_content][name][$eq]=Articles&filters[sectors][slug][$eq]=${slug}&populate=*&sort=Date:desc`;
+        const url = `${STRAPI}/api/contents?filters[$or][0][type_of_content][name][$eq]=Articles&filters[$or][1][type_of_content][name][$eq]=Featured Stories&filters[sectors][slug][$eq]=${slug}&populate=*&sort=Date:desc`;
         const res = await fetch(url, { next: { revalidate: 3600 } });
         const json = await res.json();
         return json?.data || [];
@@ -229,6 +230,7 @@ export default function SectorIntelligencePage() {
                 tags: extractTagObjects(item.tags),
                 image: item?.FeaturedImage?.url ? `${STRAPI}${item.FeaturedImage.url}` : "/placeholder.jpg",
                 excerpt: item.Excerpt?.[0]?.children?.[0]?.text || "",
+                type_of_content: item.type_of_content,
             }));
             setArticles(formatted);
         });
@@ -503,7 +505,7 @@ export default function SectorIntelligencePage() {
                             >
                                 <article className="group relative">
                                     <Link
-                                        href={`/articles/${report.slug}`}
+                                        href={buildContentUrl({ slug: report.slug, type_of_content: report.type_of_content })}
                                         className="block"
                                     >
                                         {/* Card Image */}

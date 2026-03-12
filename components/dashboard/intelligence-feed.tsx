@@ -5,6 +5,7 @@ import { Loader2, AlertCircle, User, Calendar, Clock } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { formatContentDate } from "@/lib/date";
+import { buildContentUrl } from "@/lib/content-routes";
 
 interface FeedItem {
     id: string;
@@ -91,7 +92,7 @@ export function IntelligenceFeed() {
     }
 
     const getDetailUrl = (item: FeedItem) => {
-        return `/articles/${item.slug}`;
+        return buildContentUrl({ slug: item.slug, type_of_content: { name: item.contentType } });
     };
 
     const getCatStyle = (cat: string) => {

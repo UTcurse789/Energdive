@@ -149,16 +149,6 @@ export const metadata: Metadata = {
     site: "@energdive",
     creator: "@energdive",
   },
-
-  icons: {
-    icon: [
-      { url: "/fav.jpg" },
-      { url: "/fav.jpg", type: "image/jpg" },
-    ],
-    apple: [
-      { url: "/apple-icon.jpg" },
-    ],
-  },
 };
 
 export default function RootLayout({
