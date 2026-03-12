@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { upsertZohoLead, ZohoLeadData } from "@/lib/zoho-leads";
+import { upsertZohoLead, createZohoLead, ZohoLeadData } from "@/lib/zoho-leads";
 
 // Helper: accept both "value" and ["value"] — coerce string to array
 const stringOrArray = z.preprocess(
@@ -29,7 +29,11 @@ const createLeadSchema = z.object({
  * POST /api/zoho/create-lead
  *
  * Secure REST endpoint to create/update a Lead record in Zoho CRM.
- * Used for website signups instead of create-contact.
+ * Used for website signups and Zoho Form submissions.
+ *
+ * Query params:
+ *   - mode: "create" (default) → always creates a new lead (no dedup)
+ *           "upsert" → searches by email first, updates if found
  */
 export async function POST(req: NextRequest) {
     try {
@@ -46,8 +50,16 @@ export async function POST(req: NextRequest) {
 
         const leadData: ZohoLeadData = parseResult.data;
 
-        // 2. Add or Update the Lead in Zoho CRM
-        const result = await upsertZohoLead(leadData);
+        // 2. Check mode: "create" (default) = always new lead, "upsert" = search + update/create
+        const mode = req.nextUrl.searchParams.get("mode") || "create";
+
+        let result: { id: string; action: "created" | "updated" };
+
+        if (mode === "upsert") {
+            result = await upsertZohoLead(leadData);
+        } else {
+            result = await createZohoLead(leadData);
+        }
 
         return NextResponse.json({
             success: true,
