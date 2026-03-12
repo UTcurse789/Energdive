@@ -3,6 +3,7 @@ import { clerkClient } from "@clerk/nextjs/server";
 import crypto from "crypto";
 import { provisionUser } from "@/lib/queries";
 import { sendPortalAccessEmail } from "@/lib/email";
+import { parseCommunityPortal } from "@/lib/zoho-leads";
 
 const WEBHOOK_SECRET = process.env.ZOHO_WEBHOOK_SECRET || "";
 const MAGIC_TOKEN_TTL_HOURS = 24;
@@ -161,28 +162,63 @@ export async function POST(req: NextRequest) {
             return [str];
         };
 
-        // ── 5. Provision user in database ───────────────────────────
+        // ── 5. Log raw Zoho payload for debugging ───────────────────
+        log(`Raw Zoho body keys: ${Object.keys(body).join(", ")}`);
+        log(`Raw body.phone=${body.phone}, body.Phone=${body.Phone}`);
+        log(`Raw body.community=${body.community}, body.Community=${body.Community}`);
+        log(`Raw body.sub_community=${body.sub_community}, body.Sub_Community=${body.Sub_Community}`);
+        log(`Raw body.community_portal=${body.community_portal}, body.Community_Portal=${body.Community_Portal}`);
+
+        // Handle case-insensitive field names from Zoho Deluge
+        const rawPhone = body.phone || body.Phone;
+        const rawCompany = body.company || body.Company;
+        const rawDesignation = body.designation || body.Designation;
+        const rawCountry = body.country || body.Country;
+        const rawState = body.state || body.State;
+        const rawIndustry = body.industry || body.Industry;
+        const rawSubIndustry = body.sub_industry || body.Sub_Industry || body.Industry_Sub_Category;
+        const rawCommunity = body.community || body.Community;
+        const rawSubCommunity = body.sub_community || body.Sub_Community;
+        const rawCommunityPortal = body.community_portal || body.Community_Portal;
+
+        // Parse community data — try direct fields first, then community_portal
+        let communityNames = getAllStrings(rawCommunity);
+        let subCommunityNames = getAllStrings(rawSubCommunity);
+
+        if (communityNames.length === 0 && subCommunityNames.length === 0) {
+            const portalValues = getAllStrings(rawCommunityPortal);
+            if (portalValues.length > 0) {
+                const parsed = parseCommunityPortal(portalValues);
+                communityNames = parsed.communities;
+                subCommunityNames = parsed.subCommunities;
+                log(`Parsed community_portal → communities: [${communityNames}], subs: [${subCommunityNames}]`);
+            }
+        }
+
+        log(`Final communityNames: [${communityNames}], subCommunityNames: [${subCommunityNames}], phone: ${getFirstString(rawPhone)}`);
+
+        // ── 6. Provision user in database ───────────────────────────
         const userId = await provisionUser({
             clerkId: clerkUserId,
             email,
             firstName,
             lastName,
-            phone: getFirstString(body.phone),
-            company: getFirstString(body.company),
-            designation: getFirstString(body.designation),
-            country: getFirstString(body.country),
-            state: getFirstString(body.state),
-            industryName: getFirstString(body.industry),
-            subIndustryName: getFirstString(body.sub_industry),
-            communityNames: getAllStrings(body.community),
-            subCommunityNames: getAllStrings(body.sub_community),
+            phone: getFirstString(rawPhone),
+            company: getFirstString(rawCompany),
+            designation: getFirstString(rawDesignation),
+            country: getFirstString(rawCountry),
+            state: getFirstString(rawState),
+            industryName: getFirstString(rawIndustry),
+            subIndustryName: getFirstString(rawSubIndustry),
+            communityNames,
+            subCommunityNames,
             magicToken,
             magicTokenExpiresAt,
         });
 
         log(`DB user provisioned: id=${userId}`);
 
-        // ── 6. Build magic link & send email via Brevo ──────────────
+        // ── 7. Build magic link & send email via Brevo ──────────────
         const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://www.energdive.com";
         const magicLink = `${appUrl}/access?token=${encodeURIComponent(magicToken)}`;
 
@@ -195,7 +231,7 @@ export async function POST(req: NextRequest) {
             console.error(`[PROVISION:${requestId}] Brevo email failed:`, emailErr.message);
         }
 
-        // ── 7. Return success ───────────────────────────────────────
+        // ── 8. Return success ───────────────────────────────────────
         return NextResponse.json({
             success: true,
             userId,

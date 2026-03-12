@@ -9,6 +9,7 @@ import { motion } from "framer-motion";
 import LogoLoop from "@/components/ui/logo-loop";
 import { Flame, Zap, Wind, Globe, ArrowUpRight } from "lucide-react";
 import { PublicationShowcase } from "@/components/sections/PublicationShowcase";
+import ZohoSalesIQ from "@/components/ZohoSalesIQ";
 
 // Partner Logos Data
 const partnerLogos = [
@@ -216,6 +217,7 @@ export default function AboutPage() {
                 </div>
 
             </main>
+            <ZohoSalesIQ />
         </div>
     );
 }

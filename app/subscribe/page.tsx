@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import Image from "next/image";
 import { ArrowUpRight, Globe, Users, Award } from "lucide-react";
+import ZohoSalesIQ from "@/components/ZohoSalesIQ";
 
 const STATS = [
     { label: "Active Readers", value: "10K+", icon: Users },
@@ -151,6 +152,7 @@ export default function SubscribePage() {
 
                 </div>
             </main>
+            <ZohoSalesIQ />
         </div>
     );
 }
