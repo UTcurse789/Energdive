@@ -160,7 +160,7 @@ export default function IssuesPage() {
                                 )}
 
                                 <p className="text-xs uppercase text-gray-400 mt-1">
-                                    Volume {issue.volume}, Issue {issue.number}
+                                    Volume {issue.volume}, Issue {issue.number.replace(/number/i, '').trim()}
                                 </p>
 
                                 {issue.description && (
