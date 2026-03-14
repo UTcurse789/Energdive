@@ -396,6 +396,8 @@ export interface DuplicateLeadPayload {
     source?: string;
     originalLeadId?: string;
     membershipId?: string;
+    communities?: string[];
+    subCommunities?: string[];
 }
 
 /**
@@ -424,6 +426,8 @@ export async function createZohoDuplicateLead(
             Phone: payload.phone || null,
             Company: payload.company || null,
             Lead_Source: "Portal Verified",
+            Community: payload.communities?.length ? payload.communities : null,
+            Sub_Community: payload.subCommunities?.length ? payload.subCommunities : null,
             Description: [
                 payload.membershipId ? `Membership ID: ${payload.membershipId}` : "",
                 payload.originalLeadId ? `Original Lead ID: ${payload.originalLeadId}` : "",
