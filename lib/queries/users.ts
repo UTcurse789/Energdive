@@ -135,6 +135,16 @@ export async function saveOnboardingProfile(
             );
         }
 
+        // 4. Mark as verified → triggers membership_id auto-assignment
+        await client.query(
+            `UPDATE users SET 
+                 verification_status = 'verified',
+                 email_verified = true,
+                 updated_at = NOW()
+             WHERE id = $1 AND (verification_status IS NULL OR verification_status <> 'verified')`,
+            [userId]
+        );
+
         await client.query("COMMIT");
         return userId;
     } catch (err) {
