@@ -42,3 +42,57 @@ export default async function syncUserToBrevo(user: any) {
         console.error("❌ Brevo sync failed:", err.response?.data || err.message);
     }
 }
+// ── Verified User Sync (with membership_id) ───────────────────────────────────
+
+export interface VerifiedUserBrevoPayload {
+    email: string;
+    name?: string;
+    phone?: string;
+    company?: string;
+    membershipId?: string;
+    source?: string;
+}
+
+/**
+ * Sync a newly verified user to Brevo contacts list.
+ * Stores the MEMBERSHIP_ID as a Brevo contact attribute so it's
+ * available in email campaigns and automations.
+ */
+export async function syncVerifiedUserToBrevo(user: VerifiedUserBrevoPayload): Promise<void> {
+    if (!user.email || user.email.endsWith("@phone.energdive.com")) {
+        console.warn("⚠️ Brevo sync skipped — invalid email:", user.email);
+        return;
+    }
+
+    const nameParts = (user.name || "").trim().split(/\s+/);
+    const firstName = nameParts[0] || "";
+    const lastName = nameParts.slice(1).join(" ") || "";
+
+    const axios = (await import("axios")).default;
+
+    await axios.post(
+        "https://api.brevo.com/v3/contacts",
+        {
+            email: user.email,
+            attributes: {
+                FIRSTNAME: firstName,
+                LASTNAME: lastName,
+                PHONE: user.phone || "",
+                ORGANISATION: user.company || "",
+                MEMBERSHIP_ID: user.membershipId || "",
+                SOURCE: user.source || "website",
+                VERIFICATION_STATUS: "Verified",
+            },
+            listIds: [7],
+            updateEnabled: true,
+        },
+        {
+            headers: {
+                "api-key": process.env.BREVO_API_KEY!,
+                "Content-Type": "application/json",
+            },
+        }
+    );
+
+    console.log("✅ Brevo verified user synced:", user.email, "membership:", user.membershipId);
+}

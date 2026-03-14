@@ -7,6 +7,7 @@ export interface ZohoLeadData {
     Last_Name: string;
     Email: string;
     Phone?: string;
+    Mobile?: string;
     Company?: string;
     Designation?: string;
     Lead_Source?: string;
@@ -166,6 +167,7 @@ export async function upsertZohoLead(
             Last_Name: enrichedData.Last_Name,
             Email: enrichedData.Email,
             Phone: enrichedData.Phone || null,
+            Mobile: enrichedData.Mobile || enrichedData.Phone || null,
             Company: enrichedData.Company || null,
             Designation: enrichedData.Designation || null,
             Lead_Source: enrichedData.Lead_Source || null,
@@ -380,6 +382,92 @@ export async function createZohoLead(
             await new Promise(resolve => setTimeout(resolve, backoff));
             return createZohoLead(leadData, attempt + 1);
         }
+        throw error;
+    }
+}
+
+// ── Double Opt-In: Create Duplicate Lead (ITEN MEDIA owner) ──────────────────
+
+export interface DuplicateLeadPayload {
+    email: string;
+    name?: string;
+    phone?: string;
+    company?: string;
+    source?: string;
+    originalLeadId?: string;
+    membershipId?: string;
+}
+
+/**
+ * Creates the ITEN MEDIA duplicate lead in Zoho CRM.
+ * Called ONLY after successful double opt-in verification.
+ * Sets Lead_Source to "Portal Verified" and stores the membership_id.
+ */
+export async function createZohoDuplicateLead(
+    payload: DuplicateLeadPayload,
+    attempt: number = 1
+): Promise<string | null> {
+    const MAX_RETRIES = 3;
+    const ITEN_MEDIA_OWNER = process.env.ZOHO_ITEN_MEDIA_OWNER_ID || "";
+
+    try {
+        const token = await getZohoAccessToken();
+
+        const nameParts = (payload.name || "").trim().split(/\s+/);
+        const firstName = nameParts[0] || "Member";
+        const lastName = nameParts.slice(1).join(" ") || ".";
+
+        const zohoRecord: Record<string, any> = {
+            First_Name: firstName,
+            Last_Name: lastName,
+            Email: payload.email,
+            Phone: payload.phone || null,
+            Company: payload.company || null,
+            Lead_Source: "Portal Verified",
+            Description: [
+                payload.membershipId ? `Membership ID: ${payload.membershipId}` : "",
+                payload.originalLeadId ? `Original Lead ID: ${payload.originalLeadId}` : "",
+                `Source: ${payload.source || "website"}`,
+                "Verification: Double Opt-In Verified",
+            ].filter(Boolean).join("\n"),
+            ...(ITEN_MEDIA_OWNER ? { Owner: { id: ITEN_MEDIA_OWNER } } : {}),
+        };
+
+        const url = `${ZOHO_API_URL}/Leads`;
+        const response = await fetch(url, {
+            method: "POST",
+            headers: {
+                Authorization: `Zoho-oauthtoken ${token}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ data: [zohoRecord] }),
+        });
+
+        if (!response.ok) {
+            if ((response.status === 429 || response.status >= 500) && attempt < MAX_RETRIES) {
+                const backoff = Math.pow(2, attempt) * 1000 + Math.random() * 500;
+                await new Promise((r) => setTimeout(r, backoff));
+                return createZohoDuplicateLead(payload, attempt + 1);
+            }
+            const err = await response.text();
+            throw new Error(`Zoho duplicate lead failed: ${response.status} ${err}`);
+        }
+
+        const data = await response.json();
+        if (data.data?.[0]?.code === "SUCCESS") {
+            const leadId = data.data[0].details.id;
+            console.log(`[ZOHO_LEADS] Duplicate lead created: ${leadId} for ${payload.email}`);
+            return leadId;
+        }
+
+        throw new Error("Zoho API returned non-SUCCESS: " + JSON.stringify(data));
+    } catch (error) {
+        if (attempt < MAX_RETRIES) {
+            const backoff = Math.pow(2, attempt) * 1000 + Math.random() * 500;
+            await new Promise((r) => setTimeout(r, backoff));
+            return createZohoDuplicateLead(payload, attempt + 1);
+        }
+        console.error("[ZOHO_LEADS] createZohoDuplicateLead failed after retries:", error);
         throw error;
     }
 }

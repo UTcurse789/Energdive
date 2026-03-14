@@ -46,6 +46,8 @@ export interface UserProfile {
         sub_community_id: number;
         sub_community_name: string;
     }[];
+    membership_id: string | null;
+    verification_status: string | null;
 }
 
 /**
@@ -157,6 +159,7 @@ export async function getUserProfile(
                 u.first_name, u.last_name, u.phone,
                 u.country, u.state, u.job_title, u.organization,
                 u.onboarding_completed, u.created_at,
+                u.membership_id, u.verification_status,
                 ui.industry_id,
                 ind.name  AS industry_name,
                 ui.sub_industry_id,

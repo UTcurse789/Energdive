@@ -2,7 +2,8 @@ import { auth, clerkClient } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { saveOnboardingProfile } from "@/lib/queries";
 import { getFullUserProfile } from "@/lib/getFullUserProfile";
-import { getVerificationStatus } from "@/lib/queries/users";
+import { updateVerificationStatus } from "@/lib/queries/users";
+import { query } from "@/lib/db";
 import syncUserToBrevo from "@/lib/brevoSync";
 import { sendWelcomeEmail, sendNewUserNotification } from "@/lib/email";
 import { upsertZohoLead } from "@/lib/zoho-leads";
@@ -65,45 +66,117 @@ export async function POST(req: Request) {
             preferredFormats: body.preferredFormats,
         });
 
-        // ── Update Clerk metadata and profile ──────────────────────
+        // ── Mark verified + trigger membership ID assignment ────────
+        // The DB trigger `trg_assign_membership_id` fires on UPDATE when
+        // verification_status changes to 'verified', auto-assigning ENCL-STN-xxx.
+        //
+        // Also reconcile phone: verify-second saves phone to Clerk publicMetadata,
+        // but its DB UPDATE may have hit 0 rows (user row didn't exist yet).
+        // Recover the phone from Clerk and write it to DB now.
+        let resolvedPhone = body.phone?.trim() || null;
+
+        try {
+            const clerkUser = await (await clerkClient()).users.getUser(userId);
+            const metaPhone = (clerkUser.publicMetadata as any)?.phone as string | undefined;
+            if (metaPhone && !resolvedPhone) {
+                resolvedPhone = metaPhone;
+                console.log(`[ONBOARDING] Recovered phone from Clerk metadata: ${resolvedPhone}`);
+            }
+        } catch (_) { /* non-fatal */ }
+
+        try {
+            await query(
+                `UPDATE users
+                 SET verification_status = 'verified',
+                     email_verified = true,
+                     phone = COALESCE(NULLIF($2, ''), phone),
+                     updated_at = NOW()
+                 WHERE clerk_id = $1
+                   AND (verification_status IS NULL OR verification_status <> 'verified')`,
+                [userId, resolvedPhone]
+            );
+            console.log(`[ONBOARDING] verification_status=verified, phone=${resolvedPhone} for ${userId}`);
+        } catch (verifyErr: any) {
+            console.warn(`[ONBOARDING] Could not set verification_status: ${verifyErr.message}`);
+        }
+
+        // If verification_status was already 'verified', still update phone if missing
+        if (resolvedPhone) {
+            try {
+                await query(
+                    `UPDATE users SET phone = $2 WHERE clerk_id = $1 AND (phone IS NULL OR phone = '')`,
+                    [userId, resolvedPhone]
+                );
+            } catch (_) { /* non-fatal */ }
+        }
+
         await (await clerkClient()).users.updateUser(userId, {
             firstName: body.firstName,
             lastName: body.lastName,
             publicMetadata: {
                 onboarding_completed: true,
-                ...(body.phone?.trim() ? { phone: body.phone.trim() } : {}),
+                ...(resolvedPhone ? { phone: resolvedPhone } : {}),
             },
         });
 
         // ── Fetch FULL profile ─────────────────────────────
         const fullUser = await getFullUserProfile(userId);
 
-        // ── Check verification status before external sync ──────────
-        let bothVerified = false;
-        try {
-            const verification = await getVerificationStatus(userId);
-            bothVerified = !!(verification?.email_verified && verification?.phone_verified);
-            console.log(`[ONBOARDING] Verification status: email=${verification?.email_verified}, phone=${verification?.phone_verified}`);
-        } catch (verErr: any) {
-            console.warn(`[ONBOARDING] Could not check verification status: ${verErr.message}`);
+        // ── Resolve real email (phone-first users have dummy @phone.energdive.com) ──
+        const dbEmailIsDummy = fullUser.email?.endsWith('@phone.energdive.com');
+        let syncEmail = fullUser.email;
+
+        if (dbEmailIsDummy) {
+            // Try body.email first (the real email user typed in onboarding form)
+            // Then try Clerk's current primary email (verify-second may have replaced dummy)
+            const bodyEmail = body.email?.trim();
+            if (bodyEmail && !bodyEmail.endsWith('@phone.energdive.com')) {
+                syncEmail = bodyEmail;
+            } else {
+                try {
+                    const clerkUser = await (await clerkClient()).users.getUser(userId);
+                    const clerkEmail = clerkUser.primaryEmailAddress?.emailAddress;
+                    if (clerkEmail && !clerkEmail.endsWith('@phone.energdive.com')) {
+                        syncEmail = clerkEmail;
+                    }
+                } catch (_) { /* non-fatal */ }
+            }
+
+            // Update DB email from dummy → real
+            if (syncEmail !== fullUser.email) {
+                try {
+                    await query(
+                        `UPDATE users SET email = $2 WHERE clerk_id = $1`,
+                        [userId, syncEmail]
+                    );
+                    console.log(`[ONBOARDING] Replaced dummy email with real: ${syncEmail}`);
+                    fullUser.email = syncEmail; // update in-memory too
+                } catch (_) { /* non-fatal */ }
+            }
         }
 
-        // Reject dummy emails from ever reaching external systems
-        const isDummyEmail = fullUser.email?.endsWith('@phone.energdive.com');
-        const canSyncExternally = bothVerified && !isDummyEmail;
+        const isDummyEmail = syncEmail?.endsWith('@phone.energdive.com');
+        const canSyncExternally = !isDummyEmail;
+
+        // Also mark email_verified=true now that user row definitely exists
+        try {
+            await updateVerificationStatus(userId, { emailVerified: true, email: syncEmail });
+        } catch (_) { /* non-fatal */ }
 
         if (!canSyncExternally) {
-            console.warn(`[ONBOARDING] Skipping Brevo/Zoho sync — bothVerified=${bothVerified}, isDummyEmail=${isDummyEmail}`);
+            console.warn(`[ONBOARDING] Skipping Brevo/Zoho sync — dummy email detected: ${syncEmail}`);
+        } else {
+            console.log(`[ONBOARDING] Syncing to external systems for: ${syncEmail}`);
         }
 
-        // ── Sync to Brevo (only if both verified + real email) ──────
+        // ── Sync to Brevo (only if real email) ──────────────────────
         if (canSyncExternally) {
             console.log("📋 Brevo sync payload:", {
-                email: fullUser.email,
+                email: syncEmail,
                 preferred_frequency: fullUser.preferred_frequency,
                 preferred_formats: fullUser.preferred_formats,
             });
-            await syncUserToBrevo(fullUser);
+            await syncUserToBrevo({ ...fullUser, email: syncEmail });
             console.log("✅ Full profile synced to Brevo");
         }
 
@@ -111,19 +184,19 @@ export async function POST(req: Request) {
         if (!isDummyEmail) {
             try {
                 await sendWelcomeEmail(
-                    fullUser.email,
+                    syncEmail,
                     fullUser.first_name || body.firstName,
                     fullUser.preferred_frequency || body.preferredFrequency,
                     fullUser.preferred_formats || body.preferredFormats
                 );
-                console.log("✅ Welcome email sent to:", fullUser.email);
+                console.log("✅ Welcome email sent to:", syncEmail);
             } catch (emailErr) {
                 // Non-fatal — don't block onboarding if email fails
                 console.error("⚠️ Welcome email failed:", emailErr);
             }
         }
 
-        // ── Sync to Zoho CRM as Lead (only if both verified) ─────────
+        // ── Sync to Zoho CRM as Lead (only if real email) ─────────
         if (canSyncExternally) {
             try {
                 // Helper: return non-empty array or undefined
@@ -136,11 +209,13 @@ export async function POST(req: Request) {
                 // DB sub_communities are in "Community-SubPart" format (e.g. "Distribution-Data Centres")
                 // which is the Community_Portal format. Pass them as Community_Portal and let
                 // upsertZohoLead's parseCommunityPortal derive Community/Sub_Community correctly.
+                const phone = fullUser.phone || resolvedPhone || body.phone || undefined;
                 const leadData = {
                     First_Name: fullUser.first_name || body.firstName,
                     Last_Name: fullUser.last_name || body.lastName,
-                    Email: fullUser.email,
-                    Phone: fullUser.phone || undefined,
+                    Email: syncEmail,
+                    Phone: phone,
+                    Mobile: phone,
                     Company: fullUser.organization || body.organization || undefined,
                     Designation: fullUser.job_title || body.jobTitle || undefined,
                     Lead_Source: "Website Registration",

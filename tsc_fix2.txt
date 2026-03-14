@@ -1,0 +1,1 @@
+﻿app/dashboard/layout.tsx(26,25): error TS2739: Type 'UserProfile' is missing the following properties from type 'DashboardProfile': membership_id, verification_status

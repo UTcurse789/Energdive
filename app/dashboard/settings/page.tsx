@@ -225,6 +225,30 @@ export default function SettingsPage() {
                             </div>
                             <DarkInput label="Current Role" value={jobTitle} onChange={setJobTitle} placeholder="e.g. Energy Analyst" />
                             <DarkInput label="Company" value={organization} onChange={setOrganization} placeholder="e.g. ONGC" />
+                            {/* Membership ID — read-only, full width */}
+                            <div className="md:col-span-2">
+                                <label className="text-[10px] font-bold uppercase tracking-wider block mb-1.5" style={{ color: "#0AB996" }}>
+                                    EnergClub Membership ID
+                                </label>
+                                <div
+                                    className="w-full rounded-lg px-4 py-2.5 text-sm flex items-center justify-between gap-3"
+                                    style={{ background: "rgba(10,185,150,0.06)", border: "1px solid rgba(10,185,150,0.3)", color: "var(--dash-text)" }}
+                                >
+                                    <span className="font-mono font-bold tracking-wide" style={{ color: profile?.membership_id ? "#0AB996" : "var(--dash-text-dim)" }}>
+                                        {profile?.membership_id ?? "Pending verification…"}
+                                    </span>
+                                    {profile?.membership_id && (
+                                        <button
+                                            type="button"
+                                            onClick={() => { navigator.clipboard.writeText(profile.membership_id ?? ""); setMsg({ type: "success", text: "Membership ID copied!" }); setTimeout(() => setMsg(null), 2000); }}
+                                            className="text-[10px] font-bold px-2.5 py-1 rounded-md shrink-0 transition-all"
+                                            style={{ background: "rgba(10,185,150,0.15)", color: "#0AB996", border: "1px solid rgba(10,185,150,0.25)" }}
+                                        >
+                                            Copy
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <div className="px-6 py-4 flex items-center justify-end" style={{ borderTop: "1px solid var(--dash-border)" }}>
@@ -477,7 +501,73 @@ export default function SettingsPage() {
                     </div>
                 </section>
 
-                {/* ───────── 4. Security ────────────────────────────── */}
+
+                {/* ───────── 4. EnergClub Membership ────────────────── */}
+                <section className="rounded-xl overflow-hidden" style={cardStyle}>
+                    <div className="p-6">
+                        <div className="flex items-center gap-3 mb-5">
+                            <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: "rgba(10,185,150,0.15)" }}>
+                                <Globe size={18} style={{ color: "#0AB996" }} />
+                            </div>
+                            <div>
+                                <h2 className="text-lg font-bold" style={{ color: "var(--dash-text)" }}>EnergClub Membership</h2>
+                                <p className="text-xs" style={{ color: "var(--dash-text-dim)" }}>Your unique member identifier</p>
+                            </div>
+                        </div>
+
+                        {profile?.membership_id ? (
+                            <div>
+                                {/* Membership ID card */}
+                                <div
+                                    className="relative rounded-xl p-5 mb-4 overflow-hidden"
+                                    style={{ background: "linear-gradient(135deg, #0a2e1f 0%, #0d3d28 100%)", border: "1px solid rgba(10,185,150,0.3)" }}
+                                >
+                                    {/* subtle glow */}
+                                    <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse at top right, rgba(10,185,150,0.12), transparent 70%)" }} />
+                                    <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: "#0AB996" }}>
+                                        Membership ID
+                                    </p>
+                                    <p className="text-3xl font-mono font-black tracking-wider mb-3" style={{ color: "#ffffff" }}>
+                                        {profile.membership_id}
+                                    </p>
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold" style={{ background: "rgba(10,185,150,0.2)", color: "#0AB996", border: "1px solid rgba(10,185,150,0.3)" }}>
+                                                <Check size={10} /> Verified Member
+                                            </span>
+                                        </div>
+                                        <button
+                                            onClick={() => { navigator.clipboard.writeText(profile.membership_id ?? ""); setMsg({ type: "success", text: "Membership ID copied!" }); setTimeout(() => setMsg(null), 2000); }}
+                                            className="text-[11px] font-semibold px-3 py-1.5 rounded-lg transition-all"
+                                            style={{ background: "rgba(10,185,150,0.15)", color: "#0AB996", border: "1px solid rgba(10,185,150,0.25)" }}
+                                        >
+                                            Copy ID
+                                        </button>
+                                    </div>
+                                </div>
+                                <p className="text-xs" style={{ color: "var(--dash-text-dim)" }}>
+                                    Use this ID when contacting EnergClub support or referencing your membership.
+                                </p>
+                            </div>
+                        ) : (
+                            /* No membership ID yet */
+                            <div className="flex items-center gap-3 p-4 rounded-xl" style={{ background: "var(--dash-surface-2)", border: "1px solid var(--dash-border-subtle)" }}>
+                                <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: "rgba(255,193,7,0.1)" }}>
+                                    <Loader2 size={14} style={{ color: "#FFC107" }} className="animate-spin" />
+                                </div>
+                                <div>
+                                    <p className="text-sm font-semibold" style={{ color: "var(--dash-text)" }}>Membership ID Pending</p>
+                                    <p className="text-xs" style={{ color: "var(--dash-text-dim)" }}>
+                                        Your membership ID will be assigned once your account is fully verified.
+                                    </p>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </section>
+
+                {/* ───────── 5. Security ────────────────────────────── */}
+
                 <section className="rounded-xl overflow-hidden" style={cardStyle}>
                     <div className="p-6">
                         <div className="flex items-center gap-3 mb-6">
