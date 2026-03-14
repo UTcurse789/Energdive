@@ -1,0 +1,214 @@
+﻿
+> energdive@0.1.0 build
+> next build
+
+Γû▓ Next.js 16.1.6 (Turbopack)
+- Environments: .env
+- Experiments (use with caution):
+  ┬╖ optimizePackageImports
+
+node.exe : ΓÜá The 
+"middleware" file 
+convention is 
+deprecated. Please use 
+"proxy" instead. Learn 
+more: https://nextjs.or
+g/docs/messages/middlew
+are-to-proxy
+At C:\Program Files\nod
+ejs\npm.ps1:29 char:3
++   & $NODE_EXE 
+$NPM_CLI_JS $args
++   ~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~
+    + CategoryInfo     
+         : NotSpecifi  
+  ed: (ΓÜá The "midd   
+ le...leware-to-pro    
+xy:String) [], Rem    
+oteException
+    + FullyQualifiedEr 
+   rorId : NativeComm  
+  andError
+ 
+  Creating an optimized production build ...
+Γ£ô Compiled successfully in 6.6s
+  Running TypeScript ...
+  Collecting page data using 11 workers ...
+  Generating static pages using 11 workers (0/95) ...
+  Generating static pages using 11 workers (23/95) 
+  Generating static pages using 11 workers (47/95) 
+Failed to fetch Strapi 
+content: TypeError: 
+fetch failed
+    at async f (C:\ener
+gdive\.next\server\chun
+ks\ssr\_3b0fbe76._.js:1
+:41327)
+    at async i (C:\ener
+gdive\.next\server\chun
+ks\ssr\_3b0fbe76._.js:1
+:41955) {
+  [cause]: 
+AggregateError: 
+      at ignore-listed 
+frames {
+    code: 
+'ECONNREFUSED'
+  }
+}
+  Generating static pages using 11 workers (71/95) 
+Events fetch error: 
+Error: Dynamic server 
+usage: Route / 
+couldn't be rendered 
+statically because it 
+used revalidate: 0 
+fetch https://cms.energ
+dive.com/api/events?pop
+ulate=* /. See more 
+info here: https://next
+js.org/docs/messages/dy
+namic-server-error
+    at ignore-listed 
+frames {
+  description: "Route 
+/ couldn't be rendered 
+statically because it 
+used revalidate: 0 
+fetch https://cms.energ
+dive.com/api/events?pop
+ulate=* /. See more 
+info here: https://next
+js.org/docs/messages/dy
+namic-server-error",
+  digest: 
+'DYNAMIC_SERVER_USAGE'
+}
+Γ£ô Generating static pages using 11 workers (95/95) in 7.5s
+  Finalizing page optimization ...
+
+Route (app)                                          Revalidate  Expire
+Γöî ╞Æ /
+Γö£ Γùï /_not-found
+Γö£ ╞Æ /[category]
+Γö£ Γùï /about
+Γö£ Γùï /accept-invite
+Γö£ Γùï /access
+Γö£ Γùï /advertise
+Γö£ Γùï /advertisement-enquiry
+Γö£ Γùï /analysis
+Γö£ ╞Æ /analysis/[slug]
+Γö£ ╞Æ /api/auth/access-verify
+Γö£ ╞Æ /api/auth/confirm-otp
+Γö£ ╞Æ /api/auth/email-otp-send
+Γö£ ╞Æ /api/auth/email-verify
+Γö£ ╞Æ /api/auth/generate-invite
+Γö£ ╞Æ /api/auth/invite
+Γö£ ╞Æ /api/auth/magic-email-otp-send
+Γö£ ╞Æ /api/auth/magic-link
+Γö£ ╞Æ /api/auth/magic-otp-send
+Γö£ ╞Æ /api/auth/magic-otp-verify
+Γö£ ╞Æ /api/auth/phone-verify
+Γö£ ╞Æ /api/auth/send-otp
+Γö£ ╞Æ /api/auth/signup
+Γö£ ╞Æ /api/auth/verify-account
+Γö£ ╞Æ /api/auth/verify-otp
+Γö£ ╞Æ /api/auth/verify-second
+Γö£ ╞Æ /api/brevo/sync-contact
+Γö£ ╞Æ /api/clerk/webhook
+Γö£ ╞Æ /api/community/posts
+Γö£ ╞Æ /api/community/posts/[id]
+Γö£ ╞Æ /api/community/posts/[id]/comments
+Γö£ ╞Æ /api/content
+Γö£ ╞Æ /api/crm/create-duplicate-lead
+Γö£ ╞Æ /api/crm/create-lead
+Γö£ ╞Æ /api/dashboard/events
+Γö£ ╞Æ /api/dashboard/feed
+Γö£ ╞Æ /api/leads/zoho-webhook
+Γö£ ╞Æ /api/master/communities
+Γö£ ╞Æ /api/master/industries
+Γö£ ╞Æ /api/master/sub-industries
+Γö£ ╞Æ /api/membership/generate-id
+Γö£ ╞Æ /api/onboarding/submit
+Γö£ ╞Æ /api/otp/send
+Γö£ ╞Æ /api/otp/verify
+Γö£ ╞Æ /api/profile/check
+Γö£ ╞Æ /api/search
+Γö£ ╞Æ /api/subscribe
+Γö£ ╞Æ /api/test-db
+Γö£ ╞Æ /api/user/profile
+Γö£ ╞Æ /api/user/update-profile
+Γö£ ╞Æ /api/webhooks/clerk
+Γö£ ╞Æ /api/zoho/callback
+Γö£ ╞Æ /api/zoho/create-contact
+Γö£ ╞Æ /api/zoho/create-lead
+Γö£ ╞Æ /api/zoho/form-lead
+Γö£ ╞Æ /api/zoho/provision
+Γö£ ╞Æ /api/zoho/update-lead-membership
+Γö£ ╞Æ /articles/[slug]
+Γö£ ╞Æ /auth/[[...auth]]
+Γö£ Γùï /auth/sso-callback
+Γö£ ╞Æ /author/[slug]
+Γö£ Γùï /case-study
+Γö£ ╞Æ /case-study/[slug]
+Γö£ Γùï /contact
+Γö£ Γùï /cookies
+Γö£ Γùï /cover-story
+Γö£ ╞Æ /cover-story/[slug]
+Γö£ ╞Æ /dashboard
+Γö£ ╞Æ /dashboard/bookmarks
+Γö£ ╞Æ /dashboard/content
+Γö£ ╞Æ /dashboard/events
+Γö£ ╞Æ /dashboard/feed
+Γö£ ╞Æ /dashboard/reports
+Γö£ ╞Æ /dashboard/settings
+Γö£ ╞Æ /dashboard/subscriptions
+Γö£ Γùï /download-media-kit
+Γö£ Γùï /editorial
+Γö£ ╞Æ /editorial/[slug]
+Γö£ Γùï /energclub
+Γö£ Γùï /energclub-info
+Γö£ ╞Æ /energclub/dashboard
+Γö£ Γùï /energdive-insights-and-market-intelligence-pdf
+Γö£ Γùï /events
+Γö£ Γùï /feature
+Γö£ ╞Æ /feature/[slug]
+Γö£ Γùï /interview
+Γö£ ╞Æ /interview/[slug]
+Γö£ Γùï /issues
+Γö£ ΓùÅ /issues/[slug]                                           2m      1y
+Γöé Γö£ /issues/january-2026                                     2m      1y
+Γöé Γö£ /issues/december-2025                                    2m      1y
+Γöé Γöö /issues/february-2026                                    2m      1y
+Γö£ Γùï /login
+Γö£ ╞Æ /market/[symbol]
+Γö£ Γùï /news
+Γö£ ╞Æ /news/[slug]
+Γö£ ╞Æ /onboarding
+Γö£ Γùï /opinion
+Γö£ ╞Æ /opinion/[slug]
+Γö£ ╞Æ /print/[slug]
+Γö£ Γùï /privacy
+Γö£ Γùï /register
+Γö£ Γùï /reports
+Γö£ ╞Æ /reports/[slug]
+Γö£ Γùï /robots.txt
+Γö£ Γùï /search
+Γö£ Γùï /sectors
+Γö£ ╞Æ /sectors/[slug]
+Γö£ Γùï /subscribe
+Γö£ ╞Æ /tags/[slug]
+Γö£ Γùï /terms
+Γö£ Γùï /verify-access
+Γö£ Γùï /verify-account
+Γö£ Γùï /videos
+Γöö ╞Æ /videos/[slug]
+
+
+╞Æ Proxy (Middleware)
+
+Γùï  (Static)   prerendered as static content
+ΓùÅ  (SSG)      prerendered as static HTML (uses generateStaticParams)
+╞Æ  (Dynamic)  server-rendered on demand
+

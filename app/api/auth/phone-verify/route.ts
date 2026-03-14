@@ -49,16 +49,25 @@ export async function POST(req: Request) {
             console.log(`[Auth Phone] Found user by externalId: ${clerkUser.id}`);
         }
 
-        // Strategy 2: Search by phone number
+        // Strategy 2: Search by phone number array
         if (!clerkUser) {
             const byPhone = await clerk.users.getUserList({ phoneNumber: [e164Phone] });
             if (byPhone.data.length > 0) {
                 clerkUser = byPhone.data[0];
-                console.log(`[Auth Phone] Found user by phone: ${clerkUser.id}`);
+                console.log(`[Auth Phone] Found user by phoneNumber: ${clerkUser.id}`);
             }
         }
 
-        // Strategy 3: Search by placeholder email
+        // Strategy 3: Search by query (free text search across all fields)
+        if (!clerkUser) {
+            const byQuery = await clerk.users.getUserList({ query: e164Phone });
+            if (byQuery.data.length > 0) {
+                clerkUser = byQuery.data[0];
+                console.log(`[Auth Phone] Found user by query: ${clerkUser.id}`);
+            }
+        }
+
+        // Strategy 4: Search by placeholder email
         if (!clerkUser) {
             const byEmail = await clerk.users.getUserList({ emailAddress: [placeholderEmail] });
             if (byEmail.data.length > 0) {
@@ -67,7 +76,7 @@ export async function POST(req: Request) {
             }
         }
 
-        // Strategy 4: Create new user
+        // Strategy 5: Create new user
         if (!clerkUser) {
             try {
                 clerkUser = await clerk.users.createUser({
@@ -79,13 +88,19 @@ export async function POST(req: Request) {
                 isNew = true;
                 console.log(`[Auth Phone] Created new user: ${clerkUser.id}`);
             } catch (createErr: any) {
-                console.error("[Auth Phone] createUser error:", JSON.stringify(createErr?.errors));
-                // If creation failed (duplicate), try one more broad search
-                const allUsers = await clerk.users.getUserList({ query: mobile });
-                if (allUsers.data.length > 0) {
-                    clerkUser = allUsers.data[0];
-                    console.log(`[Auth Phone] Found user via query search: ${clerkUser.id}`);
+                // If it failed because the externalId exists (but our queries missed it)
+                if (createErr.errors?.[0]?.code === 'form_identifier_exists') {
+                    console.warn(`[Auth Phone] externalId exists but hidden from query — doing fallback search by exact email...`);
+                    // The most reliable fallback is the exact placeholder email we would have generated
+                    const fallbackSearch = await clerk.users.getUserList({ emailAddress: [placeholderEmail] });
+                    if (fallbackSearch.data.length > 0) {
+                        clerkUser = fallbackSearch.data[0];
+                        console.log(`[Auth Phone] Found existing user via fallback email search: ${clerkUser.id}`);
+                    } else {
+                        throw new Error(`User exists but could not be retrieved. Error: ${createErr.errors[0].message}`);
+                    }
                 } else {
+                    console.error("[Auth Phone] createUser error:", JSON.stringify(createErr?.errors));
                     throw createErr;
                 }
             }

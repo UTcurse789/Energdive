@@ -22,11 +22,12 @@ function createPool(): Pool {
             rejectUnauthorized: false, // Required for DigitalOcean / self-signed certs
         },
 
-        // Pool tuning — conservative for managed DB with limited connections
-        max: 3,                          // keep very low for DigitalOcean managed DB
-        idleTimeoutMillis: 5_000,        // close idle clients after 5s
-        connectionTimeoutMillis: 5_000,  // fail fast if DB unreachable
-        allowExitOnIdle: true,           // let Node exit even if pool has idle clients
+        // Pool tuning — production-grade for 5000+ concurrent users
+        max: 20,                          // scaled for concurrent load
+        idleTimeoutMillis: 30_000,        // close idle clients after 30s
+        connectionTimeoutMillis: 2_000,   // fail fast if DB unreachable
+        allowExitOnIdle: true,            // let Node exit even if pool has idle clients
+        statement_timeout: 10_000,        // kill queries running > 10s
     });
 
     // Error handling to prevent "Error: Connection terminated unexpectedly" crashing the app

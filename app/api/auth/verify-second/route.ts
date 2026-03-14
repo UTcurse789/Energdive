@@ -263,6 +263,7 @@ async function trySyncAfterVerification(clerkId: string) {
                     Last_Name: fullUser.last_name || "Unknown",
                     Email: fullUser.email,
                     Phone: fullUser.phone || undefined,
+                    Mobile: fullUser.phone || undefined,
                     Company: fullUser.organization || undefined,
                     Designation: fullUser.job_title || undefined,
                     Lead_Source: "Website Registration",

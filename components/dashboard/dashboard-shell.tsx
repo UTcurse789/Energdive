@@ -27,6 +27,8 @@ export interface DashboardProfile {
     sub_industry_id: number | null;
     sub_industry_name: string | null;
     communities: CommunitySelection[];
+    membership_id: string | null;
+    verification_status: string | null;
 }
 
 interface DashboardContextType {

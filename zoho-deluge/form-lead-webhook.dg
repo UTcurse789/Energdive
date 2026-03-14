@@ -1,0 +1,67 @@
+// ═══════════════════════════════════════════════════════════════════
+// ZOHO DELUGE WORKFLOW FUNCTION
+// Trigger: After a Zoho Form submission creates a new Lead in CRM
+// Purpose: Notify the Next.js portal to store the pending verification
+//          record and send the magic link email via Brevo.
+//
+// Setup:
+//   1. In Zoho CRM → Settings → Workflow Rules
+//   2. Module: Leads | Trigger: "On Create"
+//   3. Condition: All Leads (or filter by Lead_Source = "Zoho Form")
+//   4. Action: Custom Function → paste this script
+//   5. Set the PORTAL_WEBHOOK_SECRET in Zoho Custom Function parameters
+//
+// Environment: Set PORTAL_URL and WEBHOOK_SECRET as function parameters
+//              or hardcode them below.
+// ═══════════════════════════════════════════════════════════════════
+
+// ── Configuration ────────────────────────────────────────────────────
+portalUrl = "https://www.energdive.com";
+webhookSecret = zoho.adminparams.get("ZOHO_FORM_WEBHOOK_SECRET");
+
+// ── Build payload from the triggering Lead record ─────────────────────
+leadId    = input.get("lead_id");    // passed in by the workflow trigger
+leadEmail = zoho.crm.getRecordById("Leads", leadId).get("Email");
+
+leadRecord = zoho.crm.getRecordById("Leads", leadId);
+
+firstName = leadRecord.get("First_Name");
+lastName  = leadRecord.get("Last_Name");
+fullName  = if(firstName != null, firstName, "") + " " + if(lastName != null, lastName, "");
+
+phone   = leadRecord.get("Phone");
+company = leadRecord.get("Company");
+
+// Build the JSON payload
+payload = Map();
+payload.put("email",       leadEmail);
+payload.put("name",        fullName.trim());
+payload.put("phone",       if(phone != null, phone, ""));
+payload.put("company",     if(company != null, company, ""));
+payload.put("crm_lead_id", leadId.toString());
+payload.put("source",      "zoho_form");
+
+// ── Call the Next.js form-lead webhook ────────────────────────────────
+headers = Map();
+headers.put("Content-Type",     "application/json");
+headers.put("x-webhook-secret", webhookSecret);
+
+endpointUrl = portalUrl + "/api/zoho/form-lead";
+
+response = invokeurl
+[
+    url    : endpointUrl
+    type   : POST
+    parameters : payload.toString()
+    headers : headers
+];
+
+info "EnergDive form-lead webhook response: " + response;
+
+// ── Optional: stamp a CRM field to confirm the webhook was sent ───────
+// Uncomment if you have a custom field "Portal_Notified__c" on Leads:
+//
+// updateMap = Map();
+// updateMap.put("Portal_Notified__c", true);
+// updateMap.put("Portal_Notified_At__c", zoho.currentdate.toString());
+// zoho.crm.updateRecord("Leads", leadId, updateMap);

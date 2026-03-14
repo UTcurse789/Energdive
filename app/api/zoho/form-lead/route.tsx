@@ -1,0 +1,101 @@
+import { NextRequest, NextResponse } from "next/server";
+import crypto from "crypto";
+import { query } from "@/lib/db";
+import { sendMagicLinkEmail } from "@/lib/email";
+
+const WEBHOOK_SECRET = process.env.ZOHO_FORM_WEBHOOK_SECRET || "";
+const MAGIC_TOKEN_TTL_HOURS = 24;
+
+/**
+ * POST /api/zoho/form-lead
+ *
+ * Called by Zoho Form workflow immediately after a form submission creates
+ * the first (original) CRM lead. This endpoint:
+ *   1. Validates the webhook secret.
+ *   2. Stores the lead as a "pending_verification" row.
+ *   3. Generates a 24-hour magic link token.
+ *   4. Sends the magic link email via Brevo.
+ *
+ * The duplicate (ITEN MEDIA) CRM lead is NOT created here — it is created
+ * only after the user verifies via magic link + OTP.
+ *
+ * Expected body:
+ * {
+ *   email, name, phone, company,
+ *   crm_lead_id   // original Zoho CRM lead id from the form workflow
+ * }
+ */
+export async function POST(req: NextRequest, { params }: { params: Promise<Record<string, string>> }) {
+  const requestId = crypto.randomUUID().slice(0, 8);
+  const log = (msg: string) => console.log(`[FORM-LEAD:${requestId}] ${msg}`);
+
+  try {
+    // ── 1. Validate secret ───────────────────────────────────────────
+    const secret = req.headers.get("x-webhook-secret");
+    if (!WEBHOOK_SECRET || secret !== WEBHOOK_SECRET) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // ── 2. Parse payload ─────────────────────────────────────────────
+    const body = await req.json();
+    const email = (body.email || "").trim().toLowerCase();
+    const name = (body.name || body.first_name || "").trim();
+    const phone = (body.phone || "").trim();
+    const company = (body.company || "").trim();
+    const crmLeadId = (body.crm_lead_id || "").trim();
+
+    if (!email) {
+      return NextResponse.json({ error: "Missing email" }, { status: 400 });
+    }
+
+    log(`Form submission received: ${email}, crm_lead_id=${crmLeadId}`);
+
+    // ── 3. Generate magic token ──────────────────────────────────────
+    const magicToken = crypto.randomBytes(48).toString("base64url");
+    const expiresAt = new Date(Date.now() + MAGIC_TOKEN_TTL_HOURS * 60 * 60 * 1000);
+
+    // ── 4. Upsert pending_verification row ───────────────────────────
+    // ON CONFLICT on email — if same person submits again, refresh the token.
+    const result = await query(
+      `INSERT INTO pending_verifications
+         (email, name, phone, company, source, verification_status,
+          crm_lead_id, magic_token, magic_token_expires_at, created_at, updated_at)
+       VALUES ($1,$2,$3,$4,'zoho_form','pending',$5,$6,$7,NOW(),NOW())
+       ON CONFLICT (email) DO UPDATE SET
+         name                    = EXCLUDED.name,
+         phone                   = EXCLUDED.phone,
+         company                 = EXCLUDED.company,
+         crm_lead_id             = EXCLUDED.crm_lead_id,
+         magic_token             = EXCLUDED.magic_token,
+         magic_token_expires_at  = EXCLUDED.magic_token_expires_at,
+         verification_status     = 'pending',
+         otp_verified            = false,
+         verified_at             = NULL,
+         updated_at              = NOW()
+       RETURNING id`,
+      [email, name, phone, company, crmLeadId, magicToken, expiresAt]
+    );
+
+    const pendingId = result.rows[0]?.id;
+    log(`Pending verification stored: id=${pendingId}`);
+
+    // ── 5. Send magic link via Brevo ─────────────────────────────────
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://www.energdive.com";
+    const magicLink = `${appUrl}/verify-account?token=${encodeURIComponent(magicToken)}`;
+
+    await sendMagicLinkEmail(email, name, magicLink);
+    log(`Magic link email sent to ${email}`);
+
+    return NextResponse.json({
+      success: true,
+      pendingId,
+      message: "Verification email sent",
+    });
+  } catch (error: any) {
+    console.error(`[FORM-LEAD:${requestId}] Error:`, error);
+    return NextResponse.json(
+      { error: "Internal server error", details: error.message },
+      { status: 500 }
+    );
+  }
+}
