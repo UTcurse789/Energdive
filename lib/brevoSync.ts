@@ -24,6 +24,8 @@ export default async function syncUserToBrevo(user: any) {
                     SUB_INDUSTRY: (user.sub_industries || []).join(","),
                     FREQUENCY: ((user.preferred_frequency || "daily").charAt(0).toUpperCase() + (user.preferred_frequency || "daily").slice(1)),
                     PREFERENCE: (user.preferred_formats || []).join(", "),
+                    MEMBERSHIP_ID: user.membership_id || "",
+                    VERIFICATION_STATUS: user.verification_status || "",
                     SOURCE: "Portal"
                 },
                 listIds: [7],
@@ -42,6 +44,7 @@ export default async function syncUserToBrevo(user: any) {
         console.error("❌ Brevo sync failed:", err.response?.data || err.message);
     }
 }
+
 // ── Verified User Sync (with membership_id) ───────────────────────────────────
 
 export interface VerifiedUserBrevoPayload {
@@ -49,8 +52,11 @@ export interface VerifiedUserBrevoPayload {
     name?: string;
     phone?: string;
     company?: string;
+    jobTitle?: string;
     membershipId?: string;
     source?: string;
+    communities?: string[];
+    subCommunities?: string[];
 }
 
 /**
@@ -70,19 +76,26 @@ export async function syncVerifiedUserToBrevo(user: VerifiedUserBrevoPayload): P
 
     const axios = (await import("axios")).default;
 
+    const attributes: Record<string, string> = {
+        FIRSTNAME: firstName,
+        LASTNAME: lastName,
+        PHONE: user.phone || "",
+        ORGANISATION: user.company || "",
+        MEMBERSHIP_ID: user.membershipId || "",
+        SOURCE: user.source || "website",
+        VERIFICATION_STATUS: "Verified",
+    };
+
+    // Include optional fields if provided (from Zoho lead data)
+    if (user.jobTitle) attributes.JOB_TITLE = user.jobTitle;
+    if (user.communities?.length) attributes.COMMUNITY = user.communities.join(",");
+    if (user.subCommunities?.length) attributes.SUB_COMMUNITY = user.subCommunities.join(",");
+
     await axios.post(
         "https://api.brevo.com/v3/contacts",
         {
             email: user.email,
-            attributes: {
-                FIRSTNAME: firstName,
-                LASTNAME: lastName,
-                PHONE: user.phone || "",
-                ORGANISATION: user.company || "",
-                MEMBERSHIP_ID: user.membershipId || "",
-                SOURCE: user.source || "website",
-                VERIFICATION_STATUS: "Verified",
-            },
+            attributes,
             listIds: [7],
             updateEnabled: true,
         },

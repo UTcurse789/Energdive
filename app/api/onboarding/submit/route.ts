@@ -2,7 +2,6 @@ import { auth, clerkClient } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { saveOnboardingProfile } from "@/lib/queries";
 import { getFullUserProfile } from "@/lib/getFullUserProfile";
-import { updateVerificationStatus } from "@/lib/queries/users";
 import { query } from "@/lib/db";
 import syncUserToBrevo from "@/lib/brevoSync";
 import { sendWelcomeEmail, sendNewUserNotification } from "@/lib/email";
@@ -48,13 +47,26 @@ export async function POST(req: Request) {
             );
         }
 
+        // ── Resolve phone: prefer Clerk metadata (from verify-second) over body ──
+        let resolvedPhone = body.phone?.trim() || null;
+        try {
+            const clerkUser = await (await clerkClient()).users.getUser(userId);
+            const metaPhone = (clerkUser.publicMetadata as any)?.phone as string | undefined;
+            if (metaPhone && !resolvedPhone) {
+                resolvedPhone = metaPhone;
+                console.log(`[ONBOARDING] Recovered phone from Clerk metadata: ${resolvedPhone}`);
+            }
+        } catch (_) { /* non-fatal */ }
+
         // ── Save to DB (atomic transaction) ─────────────────────────
+        // saveOnboardingProfile also sets verification_status='verified' and
+        // triggers membership_id auto-assignment via DB trigger.
         const dbUserId = await saveOnboardingProfile({
             clerkId: userId,
             email: body.email,
             firstName: body.firstName,
             lastName: body.lastName,
-            phone: body.phone,
+            phone: resolvedPhone,
             country: body.country,
             state: body.state,
             jobTitle: body.jobTitle,
@@ -65,50 +77,6 @@ export async function POST(req: Request) {
             preferredFrequency: body.preferredFrequency,
             preferredFormats: body.preferredFormats,
         });
-
-        // ── Mark verified + trigger membership ID assignment ────────
-        // The DB trigger `trg_assign_membership_id` fires on UPDATE when
-        // verification_status changes to 'verified', auto-assigning ENCL-STN-xxx.
-        //
-        // Also reconcile phone: verify-second saves phone to Clerk publicMetadata,
-        // but its DB UPDATE may have hit 0 rows (user row didn't exist yet).
-        // Recover the phone from Clerk and write it to DB now.
-        let resolvedPhone = body.phone?.trim() || null;
-
-        try {
-            const clerkUser = await (await clerkClient()).users.getUser(userId);
-            const metaPhone = (clerkUser.publicMetadata as any)?.phone as string | undefined;
-            if (metaPhone && !resolvedPhone) {
-                resolvedPhone = metaPhone;
-                console.log(`[ONBOARDING] Recovered phone from Clerk metadata: ${resolvedPhone}`);
-            }
-        } catch (_) { /* non-fatal */ }
-
-        try {
-            await query(
-                `UPDATE users
-                 SET verification_status = 'verified',
-                     email_verified = true,
-                     phone = COALESCE(NULLIF($2, ''), phone),
-                     updated_at = NOW()
-                 WHERE clerk_id = $1
-                   AND (verification_status IS NULL OR verification_status <> 'verified')`,
-                [userId, resolvedPhone]
-            );
-            console.log(`[ONBOARDING] verification_status=verified, phone=${resolvedPhone} for ${userId}`);
-        } catch (verifyErr: any) {
-            console.warn(`[ONBOARDING] Could not set verification_status: ${verifyErr.message}`);
-        }
-
-        // If verification_status was already 'verified', still update phone if missing
-        if (resolvedPhone) {
-            try {
-                await query(
-                    `UPDATE users SET phone = $2 WHERE clerk_id = $1 AND (phone IS NULL OR phone = '')`,
-                    [userId, resolvedPhone]
-                );
-            } catch (_) { /* non-fatal */ }
-        }
 
         await (await clerkClient()).users.updateUser(userId, {
             firstName: body.firstName,
@@ -158,10 +126,6 @@ export async function POST(req: Request) {
         const isDummyEmail = syncEmail?.endsWith('@phone.energdive.com');
         const canSyncExternally = !isDummyEmail;
 
-        // Also mark email_verified=true now that user row definitely exists
-        try {
-            await updateVerificationStatus(userId, { emailVerified: true, email: syncEmail });
-        } catch (_) { /* non-fatal */ }
 
         if (!canSyncExternally) {
             console.warn(`[ONBOARDING] Skipping Brevo/Zoho sync — dummy email detected: ${syncEmail}`);

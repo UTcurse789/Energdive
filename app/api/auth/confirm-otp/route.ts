@@ -84,9 +84,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<Recor
             const userResult = await client.query(
                 `INSERT INTO users (
            email, first_name, last_name, phone, organization,
-           source, verification_status, crm_lead_id,
+           source, crm_lead_id,
            onboarding_completed, created_at
-         ) VALUES ($1,$2,$3,$4,$5,$6,'verified',$7,false,NOW())
+         ) VALUES ($1,$2,$3,$4,$5,$6,$7,false,NOW())
          ON CONFLICT (email) DO UPDATE SET
            verification_status = 'verified',
            crm_lead_id         = COALESCE(EXCLUDED.crm_lead_id, users.crm_lead_id),
@@ -106,6 +106,18 @@ export async function POST(req: NextRequest, { params }: { params: Promise<Recor
 
             userId = userResult.rows[0].id;
             membershipId = userResult.rows[0].membership_id;
+
+            // Fresh INSERT → trigger didn't fire (BEFORE UPDATE only).
+            // Force verification_status change to trigger membership_id assignment.
+            if (!membershipId) {
+                const verifyResult = await client.query(
+                    `UPDATE users SET verification_status = 'verified', updated_at = NOW()
+                     WHERE id = $1 AND (verification_status IS NULL OR verification_status <> 'verified')
+                     RETURNING membership_id`,
+                    [userId]
+                );
+                membershipId = verifyResult.rows[0]?.membership_id || membershipId;
+            }
 
             // ── 4. Mark pending_verification as verified ─────────────────────
             await client.query(
