@@ -44,6 +44,31 @@ export async function POST(req: NextRequest, { params }: { params: Promise<Recor
     const company = (body.company || "").trim();
     const crmLeadId = (body.crm_lead_id || "").trim();
 
+    // Defensive parsing for communities (Zoho can send arrays or comma/semicolon strings)
+    const parseArray = (val: any) => {
+      if (Array.isArray(val)) return val;
+      if (typeof val === "string") return val.split(/[;,]/).map((s: string) => s.trim()).filter(Boolean);
+      return [];
+    };
+    
+    // Check for standard Zoho fields
+    let communities = parseArray(body.Community || body.community);
+    let subCommunities = parseArray(body.Sub_Community || body.sub_community);
+    
+    // Check for Community-Portal combined field (e.g. "Energy-Solar, Distribution-Microgrids")
+    const communityPortal = parseArray(body["Community-Portal"] || body.community_portal);
+    if (communityPortal.length > 0) {
+      const parsedComms = new Set<string>();
+      const parsedSubs = new Set<string>();
+      communityPortal.forEach((item: string) => {
+        const parts = item.split("-").map((p: string) => p.trim());
+        if (parts[0]) parsedComms.add(parts[0]);
+        if (parts[1]) parsedSubs.add(parts[1]);
+      });
+      communities = Array.from(new Set([...Array.from(parsedComms), ...communities]));
+      subCommunities = Array.from(new Set([...Array.from(parsedSubs), ...subCommunities]));
+    }
+
     if (!email) {
       return NextResponse.json({ error: "Missing email" }, { status: 400 });
     }
@@ -59,8 +84,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<Recor
     const result = await query(
       `INSERT INTO pending_verifications
          (email, name, phone, company, source, verification_status,
-          crm_lead_id, magic_token, magic_token_expires_at, created_at, updated_at)
-       VALUES ($1,$2,$3,$4,'zoho_form','pending',$5,$6,$7,NOW(),NOW())
+          crm_lead_id, magic_token, magic_token_expires_at, communities, sub_communities, created_at, updated_at)
+       VALUES ($1,$2,$3,$4,'zoho_form','pending',$5,$6,$7,$8,$9,NOW(),NOW())
        ON CONFLICT (email) DO UPDATE SET
          name                    = EXCLUDED.name,
          phone                   = EXCLUDED.phone,
@@ -68,12 +93,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<Recor
          crm_lead_id             = EXCLUDED.crm_lead_id,
          magic_token             = EXCLUDED.magic_token,
          magic_token_expires_at  = EXCLUDED.magic_token_expires_at,
+         communities             = COALESCE(EXCLUDED.communities, pending_verifications.communities),
+         sub_communities         = COALESCE(EXCLUDED.sub_communities, pending_verifications.sub_communities),
          verification_status     = 'pending',
          otp_verified            = false,
          verified_at             = NULL,
          updated_at              = NOW()
        RETURNING id`,
-      [email, name, phone, company, crmLeadId, magicToken, expiresAt]
+      [email, name, phone, company, crmLeadId, magicToken, expiresAt, JSON.stringify(communities), JSON.stringify(subCommunities)]
     );
 
     const pendingId = result.rows[0]?.id;

@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
         // ── 1. Load pending verification ─────────────────────────────────
         const pendingResult = await query(
             `SELECT id, email, name, phone, company, source, crm_lead_id,
-                    verification_status, otp_verified
+                    verification_status, otp_verified, communities, sub_communities
              FROM pending_verifications
              WHERE email = $1 LIMIT 1`,
             [normalizedEmail]
@@ -136,6 +136,43 @@ export async function POST(req: NextRequest) {
                 [userId, pending.id]
             );
 
+            // ── Map and insert Community Data ──
+            let finalCommunities: any[] = [];
+            let parsedComms = pending.communities;
+            let parsedSubs = pending.sub_communities;
+            
+            if (typeof parsedComms === 'string') parsedComms = JSON.parse(parsedComms);
+            if (typeof parsedSubs === 'string') parsedSubs = JSON.parse(parsedSubs);
+            
+            if (Array.isArray(parsedComms) && parsedComms.length > 0) {
+                const scResult = await client.query(
+                    `SELECT sc.id as sub_id, sc.name as sub_name, c.id as comm_id, c.name as comm_name 
+                     FROM sub_communities sc
+                     JOIN communities c ON sc.community_id = c.id
+                     WHERE sc.name = ANY($1) OR c.name = ANY($2)`,
+                    [Array.isArray(parsedSubs) ? parsedSubs : [], parsedComms]
+                );
+                
+                if (scResult.rows.length > 0) {
+                    for (const row of scResult.rows) {
+                        await client.query(
+                            `INSERT INTO user_communities (user_id, community_id, sub_community_id)
+                             VALUES ($1, $2, $3)
+                             ON CONFLICT DO NOTHING`,
+                            [userId, row.comm_id, row.sub_id]
+                        );
+                        finalCommunities.push({
+                            community_id: row.comm_id,
+                            community_name: row.comm_name,
+                            sub_community_id: row.sub_id,
+                            sub_community_name: row.sub_name
+                        });
+                    }
+                }
+            }
+            // Bind resolved communities to pending object so background jobs can use them
+            pending.resolved_communities = finalCommunities;
+
             await client.query("COMMIT");
             log(`User verified: id=${userId}, membership_id=${membershipId}`);
         } catch (err) {
@@ -159,6 +196,7 @@ export async function POST(req: NextRequest) {
         // ── 6. Enqueue background jobs ───────────────────────────────────
         // 6a. Create DUPLICATE CRM lead (owner = ITEN MEDIA)
         enqueueJob("CRM_CREATE_DUPLICATE_LEAD", async () => {
+            const resolvedComms = pending.resolved_communities || [];
             const duplicateLeadId = await createZohoDuplicateLead({
                 email: normalizedEmail,
                 name: pending.name,
@@ -167,6 +205,8 @@ export async function POST(req: NextRequest) {
                 source: pending.source,
                 originalLeadId: pending.crm_lead_id,
                 membershipId,
+                communities: resolvedComms.map((c: any) => c.community_name),
+                subCommunities: resolvedComms.map((c: any) => c.sub_community_name)
             });
 
             if (duplicateLeadId) {
@@ -180,6 +220,7 @@ export async function POST(req: NextRequest) {
 
         // 6b. Sync to Brevo
         enqueueJob("BREVO_SYNC_CONTACT", async () => {
+            const resolvedComms = pending.resolved_communities || [];
             await syncVerifiedUserToBrevo({
                 email: normalizedEmail,
                 name: pending.name,
@@ -187,6 +228,8 @@ export async function POST(req: NextRequest) {
                 company: pending.company,
                 membershipId,
                 source: pending.source,
+                communities: resolvedComms.map((c: any) => c.community_name),
+                subCommunities: resolvedComms.map((c: any) => c.sub_community_name)
             });
             log(`Brevo synced for ${normalizedEmail}`);
         }, normalizedEmail);

@@ -60,21 +60,36 @@ export async function POST(req: Request) {
                 return NextResponse.json({ success: true });
             }
 
-            // UPSERT (idempotent) — includes phone
-            const result = await db.query(
-                `
-        INSERT INTO users (clerk_id, email, first_name, last_name, phone)
-        VALUES ($1, $2, $3, $4, $5)
-        ON CONFLICT (clerk_id)
-        DO UPDATE SET
-          email = EXCLUDED.email,
-          first_name = EXCLUDED.first_name,
-          last_name = EXCLUDED.last_name,
-          phone = COALESCE(EXCLUDED.phone, users.phone)
-        RETURNING *;
-        `,
-                [id, email, first_name, last_name, phone]
-            );
+            // ── CHECK EXISTING USER BY EMAIL ──
+            // Magic link verifications create a user row with clerk_id = NULL.
+            // We must link the Clerk account to that row instead of blindly inserting.
+            const existingUser = await db.query(`SELECT id, clerk_id FROM users WHERE email = $1`, [email]);
+            
+            let result;
+            if (existingUser.rows.length > 0) {
+                result = await db.query(
+                    `
+                    UPDATE users SET 
+                      clerk_id = $1,
+                      first_name = COALESCE(users.first_name, $2),
+                      last_name = COALESCE(users.last_name, $3),
+                      phone = COALESCE(users.phone, $4),
+                      updated_at = NOW()
+                    WHERE email = $5
+                    RETURNING *;
+                    `,
+                    [id, first_name, last_name, phone, email]
+                );
+            } else {
+                result = await db.query(
+                    `
+                    INSERT INTO users (clerk_id, email, first_name, last_name, phone)
+                    VALUES ($1, $2, $3, $4, $5)
+                    RETURNING *;
+                    `,
+                    [id, email, first_name, last_name, phone]
+                );
+            }
 
             // Fetch full profile with community/industry data from join tables
             const fullUser = await getFullUserProfile(id);
