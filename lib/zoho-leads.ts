@@ -19,6 +19,7 @@ export interface ZohoLeadData {
     Invite_Source?: string;
     City?: string;
     Country?: string;
+    Owner?: string;
 }
 
 /**
@@ -180,6 +181,10 @@ export async function upsertZohoLead(
             City: enrichedData.City || null,
             Country: enrichedData.Country || null,
         };
+
+        if (enrichedData.Owner) {
+            zohoRecord.Owner = { id: enrichedData.Owner };
+        }
 
         // Remove null/undefined fields so we don't overwrite with blanks on UPDATE
         if (existingLead) {
