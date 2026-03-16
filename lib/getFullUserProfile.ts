@@ -5,6 +5,7 @@ export async function getFullUserProfile(clerkId: string) {
     `
     SELECT 
       u.id,
+      u.clerk_id,
       u.email,
       u.first_name,
       u.last_name,
@@ -17,6 +18,8 @@ export async function getFullUserProfile(clerkId: string) {
       u.preferred_formats,
       u.membership_id,
       u.verification_status,
+      u.source,
+      u.crm_lead_id,
 
       COALESCE(
         (SELECT ARRAY_AGG(DISTINCT c.name)
