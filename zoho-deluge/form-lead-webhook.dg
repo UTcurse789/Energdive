@@ -41,12 +41,19 @@ payload.put("company",     if(company != null, company, ""));
 payload.put("crm_lead_id", leadId.toString());
 payload.put("source",      "zoho_form");
 
+// Enrichment fields — passed through to portal DB
+payload.put("job_title",        if(leadRecord.get("Designation") != null, leadRecord.get("Designation"), ""));
+payload.put("industry",         if(leadRecord.get("Industry") != null, leadRecord.get("Industry"), ""));
+payload.put("community_portal", if(leadRecord.get("Community_Portal") != null, leadRecord.get("Community_Portal").toString(), ""));
+payload.put("city",             if(leadRecord.get("City") != null, leadRecord.get("City"), ""));
+payload.put("country",          if(leadRecord.get("Country") != null, leadRecord.get("Country"), ""));
+
 // ── Call the Next.js form-lead webhook ────────────────────────────────
 headers = Map();
 headers.put("Content-Type",     "application/json");
 headers.put("x-webhook-secret", webhookSecret);
 
-endpointUrl = portalUrl + "/api/zoho/form-lead";
+endpointUrl = portalUrl + "/api/leads/zoho-webhook";
 
 response = invokeurl
 [

@@ -3,9 +3,8 @@ import { NextResponse } from "next/server";
 import { saveOnboardingProfile } from "@/lib/queries";
 import { getFullUserProfile } from "@/lib/getFullUserProfile";
 import { query } from "@/lib/db";
-import syncUserToBrevo from "@/lib/brevoSync";
 import { sendWelcomeEmail, sendNewUserNotification } from "@/lib/email";
-import { upsertZohoLead } from "@/lib/zoho-leads";
+import { syncEnrichedLead } from "@/lib/lead-sync-orchestrator";
 
 /**
  * POST /api/onboarding/submit
@@ -133,17 +132,6 @@ export async function POST(req: Request) {
             console.log(`[ONBOARDING] Syncing to external systems for: ${syncEmail}`);
         }
 
-        // ── Sync to Brevo (only if real email) ──────────────────────
-        if (canSyncExternally) {
-            console.log("📋 Brevo sync payload:", {
-                email: syncEmail,
-                preferred_frequency: fullUser.preferred_frequency,
-                preferred_formats: fullUser.preferred_formats,
-            });
-            await syncUserToBrevo({ ...fullUser, email: syncEmail });
-            console.log("✅ Full profile synced to Brevo");
-        }
-
         // ── Send Welcome Email (only if real email) ────────────────
         if (!isDummyEmail) {
             try {
@@ -160,43 +148,19 @@ export async function POST(req: Request) {
             }
         }
 
-        // ── Sync to Zoho CRM as Lead (only if real email) ─────────
+        // ── Sync to Brevo → CRM (sequential, enriched) ─────────────
         if (canSyncExternally) {
             try {
-                // Helper: return non-empty array or undefined
-                const toArray = (arr: any[] | undefined) => {
-                    if (!arr) return undefined;
-                    const filtered = arr.filter((v: any) => v !== null && v !== undefined && v !== '');
-                    return filtered.length > 0 ? filtered : undefined;
-                };
-
-                // DB sub_communities are in "Community-SubPart" format (e.g. "Distribution-Data Centres")
-                // which is the Community_Portal format. Pass them as Community_Portal and let
-                // upsertZohoLead's parseCommunityPortal derive Community/Sub_Community correctly.
-                const phone = fullUser.phone || resolvedPhone || body.phone || undefined;
-                const leadData = {
-                    First_Name: fullUser.first_name || body.firstName,
-                    Last_Name: fullUser.last_name || body.lastName,
-                    Email: syncEmail,
-                    Phone: phone,
-                    Mobile: phone,
-                    Company: fullUser.organization || body.organization || undefined,
-                    Designation: fullUser.job_title || body.jobTitle || undefined,
-                    Lead_Source: "Website Registration",
-                    Industry: fullUser.industries?.find((i: string | null) => !!i) || undefined,
-                    Industry_Sub_Category: fullUser.sub_industries?.find((i: string | null) => !!i) || undefined,
-                    Community_Portal: toArray(fullUser.sub_communities),
-                    Invite_Source: "EnergClub",
-                    City: fullUser.state || body.state || undefined,
-                    Country: fullUser.country || body.country || undefined,
-                };
-                console.log("📋 [ZOHO_LEADS] Onboarding sync payload:", JSON.stringify(leadData, null, 2));
-
-                const zohoResult = await upsertZohoLead(leadData);
-                console.log("✅ Synced to Zoho Leads:", fullUser.email, zohoResult);
-            } catch (zohoErr: any) {
-                // Non-fatal — don't block onboarding if Zoho fails
-                console.error("⚠️ Zoho Lead sync failed:", zohoErr.message);
+                const syncResult = await syncEnrichedLead(
+                    { ...fullUser, email: syncEmail, clerk_id: userId },
+                    syncEmail,
+                    resolvedPhone,
+                    body
+                );
+                console.log("✅ Sync orchestrator result:", syncResult);
+            } catch (syncErr: any) {
+                // Non-fatal — don't block onboarding if sync fails
+                console.error("⚠️ Sync orchestrator failed:", syncErr.message);
             }
         }
 

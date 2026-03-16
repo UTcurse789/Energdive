@@ -4,8 +4,6 @@ import { query } from "@/lib/db";
 import { createMagicLink } from "@/lib/magic-link-db";
 import { sendMagicLinkEmail } from "@/lib/email";
 import { logEvent } from "@/lib/system-logger";
-import { enqueueJob } from "@/lib/job-queue";
-import { createZohoLead, ZohoLeadData } from "@/lib/zoho-leads";
 
 const WEBHOOK_SECRET = process.env.ZOHO_FORM_WEBHOOK_SECRET || process.env.ZOHO_WEBHOOK_SECRET || "";
 
@@ -16,11 +14,11 @@ const WEBHOOK_SECRET = process.env.ZOHO_FORM_WEBHOOK_SECRET || process.env.ZOHO_
  *
  * Flow:
  *   1. Validate webhook secret
- *   2. Store lead in database (MASTER) → pending_verifications
- *   3. Create original CRM lead (Lead Owner = Event Owner) via background job
- *   4. Send Magic Link email via Brevo
+ *   2. Store lead in database (MASTER) → pending_verifications (with enrichment data)
+ *   3. Send Magic Link email via Brevo
+ *   NOTE: NO CRM push happens here. CRM sync deferred to onboarding completion.
  *
- * Body: { email, name, phone, company, crm_lead_id? }
+ * Body: { email, name, phone, company, crm_lead_id?, job_title?, industry?, community_portal?, city?, country? }
  */
 export async function POST(req: NextRequest) {
     const requestId = crypto.randomUUID().slice(0, 8);
@@ -40,6 +38,13 @@ export async function POST(req: NextRequest) {
         const phone = (body.phone || "").trim();
         const company = (body.company || "").trim();
         const crmLeadId = (body.crm_lead_id || "").trim();
+
+        // ── Enrichment fields from Zoho Form ─────────────────────────
+        const jobTitle = (body.job_title || "").trim();
+        const industry = (body.industry || "").trim();
+        const communityPortal = (body.community_portal || "").trim();
+        const city = (body.city || "").trim();
+        const country = (body.country || "").trim();
 
         if (!email) {
             return NextResponse.json({ error: "Missing email" }, { status: 400 });
@@ -63,35 +68,20 @@ export async function POST(req: NextRequest) {
             });
         }
 
-        // ── 4. Store in DB (MASTER) and generate magic link ──────────────
+        // ── 4. Store in DB (MASTER) with enrichment + generate magic link ─
         const { token, expiresAt, pendingId } = await createMagicLink(
-            email, name, phone, company, "zoho_form", crmLeadId
+            email, name, phone, company, "zoho_form", crmLeadId,
+            {
+                jobTitle: jobTitle || undefined,
+                industry: industry || undefined,
+                communityPortal: communityPortal || undefined,
+                city: city || undefined,
+                country: country || undefined,
+            }
         );
 
         log(`Pending verification stored: id=${pendingId}`);
-
-        // ── 5. Create ORIGINAL CRM lead via background job ───────────────
-        // (Lead Owner = Event Owner — default Zoho assignment)
-        if (!crmLeadId) {
-            enqueueJob("CRM_CREATE_ORIGINAL_LEAD", async () => {
-                const nameParts = name.split(/\s+/);
-                const leadData: ZohoLeadData = {
-                    First_Name: nameParts[0] || "Lead",
-                    Last_Name: nameParts.slice(1).join(" ") || ".",
-                    Email: email,
-                    Phone: phone || undefined,
-                    Company: company || undefined,
-                    Lead_Source: "Zoho Form",
-                };
-                const result = await createZohoLead(leadData);
-                // Store CRM lead ID back on the pending record
-                await query(
-                    `UPDATE pending_verifications SET crm_lead_id = $1, updated_at = NOW() WHERE id = $2`,
-                    [result.id, pendingId]
-                );
-                log(`Original CRM lead created: ${result.id}`);
-            }, email);
-        }
+        // NOTE: No CRM push here — deferred to onboarding completion
 
         // ── 6. Send Magic Link email ─────────────────────────────────────
         const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://www.energdive.com";

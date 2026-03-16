@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyOtp } from "@/lib/otp-store";
 import { query, getClient } from "@/lib/db";
-import { createZohoDuplicateLead } from "@/lib/zoho-leads";
-import { syncVerifiedUserToBrevo } from "@/lib/brevoSync";
 import { sendMembershipWelcomeEmail } from "@/lib/email";
 
 /**
@@ -12,11 +10,12 @@ import { sendMembershipWelcomeEmail } from "@/lib/email";
  *
  * On success:
  *   1. Marks pending_verification as verified.
- *   2. Creates or upserts the full user record in the DB.
+ *   2. Creates or upserts the full user record in the DB (with enrichment data).
  *   3. Assigns a membership ID (ENCL-STN-xxx) via DB trigger.
- *   4. Creates the DUPLICATE CRM lead in Zoho (owner = ITEN MEDIA).
- *   5. Syncs contact to Brevo with membership_id attribute.
- *   6. Stores crm_duplicate_lead_id back on the user record.
+ *   4. Sends membership welcome email.
+ *
+ * NOTE: Brevo and CRM sync are NO LONGER done here.
+ * They are deferred to /api/onboarding/submit after the user completes their profile.
  *
  * Body: { pendingId: number, otp: string }
  */
@@ -34,10 +33,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<Recor
             );
         }
 
-        // ── 1. Load pending verification ─────────────────────────────────
+        // ── 1. Load pending verification (with enrichment fields) ────────
         const pendingResult = await query(
             `SELECT id, email, name, phone, company, source, crm_lead_id,
-              verification_status, otp_verified
+              verification_status, otp_verified,
+              job_title, industry, community_portal, city, country
        FROM pending_verifications
        WHERE id = $1 LIMIT 1`,
             [pendingId]
@@ -84,14 +84,15 @@ export async function POST(req: NextRequest, { params }: { params: Promise<Recor
             const userResult = await client.query(
                 `INSERT INTO users (
            email, first_name, last_name, phone, organization,
-           source, crm_lead_id,
+           source, crm_lead_id, job_title, sync_status,
            onboarding_completed, created_at
-         ) VALUES ($1,$2,$3,$4,$5,$6,$7,false,NOW())
+         ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,'pending',false,NOW())
          ON CONFLICT (email) DO UPDATE SET
            verification_status = 'verified',
            crm_lead_id         = COALESCE(EXCLUDED.crm_lead_id, users.crm_lead_id),
            phone               = COALESCE(EXCLUDED.phone, users.phone),
-           organization        = COALESCE(EXCLUDED.organization, users.organization)
+           organization        = COALESCE(EXCLUDED.organization, users.organization),
+           job_title           = COALESCE(EXCLUDED.job_title, users.job_title)
          RETURNING id, membership_id`,
                 [
                     pending.email,
@@ -101,6 +102,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<Recor
                     pending.company || null,
                     pending.source || "zoho_form",
                     pending.crm_lead_id || null,
+                    pending.job_title || null,
                 ]
             );
 
@@ -140,72 +142,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<Recor
             client.release();
         }
 
-        // ── 5. Create DUPLICATE CRM lead in Zoho (owner = ITEN MEDIA) ────
-        // This happens OUTSIDE the DB transaction — non-blocking, non-fatal.
-        let crmDuplicateLeadId: string | null = null;
-        try {
-            crmDuplicateLeadId = await createZohoDuplicateLead({
-                email: pending.email,
-                name: pending.name,
-                phone: pending.phone,
-                company: pending.company,
-                source: pending.source,
-                originalLeadId: pending.crm_lead_id,
-                membershipId,
-            });
-            log(`Zoho duplicate lead created: ${crmDuplicateLeadId}`);
-
-            // Store duplicate lead ID back on the user record
-            if (crmDuplicateLeadId) {
-                await query(
-                    `UPDATE users SET crm_duplicate_lead_id = $1 WHERE id = $2`,
-                    [crmDuplicateLeadId, userId]
-                );
-            }
-        } catch (zohoErr: any) {
-            console.warn(
-                `[CONFIRM-OTP:${requestId}] Zoho duplicate lead creation failed (non-fatal):`,
-                zohoErr.message
-            );
-        }
-
-        // ── 6. Sync to Brevo with membership_id ──────────────────────────
-        try {
-            await syncVerifiedUserToBrevo({
-                email: pending.email,
-                name: pending.name,
-                phone: pending.phone,
-                company: pending.company,
-                membershipId,
-                source: pending.source,
-            });
-            log(`Brevo synced for ${pending.email}`);
-        } catch (brevoErr: any) {
-            console.warn(
-                `[CONFIRM-OTP:${requestId}] Brevo sync failed (non-fatal):`,
-                brevoErr.message
-            );
-        }
-
-        // ── 7. Update BOTH Zoho leads with membership_id ─────────────────
-        try {
-            const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://www.energdive.com";
-            await fetch(`${appUrl}/api/zoho/update-lead-membership`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    originalLeadId: pending.crm_lead_id || undefined,
-                    duplicateLeadId: crmDuplicateLeadId || undefined,
-                    membershipId,
-                    secret: process.env.ZOHO_WEBHOOK_SECRET,
-                }),
-            });
-            log(`Zoho leads updated with membership_id ${membershipId}`);
-        } catch (zohoUpdateErr: any) {
-            console.warn(`[CONFIRM-OTP:${requestId}] Zoho membership update failed (non-fatal):`, zohoUpdateErr.message);
-        }
-
-        // ── 8. Send membership welcome email ─────────────────────────────
+        // ── 5. Send membership welcome email ─────────────────────────────
+        // NOTE: Brevo sync and CRM sync are deferred to /api/onboarding/submit
+        // to ensure full enriched data (job_title, community, etc.) is available.
         try {
             await sendMembershipWelcomeEmail(pending.email, pending.name || "Member", membershipId);
             log(`Welcome email sent to ${pending.email}`);
