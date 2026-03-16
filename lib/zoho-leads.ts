@@ -393,7 +393,11 @@ export interface DuplicateLeadPayload {
     name?: string;
     phone?: string;
     company?: string;
+    jobTitle?: string;
+    industry?: string;
+    subIndustry?: string;
     source?: string;
+    frequency?: string;
     originalLeadId?: string;
     membershipId?: string;
     communities?: string[];
@@ -430,11 +434,15 @@ export async function createZohoDuplicateLead(
             Email: payload.email,
             Phone: payload.phone || null,
             Company: payload.company || null,
-            Lead_Source: "Brevo Verified",
+            Designation: payload.jobTitle || null,
+            Lead_Source: "Portal",
+            Industry: payload.industry || null,
+            Industry_Sub_Category: payload.subIndustry || null,
             Community: payload.communities?.length ? payload.communities : null,
             Sub_Community: payload.subCommunities?.length ? payload.subCommunities : null,
             Community_Portal: communityPortalValues.length > 0 ? communityPortalValues : null,
             Membership_ID: payload.membershipId || null,
+            Frequency: payload.frequency || "Daily",
             Description: [
                 payload.membershipId ? `Membership ID: ${payload.membershipId}` : "",
                 payload.originalLeadId ? `Original Lead ID: ${payload.originalLeadId}` : "",

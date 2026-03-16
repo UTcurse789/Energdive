@@ -25,7 +25,7 @@ const MAGIC_TOKEN_TTL_HOURS = 24;
  *   crm_lead_id   // original Zoho CRM lead id from the form workflow
  * }
  */
-export async function POST(req: NextRequest, { params }: { params: Promise<Record<string, string>> }) {
+export async function POST(req: NextRequest) {
   const requestId = crypto.randomUUID().slice(0, 8);
   const log = (msg: string) => console.log(`[FORM-LEAD:${requestId}] ${msg}`);
 
@@ -43,9 +43,17 @@ export async function POST(req: NextRequest, { params }: { params: Promise<Recor
     const phone = (body.phone || "").trim();
     const company = (body.company || "").trim();
     const crmLeadId = (body.crm_lead_id || "").trim();
+    const jobTitle = (body.job_title || body.Designation || body.designation || "").trim();
+    const industry = (body.industry || body.Industry || "").trim();
+    const rawCommunityPortal = body["Community-Portal"] || body.community_portal || body.Community_Portal;
+    const communityPortal = Array.isArray(rawCommunityPortal)
+      ? rawCommunityPortal.map((item: string) => String(item).trim()).filter(Boolean).join(",")
+      : String(rawCommunityPortal || "").trim();
+    const city = (body.city || body.City || body.state || body.State || "").trim();
+    const country = (body.country || body.Country || "").trim();
 
     // Defensive parsing for communities (Zoho can send arrays or comma/semicolon strings)
-    const parseArray = (val: any) => {
+    const parseArray = (val: unknown): string[] => {
       if (Array.isArray(val)) return val;
       if (typeof val === "string") return val.split(/[;,]/).map((s: string) => s.trim()).filter(Boolean);
       return [];
@@ -56,11 +64,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<Recor
     let subCommunities = parseArray(body.Sub_Community || body.sub_community);
     
     // Check for Community-Portal combined field (e.g. "Energy-Solar, Distribution-Microgrids")
-    const communityPortal = parseArray(body["Community-Portal"] || body.community_portal);
-    if (communityPortal.length > 0) {
+    const communityPortalValues = parseArray(body["Community-Portal"] || body.community_portal || body.Community_Portal);
+    if (communityPortalValues.length > 0) {
       const parsedComms = new Set<string>();
       const parsedSubs = new Set<string>();
-      communityPortal.forEach((item: string) => {
+      communityPortalValues.forEach((item: string) => {
         const parts = item.split("-").map((p: string) => p.trim());
         if (parts[0]) parsedComms.add(parts[0]);
         if (parts[1]) parsedSubs.add(parts[1]);
@@ -84,8 +92,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<Recor
     const result = await query(
       `INSERT INTO pending_verifications
          (email, name, phone, company, source, verification_status,
-          crm_lead_id, magic_token, magic_token_expires_at, communities, sub_communities, created_at, updated_at)
-       VALUES ($1,$2,$3,$4,'zoho_form','pending',$5,$6,$7,$8,$9,NOW(),NOW())
+          crm_lead_id, magic_token, magic_token_expires_at, communities, sub_communities,
+          job_title, industry, community_portal, city, country, created_at, updated_at)
+       VALUES ($1,$2,$3,$4,'zoho_form','pending',$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,NOW(),NOW())
        ON CONFLICT (email) DO UPDATE SET
          name                    = EXCLUDED.name,
          phone                   = EXCLUDED.phone,
@@ -95,12 +104,32 @@ export async function POST(req: NextRequest, { params }: { params: Promise<Recor
          magic_token_expires_at  = EXCLUDED.magic_token_expires_at,
          communities             = COALESCE(EXCLUDED.communities, pending_verifications.communities),
          sub_communities         = COALESCE(EXCLUDED.sub_communities, pending_verifications.sub_communities),
+         job_title               = COALESCE(EXCLUDED.job_title, pending_verifications.job_title),
+         industry                = COALESCE(EXCLUDED.industry, pending_verifications.industry),
+         community_portal        = COALESCE(EXCLUDED.community_portal, pending_verifications.community_portal),
+         city                    = COALESCE(EXCLUDED.city, pending_verifications.city),
+         country                 = COALESCE(EXCLUDED.country, pending_verifications.country),
          verification_status     = 'pending',
          otp_verified            = false,
          verified_at             = NULL,
          updated_at              = NOW()
        RETURNING id`,
-      [email, name, phone, company, crmLeadId, magicToken, expiresAt, JSON.stringify(communities), JSON.stringify(subCommunities)]
+      [
+        email,
+        name,
+        phone,
+        company,
+        crmLeadId,
+        magicToken,
+        expiresAt,
+        JSON.stringify(communities),
+        JSON.stringify(subCommunities),
+        jobTitle || null,
+        industry || null,
+        communityPortal || null,
+        city || null,
+        country || null,
+      ]
     );
 
     const pendingId = result.rows[0]?.id;
@@ -118,10 +147,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<Recor
       pendingId,
       message: "Verification email sent",
     });
-  } catch (error: any) {
+    } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
     console.error(`[FORM-LEAD:${requestId}] Error:`, error);
     return NextResponse.json(
-      { error: "Internal server error", details: error.message },
+      { error: "Internal server error", details: message },
       { status: 500 }
     );
   }

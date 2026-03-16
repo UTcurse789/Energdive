@@ -40,11 +40,14 @@ export async function POST(req: NextRequest) {
         const crmLeadId = (body.crm_lead_id || "").trim();
 
         // ── Enrichment fields from Zoho Form ─────────────────────────
-        const jobTitle = (body.job_title || "").trim();
-        const industry = (body.industry || "").trim();
-        const communityPortal = (body.community_portal || "").trim();
-        const city = (body.city || "").trim();
-        const country = (body.country || "").trim();
+        const jobTitle = (body.job_title || body.Designation || body.designation || "").trim();
+        const industry = (body.industry || body.Industry || "").trim();
+        const rawCommunityPortal = body.community_portal || body.Community_Portal || body["Community-Portal"];
+        const communityPortal = Array.isArray(rawCommunityPortal)
+            ? rawCommunityPortal.map((item) => String(item).trim()).filter(Boolean).join(",")
+            : String(rawCommunityPortal || "").trim();
+        const city = (body.city || body.City || body.state || body.State || "").trim();
+        const country = (body.country || body.Country || "").trim();
 
         if (!email) {
             return NextResponse.json({ error: "Missing email" }, { status: 400 });
@@ -69,7 +72,7 @@ export async function POST(req: NextRequest) {
         }
 
         // ── 4. Store in DB (MASTER) with enrichment + generate magic link ─
-        const { token, expiresAt, pendingId } = await createMagicLink(
+        const { token, pendingId } = await createMagicLink(
             email, name, phone, company, "zoho_form", crmLeadId,
             {
                 jobTitle: jobTitle || undefined,
@@ -95,10 +98,11 @@ export async function POST(req: NextRequest) {
             pendingId,
             message: "Verification email sent",
         });
-    } catch (error: any) {
+    } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : String(error);
         console.error(`[ZOHO-WEBHOOK:${requestId}] Error:`, error);
         return NextResponse.json(
-            { error: "Internal server error", details: error.message },
+            { error: "Internal server error", details: message },
             { status: 500 }
         );
     }
