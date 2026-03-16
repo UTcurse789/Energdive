@@ -419,15 +419,22 @@ export async function createZohoDuplicateLead(
         const firstName = nameParts[0] || "Member";
         const lastName = nameParts.slice(1).join(" ") || ".";
 
+        // Generate Community_Portal from communities + subCommunities
+        const communityPortalValues = (payload.communities?.length && payload.subCommunities?.length)
+            ? generateCommunityPortal(payload.communities, payload.subCommunities)
+            : [];
+
         const zohoRecord: Record<string, any> = {
             First_Name: firstName,
             Last_Name: lastName,
             Email: payload.email,
             Phone: payload.phone || null,
             Company: payload.company || null,
-            Lead_Source: "Portal Verified",
+            Lead_Source: "Brevo Verified",
             Community: payload.communities?.length ? payload.communities : null,
             Sub_Community: payload.subCommunities?.length ? payload.subCommunities : null,
+            Community_Portal: communityPortalValues.length > 0 ? communityPortalValues : null,
+            Membership_ID: payload.membershipId || null,
             Description: [
                 payload.membershipId ? `Membership ID: ${payload.membershipId}` : "",
                 payload.originalLeadId ? `Original Lead ID: ${payload.originalLeadId}` : "",
