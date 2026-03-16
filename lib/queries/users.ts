@@ -343,6 +343,7 @@ export interface ProvisionPayload {
     // Magic token for one-click login
     magicToken: string;
     magicTokenExpiresAt: Date;
+    source?: string;
 }
 
 /**
@@ -364,8 +365,8 @@ export async function provisionUser(payload: ProvisionPayload): Promise<number> 
                 clerk_id, email, first_name, last_name, phone,
                 country, state, job_title, organization,
                 onboarding_completed, magic_token, magic_token_expires_at,
-                created_at
-            ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9, true, $10, $11, NOW())
+                source, created_at
+            ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9, true, $10, $11, $12, NOW())
             ON CONFLICT (clerk_id) DO UPDATE SET
                 email                  = EXCLUDED.email,
                 first_name             = EXCLUDED.first_name,
@@ -377,7 +378,8 @@ export async function provisionUser(payload: ProvisionPayload): Promise<number> 
                 organization           = COALESCE(EXCLUDED.organization, users.organization),
                 onboarding_completed   = true,
                 magic_token            = EXCLUDED.magic_token,
-                magic_token_expires_at = EXCLUDED.magic_token_expires_at
+                magic_token_expires_at = EXCLUDED.magic_token_expires_at,
+                source                 = COALESCE(EXCLUDED.source, users.source)
             RETURNING id`,
             [
                 payload.clerkId,
@@ -391,6 +393,7 @@ export async function provisionUser(payload: ProvisionPayload): Promise<number> 
                 payload.company || null,      // maps to organization
                 payload.magicToken,
                 payload.magicTokenExpiresAt,
+                payload.source || "zoho_form",
             ]
         );
 
