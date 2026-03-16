@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { verifyOtp } from "@/lib/otp-store";
 import { clerkClient } from "@clerk/nextjs/server";
-import { getUserByInternalId } from "@/lib/queries/users";
+import { getUserByInternalId, writePendingCommunities } from "@/lib/queries/users";
 import { syncVerifiedUserToBrevo } from "@/lib/brevoSync";
 import { getFullUserProfile } from "@/lib/getFullUserProfile";
 import { upsertZohoLead } from "@/lib/zoho-leads";
@@ -79,6 +79,13 @@ export async function POST(req: Request) {
 
         log(`User marked as verified in DB: id=${userId}`);
 
+        // ── Step 3.5: Write communities from pending_verifications ────────────
+        // Zoho Form webhook users have their communities stored in pending_verifications
+        // (as JSONB). Now that they are verified, we write those to user_communities
+        // so the dashboard / getFullUserProfile can read them.
+        await writePendingCommunities(userId, normalizedEmail);
+        log(`Wrote pending communities for id=${userId}`);
+
         await logEvent(
             "USER_VERIFIED",
             normalizedEmail,
@@ -140,6 +147,8 @@ export async function POST(req: Request) {
                 source: "Portal",
                 communities,
                 subCommunities,
+                industries,
+                subIndustries,
             });
 
             log(`✅ Synced to Brevo: ${normalizedEmail}`);

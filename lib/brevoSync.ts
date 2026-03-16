@@ -57,6 +57,8 @@ export interface VerifiedUserBrevoPayload {
     source?: string;
     communities?: string[];
     subCommunities?: string[];
+    industries?: string[];
+    subIndustries?: string[];
 }
 
 /**
@@ -90,6 +92,8 @@ export async function syncVerifiedUserToBrevo(user: VerifiedUserBrevoPayload): P
     if (user.jobTitle) attributes.JOB_TITLE = user.jobTitle;
     if (user.communities?.length) attributes.COMMUNITY = user.communities.join(",");
     if (user.subCommunities?.length) attributes.SUB_COMMUNITY = user.subCommunities.join(",");
+    if (user.industries?.length) attributes.INDUSTRY = user.industries.join(",");
+    if (user.subIndustries?.length) attributes.SUB_INDUSTRY = user.subIndustries.join(",");
 
     await axios.post(
         "https://api.brevo.com/v3/contacts",
