@@ -43,16 +43,6 @@ export async function POST(req: NextRequest) {
     const phone = (body.phone || "").trim();
     const company = (body.company || "").trim();
     const crmLeadId = (body.crm_lead_id || "").trim();
-    const jobTitle = (body.job_title || body.Designation || body.designation || "").trim();
-    const industry = (body.industry || body.Industry || "").trim();
-    const rawCommunityPortal = body["Community-Portal"] || body.community_portal || body.Community_Portal;
-    const communityPortal = Array.isArray(rawCommunityPortal)
-      ? rawCommunityPortal.map((item: string) => String(item).trim()).filter(Boolean).join(",")
-      : String(rawCommunityPortal || "").trim();
-    const city = (body.city || body.City || body.state || body.State || "").trim();
-    const country = (body.country || body.Country || "").trim();
-
-    // Defensive parsing for communities (Zoho can send arrays or comma/semicolon strings)
     const parseArray = (val: unknown): string[] => {
       if (Array.isArray(val)) return val;
       if (typeof val === "string") return val.split(/[;,]/).map((s: string) => s.trim()).filter(Boolean);
@@ -92,9 +82,8 @@ export async function POST(req: NextRequest) {
     const result = await query(
       `INSERT INTO pending_verifications
          (email, name, phone, company, source, verification_status,
-          crm_lead_id, magic_token, magic_token_expires_at, communities, sub_communities,
-          job_title, industry, community_portal, city, country, created_at, updated_at)
-       VALUES ($1,$2,$3,$4,'zoho_form','pending',$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,NOW(),NOW())
+          crm_lead_id, magic_token, magic_token_expires_at, communities, sub_communities, created_at, updated_at)
+       VALUES ($1,$2,$3,$4,'zoho_form','pending',$5,$6,$7,$8,$9,NOW(),NOW())
        ON CONFLICT (email) DO UPDATE SET
          name                    = EXCLUDED.name,
          phone                   = EXCLUDED.phone,
@@ -104,11 +93,6 @@ export async function POST(req: NextRequest) {
          magic_token_expires_at  = EXCLUDED.magic_token_expires_at,
          communities             = COALESCE(EXCLUDED.communities, pending_verifications.communities),
          sub_communities         = COALESCE(EXCLUDED.sub_communities, pending_verifications.sub_communities),
-         job_title               = COALESCE(EXCLUDED.job_title, pending_verifications.job_title),
-         industry                = COALESCE(EXCLUDED.industry, pending_verifications.industry),
-         community_portal        = COALESCE(EXCLUDED.community_portal, pending_verifications.community_portal),
-         city                    = COALESCE(EXCLUDED.city, pending_verifications.city),
-         country                 = COALESCE(EXCLUDED.country, pending_verifications.country),
          verification_status     = 'pending',
          otp_verified            = false,
          verified_at             = NULL,
@@ -124,11 +108,6 @@ export async function POST(req: NextRequest) {
         expiresAt,
         JSON.stringify(communities),
         JSON.stringify(subCommunities),
-        jobTitle || null,
-        industry || null,
-        communityPortal || null,
-        city || null,
-        country || null,
       ]
     );
 
