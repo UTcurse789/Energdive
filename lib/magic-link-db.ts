@@ -9,7 +9,7 @@ import crypto from "crypto";
 import { query } from "./db";
 import { logEvent } from "./system-logger";
 
-const TOKEN_EXPIRY_HOURS = 24;
+const TOKEN_EXPIRY_HOURS = 168; // 1 week
 
 /** Generate a SHA256 hash of a token string. */
 export function hashToken(token: string): string {
