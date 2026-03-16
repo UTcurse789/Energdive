@@ -5,7 +5,6 @@ import { query, getClient } from "@/lib/db";
 import { createZohoDuplicateLead } from "@/lib/zoho-leads";
 import { syncVerifiedUserToBrevo } from "@/lib/brevoSync";
 import { sendMembershipWelcomeEmail } from "@/lib/email";
-import { enqueueJob } from "@/lib/job-queue";
 import { logEvent } from "@/lib/system-logger";
 
 type PendingVerification = {
@@ -17,23 +16,15 @@ type PendingVerification = {
     source: string | null;
     crm_lead_id: string | null;
     verification_status: string;
-    otp_verified: boolean;
     communities: unknown;
     sub_communities: unknown;
-    job_title: string | null;
-    industry: string | null;
-    community_portal: unknown;
-    city: string | null;
-    country: string | null;
 };
 
 function toStringArray(value: unknown): string[] {
     if (!value) return [];
 
     if (Array.isArray(value)) {
-        return value
-            .map((item) => String(item).trim())
-            .filter(Boolean);
+        return value.map((item) => String(item).trim()).filter(Boolean);
     }
 
     if (typeof value === "string") {
@@ -43,12 +34,10 @@ function toStringArray(value: unknown): string[] {
         try {
             const parsed = JSON.parse(trimmed);
             if (Array.isArray(parsed)) {
-                return parsed
-                    .map((item) => String(item).trim())
-                    .filter(Boolean);
+                return parsed.map((item) => String(item).trim()).filter(Boolean);
             }
         } catch {
-            // Fall through to separator parsing.
+            // Fall through to delimiter parsing.
         }
 
         return trimmed
@@ -60,23 +49,25 @@ function toStringArray(value: unknown): string[] {
     return [];
 }
 
-function parseCommunityPortalPairs(value: unknown): Array<{ community: string; subCommunity: string | null }> {
-    return toStringArray(value).flatMap((entry) => {
-        const hyphenIndex = entry.indexOf("-");
-        if (hyphenIndex <= 0) {
-            return entry ? [{ community: entry, subCommunity: null }] : [];
-        }
+function normalizeSubCommunityName(community: string, subCommunity: string): string[] {
+    const cleanCommunity = community.trim();
+    const cleanSubCommunity = subCommunity.trim();
 
-        const community = entry.slice(0, hyphenIndex).trim();
-        const subCommunity = entry.slice(hyphenIndex + 1).trim();
+    const candidates = new Set<string>([
+        cleanSubCommunity,
+        `${cleanCommunity}-${cleanSubCommunity}`,
+    ]);
 
-        if (!community) return [];
+    const strippedSub = cleanSubCommunity.includes("-")
+        ? cleanSubCommunity.split("-").slice(1).join("-").trim()
+        : cleanSubCommunity;
 
-        return [{
-            community,
-            subCommunity: subCommunity || null,
-        }];
-    });
+    if (strippedSub) {
+        candidates.add(strippedSub);
+        candidates.add(`${cleanCommunity}-${strippedSub}`);
+    }
+
+    return Array.from(candidates).filter(Boolean);
 }
 
 async function ensureMembershipId(client: Awaited<ReturnType<typeof getClient>>, userId: number): Promise<string> {
@@ -111,6 +102,7 @@ async function loadVerifiedUserSnapshot(userId: number) {
         `
         SELECT
           u.id,
+          u.clerk_id,
           u.email,
           u.first_name,
           u.last_name,
@@ -163,20 +155,6 @@ async function loadVerifiedUserSnapshot(userId: number) {
     return result.rows[0] || null;
 }
 
-/**
- * POST /api/auth/verify-otp
- *
- * Verifies the OTP and completes the double opt-in verification.
- *
- * On success:
- *   1. Marks pending_verification as verified
- *   2. Creates/upserts user record in DB with membership_id
- *   3. Marks magic token as used (single-use)
- *   4. Enqueues background jobs for CRM duplicate lead + Brevo sync
- *   5. Sends membership welcome email
- *
- * Body: { email: string, otp: string }
- */
 export async function POST(req: NextRequest) {
     const requestId = Math.random().toString(36).slice(2, 8);
     const log = (msg: string) => console.log(`[VERIFY-OTP:${requestId}] ${msg}`);
@@ -192,13 +170,12 @@ export async function POST(req: NextRequest) {
         }
 
         const normalizedEmail = email.trim().toLowerCase();
-
         const pendingResult = await query<PendingVerification>(
             `SELECT id, email, name, phone, company, source, crm_lead_id,
-                    verification_status, otp_verified, communities, sub_communities,
-                    job_title, industry, community_portal, city, country
+                    verification_status, communities, sub_communities
              FROM pending_verifications
-             WHERE email = $1
+             WHERE LOWER(email) = LOWER($1)
+             ORDER BY id DESC
              LIMIT 1`,
             [normalizedEmail]
         );
@@ -208,7 +185,6 @@ export async function POST(req: NextRequest) {
         }
 
         const pending = pendingResult.rows[0];
-
         if (pending.verification_status === "verified") {
             return NextResponse.json({
                 success: true,
@@ -225,8 +201,6 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        log(`OTP verified for ${normalizedEmail}`);
-
         const client = await getClient();
         let userId: number;
         let membershipId: string;
@@ -238,121 +212,99 @@ export async function POST(req: NextRequest) {
             const firstName = nameParts[0] || "";
             const lastName = nameParts.slice(1).join(" ") || "";
 
-            const userResult = await client.query(
-                `INSERT INTO users (
-                   email, first_name, last_name, phone, organization,
-                   source, crm_lead_id, job_title, country, state,
-                   verification_status, onboarding_completed,
-                   created_at, updated_at
-                 ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'pending_verification',true,NOW(),NOW())
-                 ON CONFLICT (email) DO UPDATE SET
-                   verification_status = 'verified',
-                   onboarding_completed = true,
-                   crm_lead_id         = COALESCE(EXCLUDED.crm_lead_id, users.crm_lead_id),
-                   phone               = COALESCE(EXCLUDED.phone, users.phone),
-                   organization        = COALESCE(EXCLUDED.organization, users.organization),
-                   job_title           = COALESCE(EXCLUDED.job_title, users.job_title),
-                   country             = COALESCE(EXCLUDED.country, users.country),
-                   state               = COALESCE(EXCLUDED.state, users.state),
-                   updated_at          = NOW()
-                 RETURNING id, membership_id`,
-                [
-                    normalizedEmail,
-                    firstName,
-                    lastName,
-                    pending.phone || null,
-                    pending.company || null,
-                    pending.source || "zoho_form",
-                    pending.crm_lead_id || null,
-                    pending.job_title || null,
-                    pending.country || null,
-                    pending.city || null,
-                ]
+            const existingUserResult = await client.query(
+                `SELECT id, membership_id
+                 FROM users
+                 WHERE LOWER(email) = LOWER($1)
+                 ORDER BY
+                   CASE WHEN source = 'zoho_form' THEN 0 ELSE 1 END,
+                   updated_at DESC NULLS LAST,
+                   id DESC
+                 LIMIT 1
+                 FOR UPDATE`,
+                [normalizedEmail]
             );
 
-            userId = userResult.rows[0].id;
-            membershipId = userResult.rows[0].membership_id;
+            if (existingUserResult.rows.length > 0) {
+                userId = existingUserResult.rows[0].id;
+                membershipId = existingUserResult.rows[0].membership_id;
 
-            if (!membershipId) {
-                const verifyResult = await client.query(
+                const updateResult = await client.query(
                     `UPDATE users
-                     SET verification_status = 'verified',
+                     SET first_name = COALESCE(NULLIF($2, ''), first_name),
+                         last_name = COALESCE(NULLIF($3, ''), last_name),
+                         phone = COALESCE(NULLIF($4, ''), phone),
+                         organization = COALESCE(NULLIF($5, ''), organization),
+                         source = COALESCE($6, source),
+                         crm_lead_id = COALESCE($7, crm_lead_id),
+                         verification_status = 'verified',
+                         onboarding_completed = true,
                          updated_at = NOW()
                      WHERE id = $1
-                       AND verification_status IS DISTINCT FROM 'verified'
                      RETURNING membership_id`,
-                    [userId]
+                    [
+                        userId,
+                        firstName,
+                        lastName,
+                        pending.phone || "",
+                        pending.company || "",
+                        pending.source || "zoho_form",
+                        pending.crm_lead_id,
+                    ]
                 );
-                membershipId = verifyResult.rows[0]?.membership_id || membershipId;
+
+                membershipId = updateResult.rows[0]?.membership_id || membershipId;
+            } else {
+                const insertResult = await client.query(
+                    `INSERT INTO users (
+                       email, first_name, last_name, phone, organization,
+                       source, crm_lead_id, verification_status,
+                       onboarding_completed, created_at, updated_at
+                     ) VALUES ($1,$2,$3,$4,$5,$6,$7,'verified',true,NOW(),NOW())
+                     RETURNING id, membership_id`,
+                    [
+                        normalizedEmail,
+                        firstName,
+                        lastName,
+                        pending.phone || null,
+                        pending.company || null,
+                        pending.source || "zoho_form",
+                        pending.crm_lead_id || null,
+                    ]
+                );
+
+                userId = insertResult.rows[0].id;
+                membershipId = insertResult.rows[0].membership_id;
             }
 
-            if (!membershipId) {
-                membershipId = await ensureMembershipId(client, userId);
-            }
+            membershipId = await ensureMembershipId(client, userId);
 
             await client.query(
-                `UPDATE pending_verifications SET
-                   verification_status = 'verified',
-                   otp_verified        = true,
-                   verified_at         = NOW(),
-                   user_id             = $1,
-                   updated_at          = NOW()
+                `UPDATE pending_verifications
+                 SET verification_status = 'verified',
+                     otp_verified = true,
+                     verified_at = NOW(),
+                     user_id = $1,
+                     updated_at = NOW()
                  WHERE id = $2`,
                 [userId, pending.id]
             );
 
-            if (pending.industry) {
-                const industryResult = await client.query(
-                    `SELECT id FROM industry WHERE LOWER(name) = LOWER($1) LIMIT 1`,
-                    [pending.industry.trim()]
-                );
+            const communities = toStringArray(pending.communities);
+            const subCommunities = toStringArray(pending.sub_communities);
 
-                if (industryResult.rows.length > 0) {
-                    const industryId = industryResult.rows[0].id;
-                    const subIndustryResult = await client.query(
-                        `SELECT id
-                         FROM sub_industries
-                         WHERE industry_id = $1
-                         ORDER BY id
-                         LIMIT 1`,
-                        [industryId]
-                    );
-
-                    const subIndustryId = subIndustryResult.rows[0]?.id;
-                    if (subIndustryId) {
-                        await client.query(`DELETE FROM user_industries WHERE user_id = $1`, [userId]);
-                        await client.query(
-                            `INSERT INTO user_industries (user_id, industry_id, sub_industry_id)
-                             VALUES ($1, $2, $3)`,
-                            [userId, industryId, subIndustryId]
-                        );
-                    }
-                }
-            }
-
-            const parsedCommunities = new Set(toStringArray(pending.communities));
-            const globalSubCommunities = new Set(toStringArray(pending.sub_communities));
-            const scopedSubCommunities = new Map<string, Set<string>>();
-
-            for (const pair of parseCommunityPortalPairs(pending.community_portal)) {
-                parsedCommunities.add(pair.community);
-                if (pair.subCommunity) {
-                    const key = pair.community.toLowerCase();
-                    if (!scopedSubCommunities.has(key)) {
-                        scopedSubCommunities.set(key, new Set());
-                    }
-                    scopedSubCommunities.get(key)!.add(pair.subCommunity);
-                }
-            }
-
-            if (parsedCommunities.size > 0) {
+            if (communities.length > 0) {
                 await client.query(`DELETE FROM user_communities WHERE user_id = $1`, [userId]);
+
                 const insertedPairs = new Set<string>();
 
-                for (const communityName of parsedCommunities) {
+                for (const communityName of communities) {
                     const communityResult = await client.query(
-                        `SELECT id FROM communities WHERE LOWER(name) = LOWER($1) LIMIT 1`,
-                        [communityName.trim()]
+                        `SELECT id, name
+                         FROM communities
+                         WHERE LOWER(name) = LOWER($1)
+                         LIMIT 1`,
+                        [communityName]
                     );
 
                     if (communityResult.rows.length === 0) {
@@ -360,21 +312,20 @@ export async function POST(req: NextRequest) {
                     }
 
                     const communityId = communityResult.rows[0].id;
-                    const candidateSubs = Array.from(new Set([
-                        ...Array.from(scopedSubCommunities.get(communityName.toLowerCase()) || []),
-                        ...Array.from(globalSubCommunities),
-                    ]));
+                    const subCandidates = subCommunities.flatMap((subCommunity) =>
+                        normalizeSubCommunityName(communityName, subCommunity)
+                    );
 
-                    let insertedForCommunity = false;
+                    let matchedSub = false;
 
-                    for (const subName of candidateSubs) {
+                    for (const candidate of subCandidates) {
                         const subResult = await client.query(
                             `SELECT id
                              FROM sub_communities
                              WHERE community_id = $1
                                AND LOWER(name) = LOWER($2)
                              LIMIT 1`,
-                            [communityId, subName.trim()]
+                            [communityId, candidate]
                         );
 
                         if (subResult.rows.length === 0) {
@@ -394,10 +345,10 @@ export async function POST(req: NextRequest) {
                         );
 
                         insertedPairs.add(pairKey);
-                        insertedForCommunity = true;
+                        matchedSub = true;
                     }
 
-                    if (!insertedForCommunity) {
+                    if (!matchedSub) {
                         const fallbackSubResult = await client.query(
                             `SELECT id
                              FROM sub_communities
@@ -425,9 +376,9 @@ export async function POST(req: NextRequest) {
 
             await client.query("COMMIT");
             log(`User verified: id=${userId}, membership_id=${membershipId}`);
-        } catch (err) {
+        } catch (error) {
             await client.query("ROLLBACK");
-            throw err;
+            throw error;
         } finally {
             client.release();
         }
@@ -439,18 +390,34 @@ export async function POST(req: NextRequest) {
             membershipId,
             source: pending.source,
         });
-        await logEvent("MEMBERSHIP_GENERATED", normalizedEmail, `Membership ID: ${membershipId}`);
 
         const fullUser = await loadVerifiedUserSnapshot(userId);
 
-        enqueueJob("CRM_CREATE_DUPLICATE_LEAD", async () => {
+        try {
+            await syncVerifiedUserToBrevo({
+                email: normalizedEmail,
+                name: `${fullUser?.first_name || ""} ${fullUser?.last_name || ""}`.trim() || pending.name || undefined,
+                phone: fullUser?.phone || pending.phone || undefined,
+                company: fullUser?.organization || pending.company || undefined,
+                jobTitle: fullUser?.job_title || undefined,
+                membershipId: fullUser?.membership_id || membershipId,
+                source: "Portal",
+                communities: fullUser?.communities || [],
+                subCommunities: fullUser?.sub_communities || [],
+            });
+        } catch (brevoError: unknown) {
+            const message = brevoError instanceof Error ? brevoError.message : String(brevoError);
+            console.warn(`[VERIFY-OTP:${requestId}] Brevo sync failed:`, message);
+        }
+
+        try {
             const duplicateLeadId = await createZohoDuplicateLead({
                 email: normalizedEmail,
                 name: `${fullUser?.first_name || ""} ${fullUser?.last_name || ""}`.trim() || pending.name || undefined,
                 phone: fullUser?.phone || pending.phone || undefined,
                 company: fullUser?.organization || pending.company || undefined,
-                jobTitle: fullUser?.job_title || pending.job_title || undefined,
-                industry: fullUser?.industries?.[0] || pending.industry || undefined,
+                jobTitle: fullUser?.job_title || undefined,
+                industry: fullUser?.industries?.[0] || undefined,
                 subIndustry: fullUser?.sub_industries?.[0] || undefined,
                 source: "Portal",
                 frequency: fullUser?.preferred_frequency || "Daily",
@@ -469,24 +436,11 @@ export async function POST(req: NextRequest) {
                      WHERE id = $2`,
                     [duplicateLeadId, userId]
                 );
-                log(`Zoho duplicate lead created: ${duplicateLeadId}`);
             }
-        }, normalizedEmail);
-
-        enqueueJob("BREVO_SYNC_CONTACT", async () => {
-            await syncVerifiedUserToBrevo({
-                email: normalizedEmail,
-                name: `${fullUser?.first_name || ""} ${fullUser?.last_name || ""}`.trim() || pending.name || undefined,
-                phone: fullUser?.phone || pending.phone || undefined,
-                company: fullUser?.organization || pending.company || undefined,
-                jobTitle: fullUser?.job_title || pending.job_title || undefined,
-                membershipId: fullUser?.membership_id || membershipId,
-                source: "Portal",
-                communities: fullUser?.communities || [],
-                subCommunities: fullUser?.sub_communities || [],
-            });
-            log(`Brevo synced for ${normalizedEmail}`);
-        }, normalizedEmail);
+        } catch (crmError: unknown) {
+            const message = crmError instanceof Error ? crmError.message : String(crmError);
+            console.warn(`[VERIFY-OTP:${requestId}] CRM duplicate lead sync failed:`, message);
+        }
 
         try {
             await sendMembershipWelcomeEmail(
@@ -494,10 +448,9 @@ export async function POST(req: NextRequest) {
                 pending.name || "Member",
                 membershipId
             );
-            log(`Welcome email sent to ${normalizedEmail}`);
-        } catch (emailErr: unknown) {
-            const message = emailErr instanceof Error ? emailErr.message : String(emailErr);
-            console.warn(`[VERIFY-OTP:${requestId}] Welcome email failed (non-fatal):`, message);
+        } catch (emailError: unknown) {
+            const message = emailError instanceof Error ? emailError.message : String(emailError);
+            console.warn(`[VERIFY-OTP:${requestId}] Welcome email failed:`, message);
         }
 
         return NextResponse.json({

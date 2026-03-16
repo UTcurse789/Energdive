@@ -39,15 +39,29 @@ export async function POST(req: NextRequest) {
         const company = (body.company || "").trim();
         const crmLeadId = (body.crm_lead_id || "").trim();
 
-        // ── Enrichment fields from Zoho Form ─────────────────────────
-        const jobTitle = (body.job_title || body.Designation || body.designation || "").trim();
-        const industry = (body.industry || body.Industry || "").trim();
-        const rawCommunityPortal = body.community_portal || body.Community_Portal || body["Community-Portal"];
-        const communityPortal = Array.isArray(rawCommunityPortal)
-            ? rawCommunityPortal.map((item) => String(item).trim()).filter(Boolean).join(",")
-            : String(rawCommunityPortal || "").trim();
-        const city = (body.city || body.City || body.state || body.State || "").trim();
-        const country = (body.country || body.Country || "").trim();
+        const parseArray = (value: unknown): string[] => {
+            if (Array.isArray(value)) {
+                return value.map((item) => String(item).trim()).filter(Boolean);
+            }
+            if (typeof value === "string") {
+                return value.split(/[;,]/).map((item) => item.trim()).filter(Boolean);
+            }
+            return [];
+        };
+
+        const portalValues = parseArray(body.community_portal || body.Community_Portal || body["Community-Portal"]);
+        const parsedCommunities = new Set(parseArray(body.Community || body.community));
+        const parsedSubCommunities = new Set(parseArray(body.Sub_Community || body.sub_community));
+
+        for (const entry of portalValues) {
+            const hyphenIndex = entry.indexOf("-");
+            if (hyphenIndex > 0) {
+                const community = entry.slice(0, hyphenIndex).trim();
+                const subCommunity = entry.slice(hyphenIndex + 1).trim();
+                if (community) parsedCommunities.add(community);
+                if (subCommunity) parsedSubCommunities.add(subCommunity);
+            }
+        }
 
         if (!email) {
             return NextResponse.json({ error: "Missing email" }, { status: 400 });
@@ -75,11 +89,8 @@ export async function POST(req: NextRequest) {
         const { token, pendingId } = await createMagicLink(
             email, name, phone, company, "zoho_form", crmLeadId,
             {
-                jobTitle: jobTitle || undefined,
-                industry: industry || undefined,
-                communityPortal: communityPortal || undefined,
-                city: city || undefined,
-                country: country || undefined,
+                communities: Array.from(parsedCommunities),
+                subCommunities: Array.from(parsedSubCommunities),
             }
         );
 

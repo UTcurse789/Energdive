@@ -18,11 +18,8 @@ export function hashToken(token: string): string {
 
 /** Optional enrichment fields from Zoho Form submissions. */
 export interface EnrichmentData {
-    jobTitle?: string;
-    industry?: string;
-    communityPortal?: string;
-    city?: string;
-    country?: string;
+    communities?: string[];
+    subCommunities?: string[];
 }
 
 /**
@@ -60,9 +57,9 @@ export async function createMagicLink(
            (email, name, phone, company, source, verification_status,
             crm_lead_id, magic_token_hash, magic_token_expires_at,
             token_used, otp_verified, otp_attempts,
-            job_title, industry, community_portal, city, country,
+            communities, sub_communities,
             created_at, updated_at)
-         VALUES ($1,$2,$3,$4,$5,'pending',$6,$7,$8,false,false,0,$9,$10,$11,$12,$13,NOW(),NOW())
+         VALUES ($1,$2,$3,$4,$5,'pending',$6,$7,$8,false,false,0,$9,$10,NOW(),NOW())
          ON CONFLICT (email) DO UPDATE SET
            name                    = EXCLUDED.name,
            phone                   = EXCLUDED.phone,
@@ -74,17 +71,14 @@ export async function createMagicLink(
            verification_status     = 'pending',
            otp_verified            = false,
            otp_attempts            = 0,
-           job_title               = COALESCE(EXCLUDED.job_title, pending_verifications.job_title),
-           industry                = COALESCE(EXCLUDED.industry, pending_verifications.industry),
-           community_portal        = COALESCE(EXCLUDED.community_portal, pending_verifications.community_portal),
-           city                    = COALESCE(EXCLUDED.city, pending_verifications.city),
-           country                 = COALESCE(EXCLUDED.country, pending_verifications.country),
+           communities             = COALESCE(EXCLUDED.communities, pending_verifications.communities),
+           sub_communities         = COALESCE(EXCLUDED.sub_communities, pending_verifications.sub_communities),
            updated_at              = NOW()
          RETURNING id`,
         [
             normalizedEmail, name, phone || null, company || null, source, crmLeadId || null, tokenHash, expiresAt,
-            enrichment?.jobTitle || null, enrichment?.industry || null, enrichment?.communityPortal || null,
-            enrichment?.city || null, enrichment?.country || null
+            enrichment?.communities?.length ? JSON.stringify(enrichment.communities) : null,
+            enrichment?.subCommunities?.length ? JSON.stringify(enrichment.subCommunities) : null,
         ]
     );
 
