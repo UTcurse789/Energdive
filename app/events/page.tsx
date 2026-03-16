@@ -11,6 +11,7 @@ import { BlocksRenderer } from "@strapi/blocks-react-renderer";
 import { DateChip } from "@/components/ui/date-chip";
 import { Skeleton } from "@/components/ui/skeleton";
 import ArticleBody from "@/components/ArticleBody";
+import { strapiImageUrl } from "@/lib/strapi-image";
 
 export default function EventsPage() {
     const [events, setEvents] = useState<any[]>([]);
@@ -176,7 +177,7 @@ export default function EventsPage() {
                             {filteredEvents.map((event, idx) => {
                                 // FIXED: Accessing the image from the array in your JSON
                                 const imageUrl = event.image?.[0]?.url
-                                    ? `${BASE_URL}${event.image[0].url}`
+                                    ? strapiImageUrl(event.image[0].url)
                                     : "/api/placeholder/400/150";
 
                                 return (

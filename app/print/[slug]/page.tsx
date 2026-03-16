@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { formatContentDate } from "@/lib/date";
 import ArticleBody from "@/components/ArticleBody";
 import PrintTrigger from "@/components/print/PrintTrigger";
+import { strapiImageUrl } from "@/lib/strapi-image";
 
 /* ─── Strapi ─── */
 const STRAPI = "http://206.189.132.187:1337";
@@ -46,7 +47,7 @@ export default async function PrintPage(
     const content = data.Content ?? [];
     const date = formatContentDate(data.Date ?? data.publishedAt ?? data.createdAt);
     const author = data.author?.name ?? null;
-    const image = data.FeaturedImage?.url ? `${STRAPI}${data.FeaturedImage.url}` : null;
+    const image = data.FeaturedImage?.url ? strapiImageUrl(data.FeaturedImage.url) : null;
     const articleUrl = `${SITE_URL}/articles/${slug}`;
 
     return (

@@ -8,6 +8,7 @@ import { ArrowUpRight, Clock, Search } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Header } from "@/components/layout/header";
 import { AdBanner } from "@/components/ads/AdBanner";
+import { strapiImageUrl } from "@/lib/strapi-image";
 const STRAPI = process.env.NEXT_PUBLIC_STRAPI_URL;
 
 async function fetchReports() {
@@ -46,7 +47,7 @@ export default function ReportsPage() {
         date: item.publishedAt || item.Date,
         category: "Reports",
         excerpt: item?.Excerpt?.[0]?.children?.[0]?.text || "",
-        image: item?.FeaturedImage?.url ? `${STRAPI}${item.FeaturedImage.url}` : null,
+        image: item?.FeaturedImage?.url ? strapiImageUrl(item.FeaturedImage.url) : null,
       }));
       setReports(formatted);
       setLoading(false);

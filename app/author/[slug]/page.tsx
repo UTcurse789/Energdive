@@ -5,6 +5,7 @@ import { Calendar, ArrowRight, Briefcase, FileText, Tag } from "lucide-react";
 import { DateChip } from "@/components/ui/date-chip";
 import { formatContentDate } from "@/lib/date";
 import { buildContentUrl } from "@/lib/content-routes";
+import { strapiImageUrl } from "@/lib/strapi-image";
 
 const STRAPI_BASE = process.env.NEXT_PUBLIC_STRAPI_URL || "https://cms.energdive.com";
 
@@ -26,7 +27,7 @@ function getImageUrl(img: any): string {
     const attrs = source?.attributes || source;
     const url = attrs?.formats?.large?.url || attrs?.formats?.medium?.url || attrs?.formats?.small?.url || attrs?.url;
     if (!url) return "/magazine-default.jpg";
-    return url.startsWith("http") ? url : `${STRAPI_BASE}${url}`;
+    return strapiImageUrl(url);
 }
 
 function getExcerpt(excerpt: any): string {
@@ -122,7 +123,7 @@ export default async function AuthorPage({
 
     const avatarData = attrs.avatar?.data?.attributes || attrs.avatar;
     const avatarUrl = avatarData?.url
-        ? (avatarData.url.startsWith("http") ? avatarData.url : `${STRAPI_BASE}${avatarData.url}`)
+        ? (avatarData.url.startsWith("http") ? avatarData.url : strapiImageUrl(avatarData.url))
         : null;
 
     const contents = await getContentByAuthor(authorName);

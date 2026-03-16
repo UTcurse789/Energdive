@@ -1,3 +1,5 @@
+
+import { strapiImageUrl } from "@/lib/strapi-image";
 const STRAPI_BASE = process.env.NEXT_PUBLIC_STRAPI_URL || "https://cms.energdive.com";
 const STRAPI_TOKEN = process.env.STRAPI_API_TOKEN || "";
 
@@ -135,5 +137,5 @@ export function getAdImageUrl(media: StrapiMedia | null | undefined): string | n
         media.formats?.small?.url ||
         media.url;
     if (!url) return null;
-    return url.startsWith("http") ? url : `${STRAPI_BASE}${url}`;
+    return strapiImageUrl(url);
 }

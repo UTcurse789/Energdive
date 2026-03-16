@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import MagicBento from '../MagicBento';
 import { cn } from "@/lib/utils";
 import { buildContentUrl } from "@/lib/content-routes";
+import { strapiImageUrl } from "@/lib/strapi-image";
 
 const STRAPI_BASE = "https://cms.energdive.com";
 const API_URL =
@@ -42,7 +43,7 @@ function extractImageUrl(article: any): string {
         img.formats?.small?.url ||
         img.url;
     if (!url) return "/magazine-default.jpg";
-    return url.startsWith("http") ? url : `${STRAPI_BASE}${url}`;
+    return strapiImageUrl(url);
 }
 
 function extractExcerpt(article: any): string {

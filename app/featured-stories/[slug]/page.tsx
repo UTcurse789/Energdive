@@ -61,6 +61,7 @@ async function getRelated(tags: string[], currentSlug: string) {
 }
 
 import type { Metadata } from "next";
+import { strapiImageUrl } from "@/lib/strapi-image";
 
 /* ================= METADATA (OG tags for WhatsApp / social) ================= */
 
@@ -85,7 +86,7 @@ export async function generateMetadata({
             : null) || "Read featured stories on Energdive.";
 
     const imageUrl = attrs.FeaturedImage?.url
-        ? `${STRAPI_BASE_URL}${attrs.FeaturedImage.url}`
+        ? strapiImageUrl(attrs.FeaturedImage.url)
         : "https://energdive.com/fav.jpg";
 
     return {
@@ -154,16 +155,16 @@ export default async function FeaturedStoryDetailPage({
         excerpt: attrs.Excerpt || [],
         content: attrs.Content || [],
         image: attrs.FeaturedImage?.url
-            ? `${STRAPI_BASE_URL}${attrs.FeaturedImage.url}`
+            ? strapiImageUrl(attrs.FeaturedImage.url)
             : "/magazine-default.jpg",
         date: formatContentDate(attrs.Date || attrs.publishedAt || attrs.createdAt),
         author: author
             ? {
                 name: author.name,
                 avatar: author.avatar?.url
-                    ? `${STRAPI_BASE_URL}${author.avatar.url}`
+                    ? strapiImageUrl(author.avatar.url)
                     : author.avatar?.data?.attributes?.url
-                        ? `${STRAPI_BASE_URL}${author.avatar.data.attributes.url}`
+                        ? strapiImageUrl(author.avatar.data.attributes.url)
                         : null,
             }
             : null,
@@ -342,7 +343,7 @@ first:prose-p:first-letter:text-6xl first:prose-p:first-letter:font-serif first:
                                         {relatedArticles.map((item: any) => {
                                             const r = item.attributes || item;
                                             const imgUrl = r.FeaturedImage?.url
-                                                ? `${STRAPI_BASE_URL}${r.FeaturedImage.url}`
+                                                ? strapiImageUrl(r.FeaturedImage.url)
                                                 : "/magazine-default.jpg";
 
                                             const itemDate = formatContentDate(r.Date || r.publishedAt || item.publishedAt);

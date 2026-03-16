@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import { strapiImageUrl } from "@/lib/strapi-image";
 
 const STRAPI_BASE = process.env.NEXT_PUBLIC_STRAPI_URL || "https://cms.energdive.com";
 
@@ -28,7 +29,7 @@ function getImageUrl(media: any): string | null {
         media.formats?.small?.url ||
         media.url;
     if (!url) return null;
-    return url.startsWith("http") ? url : `${STRAPI_BASE}${url}`;
+    return strapiImageUrl(url);
 }
 
 interface AdBannerProps {

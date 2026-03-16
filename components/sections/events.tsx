@@ -1,5 +1,6 @@
 import { SectionHeading } from "@/components/ui/section-heading";
 import { EventCard } from "../ui/event-card";
+import { strapiImageUrl } from "@/lib/strapi-image";
 
 const STRAPI_BASE = "https://cms.energdive.com";
 
@@ -52,7 +53,7 @@ async function getEvents() {
             if (img) {
                 const rawUrl = img.url || img.formats?.thumbnail?.url || null;
                 if (rawUrl) {
-                    imageUrl = rawUrl.startsWith("http") ? rawUrl : `${STRAPI_BASE}${rawUrl}`;
+                    imageUrl = strapiImageUrl(rawUrl);
                 }
             }
 

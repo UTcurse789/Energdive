@@ -1,3 +1,5 @@
+
+import { strapiImageUrl } from "@/lib/strapi-image";
 const STRAPI_BASE_URL = process.env.NEXT_PUBLIC_STRAPI_URL || "https://cms.energdive.com";
 
 type StrapiMedia = {
@@ -55,7 +57,7 @@ function normalizeIssue(item: StrapiIssueItem): LatestIssueData | null {
         null;
 
     const coverImage = rawCover
-        ? rawCover.startsWith("http") ? rawCover : `${STRAPI_BASE_URL}${rawCover}`
+        ? strapiImageUrl(rawCover)
         : "/magazine-default.jpg";
 
     const titleFromApi = typeof item?.Title === "string" ? item.Title.trim() : "";

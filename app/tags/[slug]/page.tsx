@@ -6,6 +6,7 @@ import { slugify } from "@/lib/utils";
 import { DateChip } from "@/components/ui/date-chip";
 import { formatContentDate } from "@/lib/date";
 import { buildContentUrl } from "@/lib/content-routes";
+import { strapiImageUrl } from "@/lib/strapi-image";
 
 const STRAPI_BASE = process.env.NEXT_PUBLIC_STRAPI_URL || "https://cms.energdive.com";
 
@@ -15,7 +16,7 @@ function readAttrs(item: any) {
 
 function toAbsoluteUrl(url?: string | null) {
     if (!url) return null;
-    return url.startsWith("http") ? url : `${STRAPI_BASE}${url}`;
+    return strapiImageUrl(url);
 }
 
 function normalizeTag(tag: any) {

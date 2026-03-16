@@ -8,6 +8,7 @@ import { Play, Eye, Calendar, Filter, Loader2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Header } from "@/components/layout/header";
 import { slugify } from "@/lib/utils";
+import { strapiImageUrl } from "@/lib/strapi-image";
 
 // --- Types for our mapped data ---
 interface Video {
@@ -42,7 +43,7 @@ export default function VideosPage() {
                 const mappedData: Video[] = data.map((item: any) => {
                     // Fallback: If Strapi thumbnail is null, use YouTube's image service
                     const thumbUrl = item.thumbnail?.url
-                        ? `${baseUrl}${item.thumbnail.url}`
+                        ? strapiImageUrl(item.thumbnail.url)
                         : `https://img.youtube.com/vi/${item.youtubeId}/maxresdefault.jpg`;
 
                     return {
@@ -57,7 +58,7 @@ export default function VideosPage() {
                         author: {
                             name: item.author?.name || "Team ENERGDIVE",
                             avatar: item.author?.avatar?.url
-                                ? `${baseUrl}${item.author.avatar.url}`
+                                ? strapiImageUrl(item.author.avatar.url)
                                 : "/images/avtar.png", // Start with a default avatar if none exists
                         },
                     };

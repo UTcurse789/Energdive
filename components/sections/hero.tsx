@@ -21,7 +21,7 @@ function getImageUrl(article: any): string {
     if (!img) return "/placeholder.jpg";
     // const url = img.formats?.large?.url || img.formats?.medium?.url || img.url;
     const url = img.url
-    return url.startsWith("http") ? url : `${STRAPI_BASE}${url}`;
+    return strapiImageUrl(url);
 }
 
 function getExcerpt(excerpt: any[]): string {
@@ -236,6 +236,7 @@ export function Hero({ topStories: propTopStories }: HeroProps) {
 }
 
 import { Skeleton } from "@/components/ui/skeleton";
+import { strapiImageUrl } from "@/lib/strapi-image";
 
 function HeroSkeleton() {
     return (

@@ -4,6 +4,7 @@ import { Play } from "lucide-react";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { DateChip } from "@/components/ui/date-chip";
 import { formatContentDate } from "@/lib/date";
+import { strapiImageUrl } from "@/lib/strapi-image";
 
 const STRAPI_BASE = process.env.NEXT_PUBLIC_STRAPI_URL || "https://cms.energdive.com";
 
@@ -17,7 +18,7 @@ async function getLatestVideos() {
         const json = await res.json();
         return (json.data || []).map((item: any) => {
             const thumbUrl = item.thumbnail?.url
-                ? `${STRAPI_BASE}${item.thumbnail.url}`
+                ? strapiImageUrl(item.thumbnail.url)
                 : `https://img.youtube.com/vi/${item.youtubeId}/maxresdefault.jpg`;
 
             return {

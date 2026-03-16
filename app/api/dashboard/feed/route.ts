@@ -1,6 +1,7 @@
 import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { getUserProfile } from "@/lib/queries";
+import { strapiImageUrl } from "@/lib/strapi-image";
 
 const STRAPI = process.env.NEXT_PUBLIC_STRAPI_URL || "http://localhost:1337";
 const TOKEN = process.env.STRAPI_API_TOKEN || "";
@@ -87,9 +88,9 @@ export async function GET(request: Request) {
             // Featured image
             const img = item.FeaturedImage;
             const imageUrl = img?.url
-                ? `${STRAPI}${img.url}`
+                ? strapiImageUrl(img.url)
                 : img?.formats?.small?.url
-                    ? `${STRAPI}${img.formats.small.url}`
+                    ? strapiImageUrl(img.formats.small.url)
                     : null;
 
             // Sectors — flat array
@@ -98,7 +99,7 @@ export async function GET(request: Request) {
             // Author — flat object
             const authorName = item.author?.name || item.Author || "Team ENERGDIVE";
             const authorAvatarRaw = item.author?.avatar?.url || item.author?.avatar?.data?.attributes?.url || null;
-            const authorAvatar = authorAvatarRaw ? `${STRAPI}${authorAvatarRaw}` : null;
+            const authorAvatar = authorAvatarRaw ? strapiImageUrl(authorAvatarRaw) : null;
 
             // Content type
             const contentTypeName = item.type_of_content?.name || "Articles";

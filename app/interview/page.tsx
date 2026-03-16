@@ -9,6 +9,7 @@ import { motion } from "framer-motion";
 import { DateChip } from "@/components/ui/date-chip";
 import { formatContentDate } from "@/lib/date";
 import { Skeleton } from "@/components/ui/skeleton";
+import { strapiImageUrl } from "@/lib/strapi-image";
 
 const STRAPI_BASE_URL = process.env.NEXT_PUBLIC_STRAPI_URL || "https://cms.energdive.com";
 
@@ -39,7 +40,7 @@ export default function InterviewPage() {
                             title: attrs.TITLE || attrs.Title || "Untitled",
                             slug: attrs.slug,
                             image: attrs.FeaturedImage?.url
-                                ? `${STRAPI_BASE_URL}${attrs.FeaturedImage.url}`
+                                ? strapiImageUrl(attrs.FeaturedImage.url)
                                 : "/placeholder.jpg",
                             excerpt: excerptText,
                             sector: attrs.sectors?.[0]?.name || attrs.sectors?.data?.[0]?.attributes?.name || "Energy",
