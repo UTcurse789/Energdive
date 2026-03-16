@@ -6,6 +6,27 @@ import db from "@/lib/db";
 import { getFullUserProfile } from "@/lib/getFullUserProfile";
 import { upsertZohoLead } from "@/lib/zoho-leads";
 
+type ClerkEmailAddress = {
+    id: string;
+    email_address: string;
+};
+
+type ClerkPhoneNumber = {
+    phone_number: string;
+};
+
+type ClerkWebhookEvent = {
+    type: string;
+    data: {
+        id: string;
+        first_name?: string | null;
+        last_name?: string | null;
+        primary_email_address_id?: string | null;
+        email_addresses?: ClerkEmailAddress[];
+        phone_numbers?: ClerkPhoneNumber[];
+    };
+};
+
 export async function POST(req: Request) {
     try {
         const payload = await req.text();
@@ -16,111 +37,140 @@ export async function POST(req: Request) {
         const svixSignature = headerPayload.get("svix-signature");
 
         if (!svixId || !svixTimestamp || !svixSignature) {
-            console.error("❌ Missing Svix headers");
+            console.error("Missing Svix headers");
             return new NextResponse("Missing headers", { status: 400 });
         }
 
         const wh = new Webhook(process.env.CLERK_WEBHOOK_SECRET!);
 
-        let event: any;
-
+        let event: ClerkWebhookEvent;
         try {
             event = wh.verify(payload, {
                 "svix-id": svixId,
                 "svix-timestamp": svixTimestamp,
                 "svix-signature": svixSignature,
-            });
-        } catch (err) {
-            console.error("❌ Webhook verification failed:", err);
+            }) as ClerkWebhookEvent;
+        } catch (error) {
+            console.error("Webhook verification failed:", error);
             return new NextResponse("Invalid signature", { status: 400 });
         }
 
-        console.log("🔥 Webhook received:", event.type);
+        console.log("Webhook received:", event.type);
 
-        // ---------------------------------------------------
-        // USER CREATED / UPDATED
-        // ---------------------------------------------------
         if (event.type === "user.created" || event.type === "user.updated") {
             const { id, first_name, last_name } = event.data;
-
             const primaryEmailId = event.data.primary_email_address_id;
-
             const emailObj = event.data.email_addresses?.find(
-                (e: any) => e.id === primaryEmailId
+                (entry) => entry.id === primaryEmailId
             );
-
-            const email = emailObj?.email_address;
-
-            // Extract phone number from Clerk user data
-            const phoneObj = event.data.phone_numbers?.[0];
-            const phone = phoneObj?.phone_number || null;
+            const email = emailObj?.email_address?.trim().toLowerCase();
+            const phone = event.data.phone_numbers?.[0]?.phone_number || null;
 
             if (!email) {
-                console.log("⚠️ No email found, skipping Brevo sync");
+                console.log("No email found, skipping sync");
                 return NextResponse.json({ success: true });
             }
 
-            // ── CHECK EXISTING USER BY EMAIL ──
-            // Magic link verifications create a user row with clerk_id = NULL.
-            // We must link the Clerk account to that row instead of blindly inserting.
-            const existingUser = await db.query(`SELECT id, clerk_id FROM users WHERE email = $1`, [email]);
-            
-            let result;
-            if (existingUser.rows.length > 0) {
-                result = await db.query(
-                    `
-                    UPDATE users SET 
-                      clerk_id = $1,
-                      first_name = COALESCE(users.first_name, $2),
-                      last_name = COALESCE(users.last_name, $3),
-                      phone = COALESCE(users.phone, $4),
-                      updated_at = NOW()
-                    WHERE email = $5
-                    RETURNING *;
-                    `,
-                    [id, first_name, last_name, phone, email]
-                );
-            } else {
-                result = await db.query(
-                    `
-                    INSERT INTO users (clerk_id, email, first_name, last_name, phone)
-                    VALUES ($1, $2, $3, $4, $5)
-                    RETURNING *;
-                    `,
-                    [id, email, first_name, last_name, phone]
-                );
-            }
+            let userRow;
 
-            // Fetch full profile with community/industry data from join tables
-            const fullUser = await getFullUserProfile(id);
-            const user = fullUser || result.rows[0];
+            const existingByClerkId = await db.query(
+                `SELECT *
+                 FROM users
+                 WHERE clerk_id = $1
+                 LIMIT 1`,
+                [id]
+            );
 
-            // Skip Brevo sync for dummy/placeholder emails
-            const isDummyEmail = email?.endsWith?.('@phone.energdive.com');
-            if (isDummyEmail) {
-                console.log("⚠️ Skipping Brevo sync — dummy email:", email);
+            if (existingByClerkId.rows.length > 0) {
+                userRow = (
+                    await db.query(
+                        `UPDATE users
+                         SET email = $2,
+                             first_name = COALESCE(first_name, $3),
+                             last_name = COALESCE(last_name, $4),
+                             phone = COALESCE(phone, $5),
+                             updated_at = NOW()
+                         WHERE id = $1
+                         RETURNING *`,
+                        [
+                            existingByClerkId.rows[0].id,
+                            email,
+                            first_name || null,
+                            last_name || null,
+                            phone,
+                        ]
+                    )
+                ).rows[0];
             } else {
-                try {
-                    await syncUserToBrevo(user);
-                    console.log("✅ Synced to Brevo:", email);
-                } catch (brevoErr) {
-                    console.error("❌ Brevo sync failed:", brevoErr);
-                    // We DO NOT fail webhook if Brevo fails
+                const candidateByEmail = await db.query(
+                    `SELECT *
+                     FROM users
+                     WHERE LOWER(email) = LOWER($1)
+                     ORDER BY
+                       CASE WHEN clerk_id IS NULL THEN 0 ELSE 1 END,
+                       CASE WHEN source = 'zoho_form' THEN 0 ELSE 1 END,
+                       updated_at DESC NULLS LAST,
+                       id DESC
+                     LIMIT 1`,
+                    [email]
+                );
+
+                if (candidateByEmail.rows.length > 0) {
+                    userRow = (
+                        await db.query(
+                            `UPDATE users
+                             SET clerk_id = $2,
+                                 email = $3,
+                                 first_name = COALESCE(first_name, $4),
+                                 last_name = COALESCE(last_name, $5),
+                                 phone = COALESCE(phone, $6),
+                                 updated_at = NOW()
+                             WHERE id = $1
+                             RETURNING *`,
+                            [
+                                candidateByEmail.rows[0].id,
+                                id,
+                                email,
+                                first_name || null,
+                                last_name || null,
+                                phone,
+                            ]
+                        )
+                    ).rows[0];
+                } else {
+                    userRow = (
+                        await db.query(
+                            `INSERT INTO users (clerk_id, email, first_name, last_name, phone)
+                             VALUES ($1, $2, $3, $4, $5)
+                             RETURNING *`,
+                            [id, email, first_name || null, last_name || null, phone]
+                        )
+                    ).rows[0];
                 }
             }
 
-            // Sync to Zoho as a Lead (NOT Contact — preserves Lead records for Magic Link flow)
+            const fullUser = await getFullUserProfile(id);
+            const user = fullUser || userRow;
+
+            const isDummyEmail = email.endsWith("@phone.energdive.com");
+            if (isDummyEmail) {
+                console.log("Skipping Brevo sync for dummy email:", email);
+            } else {
+                try {
+                    await syncUserToBrevo(user);
+                    console.log("Synced to Brevo:", email);
+                } catch (error) {
+                    console.error("Brevo sync failed:", error);
+                }
+            }
+
             try {
-                // Helper: return non-empty array or undefined
-                const toArray = (arr: any[] | undefined) => {
+                const toArray = (arr: Array<string | null> | undefined) => {
                     if (!arr) return undefined;
-                    const filtered = arr.filter((v: any) => v !== null && v !== undefined && v !== '');
+                    const filtered = arr.filter((value): value is string => value !== null && value !== undefined && value !== "");
                     return filtered.length > 0 ? filtered : undefined;
                 };
 
-                // DB sub_communities are in "Community-SubPart" format (e.g. "Distribution-Data Centres")
-                // which is the Community_Portal format. Pass them as Community_Portal and let
-                // upsertZohoLead's parseCommunityPortal derive Community/Sub_Community correctly.
                 const leadData = {
                     First_Name: user.first_name || "Unknown",
                     Last_Name: user.last_name || "Unknown",
@@ -129,8 +179,8 @@ export async function POST(req: Request) {
                     Company: user.organization || undefined,
                     Designation: user.job_title || undefined,
                     Lead_Source: "Website Registration",
-                    Industry: user.industries?.find((i: string | null) => !!i) || undefined,
-                    Industry_Sub_Category: user.sub_industries?.find((i: string | null) => !!i) || undefined,
+                    Industry: user.industries?.find((value: string | null) => !!value) || undefined,
+                    Industry_Sub_Category: user.sub_industries?.find((value: string | null) => !!value) || undefined,
                     Community: toArray(user.communities),
                     Sub_Community: toArray(user.sub_communities),
                     Invite_Source: "EnergClub",
@@ -138,18 +188,27 @@ export async function POST(req: Request) {
                     Country: user.country || undefined,
                 };
 
-                console.log("📋 [ZOHO_LEADS] Webhook sync payload:", JSON.stringify(leadData, null, 2));
+                console.log("[ZOHO_LEADS] Webhook sync payload:", JSON.stringify(leadData, null, 2));
                 const zohoResult = await upsertZohoLead(leadData);
-                console.log("✅ Synced to Zoho Leads:", email, zohoResult);
-            } catch (zohoErr: any) {
-                console.error("❌ Zoho Lead sync failed:", zohoErr.message);
-                // We DO NOT fail webhook if Zoho sync fails
+
+                await db.query(
+                    `UPDATE users
+                     SET crm_lead_id = $2,
+                         updated_at = NOW()
+                     WHERE id = $1`,
+                    [userRow.id, zohoResult.id]
+                );
+
+                console.log("Synced to Zoho Leads:", email, zohoResult);
+            } catch (error: unknown) {
+                const message = error instanceof Error ? error.message : String(error);
+                console.error("Zoho Lead sync failed:", message);
             }
         }
 
         return NextResponse.json({ success: true });
-    } catch (err) {
-        console.error("💥 Webhook handler crashed:", err);
+    } catch (error) {
+        console.error("Webhook handler crashed:", error);
         return NextResponse.json({ success: false }, { status: 500 });
     }
 }
