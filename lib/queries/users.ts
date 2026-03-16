@@ -711,3 +711,127 @@ export async function getUserByInternalId(
     );
     return result.rows[0] || null;
 }
+
+/**
+ * After magic-link OTP verification, reads the `communities` + `sub_communities`
+ * JSONB arrays stored in `pending_verifications` and writes them to `user_communities`.
+ *
+ * This bridges the gap for Zoho-Form webhook users, whose communities are stored
+ * in pending_verifications (not in user_communities), so the dashboard can display them.
+ *
+ * Safe to call multiple times — uses INSERT ... ON CONFLICT DO NOTHING.
+ */
+export async function writePendingCommunities(
+    userId: number,
+    email: string
+): Promise<void> {
+    try {
+        // 1. Read community + sub_community arrays from pending_verifications
+        const pvResult = await query(
+            `SELECT communities, sub_communities
+             FROM pending_verifications
+             WHERE email = $1
+             ORDER BY updated_at DESC
+             LIMIT 1`,
+            [email.trim().toLowerCase()]
+        );
+
+        if (pvResult.rows.length === 0) return;
+
+        const row = pvResult.rows[0];
+
+        // JSONB columns come back as JS arrays already when using node-postgres
+        const communityNames: string[] = Array.isArray(row.communities)
+            ? row.communities.filter(Boolean)
+            : typeof row.communities === "string"
+            ? JSON.parse(row.communities).filter(Boolean)
+            : [];
+
+        const subCommunityNames: string[] = Array.isArray(row.sub_communities)
+            ? row.sub_communities.filter(Boolean)
+            : typeof row.sub_communities === "string"
+            ? JSON.parse(row.sub_communities).filter(Boolean)
+            : [];
+
+        if (communityNames.length === 0) return;
+
+        const client = await getClient();
+        try {
+            await client.query("BEGIN");
+
+            const insertedPairs: string[] = [];
+
+            for (const commName of communityNames) {
+                const commResult = await client.query(
+                    `SELECT id FROM communities WHERE LOWER(name) = LOWER($1) LIMIT 1`,
+                    [commName.trim()]
+                );
+                if (commResult.rows.length === 0) {
+                    console.warn(`[writePendingCommunities] Community not found: "${commName}" — skipping`);
+                    continue;
+                }
+                const communityId = commResult.rows[0].id;
+
+                let matchedAnySub = false;
+                for (const subName of subCommunityNames) {
+                    const subResult = await client.query(
+                        `SELECT id FROM sub_communities
+                         WHERE community_id = $1
+                           AND LOWER(name) = LOWER($2)
+                         LIMIT 1`,
+                        [communityId, subName.trim()]
+                    );
+                    if (subResult.rows.length > 0) {
+                        const subCommunityId = subResult.rows[0].id;
+                        const pairKey = `${communityId}-${subCommunityId}`;
+                        if (!insertedPairs.includes(pairKey)) {
+                            await client.query(
+                                `INSERT INTO user_communities (user_id, community_id, sub_community_id)
+                                 VALUES ($1, $2, $3)
+                                 ON CONFLICT DO NOTHING`,
+                                [userId, communityId, subCommunityId]
+                            );
+                            insertedPairs.push(pairKey);
+                            console.log(`[writePendingCommunities] Inserted: user=${userId} community="${commName}" sub="${subName}"`);
+                            matchedAnySub = true;
+                        }
+                    }
+                }
+
+                // Fallback: if no sub-community matched, pick the first available sub
+                if (!matchedAnySub) {
+                    const fallback = await client.query(
+                        `SELECT id FROM sub_communities WHERE community_id = $1 ORDER BY id LIMIT 1`,
+                        [communityId]
+                    );
+                    const subCommunityId = fallback.rows[0]?.id ?? null;
+                    if (subCommunityId) {
+                        const pairKey = `${communityId}-${subCommunityId}`;
+                        if (!insertedPairs.includes(pairKey)) {
+                            await client.query(
+                                `INSERT INTO user_communities (user_id, community_id, sub_community_id)
+                                 VALUES ($1, $2, $3)
+                                 ON CONFLICT DO NOTHING`,
+                                [userId, communityId, subCommunityId]
+                            );
+                            insertedPairs.push(pairKey);
+                            console.warn(`[writePendingCommunities] No sub matched for "${commName}", used fallback sub_id=${subCommunityId}`);
+                        }
+                    }
+                }
+            }
+
+            await client.query("COMMIT");
+            console.log(`[writePendingCommunities] Done — ${insertedPairs.length} pairs written for user=${userId}`);
+        } catch (err) {
+            await client.query("ROLLBACK");
+            throw err;
+        } finally {
+            client.release();
+        }
+    } catch (err) {
+        // Non-fatal — log and continue
+        console.error(`[writePendingCommunities] Failed for user=${userId} email=${email}:`, err);
+    }
+}
+
