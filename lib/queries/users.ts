@@ -199,7 +199,7 @@ export async function getUserProfile(
                 sc.name AS sub_community_name
             FROM user_communities uc
             JOIN communities c      ON uc.community_id = c.id
-            JOIN sub_communities sc ON uc.sub_community_id = sc.id
+            LEFT JOIN sub_communities sc ON uc.sub_community_id = sc.id
             WHERE uc.user_id = $1
             ORDER BY c.name, sc.name`,
             [user.id]
