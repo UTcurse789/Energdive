@@ -109,3 +109,33 @@ export async function syncVerifiedUserToBrevo(user: VerifiedUserBrevoPayload): P
 
     console.log("✅ Brevo verified user synced:", user.email, "membership:", user.membershipId);
 }
+
+/**
+ * Fetch a contact's details from Brevo.
+ * This is used to pull enriched data (e.g., COMMUNITY, SUB_COMMUNITY)
+ * before posting to Zoho CRM.
+ */
+export async function getBrevoContact(email: string): Promise<Record<string, any> | null> {
+    if (!email || email.endsWith("@phone.energdive.com")) {
+        return null;
+    }
+
+    try {
+        const axios = (await import("axios")).default;
+        const response = await axios.get(
+            `https://api.brevo.com/v3/contacts/${encodeURIComponent(email)}`,
+            {
+                headers: {
+                    "api-key": process.env.BREVO_API_KEY!,
+                },
+            }
+        );
+        return response.data?.attributes || null;
+    } catch (err: any) {
+        if (err.response?.status === 404) {
+            return null; // Contact doesn't exist
+        }
+        console.error("❌ Failed to fetch Brevo contact:", err.response?.data || err.message);
+        return null;
+    }
+}

@@ -43,10 +43,6 @@ communityPortalRaw = leadRecord.get("Community_Portal");
 communityRaw       = leadRecord.get("Community");
 subCommunityRaw    = leadRecord.get("Sub_Community");
 
-communityPortalStr = if(communityPortalRaw != null, communityPortalRaw.toString(), "");
-communityStr       = if(communityRaw       != null, communityRaw.toString(),       "");
-subCommunityStr    = if(subCommunityRaw    != null, subCommunityRaw.toString(),    "");
-
 // ── Build the JSON payload ────────────────────────────────────────────
 payload = Map();
 payload.put("email",            leadEmail);
@@ -59,9 +55,9 @@ payload.put("source",           "zoho_form");
 // Enrichment fields — passed through to portal DB and used in Brevo/CRM sync
 payload.put("job_title",        if(leadRecord.get("Designation")       != null, leadRecord.get("Designation"),       ""));
 payload.put("industry",         if(leadRecord.get("Industry")           != null, leadRecord.get("Industry"),           ""));
-payload.put("community_portal", communityPortalStr);
-payload.put("Community",        communityStr);
-payload.put("Sub_Community",    subCommunityStr);
+payload.put("community_portal", if(communityPortalRaw != null, communityPortalRaw, ""));
+payload.put("Community",        if(communityRaw != null, communityRaw, ""));
+payload.put("Sub_Community",    if(subCommunityRaw != null, subCommunityRaw, ""));
 payload.put("city",             if(leadRecord.get("City")               != null, leadRecord.get("City"),               ""));
 payload.put("country",          if(leadRecord.get("Country")            != null, leadRecord.get("Country"),            ""));
 
