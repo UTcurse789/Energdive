@@ -89,10 +89,12 @@ export async function POST(req: NextRequest) {
                 `INSERT INTO users (
                    email, first_name, last_name, phone, organization,
                    source, crm_lead_id,
-                   onboarding_completed, created_at, updated_at
-                 ) VALUES ($1,$2,$3,$4,$5,$6,$7,false,NOW(),NOW())
+                   verification_status, onboarding_completed,
+                   created_at, updated_at
+                 ) VALUES ($1,$2,$3,$4,$5,$6,$7,'pending_verification',true,NOW(),NOW())
                  ON CONFLICT (email) DO UPDATE SET
                    verification_status = 'verified',
+                   onboarding_completed = true,
                    crm_lead_id         = COALESCE(EXCLUDED.crm_lead_id, users.crm_lead_id),
                    phone               = COALESCE(EXCLUDED.phone, users.phone),
                    organization        = COALESCE(EXCLUDED.organization, users.organization),
@@ -117,7 +119,7 @@ export async function POST(req: NextRequest) {
             if (!membershipId) {
                 const verifyResult = await client.query(
                     `UPDATE users SET verification_status = 'verified', updated_at = NOW()
-                     WHERE id = $1 AND (verification_status IS NULL OR verification_status <> 'verified')
+                     WHERE id = $1 AND verification_status IS DISTINCT FROM 'verified'
                      RETURNING membership_id`,
                     [userId]
                 );
