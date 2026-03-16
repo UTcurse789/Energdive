@@ -10,15 +10,20 @@ const WEBHOOK_SECRET = process.env.ZOHO_FORM_WEBHOOK_SECRET || process.env.ZOHO_
 /**
  * POST /api/leads/zoho-webhook
  *
- * Scenario 1: Zoho Form submits user data via webhook.
+ * Scenario 1: Zoho Form submits user data via Deluge workflow webhook.
  *
  * Flow:
  *   1. Validate webhook secret
- *   2. Store lead in database (MASTER) → pending_verifications (with enrichment data)
- *   3. Send Magic Link email via Brevo
- *   NOTE: NO CRM push happens here. CRM sync deferred to onboarding completion.
+ *   2. Parse community data from Community, Sub_Community, AND community_portal fields
+ *   3. Store lead in pending_verifications with all enrichment fields
+ *   4. Send Magic Link email via Brevo
  *
- * Body: { email, name, phone, company, crm_lead_id?, job_title?, industry?, community_portal?, city?, country? }
+ * NOTE: NO Brevo contact sync or CRM lead creation happens here.
+ *       Those happen in /api/auth/magic-otp-verify AFTER the user verifies.
+ *
+ * Body (from Deluge form-lead-webhook.dg):
+ *   { email, name, phone, company, crm_lead_id,
+ *     job_title, industry, community_portal, Community, Sub_Community, city, country }
  */
 export async function POST(req: NextRequest) {
     const requestId = crypto.randomUUID().slice(0, 8);
@@ -39,20 +44,38 @@ export async function POST(req: NextRequest) {
         const company = (body.company || "").trim();
         const crmLeadId = (body.crm_lead_id || "").trim();
 
-        const parseArray = (value: unknown): string[] => {
+        if (!email) {
+            return NextResponse.json({ error: "Missing email" }, { status: 400 });
+        }
+
+        // ── Parse community data ─────────────────────────────────────────
+        // The Deluge script (form-lead-webhook.dg) sends three fields:
+        //   - Community        : e.g. "Oil & Gas;Power Generation"
+        //   - Sub_Community    : e.g. "Upstream;Solar"
+        //   - community_portal : e.g. "Oil & Gas-Upstream;Power Generation-Solar"
+        //
+        // We merge all three sources so that communities and sub-communities are
+        // captured regardless of which fields Zoho has populated.
+
+        const parseDelimitedString = (value: unknown): string[] => {
             if (Array.isArray(value)) {
                 return value.map((item) => String(item).trim()).filter(Boolean);
             }
-            if (typeof value === "string") {
+            if (typeof value === "string" && value.trim()) {
+                // Zoho multi-select fields serialize as semicolon or comma-separated strings
                 return value.split(/[;,]/).map((item) => item.trim()).filter(Boolean);
             }
             return [];
         };
 
-        const portalValues = parseArray(body.community_portal || body.Community_Portal || body["Community-Portal"]);
-        const parsedCommunities = new Set(parseArray(body.Community || body.community));
-        const parsedSubCommunities = new Set(parseArray(body.Sub_Community || body.sub_community));
+        const parsedCommunities = new Set<string>(parseDelimitedString(body.Community || body.community));
+        const parsedSubCommunities = new Set<string>(parseDelimitedString(body.Sub_Community || body.sub_community));
 
+        // Also parse community_portal (e.g. "Oil & Gas-Upstream") as a fallback
+        // so any communities not in Community/Sub_Community fields are still captured.
+        const portalValues = parseDelimitedString(
+            body.community_portal || body.Community_Portal || body["Community-Portal"]
+        );
         for (const entry of portalValues) {
             const hyphenIndex = entry.indexOf("-");
             if (hyphenIndex > 0) {
@@ -60,15 +83,17 @@ export async function POST(req: NextRequest) {
                 const subCommunity = entry.slice(hyphenIndex + 1).trim();
                 if (community) parsedCommunities.add(community);
                 if (subCommunity) parsedSubCommunities.add(subCommunity);
+            } else if (entry.trim()) {
+                // No hyphen — treat whole value as community name
+                parsedCommunities.add(entry.trim());
             }
         }
 
-        if (!email) {
-            return NextResponse.json({ error: "Missing email" }, { status: 400 });
-        }
+        const communities = Array.from(parsedCommunities);
+        const subCommunities = Array.from(parsedSubCommunities);
 
-        log(`Webhook received: ${email}`);
-        await logEvent("WEBHOOK_RECEIVED", email, `Zoho Form webhook for ${name}`, { source: "zoho_form" });
+        log(`Webhook received: ${email} | communities=[${communities}] | subs=[${subCommunities}] | phone=${phone}`);
+        await logEvent("WEBHOOK_RECEIVED", email, `Zoho Form webhook for ${name}`, { source: "zoho_form", communities, subCommunities });
 
         // ── 3. Check for existing verified user ──────────────────────────
         const existingUser = await query(
@@ -85,17 +110,36 @@ export async function POST(req: NextRequest) {
             });
         }
 
-        // ── 4. Store in DB (MASTER) with enrichment + generate magic link ─
+        // ── 4. Store pending verification with enrichment data ───────────
+        // createMagicLink upserts the pending_verifications row (ON CONFLICT email)
+        // and stores communities/sub_communities as JSONB for use at verify time.
         const { token, pendingId } = await createMagicLink(
             email, name, phone, company, "zoho_form", crmLeadId,
-            {
-                communities: Array.from(parsedCommunities),
-                subCommunities: Array.from(parsedSubCommunities),
-            }
+            { communities, subCommunities }
         );
 
         log(`Pending verification stored: id=${pendingId}`);
-        // NOTE: No CRM push here — deferred to onboarding completion
+
+        // ── 5. Store enrichment fields on pending_verifications ──────────
+        // job_title, industry, city, country are not part of the createMagicLink
+        // signature — update the row directly.
+        const jobTitle = (body.job_title || "").trim() || null;
+        const industry = (body.industry || "").trim() || null;
+        const city = (body.city || "").trim() || null;
+        const country = (body.country || "").trim() || null;
+
+        if (jobTitle || industry || city || country) {
+            await query(
+                `UPDATE pending_verifications
+                 SET job_title = COALESCE($2, job_title),
+                     industry  = COALESCE($3, industry),
+                     city      = COALESCE($4, city),
+                     country   = COALESCE($5, country),
+                     updated_at = NOW()
+                 WHERE id = $1`,
+                [pendingId, jobTitle, industry, city, country]
+            );
+        }
 
         // ── 6. Send Magic Link email ─────────────────────────────────────
         const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://www.energdive.com";
