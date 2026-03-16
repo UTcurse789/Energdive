@@ -155,24 +155,38 @@ export async function POST(req: Request) {
         // We UPDATE (upsert) it here with community, sub-community, phone, and
         // industry data that is now available post-verification.
         // This replaces the previous approach of creating a duplicate blank lead.
+        // Fetch from Brevo to ensure we have the latest enriched data
+        let brevoData: Record<string, any> | null = null;
+        try {
+            const { getBrevoContact } = await import("@/lib/brevoSync");
+            brevoData = await getBrevoContact(normalizedEmail);
+        } catch (e) {
+            console.warn(`[MAGIC-OTP-VERIFY:${requestId}] Could not fetch Brevo contact`, e);
+        }
+
         try {
             const nameParts = [fullUser.first_name, fullUser.last_name].filter(Boolean);
 
+            const bCommunities = brevoData?.COMMUNITY ? brevoData.COMMUNITY.split(",").map((s: string) => s.trim()).filter(Boolean) : communities;
+            const bSubCommunities = brevoData?.SUB_COMMUNITY ? brevoData.SUB_COMMUNITY.split(",").map((s: string) => s.trim()).filter(Boolean) : subCommunities;
+            const bFirstName = brevoData?.FIRSTNAME || nameParts[0] || "";
+            const bLastName = brevoData?.LASTNAME || nameParts[1] || nameParts[0] || "";
+
             const zohoLeadData = {
-                First_Name: nameParts[0] || "",
-                Last_Name: nameParts[1] || nameParts[0] || "",
+                First_Name: bFirstName,
+                Last_Name: bLastName,
                 Email: normalizedEmail,
-                Phone: fullUser.phone || undefined,
-                Mobile: fullUser.phone || undefined,
-                Company: fullUser.organization || undefined,
-                Designation: fullUser.job_title || undefined,
+                Phone: brevoData?.PHONE || fullUser.phone || undefined,
+                Mobile: brevoData?.PHONE || fullUser.phone || undefined,
+                Company: brevoData?.ORGANISATION || fullUser.organization || undefined,
+                Designation: brevoData?.JOB_TITLE || fullUser.job_title || undefined,
                 Lead_Source: "Portal Verified",
-                Industry: industries[0] || undefined,
-                Industry_Sub_Category: subIndustries[0] || undefined,
+                Industry: brevoData?.INDUSTRY || industries[0] || undefined,
+                Industry_Sub_Category: brevoData?.SUB_INDUSTRY || subIndustries[0] || undefined,
                 // Community_Portal drives the split into Community + Sub_Community
                 // in upsertZohoLead via the bidirectional parsing logic.
-                Community: communities.length > 0 ? communities : undefined,
-                Sub_Community: subCommunities.length > 0 ? subCommunities : undefined,
+                Community: bCommunities.length > 0 ? bCommunities : undefined,
+                Sub_Community: bSubCommunities.length > 0 ? bSubCommunities : undefined,
                 Invite_Source: "EnergClub",
                 City: fullUser.state || undefined,
                 Country: fullUser.country || undefined,
