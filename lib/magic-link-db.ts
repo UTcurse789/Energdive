@@ -16,6 +16,15 @@ export function hashToken(token: string): string {
     return crypto.createHash("sha256").update(token).digest("hex");
 }
 
+/** Optional enrichment fields from Zoho Form submissions. */
+export interface EnrichmentData {
+    jobTitle?: string;
+    industry?: string;
+    communityPortal?: string;
+    city?: string;
+    country?: string;
+}
+
 /**
  * Generate a magic link token and store its hash in pending_verifications.
  *
@@ -25,6 +34,7 @@ export function hashToken(token: string): string {
  * @param company - Company name (optional)
  * @param source - Lead source ('zoho_form' | 'website')
  * @param crmLeadId - Original CRM lead ID (for Zoho Form leads)
+ * @param enrichment - Optional enrichment fields from Zoho Form
  * @returns The raw token (to be included in the magic link URL)
  */
 export async function createMagicLink(
@@ -33,7 +43,8 @@ export async function createMagicLink(
     phone?: string,
     company?: string,
     source: string = "zoho_form",
-    crmLeadId?: string
+    crmLeadId?: string,
+    enrichment?: EnrichmentData
 ): Promise<{ token: string; expiresAt: Date; pendingId: number }> {
     const normalizedEmail = email.trim().toLowerCase();
 
@@ -48,8 +59,10 @@ export async function createMagicLink(
         `INSERT INTO pending_verifications
            (email, name, phone, company, source, verification_status,
             crm_lead_id, magic_token_hash, magic_token_expires_at,
-            token_used, otp_verified, otp_attempts, created_at, updated_at)
-         VALUES ($1,$2,$3,$4,$5,'pending',$6,$7,$8,false,false,0,NOW(),NOW())
+            token_used, otp_verified, otp_attempts,
+            job_title, industry, community_portal, city, country,
+            created_at, updated_at)
+         VALUES ($1,$2,$3,$4,$5,'pending',$6,$7,$8,false,false,0,$9,$10,$11,$12,$13,NOW(),NOW())
          ON CONFLICT (email) DO UPDATE SET
            name                    = EXCLUDED.name,
            phone                   = EXCLUDED.phone,
@@ -61,9 +74,18 @@ export async function createMagicLink(
            verification_status     = 'pending',
            otp_verified            = false,
            otp_attempts            = 0,
+           job_title               = COALESCE(EXCLUDED.job_title, pending_verifications.job_title),
+           industry                = COALESCE(EXCLUDED.industry, pending_verifications.industry),
+           community_portal        = COALESCE(EXCLUDED.community_portal, pending_verifications.community_portal),
+           city                    = COALESCE(EXCLUDED.city, pending_verifications.city),
+           country                 = COALESCE(EXCLUDED.country, pending_verifications.country),
            updated_at              = NOW()
          RETURNING id`,
-        [normalizedEmail, name, phone || null, company || null, source, crmLeadId || null, tokenHash, expiresAt]
+        [
+            normalizedEmail, name, phone || null, company || null, source, crmLeadId || null, tokenHash, expiresAt,
+            enrichment?.jobTitle || null, enrichment?.industry || null, enrichment?.communityPortal || null,
+            enrichment?.city || null, enrichment?.country || null
+        ]
     );
 
     const pendingId = result.rows[0].id;
@@ -97,6 +119,11 @@ export interface PendingVerificationRow {
     magic_token_expires_at: string;
     token_used: boolean;
     otp_verified: boolean;
+    job_title: string | null;
+    industry: string | null;
+    community_portal: string | null;
+    city: string | null;
+    country: string | null;
 }
 
 export async function validateMagicToken(rawToken: string): Promise<Omit<PendingVerificationRow, 'magic_token_expires_at' | 'token_used' | 'otp_verified'> | null> {
