@@ -11,6 +11,7 @@ import { SECTORS } from "@/data/dummy";
 import { motion, AnimatePresence } from "framer-motion";
 import { SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
 import { GlobalSearch } from "@/components/global-search";
+import { strapiImageUrl } from "@/lib/strapi-image";
 
 type MagazineIssue = {
     id: number | string;
@@ -131,7 +132,7 @@ function normalizeIssue(item: StrapiIssueResponseItem, baseUrl: string): Magazin
         null;
 
     const coverImage = rawCover
-        ? rawCover.startsWith("http") ? rawCover : `${baseUrl}${rawCover}`
+        ? strapiImageUrl(rawCover)
         : "/magazine-default.jpg";
 
     const titleFromApi = typeof item?.Title === "string" ? item.Title.trim() : "";
@@ -719,7 +720,7 @@ export function Header() {
                                                 {realVideos.length > 0 ? realVideos.slice(0, 3).map((video: any) => {
                                                     const rawThumb = video.thumbnail?.url || null;
                                                     const thumbUrl = rawThumb
-                                                        ? (rawThumb.startsWith("http") ? rawThumb : `${baseUrl}${rawThumb}`)
+                                                        ? (strapiImageUrl(rawThumb))
                                                         : (video.youtubeId ? `https://img.youtube.com/vi/${video.youtubeId}/mqdefault.jpg` : "/magazine-default.jpg");
                                                     return (
                                                         <Link key={video.id} href={`/videos/${video.slug}`} onClick={closeMenus} className="group cursor-pointer block">
@@ -755,7 +756,7 @@ export function Header() {
                                                     const img = imageField || null;
                                                     let eventImage = "/magazine-default.jpg";
                                                     if (typeof img === "string") {
-                                                        eventImage = img.startsWith("http") ? img : `${baseUrl}${img}`;
+                                                        eventImage = strapiImageUrl(img);
                                                     } else if (img) {
                                                         const rawUrl =
                                                             img.formats?.medium?.url ||
@@ -764,7 +765,7 @@ export function Header() {
                                                             img.url ||
                                                             null;
                                                         if (rawUrl) {
-                                                            eventImage = rawUrl.startsWith("http") ? rawUrl : `${baseUrl}${rawUrl}`;
+                                                            eventImage = strapiImageUrl(rawUrl);
                                                         }
                                                     }
                                                     const eventDate = event.date ? new Date(event.date) : null;

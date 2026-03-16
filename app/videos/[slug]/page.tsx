@@ -9,6 +9,7 @@ import { DateChip } from "@/components/ui/date-chip";
 import { ShareButton } from "@/components/ui/share-button";
 import { ArrowLeft, Youtube, Tag, Printer } from "lucide-react";
 import { formatContentDate } from "@/lib/date";
+import { strapiImageUrl } from "@/lib/strapi-image";
 
 function slugify(text: string): string {
     return text.toLowerCase().trim().replace(/[^\w\s-]/g, "").replace(/[\s_]+/g, "-").replace(/-+/g, "-").replace(/^-+|-+$/g, "");
@@ -63,7 +64,7 @@ export default async function VideoDetailPage({ params }: { params: Promise<{ sl
     const category = video.sectors?.[0]?.name || "Energy";
     const authorName = video.author?.name || "Team ENERGDIVE";
     const authorAvatar = video.author?.avatar?.url
-        ? `${baseUrl}${video.author.avatar.url}`
+        ? strapiImageUrl(video.author.avatar.url)
         : "/api/placeholder/40/40";
 
     return (
@@ -163,7 +164,7 @@ export default async function VideoDetailPage({ params }: { params: Promise<{ sl
                                     const thumb = `https://img.youtube.com/vi/${item.youtubeId}/mqdefault.jpg`;
                                     const itemAuthor = item.author?.name || "Team ENERGDIVE";
                                     const itemAuthorImg = item.author?.avatar?.url
-                                        ? `${baseUrl}${item.author.avatar.url}`
+                                        ? strapiImageUrl(item.author.avatar.url)
                                         : "/api/placeholder/30/30";
 
                                     return (

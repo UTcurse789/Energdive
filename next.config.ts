@@ -76,6 +76,13 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'cms.energdive.com',
       },
+      // ✅ CDN IMAGES
+      {
+        protocol: 'https',
+        hostname: 'cdn.energdive.com',
+        port: '',
+        pathname: '/**',
+      },
       {
         protocol: 'http',
         hostname: 'cms.energdive.com',

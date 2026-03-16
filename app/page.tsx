@@ -14,6 +14,7 @@ import { Article } from "@/types";
 import { formatContentDate } from "@/lib/date";
 import { Publication2 } from "@/components/sections/publication2";
 import { getLatestIssue } from "@/lib/api/getLatestIssue";
+import { strapiImageUrl } from "@/lib/strapi-image";
 
 const STRAPI_BASE = "https://cms.energdive.com";
 
@@ -31,7 +32,7 @@ function extractImageUrl(article: any): string {
     img.formats?.small?.url ||
     img.url;
   if (!url) return "/magazine-default.jpg";
-  return url.startsWith("http") ? url : `${STRAPI_BASE}${url}`;
+  return strapiImageUrl(url);
 }
 
 function extractExcerpt(article: any): string {
@@ -57,7 +58,7 @@ function mapArticle(article: any, sectorName: string): Article {
     date: formatContentDate(article.Date || article.publishedAt || article.createdAt),
     author: article.author ? {
       name: article.author.name || "Staff Writer",
-      avatar: article.author.avatar?.url ? `${STRAPI_BASE}${article.author.avatar.url}` : "/default-avatar.png",
+      avatar: article.author.avatar?.url ? strapiImageUrl(article.author.avatar.url) : "/default-avatar.png",
       role: article.author.role || "Author"
     } : { name: "Staff Writer", avatar: "/default-avatar.png", role: "Author" },
     readTime: "5 min read",

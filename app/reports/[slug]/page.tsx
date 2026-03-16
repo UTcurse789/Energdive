@@ -284,6 +284,7 @@ import {
 } from "lucide-react";
 import { formatContentDate } from "@/lib/date";
 import { ShareButton } from "@/components/ui/share-button";
+import { strapiImageUrl } from "@/lib/strapi-image";
 
 const STRAPI = process.env.NEXT_PUBLIC_STRAPI_URL;
 
@@ -375,7 +376,7 @@ export default async function IntelligenceReportPage({ params }: { params: Promi
 
     if (!article) notFound();
 
-    const imageUrl = article.FeaturedImage?.url ? `${STRAPI}${article.FeaturedImage.url}` : null;
+    const imageUrl = article.FeaturedImage?.url ? strapiImageUrl(article.FeaturedImage.url) : null;
     const downloadUrl = article.source || "#";
     const excerpt = article.Excerpt?.[0]?.children?.[0]?.text || "";
 
@@ -706,7 +707,7 @@ export default async function IntelligenceReportPage({ params }: { params: Promi
                                     <div className="relative aspect-16/10 w-full bg-zinc-100 overflow-hidden">
                                         {trending[0].FeaturedImage?.url && (
                                             <Image
-                                                src={`${STRAPI}${trending[0].FeaturedImage.url}`}
+                                                src={strapiImageUrl(trending[0].FeaturedImage.url)}
                                                 fill
                                                 alt={trending[0].Title}
                                                 className="object-cover grayscale group-hover:grayscale-0 group-hover:scale-105 transition-all duration-700"
@@ -754,7 +755,7 @@ export default async function IntelligenceReportPage({ params }: { params: Promi
                                             <div className="relative w-14 h-14 rounded-xl overflow-hidden bg-zinc-100 flex-shrink-0">
                                                 {item.FeaturedImage?.url && (
                                                     <Image
-                                                        src={`${STRAPI}${item.FeaturedImage.url}`}
+                                                        src={strapiImageUrl(item.FeaturedImage.url)}
                                                         fill
                                                         alt={item.Title}
                                                         className="object-cover grayscale group-hover:grayscale-0 transition-all duration-500"

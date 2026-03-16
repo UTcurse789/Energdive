@@ -9,6 +9,7 @@ import { motion } from "framer-motion";
 import { DateChip } from "@/components/ui/date-chip";
 import { formatContentDate } from "@/lib/date";
 import { Skeleton } from "@/components/ui/skeleton";
+import { strapiImageUrl } from "@/lib/strapi-image";
 
 const STRAPI_BASE_URL = "https://cms.energdive.com";
 
@@ -46,9 +47,9 @@ export default function ArchitectEditorialPage() {
                             title: attrs.TITLE || attrs.Title || "Untitled",
                             slug: attrs.slug,
                             image: attrs.FEATUREDIMAGE?.data?.attributes?.url
-                                ? `${STRAPI_BASE_URL}${attrs.FEATUREDIMAGE.data.attributes.url}`
+                                ? strapiImageUrl(attrs.FEATUREDIMAGE.data.attributes.url)
                                 : attrs.FeaturedImage?.url
-                                    ? `${STRAPI_BASE_URL}${attrs.FeaturedImage.url}`
+                                    ? strapiImageUrl(attrs.FeaturedImage.url)
                                     : "/placeholder.jpg",
                             excerpt: excerptText,
                             category: attrs.type_of_content?.data?.attributes?.name || "NEWS",

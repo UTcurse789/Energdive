@@ -46,6 +46,7 @@ async function getRelated(currentSlug: string) {
 }
 
 import type { Metadata } from "next";
+import { strapiImageUrl } from "@/lib/strapi-image";
 
 /* ================= METADATA (OG tags for WhatsApp / social) ================= */
 
@@ -70,7 +71,7 @@ export async function generateMetadata({
             : null) || "Read energy case studies on Energdive.";
 
     const imageUrl = attrs.FeaturedImage?.url
-        ? `${STRAPI_BASE_URL}${attrs.FeaturedImage.url}`
+        ? strapiImageUrl(attrs.FeaturedImage.url)
         : "https://energdive.com/fav.jpg";
 
     return {
@@ -116,9 +117,9 @@ export default async function CaseStudyDetailPage({ params }: { params: Promise<
         title: attrs.Title,
         excerpt: attrs.Excerpt || [],
         content: attrs.Content || [],
-        image: attrs.FeaturedImage?.url ? `${STRAPI_BASE_URL}${attrs.FeaturedImage.url}` : "/magazine-default.jpg",
+        image: attrs.FeaturedImage?.url ? strapiImageUrl(attrs.FeaturedImage.url) : "/magazine-default.jpg",
         date: formatContentDate(attrs.Date || attrs.publishedAt || attrs.createdAt),
-        author: author ? { name: author.name, avatar: author.avatar?.url ? `${STRAPI_BASE_URL}${author.avatar.url}` : author.avatar?.data?.attributes?.url ? `${STRAPI_BASE_URL}${author.avatar.data.attributes.url}` : null } : null,
+        author: author ? { name: author.name, avatar: author.avatar?.url ? strapiImageUrl(author.avatar.url) : author.avatar?.data?.attributes?.url ? strapiImageUrl(author.avatar.data.attributes.url) : null } : null,
         tags: normalizedTags,
         category: attrs.type_of_content?.name || attrs.type_of_content?.data?.attributes?.name || "Case Study",
     };
@@ -161,7 +162,7 @@ export default async function CaseStudyDetailPage({ params }: { params: Promise<
                         <div className="sticky top-24 space-y-8">
                             <SidebarSubscribe />
                             {latestIssue && (<div className="rounded-xl border border-gray-100 bg-white p-5 shadow-sm"><div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-widest text-[#00A651] bg-white/90 backdrop-blur-md px-4 py-2 rounded-full w-fit shadow-lg bg-linear-to-b from-white to-zinc-50 border border-white/20"><Calendar className="h-3.5 w-3.5 text-teal-500" />Latest Issue</div><Link href={`/issues/${latestIssue.slug}`} className="group block"><div className="relative aspect-3/4 w-full overflow-hidden rounded-lg border border-gray-100 shadow-md mb-4 transition-all duration-500 group-hover:shadow-xl group-hover:-translate-y-0.5"><Image src={latestIssue.coverImage} alt={latestIssue.title} fill className="object-contain bg-white p-1 transition-transform duration-700 group-hover:scale-[1.02]" /></div><h4 className="font-serif font-bold text-gray-900 group-hover:text-teal-600 transition-colors mb-1">{latestIssue.month} {latestIssue.year}</h4><span className="inline-flex items-center gap-1 text-xs font-bold text-teal-600 group-hover:gap-2 transition-all">Read Issue <ArrowRight className="h-3.5 w-3.5" /></span></Link></div>)}
-                            {relatedArticles.length > 0 && (<div><h3 className="mb-5 flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-gray-400"><span className="h-px flex-1 bg-gray-200" />Related Stories<span className="h-px flex-1 bg-gray-200" /></h3><div className="space-y-5">{relatedArticles.map((item: any) => { const r = item.attributes || item; const imgUrl = r.FeaturedImage?.url ? `${STRAPI_BASE_URL}${r.FeaturedImage.url}` : "/magazine-default.jpg"; const itemDate = formatContentDate(r.Date || r.publishedAt || item.publishedAt); return (<Link key={item.id} href={`/case-study/${r.slug}`} className="group flex gap-4 rounded-lg p-2 -mx-2 transition-colors hover:bg-gray-50"><div className="relative w-24 h-20 shrink-0 overflow-hidden rounded-lg bg-gray-100"><Image src={imgUrl} alt="" fill className="object-contain bg-white p-0.5 transition-transform duration-500 group-hover:scale-[1.02]" /></div><div className="flex-1 min-w-0"><h4 className="font-serif font-bold text-sm leading-snug text-gray-900 group-hover:text-teal-600 transition-colors line-clamp-2 mb-1">{r.Title}</h4>{itemDate && <DateChip value={itemDate} className="text-[10px]" />}</div></Link>); })}</div></div>)}
+                            {relatedArticles.length > 0 && (<div><h3 className="mb-5 flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-gray-400"><span className="h-px flex-1 bg-gray-200" />Related Stories<span className="h-px flex-1 bg-gray-200" /></h3><div className="space-y-5">{relatedArticles.map((item: any) => { const r = item.attributes || item; const imgUrl = r.FeaturedImage?.url ? strapiImageUrl(r.FeaturedImage.url) : "/magazine-default.jpg"; const itemDate = formatContentDate(r.Date || r.publishedAt || item.publishedAt); return (<Link key={item.id} href={`/case-study/${r.slug}`} className="group flex gap-4 rounded-lg p-2 -mx-2 transition-colors hover:bg-gray-50"><div className="relative w-24 h-20 shrink-0 overflow-hidden rounded-lg bg-gray-100"><Image src={imgUrl} alt="" fill className="object-contain bg-white p-0.5 transition-transform duration-500 group-hover:scale-[1.02]" /></div><div className="flex-1 min-w-0"><h4 className="font-serif font-bold text-sm leading-snug text-gray-900 group-hover:text-teal-600 transition-colors line-clamp-2 mb-1">{r.Title}</h4>{itemDate && <DateChip value={itemDate} className="text-[10px]" />}</div></Link>); })}</div></div>)}
                         </div>
                     </aside>
                 </div>

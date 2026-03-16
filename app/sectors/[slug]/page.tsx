@@ -14,6 +14,7 @@ import { TagBadge } from "@/components/ui/tag-badge";
 import { DateChip } from "@/components/ui/date-chip";
 import { ShareButton } from "@/components/ui/share-button";
 import { formatContentDate } from "@/lib/date";
+import { strapiImageUrl } from "@/lib/strapi-image";
 
 /* ================================
    STRAPI CONFIG & HELPERS
@@ -113,7 +114,7 @@ function resolveMediaUrl(raw: any): string | null {
         null;
 
     if (!path) return null;
-    return path.startsWith("http") ? path : `${STRAPI}${path}`;
+    return strapiImageUrl(path);
 }
 
 const DEFAULT_SECTOR_META = {
@@ -228,7 +229,7 @@ export default function SectorIntelligencePage() {
                 date: item.Date || item.publishedAt || item.createdAt,
                 sectors: extractNames(item.sectors),
                 tags: extractTagObjects(item.tags),
-                image: item?.FeaturedImage?.url ? `${STRAPI}${item.FeaturedImage.url}` : "/placeholder.jpg",
+                image: strapiImageUrl(item?.FeaturedImage?.url),
                 excerpt: item.Excerpt?.[0]?.children?.[0]?.text || "",
                 type_of_content: item.type_of_content,
             }));
@@ -239,9 +240,10 @@ export default function SectorIntelligencePage() {
                 id: item.id,
                 title: item.title,
                 slug: item.slug,
-                thumbnail: item.thumbnail?.url
-                    ? `${STRAPI}${item.thumbnail.url}`
-                    : `https://img.youtube.com/vi/${item.youtubeId}/mqdefault.jpg`,
+                thumbnail: strapiImageUrl(
+                    item.thumbnail?.url,
+                    `https://img.youtube.com/vi/${item.youtubeId}/mqdefault.jpg`
+                ),
                 date: item.date || item.createdAt,
                 sectors: extractNames(item.sectors),
                 tags: extractNames(item.tags),

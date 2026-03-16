@@ -46,6 +46,7 @@ async function getRelated(currentSlug: string) {
 }
 
 import type { Metadata } from "next";
+import { strapiImageUrl } from "@/lib/strapi-image";
 
 /* ================= METADATA (OG tags for WhatsApp / social) ================= */
 
@@ -70,7 +71,7 @@ export async function generateMetadata({
             : null) || "Read the latest cover stories on Energdive.";
 
     const imageUrl = attrs.FeaturedImage?.url
-        ? `${STRAPI_BASE_URL}${attrs.FeaturedImage.url}`
+        ? strapiImageUrl(attrs.FeaturedImage.url)
         : "https://energdive.com/fav.jpg";
 
     return {
@@ -120,11 +121,11 @@ export default async function CoverStoryDetailPage({
         title: attrs.Title,
         excerpt: attrs.Excerpt || [],
         content: attrs.Content || [],
-        image: attrs.FeaturedImage?.url ? `${STRAPI_BASE_URL}${attrs.FeaturedImage.url}` : "/magazine-default.jpg",
+        image: attrs.FeaturedImage?.url ? strapiImageUrl(attrs.FeaturedImage.url) : "/magazine-default.jpg",
         date: formatContentDate(attrs.Date || attrs.publishedAt || attrs.createdAt),
         author: author ? {
             name: author.name,
-            avatar: author.avatar?.url ? `${STRAPI_BASE_URL}${author.avatar.url}` : author.avatar?.data?.attributes?.url ? `${STRAPI_BASE_URL}${author.avatar.data.attributes.url}` : null,
+            avatar: author.avatar?.url ? strapiImageUrl(author.avatar.url) : author.avatar?.data?.attributes?.url ? strapiImageUrl(author.avatar.data.attributes.url) : null,
         } : null,
         tags: normalizedTags,
         category: attrs.type_of_content?.name || attrs.type_of_content?.data?.attributes?.name || "Cover Story",
@@ -223,7 +224,7 @@ export default async function CoverStoryDetailPage({
                                     <div className="space-y-5">
                                         {relatedArticles.map((item: any) => {
                                             const r = item.attributes || item;
-                                            const imgUrl = r.FeaturedImage?.url ? `${STRAPI_BASE_URL}${r.FeaturedImage.url}` : "/magazine-default.jpg";
+                                            const imgUrl = r.FeaturedImage?.url ? strapiImageUrl(r.FeaturedImage.url) : "/magazine-default.jpg";
                                             const itemDate = formatContentDate(r.Date || r.publishedAt || item.publishedAt);
                                             return (
                                                 <Link key={item.id} href={`/cover-story/${r.slug}`} className="group flex gap-4 rounded-lg p-2 -mx-2 transition-colors hover:bg-gray-50">

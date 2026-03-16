@@ -7,6 +7,7 @@ import { SectionHeading } from "@/components/ui/section-heading";
 import { ChevronLeft, ChevronRight, ArrowUpRight } from "lucide-react";
 import { slugify } from "@/lib/utils";
 import { formatContentDate } from "@/lib/date";
+import { strapiImageUrl } from "@/lib/strapi-image";
 
 const STRAPI_BASE = process.env.NEXT_PUBLIC_STRAPI_URL || "https://cms.energdive.com";
 
@@ -49,7 +50,7 @@ export function OpinionSection() {
                     let imageCaption = "";
                     if (img) {
                         const url = img.formats?.large?.url || img.formats?.medium?.url || img.url;
-                        if (url) imageUrl = url.startsWith("http") ? url : `${STRAPI_BASE}${url}`;
+                        if (url) imageUrl = strapiImageUrl(url);
                     }
 
                     return {
@@ -65,7 +66,7 @@ export function OpinionSection() {
                         imageCaption: img?.caption || "",
                         authorName: item.author?.name || "Staff Writer",
                         authorAvatar: item.author?.avatar?.url
-                            ? `${STRAPI_BASE}${item.author.avatar.url}`
+                            ? strapiImageUrl(item.author.avatar.url)
                             : "/default-avatar.png",
                         authorRole: item.author?.role || "Author",
                         date: formatContentDate(item.Date || item.publishedAt || item.createdAt),

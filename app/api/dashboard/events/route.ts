@@ -1,5 +1,6 @@
 import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
+import { strapiImageUrl } from "@/lib/strapi-image";
 
 const STRAPI = process.env.NEXT_PUBLIC_STRAPI_URL || "http://localhost:1337";
 const TOKEN = process.env.STRAPI_API_TOKEN || "";
@@ -54,7 +55,7 @@ export async function GET(request: Request) {
             // Event image
             const images = item.image || [];
             const firstImage = Array.isArray(images) ? images[0] : images;
-            const imageUrl = firstImage?.url ? `${STRAPI}${firstImage.url}` : null;
+            const imageUrl = firstImage?.url ? strapiImageUrl(firstImage.url) : null;
 
             return {
                 id: String(item.id),

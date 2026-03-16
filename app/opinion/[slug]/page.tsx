@@ -65,13 +65,13 @@
 //     content: article?.Content || [],
 //     featuredImage:
 //       article?.FeaturedImage?.url
-//         ? `${STRAPI}${article.FeaturedImage.url}`
+//         ? strapiImageUrl(article.FeaturedImage.url)
 //         : article?.FeaturedImage?.data?.attributes?.url
-//           ? `${STRAPI}${article.FeaturedImage.data.attributes.url}`
+//           ? strapiImageUrl(article.FeaturedImage.data.attributes.url)
 //           : "/placeholder.jpg",
 //     image:
 //       article?.FeaturedImage?.url
-//         ? `${STRAPI}${article.FeaturedImage.url}`
+//         ? strapiImageUrl(article.FeaturedImage.url)
 //         : "/placeholder.jpg",
 //     readTime: "5 min read",
 //     author: {
@@ -79,11 +79,11 @@
 //       role: article?.author?.designation || "Author",
 //       avatar:
 //         article?.author?.avatar?.url
-//           ? `${STRAPI}${article.author.avatar.url}`
+//           ? strapiImageUrl(article.author.avatar.url)
 //           : "/placeholder.jpg",
 //       image:
 //         article?.author?.avatar?.url
-//           ? `${STRAPI}${article.author.avatar.url}`
+//           ? strapiImageUrl(article.author.avatar.url)
 //           : "/placeholder.jpg",
 //     },
 //   };
@@ -101,21 +101,21 @@
 //     content: item.Content || [],
 //     featuredImage:
 //       item?.FeaturedImage?.url
-//         ? `${STRAPI}${item.FeaturedImage.url}`
+//         ? strapiImageUrl(item.FeaturedImage.url)
 //         : item?.FeaturedImage?.data?.attributes?.url
-//           ? `${STRAPI}${item.FeaturedImage.data.attributes.url}`
+//           ? strapiImageUrl(item.FeaturedImage.data.attributes.url)
 //           : "/placeholder.jpg",
-//     image: item?.FeaturedImage?.url ? `${STRAPI}${item.FeaturedImage.url}` : "/placeholder.jpg",
+//     image: item?.FeaturedImage?.url ? strapiImageUrl(item.FeaturedImage.url) : "/placeholder.jpg",
 //     readTime: "5 min read",
 //     author: {
 //       name: item?.author?.name,
 //       avatar:
 //         item?.author?.avatar?.url
-//           ? `${STRAPI}${item.author.avatar.url}`
+//           ? strapiImageUrl(item.author.avatar.url)
 //           : "/placeholder.jpg",
 //       image:
 //         item?.author?.avatar?.url
-//           ? `${STRAPI}${item.author.avatar.url}`
+//           ? strapiImageUrl(item.author.avatar.url)
 //           : "/placeholder.jpg",
 //       role: item?.author?.designation || "Contributing Analyst",
 //     },
@@ -132,6 +132,7 @@
 
 import { notFound } from "next/navigation";
 import OpinionContent from "./opinion-content";
+import { strapiImageUrl } from "@/lib/strapi-image";
 
 const STRAPI = process.env.NEXT_PUBLIC_STRAPI_URL;
 
@@ -171,13 +172,13 @@ export default async function OpinionDetailPage({ params }: { params: Promise<{ 
     category: "Opinion",
     readTime: "6 min read",
     featuredImage: (article.FeaturedImage?.url || article.attributes?.FeaturedImage?.data?.attributes?.url)
-      ? `${STRAPI}${article.FeaturedImage?.url || article.attributes?.FeaturedImage?.data?.attributes?.url}`
+      ? strapiImageUrl(article.FeaturedImage?.url || article.attributes?.FeaturedImage?.data?.attributes?.url)
       : "/placeholder.jpg",
     author: {
       name: article?.author?.name || article.attributes?.author?.data?.attributes?.name || "Editorial Staff",
       role: article?.author?.designation || article.attributes?.author?.data?.attributes?.designation || "Senior Analyst",
       avatar: (article?.author?.avatar?.url || article.attributes?.author?.data?.attributes?.avatar?.data?.attributes?.url)
-        ? `${STRAPI}${article?.author?.avatar?.url || article.attributes?.author?.data?.attributes?.avatar?.data?.attributes?.url}`
+        ? strapiImageUrl(article?.author?.avatar?.url || article.attributes?.author?.data?.attributes?.avatar?.data?.attributes?.url)
         : "/placeholder.jpg",
     }
   };
@@ -187,7 +188,7 @@ export default async function OpinionDetailPage({ params }: { params: Promise<{ 
     slug: item.slug,
     title: item.Title,
     category: "Opinion",
-    featuredImage: item?.FeaturedImage?.url ? `${STRAPI}${item.FeaturedImage.url}` : "/placeholder.jpg",
+    featuredImage: item?.FeaturedImage?.url ? strapiImageUrl(item.FeaturedImage.url) : "/placeholder.jpg",
     author: { name: item?.author?.name }
   }));
 

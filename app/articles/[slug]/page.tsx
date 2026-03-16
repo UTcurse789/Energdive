@@ -51,6 +51,7 @@ async function getRelated(slug: string) {
     return json?.data || [];
 }
 import type { Metadata } from "next";
+import { strapiImageUrl } from "@/lib/strapi-image";
 
 /* ================= METADATA (OG tags for WhatsApp / social) ================= */
 
@@ -72,7 +73,7 @@ export async function generateMetadata({
         "Read in-depth energy articles on Energdive.";
 
     const imageUrl = articleData.FeaturedImage?.url
-        ? `${STRAPI}${articleData.FeaturedImage.url}`
+        ? strapiImageUrl(articleData.FeaturedImage.url)
         : "https://energdive.com/fav.jpg";
 
     return {
@@ -131,16 +132,16 @@ export default async function ArticlePage(props: any) {
         excerpt: articleData.Excerpt?.[0]?.children?.[0]?.text || "",
         content: articleData.Content || [],
         image: articleData.FeaturedImage?.url
-            ? `${STRAPI}${articleData.FeaturedImage.url}`
+            ? strapiImageUrl(articleData.FeaturedImage.url)
             : "/magazine-default.jpg",
         date: formatContentDate(articleData.Date || articleData.publishedAt || articleData.createdAt),
         author: articleData.author
             ? {
                 name: articleData.author.name,
                 avatar: articleData.author.avatar?.url
-                    ? `${STRAPI}${articleData.author.avatar.url}`
+                    ? strapiImageUrl(articleData.author.avatar.url)
                     : articleData.author.avatar?.data?.attributes?.url
-                        ? `${STRAPI}${articleData.author.avatar.data.attributes.url}`
+                        ? strapiImageUrl(articleData.author.avatar.data.attributes.url)
                         : null,
             }
             : null,
@@ -339,7 +340,7 @@ export default async function ArticlePage(props: any) {
                                     <div className="space-y-5">
                                         {related.map((item: any, idx: number) => {
                                             const imgUrl = item.FeaturedImage?.url
-                                                ? `${STRAPI}${item.FeaturedImage.url}`
+                                                ? strapiImageUrl(item.FeaturedImage.url)
                                                 : "/magazine-default.jpg";
 
                                             const itemDate = formatContentDate(item.Date || item.publishedAt || item.createdAt);

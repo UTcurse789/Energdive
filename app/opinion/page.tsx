@@ -15,6 +15,7 @@ import { ArrowUpRight, ArrowRight } from "lucide-react";
 import { slugify } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DateChip } from "@/components/ui/date-chip";
+import { strapiImageUrl } from "@/lib/strapi-image";
 
 const STRAPI = process.env.NEXT_PUBLIC_STRAPI_URL;
 
@@ -69,13 +70,13 @@ export default function OpinionPage() {
 
         image:
           item?.FeaturedImage?.url
-            ? `${STRAPI}${item.FeaturedImage.url}`
+            ? strapiImageUrl(item.FeaturedImage.url)
             : null,
 
         authorName: item?.author?.name,
         authorAvatar:
           item?.author?.avatar?.url
-            ? `${STRAPI}${item.author.avatar.url}`
+            ? strapiImageUrl(item.author.avatar.url)
             : null,
       }));
 
