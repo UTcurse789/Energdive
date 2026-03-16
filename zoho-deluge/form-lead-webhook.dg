@@ -29,7 +29,11 @@ firstName = leadRecord.get("First_Name");
 lastName  = leadRecord.get("Last_Name");
 fullName  = if(firstName != null, firstName, "") + " " + if(lastName != null, lastName, "");
 
-phone   = leadRecord.get("Phone");
+phone   = leadRecord.get("Mobile");
+if(phone == null || phone == "")
+{
+    phone = leadRecord.get("Phone");
+}
 company = leadRecord.get("Company");
 
 // Build the JSON payload
