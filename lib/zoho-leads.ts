@@ -331,6 +331,11 @@ export async function createZohoLead(
             Country: enrichedData.Country || null,
         };
 
+        // 3. Set Owner if specified
+        if (enrichedData.Owner) {
+            zohoRecord.Owner = { id: enrichedData.Owner };
+        }
+
         // 3. Always POST (create new lead)
         const payload = { data: [zohoRecord] };
         const url = `${ZOHO_API_URL}/Leads`;
