@@ -104,6 +104,63 @@ function getCategoryBadgeTone(type: string) {
     return "bg-zinc-50 text-zinc-600 border-zinc-200";
 }
 
+/* ==================== METADATA ==================== */
+
+import type { Metadata } from "next";
+
+export async function generateMetadata({
+    params,
+}: {
+    params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+    const { slug } = await params;
+    const authorData = await getAuthorBySlug(slug);
+
+    if (!authorData) {
+        return { title: "Author | Energdive" };
+    }
+
+    const attrs = authorData.attributes || authorData;
+    const authorName = extractText(attrs.name) || "Author";
+    const authorDesignation = extractText(attrs.designation) || "";
+    const authorBio = extractText(attrs.bio) || "";
+
+    const avatarData = attrs.avatar?.data?.attributes || attrs.avatar;
+    const avatarUrl = avatarData?.url
+        ? (avatarData.url.startsWith("http") ? avatarData.url : strapiImageUrl(avatarData.url))
+        : "https://www.energdive.com/og-image.jpg";
+
+    const description = authorBio
+        ? authorBio.substring(0, 160)
+        : `Read articles by ${authorName}${authorDesignation ? `, ${authorDesignation}` : ""} on Energdive.`;
+
+    return {
+        title: `${authorName}${authorDesignation ? ` — ${authorDesignation}` : ""}`,
+        description,
+        openGraph: {
+            title: `${authorName} | ENERGDIVE`,
+            description,
+            url: `https://www.energdive.com/author/${slug}`,
+            siteName: "ENERGDIVE",
+            images: [
+                {
+                    url: avatarUrl,
+                    width: 400,
+                    height: 400,
+                    alt: authorName,
+                },
+            ],
+            type: "profile",
+        },
+        twitter: {
+            card: "summary",
+            title: `${authorName} | ENERGDIVE`,
+            description,
+            images: [avatarUrl],
+        },
+    };
+}
+
 /* ==================== PAGE ==================== */
 
 export default async function AuthorPage({

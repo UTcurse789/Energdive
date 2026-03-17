@@ -46,6 +46,59 @@ async function getVideoData(slug: string) {
         return { video: null, moreVideos: [] };
     }
 }
+
+import type { Metadata } from "next";
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+    const { slug } = await params;
+    const { video } = await getVideoData(slug);
+
+    if (!video) {
+        return { title: "Video | ENERGDIVE" };
+    }
+
+    const title = video.title || "Video | ENERGDIVE";
+    
+    // Extract a plain text description from blocks content
+    let description = "Watch this exclusive energy sector video on ENERGDIVE.";
+    if (video.description && Array.isArray(video.description)) {
+        const text = video.description
+            .map((block: any) => (block.children || []).map((child: any) => child.text || "").join(""))
+            .join(" ")
+            .trim();
+        if (text) description = text.substring(0, 160) + (text.length > 160 ? "..." : "");
+    }
+
+    const imageUrl = video.youtubeId 
+        ? `https://img.youtube.com/vi/${video.youtubeId}/maxresdefault.jpg`
+        : "/og-image.jpg";
+
+    return {
+        title,
+        description,
+        openGraph: {
+            title,
+            description,
+            url: `https://www.energdive.com/videos/${slug}`,
+            siteName: "ENERGDIVE",
+            images: [
+                {
+                    url: imageUrl,
+                    width: 1280,
+                    height: 720,
+                    alt: title,
+                },
+            ],
+            type: "video.other",
+        },
+        twitter: {
+            card: "summary_large_image",
+            title,
+            description,
+            images: [imageUrl],
+        },
+    };
+}
 export default async function VideoDetailPage({ params }: { params: Promise<{ slug: string }> }) {
     const { slug } = await params;
     const { video, moreVideos } = await getVideoData(slug);
