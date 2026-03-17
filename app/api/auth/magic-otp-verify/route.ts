@@ -128,7 +128,7 @@ export async function POST(req: Request) {
         // getFullUserProfile joins user_communities and user_industries, so it
         // returns the Community, Sub-Community, Industry, etc. that were stored
         // by provisionUser() during the /api/zoho/provision call.
-        const fullUser = await getFullUserProfile(user.clerk_id);
+        let fullUser = await getFullUserProfile(user.clerk_id);
 
         if (!fullUser || normalizedEmail.endsWith("@phone.energdive.com")) {
             log(`Skipping external sync — no profile or dummy email`);
@@ -141,19 +141,169 @@ export async function POST(req: Request) {
             return arr.filter((v): v is string => !!v && v.trim() !== "");
         };
 
-        const communities = toCleanArray(fullUser.communities);
-        const subCommunities = toCleanArray(fullUser.sub_communities);
-        const industries = toCleanArray(fullUser.industries);
-        const subIndustries = toCleanArray(fullUser.sub_industries);
+        let communities = toCleanArray(fullUser.communities);
+        let subCommunities = toCleanArray(fullUser.sub_communities);
+        let industries = toCleanArray(fullUser.industries);
+        let subIndustries = toCleanArray(fullUser.sub_industries);
+
+        // ── Step 5.5: CRM Lead Fallback ──────────────────────────────────────
+        // If communities/phone are empty, the Deluge script may not have sent
+        // them (timing issue: split-community-portal.dg hasn't run yet).
+        // Fetch the CRM lead directly from Zoho API and recover the data.
+        const needsCommunityFallback = communities.length === 0;
+        const needsPhoneFallback = !fullUser.phone;
+
+        if ((needsCommunityFallback || needsPhoneFallback) && fullUser.crm_lead_id) {
+            log(`Profile missing data (communities=${communities.length}, phone=${fullUser.phone}). Fetching CRM lead ${fullUser.crm_lead_id}...`);
+            try {
+                const { getLeadById } = await import("@/lib/zoho");
+                const { parseCommunityPortal } = await import("@/lib/zoho-leads");
+                const crmLead = await getLeadById(fullUser.crm_lead_id);
+
+                if (crmLead) {
+                    log(`CRM lead fetched: Community_Portal=${JSON.stringify(crmLead.Community_Portal)}, Community=${JSON.stringify(crmLead.Community)}, Sub_Community=${JSON.stringify(crmLead.Sub_Community)}, Phone=${crmLead.Phone}, Mobile=${crmLead.Mobile}`);
+
+                    // ── Recover phone ─────────────────────────────────────────
+                    const crmPhone = crmLead.Mobile || crmLead.Phone || null;
+                    if (needsPhoneFallback && crmPhone) {
+                        await query(
+                            `UPDATE users SET phone = $2, updated_at = NOW()
+                             WHERE id = $1 AND (phone IS NULL OR phone = '')`,
+                            [userId, crmPhone]
+                        );
+                        log(`Phone recovered from CRM lead: ${crmPhone}`);
+                    }
+
+                    // ── Recover communities ───────────────────────────────────
+                    if (needsCommunityFallback) {
+                        // Try Community_Portal first (combined field), then direct fields
+                        let crmCommunities: string[] = [];
+                        let crmSubCommunities: string[] = [];
+
+                        const portalValues = Array.isArray(crmLead.Community_Portal)
+                            ? crmLead.Community_Portal
+                            : typeof crmLead.Community_Portal === "string" && crmLead.Community_Portal
+                            ? crmLead.Community_Portal.split(";").map((s: string) => s.trim()).filter(Boolean)
+                            : [];
+
+                        if (portalValues.length > 0) {
+                            const parsed = parseCommunityPortal(portalValues);
+                            crmCommunities = parsed.communities;
+                            crmSubCommunities = parsed.subCommunities;
+                        }
+
+                        // Also try direct Community / Sub_Community fields
+                        if (crmCommunities.length === 0) {
+                            crmCommunities = Array.isArray(crmLead.Community)
+                                ? crmLead.Community.filter(Boolean)
+                                : typeof crmLead.Community === "string" && crmLead.Community
+                                ? crmLead.Community.split(";").map((s: string) => s.trim()).filter(Boolean)
+                                : [];
+                        }
+                        if (crmSubCommunities.length === 0) {
+                            crmSubCommunities = Array.isArray(crmLead.Sub_Community)
+                                ? crmLead.Sub_Community.filter(Boolean)
+                                : typeof crmLead.Sub_Community === "string" && crmLead.Sub_Community
+                                ? crmLead.Sub_Community.split(";").map((s: string) => s.trim()).filter(Boolean)
+                                : [];
+                        }
+
+                        if (crmCommunities.length > 0) {
+                            log(`Recovered from CRM: communities=[${crmCommunities}], subs=[${crmSubCommunities}]`);
+                            // Store in user_communities via provisionUser-style matching
+                            const { getClient } = await import("@/lib/db");
+                            const dbClient = await getClient();
+                            try {
+                                await dbClient.query("BEGIN");
+                                const insertedPairs: string[] = [];
+
+                                for (const commName of crmCommunities) {
+                                    const commResult = await dbClient.query(
+                                        `SELECT id FROM communities WHERE LOWER(name) = LOWER($1) LIMIT 1`,
+                                        [commName.trim()]
+                                    );
+                                    if (commResult.rows.length === 0) {
+                                        log(`Community not found in DB: "${commName}"`);
+                                        continue;
+                                    }
+                                    const communityId = commResult.rows[0].id;
+
+                                    let matchedAnySub = false;
+                                    for (const subName of crmSubCommunities) {
+                                        const subResult = await dbClient.query(
+                                            `SELECT id FROM sub_communities
+                                             WHERE community_id = $1 AND LOWER(name) = LOWER($2) LIMIT 1`,
+                                            [communityId, subName.trim()]
+                                        );
+                                        if (subResult.rows.length > 0) {
+                                            const subCommunityId = subResult.rows[0].id;
+                                            const pairKey = `${communityId}-${subCommunityId}`;
+                                            if (!insertedPairs.includes(pairKey)) {
+                                                await dbClient.query(
+                                                    `INSERT INTO user_communities (user_id, community_id, sub_community_id)
+                                                     VALUES ($1, $2, $3) ON CONFLICT DO NOTHING`,
+                                                    [userId, communityId, subCommunityId]
+                                                );
+                                                insertedPairs.push(pairKey);
+                                                matchedAnySub = true;
+                                            }
+                                        }
+                                    }
+
+                                    if (!matchedAnySub) {
+                                        const fallback = await dbClient.query(
+                                            `SELECT id FROM sub_communities WHERE community_id = $1 ORDER BY id LIMIT 1`,
+                                            [communityId]
+                                        );
+                                        if (fallback.rows[0]?.id) {
+                                            const pairKey = `${communityId}-${fallback.rows[0].id}`;
+                                            if (!insertedPairs.includes(pairKey)) {
+                                                await dbClient.query(
+                                                    `INSERT INTO user_communities (user_id, community_id, sub_community_id)
+                                                     VALUES ($1, $2, $3) ON CONFLICT DO NOTHING`,
+                                                    [userId, communityId, fallback.rows[0].id]
+                                                );
+                                                insertedPairs.push(pairKey);
+                                            }
+                                        }
+                                    }
+                                }
+
+                                await dbClient.query("COMMIT");
+                                log(`CRM fallback stored ${insertedPairs.length} community pairs`);
+                            } catch (dbErr) {
+                                await dbClient.query("ROLLBACK");
+                                throw dbErr;
+                            } finally {
+                                dbClient.release();
+                            }
+
+                            // Re-fetch profile with updated communities
+                            fullUser = await getFullUserProfile(user.clerk_id);
+                            communities = toCleanArray(fullUser?.communities);
+                            subCommunities = toCleanArray(fullUser?.sub_communities);
+                            industries = toCleanArray(fullUser?.industries);
+                            subIndustries = toCleanArray(fullUser?.sub_industries);
+                        }
+                    }
+                } else {
+                    log(`CRM lead ${fullUser.crm_lead_id} not found in Zoho`);
+                }
+            } catch (crmFallbackErr: any) {
+                log(`CRM fallback failed (non-fatal): ${crmFallbackErr.message}`);
+            }
+        }
 
         // Reload membership_id — the DB trigger may have just assigned it
         const membershipResult = await query(
-            `SELECT membership_id FROM users WHERE id = $1 LIMIT 1`,
+            `SELECT membership_id, phone FROM users WHERE id = $1 LIMIT 1`,
             [userId]
         );
         const membershipId = membershipResult.rows[0]?.membership_id || undefined;
+        // Use refreshed phone from DB (may have been updated by CRM fallback)
+        const userPhone = membershipResult.rows[0]?.phone || fullUser.phone || null;
 
-        log(`Enriched profile: communities=[${communities}], subs=[${subCommunities}], phone=${fullUser.phone}, membership=${membershipId}`);
+        log(`Enriched profile: communities=[${communities}], subs=[${subCommunities}], phone=${userPhone}, membership=${membershipId}`);
 
         // ── Step 6: Sync to Brevo with all enriched fields ────────────────────
         // Uses syncVerifiedUserToBrevo which maps all fields including
@@ -162,7 +312,7 @@ export async function POST(req: Request) {
             await syncVerifiedUserToBrevo({
                 email: normalizedEmail,
                 name: [fullUser.first_name, fullUser.last_name].filter(Boolean).join(" ") || undefined,
-                phone: fullUser.phone || undefined,
+                phone: userPhone || undefined,
                 company: fullUser.organization || undefined,
                 jobTitle: fullUser.job_title || undefined,
                 membershipId,
@@ -207,8 +357,8 @@ export async function POST(req: Request) {
                 First_Name: bFirstName,
                 Last_Name: bLastName,
                 Email: normalizedEmail,
-                Phone: brevoData?.PHONE || fullUser.phone || undefined,
-                Mobile: brevoData?.PHONE || fullUser.phone || undefined,
+                Phone: brevoData?.PHONE || userPhone || undefined,
+                Mobile: brevoData?.PHONE || userPhone || undefined,
                 Company: brevoData?.ORGANISATION || fullUser.organization || undefined,
                 Designation: brevoData?.JOB_TITLE || fullUser.job_title || undefined,
                 Lead_Source: "Portal Verified",
