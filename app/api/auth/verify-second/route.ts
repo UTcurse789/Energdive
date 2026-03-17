@@ -5,7 +5,7 @@ import { verifyOtp } from "@/lib/otp-store";
 import { updateVerificationStatus, getVerificationStatus } from "@/lib/queries/users";
 import syncUserToBrevo from "@/lib/brevoSync";
 import { getFullUserProfile } from "@/lib/getFullUserProfile";
-import { upsertZohoLead } from "@/lib/zoho-leads";
+import { upsertZohoLead, generateCommunityPortal } from "@/lib/zoho-leads";
 
 const clerk = createClerkClient({
     secretKey: process.env.CLERK_SECRET_KEY!,
@@ -269,7 +269,16 @@ async function trySyncAfterVerification(clerkId: string) {
                     Lead_Source: "Website Registration",
                     Industry: fullUser.industries?.find((i: string | null) => !!i) || undefined,
                     Industry_Sub_Category: fullUser.sub_industries?.find((i: string | null) => !!i) || undefined,
-                    Community_Portal: toArray(fullUser.sub_communities),
+                    Community: toArray(fullUser.communities),
+                    Sub_Community: toArray(fullUser.sub_communities),
+                    Community_Portal: (() => {
+                        const comms = toArray(fullUser.communities);
+                        const subs = toArray(fullUser.sub_communities);
+                        if (comms && subs) {
+                            return generateCommunityPortal(comms, subs);
+                        }
+                        return undefined;
+                    })(),
                     Invite_Source: "EnergClub",
                     City: fullUser.state || undefined,
                     Country: fullUser.country || undefined,
