@@ -74,7 +74,7 @@ export async function getLatestIssue(): Promise<LatestIssueData | null> {
     try {
         const res = await fetch(
             `${STRAPI_BASE_URL}/api/issues?populate=CoverImage&sort=createdAt:desc&pagination[limit]=1`,
-            { next: { revalidate: 86400 } } // 24 hour ISR — issues change monthly
+            { next: { revalidate: 3600 } } // 1 hour ISR — keeps latest issue fresh
         );
         if (!res.ok) return null;
 

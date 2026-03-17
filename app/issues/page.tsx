@@ -18,6 +18,7 @@ interface Issue {
     volume: string;
     number: string;
     coverImage: string;
+    isCurrentIssue: boolean;
 }
 
 export default function IssuesPage() {
@@ -29,8 +30,7 @@ export default function IssuesPage() {
     useEffect(() => {
         async function fetchIssues() {
             try {
-                // Bust cache with timestamp
-                const res = await fetch(`${STRAPI_URL}/api/issues?populate=CoverImage&t=${Date.now()}`);
+                const res = await fetch(`${STRAPI_URL}/api/issues?populate=CoverImage`, { cache: "no-store" });
                 const json = await res.json();
 
                 console.log("DEBUG: Issues Raw Data:", json);
@@ -41,52 +41,56 @@ export default function IssuesPage() {
                 }
 
                 const formatted: Issue[] = json.data.map((item: any) => {
-                    const dataObj = item.attributes || item;
+                    // Strapi v5 often returns flat data, but handle both for safety
+                    const d = item.attributes || item;
 
-                    // PARANOID EXTRACTION: try all possible casing and nesting
-                    const month = dataObj.Month || dataObj.month || item.Month || item.month || "";
-                    const year = dataObj.Year || dataObj.year || item.Year || item.year || "";
-                    const slugField = dataObj.slug || dataObj.Slug || item.slug || item.Slug || "";
-
-                    const finalSlug = (month && year)
-                        ? `${String(month).toLowerCase().trim()}-${String(year).trim()}`
-                        : (slugField || "undefined");
-
-                    // CoverImage paranoid extraction
-                    const coverImageData = dataObj.CoverImage?.data?.attributes ||
-                        dataObj.CoverImage?.[0] ||
-                        dataObj.CoverImage ||
-                        item.CoverImage;
-
-                    const rawUrl = coverImageData?.url;
-
-                    const coverImage = rawUrl
-                        ? rawUrl.startsWith("http")
-                            ? rawUrl
-                            : STRAPI_URL + rawUrl
-                        : "/Energdive-Logo.png";
-
-                    // Extract sub_title
-                    const subTitle = dataObj.sub_title || dataObj.Sub_Title || dataObj.subTitle || item.sub_title || "";
-
-                    // Extract description (note: Strapi field is "Discription" — typo in CMS)
-                    const description = dataObj.Discription || dataObj.Description || dataObj.description || item.Discription || item.Description || item.description || "";
+                    const month = String(d.Month || d.month || "").trim();
+                    const year = String(d.Year || d.year || "").trim();
+                    
+                    const coverImg = d.CoverImage?.[0]?.url || d.CoverImage?.url || "/Energdive-Logo.png";
+                    const finalCoverImage = coverImg.startsWith("http") ? coverImg : `${STRAPI_URL}${coverImg}`;
 
                     return {
                         id: item.id,
-                        slug: finalSlug,
-                        title: dataObj.Title || dataObj.title || `${month} ${year}` || "Untitled Issue",
-                        subTitle: typeof subTitle === "string" ? subTitle : "",
-                        description: typeof description === "string" ? description : "",
-                        month: String(month),
-                        year: String(year),
-                        volume: (dataObj.Volume || dataObj.volume || "")?.toString(),
-                        number: (dataObj.IssueNumber || dataObj.issueNumber || dataObj.Number || "")?.toString(),
-                        coverImage,
+                        slug: d.slug || `${month.toLowerCase()}-${year}`,
+                        title: d.Title || `${month} ${year}`,
+                        subTitle: String(d.sub_title || d.subTitle || ""),
+                        description: String(d.Discription || d.Description || ""),
+                        month,
+                        year,
+                        volume: String(d.Volume || ""),
+                        number: String(d.IssueNumber || d.Number || ""),
+                        coverImage: finalCoverImage,
+                        isCurrentIssue: d.is_current_issue === true || d.is_current_issue === "true",
                     };
                 });
 
-                console.log("DEBUG: Formatted Issues:", formatted);
+                // Month mapping for sorting
+                const monthOrder: Record<string, number> = {
+                    january: 1, february: 2, fbruary: 2, march: 3, april: 4, may: 5, june: 6,
+                    july: 7, august: 8, september: 9, october: 10, november: 11, december: 12
+                };
+
+                formatted.sort((a, b) => {
+                    // 1. Current Always First
+                    const valA = a.isCurrentIssue ? 1 : 0;
+                    const valB = b.isCurrentIssue ? 1 : 0;
+                    if (valA !== valB) return valB - valA;
+
+                    // 2. Year Desc
+                    const yA = parseInt(a.year, 10) || 0;
+                    const yB = parseInt(b.year, 10) || 0;
+                    if (yA !== yB) return yB - yA;
+
+                    // 3. Month Desc
+                    const mA = monthOrder[a.month.toLowerCase()] || 0;
+                    const mB = monthOrder[b.month.toLowerCase()] || 0;
+                    return mB - mA;
+                });
+
+                console.log("DEBUG: Issues Sorted List:");
+                console.table(formatted.map(i => ({ Title: i.title, Current: i.isCurrentIssue, Month: i.month, Year: i.year })));
+                
                 setIssues(formatted);
             } catch (err) {
                 console.error("Fetch error:", err);

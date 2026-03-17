@@ -3,11 +3,6 @@
 import Link from "next/link";
 import NextImage from "next/image";
 import {
-    Mail,
-    MapPin,
-    Phone,
-    ArrowRight,
-    Send,
     Twitter,
     Linkedin,
     Youtube,
