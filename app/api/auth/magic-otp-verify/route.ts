@@ -86,6 +86,28 @@ export async function POST(req: Request) {
         await writePendingCommunities(userId, normalizedEmail);
         log(`Wrote pending communities for id=${userId}`);
 
+        // ── Step 3.6: Transfer phone from pending_verifications to users ─────
+        // The Zoho Form webhook stores the phone in pending_verifications but
+        // it's never copied to the users table. Do that now so Brevo gets it.
+        try {
+            const pvPhone = await query(
+                `SELECT phone FROM pending_verifications
+                 WHERE email = $1 AND phone IS NOT NULL AND phone <> ''
+                 ORDER BY updated_at DESC LIMIT 1`,
+                [normalizedEmail]
+            );
+            if (pvPhone.rows.length > 0 && pvPhone.rows[0].phone) {
+                await query(
+                    `UPDATE users SET phone = COALESCE(phone, $2), updated_at = NOW()
+                     WHERE id = $1 AND (phone IS NULL OR phone = '')`,
+                    [userId, pvPhone.rows[0].phone]
+                );
+                log(`Phone transferred from pending_verifications: ${pvPhone.rows[0].phone}`);
+            }
+        } catch (phoneErr: any) {
+            console.warn(`[MAGIC-OTP-VERIFY] Phone transfer failed (non-fatal): ${phoneErr.message}`);
+        }
+
         await logEvent(
             "USER_VERIFIED",
             normalizedEmail,
@@ -207,8 +229,6 @@ export async function POST(req: Request) {
             await query(
                 `UPDATE users
                  SET crm_lead_id = COALESCE(crm_lead_id, $2),
-                     sync_status = 'complete',
-                     crm_synced_at = NOW(),
                      updated_at  = NOW()
                  WHERE id = $1`,
                 [userId, zohoResult.id]

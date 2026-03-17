@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { upsertZohoLead } from "@/lib/zoho-leads";
+import { createZohoLead } from "@/lib/zoho-leads";
 
 export const maxDuration = 60; // Allow more time for batch operations
 
@@ -63,7 +63,7 @@ export async function GET(req: Request) {
                     ? attrs.SUB_COMMUNITY.split(",").map((s: string) => s.trim()).filter(Boolean)
                     : undefined;
 
-                const zohoResult = await upsertZohoLead({
+                const zohoResult = await createZohoLead({
                     Email: email,
                     First_Name: attrs.FIRSTNAME || "",
                     Last_Name: attrs.LASTNAME || "",
