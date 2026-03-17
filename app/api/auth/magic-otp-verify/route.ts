@@ -86,26 +86,36 @@ export async function POST(req: Request) {
         await writePendingCommunities(userId, normalizedEmail);
         log(`Wrote pending communities for id=${userId}`);
 
-        // ── Step 3.6: Transfer phone from pending_verifications to users ─────
-        // The Zoho Form webhook stores the phone in pending_verifications but
-        // it's never copied to the users table. Do that now so Brevo gets it.
+        // ── Step 3.6: Transfer phone + community_portal from pending_verifications ─
+        // The Zoho Form webhook stores the phone and raw community_portal pairs
+        // in pending_verifications. Transfer phone to users table so Brevo gets it.
+        // Keep community_portal for CRM lead creation (to avoid cartesian product).
+        let pvCommunityPortal: string | null = null;
         try {
-            const pvPhone = await query(
-                `SELECT phone FROM pending_verifications
-                 WHERE email = $1 AND phone IS NOT NULL AND phone <> ''
+            const pvData = await query(
+                `SELECT phone, community_portal FROM pending_verifications
+                 WHERE email = $1
                  ORDER BY updated_at DESC LIMIT 1`,
                 [normalizedEmail]
             );
-            if (pvPhone.rows.length > 0 && pvPhone.rows[0].phone) {
-                await query(
-                    `UPDATE users SET phone = COALESCE(phone, $2), updated_at = NOW()
-                     WHERE id = $1 AND (phone IS NULL OR phone = '')`,
-                    [userId, pvPhone.rows[0].phone]
-                );
-                log(`Phone transferred from pending_verifications: ${pvPhone.rows[0].phone}`);
+            if (pvData.rows.length > 0) {
+                const pvPhone = pvData.rows[0].phone;
+                pvCommunityPortal = pvData.rows[0].community_portal || null;
+
+                if (pvPhone && pvPhone.trim() !== '') {
+                    await query(
+                        `UPDATE users SET phone = COALESCE(phone, $2), updated_at = NOW()
+                         WHERE id = $1 AND (phone IS NULL OR phone = '')`,
+                        [userId, pvPhone.trim()]
+                    );
+                    log(`Phone transferred from pending_verifications: ${pvPhone}`);
+                }
+                if (pvCommunityPortal) {
+                    log(`Community portal from pending_verifications: ${pvCommunityPortal}`);
+                }
             }
         } catch (phoneErr: any) {
-            console.warn(`[MAGIC-OTP-VERIFY] Phone transfer failed (non-fatal): ${phoneErr.message}`);
+            console.warn(`[MAGIC-OTP-VERIFY] Phone/community_portal transfer failed (non-fatal): ${phoneErr.message}`);
         }
 
         // ── Step 3.7: Transfer crm_lead_id from pending_verifications ────────
@@ -250,37 +260,22 @@ export async function POST(req: Request) {
 
                                     let matchedAnySub = false;
                                     for (const subName of crmSubCommunities) {
-                                        // Generate multiple candidate names to handle community-prefixed subs
-                                        const candidates = [subName.trim()];
-                                        const lowerSub = subName.trim().toLowerCase();
-                                        const lowerComm = commName.trim().toLowerCase();
-                                        if (lowerSub.startsWith(lowerComm + "-")) {
-                                            candidates.push(subName.trim().slice(commName.trim().length + 1).trim());
-                                        } else if (subName.includes("-")) {
-                                            candidates.push(subName.split("-").slice(1).join("-").trim());
-                                        }
-                                        candidates.push(`${commName.trim()}-${subName.trim()}`);
-
-                                        for (const candidate of candidates) {
-                                            if (!candidate) continue;
-                                            const subResult = await dbClient.query(
-                                                `SELECT id FROM sub_communities
-                                                 WHERE community_id = $1 AND LOWER(name) = LOWER($2) LIMIT 1`,
-                                                [communityId, candidate]
-                                            );
-                                            if (subResult.rows.length > 0) {
-                                                const subCommunityId = subResult.rows[0].id;
-                                                const pairKey = `${communityId}-${subCommunityId}`;
-                                                if (!insertedPairs.includes(pairKey)) {
-                                                    await dbClient.query(
-                                                        `INSERT INTO user_communities (user_id, community_id, sub_community_id)
-                                                         VALUES ($1, $2, $3) ON CONFLICT DO NOTHING`,
-                                                        [userId, communityId, subCommunityId]
-                                                    );
-                                                    insertedPairs.push(pairKey);
-                                                    matchedAnySub = true;
-                                                }
-                                                break;
+                                        const subResult = await dbClient.query(
+                                            `SELECT id FROM sub_communities
+                                             WHERE community_id = $1 AND LOWER(name) = LOWER($2) LIMIT 1`,
+                                            [communityId, subName.trim()]
+                                        );
+                                        if (subResult.rows.length > 0) {
+                                            const subCommunityId = subResult.rows[0].id;
+                                            const pairKey = `${communityId}-${subCommunityId}`;
+                                            if (!insertedPairs.includes(pairKey)) {
+                                                await dbClient.query(
+                                                    `INSERT INTO user_communities (user_id, community_id, sub_community_id)
+                                                     VALUES ($1, $2, $3) ON CONFLICT DO NOTHING`,
+                                                    [userId, communityId, subCommunityId]
+                                                );
+                                                insertedPairs.push(pairKey);
+                                                matchedAnySub = true;
                                             }
                                         }
                                     }
@@ -399,14 +394,32 @@ export async function POST(req: Request) {
                 Lead_Source: "Portal Verified",
                 Industry: brevoData?.INDUSTRY || industries[0] || undefined,
                 Industry_Sub_Category: brevoData?.SUB_INDUSTRY || subIndustries[0] || undefined,
-                // Community_Portal drives the split into Community + Sub_Community
-                // in upsertZohoLead via the bidirectional parsing logic.
                 Community: bCommunities.length > 0 ? bCommunities : undefined,
                 Sub_Community: bSubCommunities.length > 0 ? bSubCommunities : undefined,
                 Invite_Source: "EnergClub",
                 City: fullUser.state || undefined,
                 Country: fullUser.country || undefined,
             };
+
+            // Use original community_portal paired values from pending_verifications
+            // instead of generateCommunityPortal() which creates wrong cartesian products.
+            // e.g. if user selected "Power Generation-Solar" and "Oil & Gas-Upstream",
+            // we send exactly those two — NOT all 4 combinations.
+            if (pvCommunityPortal) {
+                const portalPairs = pvCommunityPortal.split(";").map((s: string) => s.trim()).filter(Boolean);
+                if (portalPairs.length > 0) {
+                    zohoLeadData.Community_Portal = portalPairs;
+                    log(`Using original community_portal pairs: [${portalPairs}]`);
+                }
+            } else if (bCommunities.length > 0 && bSubCommunities.length > 0) {
+                // Fallback: only for non-Zoho-Form leads (portal onboarding)
+                // where we don't have the original portal values.
+                zohoLeadData.Community_Portal = generateCommunityPortal(
+                    bCommunities,
+                    bSubCommunities
+                );
+                log(`Generated community_portal (fallback): [${zohoLeadData.Community_Portal}]`);
+            }
 
             zohoLeadData.Owner = process.env.ZOHO_ITEN_MEDIA_OWNER_ID || "651593000000305001";
             const zohoResult = await createZohoLead(zohoLeadData);
