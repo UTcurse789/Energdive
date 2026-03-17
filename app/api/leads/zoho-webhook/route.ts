@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
         const body = await req.json();
         const email = (body.email || "").trim().toLowerCase();
         const name = (body.name || body.first_name || "").trim();
-        const phone = (body.phone || "").trim();
+        const phone = (body.phone || body.mobile || body.Mobile || body.Phone || "").trim();
         const company = (body.company || "").trim();
         const crmLeadId = (body.crm_lead_id || "").trim();
 
@@ -80,7 +80,12 @@ export async function POST(req: NextRequest) {
             const hyphenIndex = entry.indexOf("-");
             if (hyphenIndex > 0) {
                 const community = entry.slice(0, hyphenIndex).trim();
-                const subCommunity = entry.slice(hyphenIndex + 1).trim();
+                let subCommunity = entry.slice(hyphenIndex + 1).trim();
+                // Strip community-name prefix from sub-community if present
+                // e.g. "Oil & Gas-Oil & Gas-Upstream" → sub = "Upstream" not "Oil & Gas-Upstream"
+                if (community && subCommunity.toLowerCase().startsWith(community.toLowerCase() + "-")) {
+                    subCommunity = subCommunity.slice(community.length + 1).trim();
+                }
                 if (community) parsedCommunities.add(community);
                 if (subCommunity) parsedSubCommunities.add(subCommunity);
             } else if (entry.trim()) {
