@@ -250,37 +250,22 @@ export async function POST(req: Request) {
 
                                     let matchedAnySub = false;
                                     for (const subName of crmSubCommunities) {
-                                        // Generate multiple candidate names to handle community-prefixed subs
-                                        const candidates = [subName.trim()];
-                                        const lowerSub = subName.trim().toLowerCase();
-                                        const lowerComm = commName.trim().toLowerCase();
-                                        if (lowerSub.startsWith(lowerComm + "-")) {
-                                            candidates.push(subName.trim().slice(commName.trim().length + 1).trim());
-                                        } else if (subName.includes("-")) {
-                                            candidates.push(subName.split("-").slice(1).join("-").trim());
-                                        }
-                                        candidates.push(`${commName.trim()}-${subName.trim()}`);
-
-                                        for (const candidate of candidates) {
-                                            if (!candidate) continue;
-                                            const subResult = await dbClient.query(
-                                                `SELECT id FROM sub_communities
-                                                 WHERE community_id = $1 AND LOWER(name) = LOWER($2) LIMIT 1`,
-                                                [communityId, candidate]
-                                            );
-                                            if (subResult.rows.length > 0) {
-                                                const subCommunityId = subResult.rows[0].id;
-                                                const pairKey = `${communityId}-${subCommunityId}`;
-                                                if (!insertedPairs.includes(pairKey)) {
-                                                    await dbClient.query(
-                                                        `INSERT INTO user_communities (user_id, community_id, sub_community_id)
-                                                         VALUES ($1, $2, $3) ON CONFLICT DO NOTHING`,
-                                                        [userId, communityId, subCommunityId]
-                                                    );
-                                                    insertedPairs.push(pairKey);
-                                                    matchedAnySub = true;
-                                                }
-                                                break;
+                                        const subResult = await dbClient.query(
+                                            `SELECT id FROM sub_communities
+                                             WHERE community_id = $1 AND LOWER(name) = LOWER($2) LIMIT 1`,
+                                            [communityId, subName.trim()]
+                                        );
+                                        if (subResult.rows.length > 0) {
+                                            const subCommunityId = subResult.rows[0].id;
+                                            const pairKey = `${communityId}-${subCommunityId}`;
+                                            if (!insertedPairs.includes(pairKey)) {
+                                                await dbClient.query(
+                                                    `INSERT INTO user_communities (user_id, community_id, sub_community_id)
+                                                     VALUES ($1, $2, $3) ON CONFLICT DO NOTHING`,
+                                                    [userId, communityId, subCommunityId]
+                                                );
+                                                insertedPairs.push(pairKey);
+                                                matchedAnySub = true;
                                             }
                                         }
                                     }
