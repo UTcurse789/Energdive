@@ -74,6 +74,23 @@ export default function ArticleBody({ content, enableSectionSharing = false }: {
                         key={i}
                         content={[block]}
                         blocks={{
+                            quote: ({ children }: any) => (
+                                <blockquote
+                                    style={{
+                                        borderLeft: "4px solid #14b8a6",
+                                        backgroundColor: "rgba(204, 251, 241, 0.3)",
+                                        borderRadius: "0 0.5rem 0.5rem 0",
+                                        padding: "1rem 1.25rem",
+                                        margin: "1.5rem 0",
+                                        fontStyle: "italic",
+                                        color: "#374151",
+                                        fontFamily: "Georgia, serif",
+                                        lineHeight: "1.8",
+                                    }}
+                                >
+                                    {children}
+                                </blockquote>
+                            ),
                             image: ({ image }: any) => {
                                 const src = resolveImageUrl(image?.url);
                                 const alt = image?.alternativeText || image?.name || "";
