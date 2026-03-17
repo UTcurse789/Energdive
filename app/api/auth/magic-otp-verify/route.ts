@@ -93,7 +93,7 @@ export async function POST(req: Request) {
         let pvCommunityPortal: string | null = null;
         try {
             const pvData = await query(
-                `SELECT phone, community_portal FROM pending_verifications
+                `SELECT phone, community_portal, source FROM pending_verifications
                  WHERE email = $1
                  ORDER BY updated_at DESC LIMIT 1`,
                 [normalizedEmail]
@@ -113,6 +113,10 @@ export async function POST(req: Request) {
                 if (pvCommunityPortal) {
                     log(`Community portal from pending_verifications: ${pvCommunityPortal}`);
                 }
+            } else {
+                // If it's a CRM-provisioned lead, they don't have a pending_verifications row.
+                // Their community_portal (if any) might just be generated from user_communities later.
+                log(`No pending_verifications row found for ${normalizedEmail} (likely CRM-provisioned lead)`);
             }
         } catch (phoneErr: any) {
             console.warn(`[MAGIC-OTP-VERIFY] Phone/community_portal transfer failed (non-fatal): ${phoneErr.message}`);
@@ -168,7 +172,7 @@ export async function POST(req: Request) {
         // Helper: filter null/undefined/empty strings from array fields
         const toCleanArray = (arr: Array<string | null> | undefined): string[] => {
             if (!arr) return [];
-            return arr.filter((v): v is string => !!v && v.trim() !== "");
+            return arr.filter((v): v is string => !!v && v.trim() !== "" && v.trim() !== "undefined" && v.trim() !== "null");
         };
 
         let communities = toCleanArray(fullUser.communities);
@@ -339,12 +343,14 @@ export async function POST(req: Request) {
         // Uses syncVerifiedUserToBrevo which maps all fields including
         // COMMUNITY, SUB_COMMUNITY, PHONE, JOB_TITLE, MEMBERSHIP_ID.
         try {
+            const cleanString = (s: string | null | undefined) => s && s !== "undefined" && s !== "null" ? s : undefined;
+
             await syncVerifiedUserToBrevo({
                 email: normalizedEmail,
-                name: [fullUser.first_name, fullUser.last_name].filter(Boolean).join(" ") || undefined,
-                phone: userPhone || undefined,
-                company: fullUser.organization || undefined,
-                jobTitle: fullUser.job_title || undefined,
+                name: cleanString([fullUser.first_name, fullUser.last_name].filter(Boolean).join(" ")),
+                phone: cleanString(userPhone),
+                company: cleanString(fullUser.organization),
+                jobTitle: cleanString(fullUser.job_title),
                 membershipId,
                 source: "Portal",
                 communities,

@@ -15,13 +15,13 @@ export default async function syncUserToBrevo(user: any) {
                 attributes: {
                     FIRSTNAME: user.first_name || "",
                     LASTNAME: user.last_name || "",
-                    PHONE: user.phone || "",
+                    PHONE: user.phone && user.phone !== "undefined" && user.phone !== "null" ? user.phone : "",
                     ORGANISATION: user.organization || "",
                     JOB_TITLE: user.job_title || "",
-                    COMMUNITY: (user.communities || []).join(","),
-                    SUB_COMMUNITY: (user.sub_communities || []).join(","),
-                    INDUSTRY: (user.industries || []).join(","),
-                    SUB_INDUSTRY: (user.sub_industries || []).join(","),
+                    COMMUNITY: (user.communities || []).filter((c: string) => c && c !== "undefined" && c !== "null").join(","),
+                    SUB_COMMUNITY: (user.sub_communities || []).filter((c: string) => c && c !== "undefined" && c !== "null").join(","),
+                    INDUSTRY: (user.industries || []).filter((c: string) => c && c !== "undefined" && c !== "null").join(","),
+                    SUB_INDUSTRY: (user.sub_industries || []).filter((c: string) => c && c !== "undefined" && c !== "null").join(","),
                     FREQUENCY: ((user.preferred_frequency || "daily").charAt(0).toUpperCase() + (user.preferred_frequency || "daily").slice(1)),
                     PREFERENCE: (user.preferred_formats || []).join(", "),
                     MEMBERSHIP_ID: user.membership_id || "",
@@ -81,7 +81,7 @@ export async function syncVerifiedUserToBrevo(user: VerifiedUserBrevoPayload): P
     const attributes: Record<string, string> = {
         FIRSTNAME: firstName,
         LASTNAME: lastName,
-        PHONE: user.phone || "",
+        PHONE: user.phone && user.phone !== "undefined" && user.phone !== "null" ? user.phone : "",
         ORGANISATION: user.company || "",
         MEMBERSHIP_ID: user.membershipId || "",
         SOURCE: user.source || "website",
@@ -89,11 +89,23 @@ export async function syncVerifiedUserToBrevo(user: VerifiedUserBrevoPayload): P
     };
 
     // Include optional fields if provided (from Zoho lead data)
-    if (user.jobTitle) attributes.JOB_TITLE = user.jobTitle;
-    if (user.communities?.length) attributes.COMMUNITY = user.communities.join(",");
-    if (user.subCommunities?.length) attributes.SUB_COMMUNITY = user.subCommunities.join(",");
-    if (user.industries?.length) attributes.INDUSTRY = user.industries.join(",");
-    if (user.subIndustries?.length) attributes.SUB_INDUSTRY = user.subIndustries.join(",");
+    if (user.jobTitle && user.jobTitle !== "undefined") attributes.JOB_TITLE = user.jobTitle;
+    if (user.communities?.length) {
+        const valid = user.communities.filter(c => c && c !== "undefined" && c !== "null");
+        if (valid.length) attributes.COMMUNITY = valid.join(",");
+    }
+    if (user.subCommunities?.length) {
+        const valid = user.subCommunities.filter(c => c && c !== "undefined" && c !== "null");
+        if (valid.length) attributes.SUB_COMMUNITY = valid.join(",");
+    }
+    if (user.industries?.length) {
+        const valid = user.industries.filter(c => c && c !== "undefined" && c !== "null");
+        if (valid.length) attributes.INDUSTRY = valid.join(",");
+    }
+    if (user.subIndustries?.length) {
+        const valid = user.subIndustries.filter(c => c && c !== "undefined" && c !== "null");
+        if (valid.length) attributes.SUB_INDUSTRY = valid.join(",");
+    }
 
     await axios.post(
         "https://api.brevo.com/v3/contacts",
