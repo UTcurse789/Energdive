@@ -713,6 +713,39 @@ export async function getUserByInternalId(
 }
 
 /**
+ * Generate multiple candidate names for a sub-community to handle Zoho's
+ * community-prefixed naming (e.g. "Oil & Gas-Upstream" for sub "Upstream").
+ */
+function normalizeSubCommunityName(community: string, subCommunity: string): string[] {
+    const cleanCommunity = community.trim();
+    const cleanSub = subCommunity.trim();
+
+    const candidates = new Set<string>([
+        cleanSub,
+        `${cleanCommunity}-${cleanSub}`,
+    ]);
+
+    // Strip community prefix: "Oil & Gas-Upstream" → "Upstream"
+    const lowerSub = cleanSub.toLowerCase();
+    const lowerComm = cleanCommunity.toLowerCase();
+    if (lowerSub.startsWith(lowerComm + "-")) {
+        const stripped = cleanSub.slice(cleanCommunity.length + 1).trim();
+        if (stripped) {
+            candidates.add(stripped);
+            candidates.add(`${cleanCommunity}-${stripped}`);
+        }
+    } else if (cleanSub.includes("-")) {
+        const stripped = cleanSub.split("-").slice(1).join("-").trim();
+        if (stripped) {
+            candidates.add(stripped);
+            candidates.add(`${cleanCommunity}-${stripped}`);
+        }
+    }
+
+    return Array.from(candidates).filter(Boolean);
+}
+
+/**
  * After magic-link OTP verification, reads the `communities` + `sub_communities`
  * JSONB arrays stored in `pending_verifications` and writes them to `user_communities`.
  *
@@ -774,26 +807,33 @@ export async function writePendingCommunities(
 
                 let matchedAnySub = false;
                 for (const subName of subCommunityNames) {
-                    const subResult = await client.query(
-                        `SELECT id FROM sub_communities
-                         WHERE community_id = $1
-                           AND LOWER(name) = LOWER($2)
-                         LIMIT 1`,
-                        [communityId, subName.trim()]
-                    );
-                    if (subResult.rows.length > 0) {
-                        const subCommunityId = subResult.rows[0].id;
-                        const pairKey = `${communityId}-${subCommunityId}`;
-                        if (!insertedPairs.includes(pairKey)) {
-                            await client.query(
-                                `INSERT INTO user_communities (user_id, community_id, sub_community_id)
-                                 VALUES ($1, $2, $3)
-                                 ON CONFLICT DO NOTHING`,
-                                [userId, communityId, subCommunityId]
-                            );
-                            insertedPairs.push(pairKey);
-                            console.log(`[writePendingCommunities] Inserted: user=${userId} community="${commName}" sub="${subName}"`);
-                            matchedAnySub = true;
+                    // Generate multiple candidate names to handle community-prefixed subs
+                    const candidates = normalizeSubCommunityName(commName, subName);
+                    let matched = false;
+                    for (const candidate of candidates) {
+                        const subResult = await client.query(
+                            `SELECT id FROM sub_communities
+                             WHERE community_id = $1
+                               AND LOWER(name) = LOWER($2)
+                             LIMIT 1`,
+                            [communityId, candidate]
+                        );
+                        if (subResult.rows.length > 0) {
+                            const subCommunityId = subResult.rows[0].id;
+                            const pairKey = `${communityId}-${subCommunityId}`;
+                            if (!insertedPairs.includes(pairKey)) {
+                                await client.query(
+                                    `INSERT INTO user_communities (user_id, community_id, sub_community_id)
+                                     VALUES ($1, $2, $3)
+                                     ON CONFLICT DO NOTHING`,
+                                    [userId, communityId, subCommunityId]
+                                );
+                                insertedPairs.push(pairKey);
+                                console.log(`[writePendingCommunities] Inserted: user=${userId} community="${commName}" sub="${candidate}" (from "${subName}")`);
+                                matchedAnySub = true;
+                            }
+                            matched = true;
+                            break;
                         }
                     }
                 }
