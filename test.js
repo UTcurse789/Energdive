@@ -1,0 +1,1 @@
+console.log('API response:', await fetch('https://cms.energdive.com/api/contents?filters[type_of_content][name][$eq]=Opinion&populate[FeaturedImage]=true&populate[content_tag]=true&populate[author][populate]=avatar&sort=Date:desc').then(r=>r.json()).then(j=>j.data.map(d=>d.content_tag?.title || null)))
