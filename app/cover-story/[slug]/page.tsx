@@ -171,7 +171,6 @@ export default async function CoverStoryDetailPage({
                                 )}
                                 <div>
                                     <Link href={`/author/${slugify(article.author.name)}`} className="font-bold text-gray-900 hover:text-teal-600 transition-colors">{article.author.name}</Link>
-                                    <DateChip value={article.date} className="mt-0.5" />
                                 </div>
                             </div>
                         )}

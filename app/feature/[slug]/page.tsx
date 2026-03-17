@@ -151,7 +151,7 @@ export default async function FeatureDetailPage({ params }: { params: Promise<{ 
                         {article.author && (
                             <div className="flex items-center gap-4 mb-10 pb-8 border-b border-gray-100">
                                 {article.author.avatar ? (<Image src={article.author.avatar} width={52} height={52} alt={article.author.name || ""} className="rounded-full ring-2 ring-teal-100" />) : (<div className="w-[52px] h-[52px] rounded-full bg-teal-100 flex items-center justify-center text-teal-700 font-bold text-lg">{article.author.name?.charAt(0) || "A"}</div>)}
-                                <div><Link href={`/author/${slugify(article.author.name)}`} className="font-bold text-gray-900 hover:text-teal-600 transition-colors">{article.author.name}</Link><DateChip value={article.date} className="mt-0.5" /></div>
+                                <div><Link href={`/author/${slugify(article.author.name)}`} className="font-bold text-gray-900 hover:text-teal-600 transition-colors">{article.author.name}</Link></div>
                             </div>
                         )}
                         <div className="relative aspect-video mb-12 rounded-xl overflow-hidden shadow-lg shadow-black/10 group"><Image src={article.image} alt={article.title || ""} fill priority className="object-cover transition-transform duration-700 group-hover:scale-[1.02]" /><div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/20 to-transparent" /></div>

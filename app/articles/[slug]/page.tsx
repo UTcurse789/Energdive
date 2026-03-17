@@ -227,8 +227,6 @@ export default async function ArticlePage(props: any) {
                                     >
                                         {article.author.name}
                                     </Link>
-
-                                    <DateChip value={article.date} className="mt-0" />
                                 </div>
                             </div>
                         )}
