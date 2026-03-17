@@ -231,8 +231,6 @@ export default async function Home() {
         <div className="w-full max-w-[1800px] mx-auto px-6 lg:px-16 relative z-10">
           <SectionHeading
             title="Featured"
-            linkText="Explore All"
-            linkHref="/news"
           />
           <div className="-mt-6 flex flex-col lg:flex-row gap-8 items-start">
             <div className="flex-1 min-w-0">

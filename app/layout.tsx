@@ -126,26 +126,19 @@ export const metadata: Metadata = {
 
   openGraph: {
     type: "website",
-    url: "https://www.energdive.com",
-    siteName: "ENERGDIVE - Insights and Market Intelligence",
-    title: "ENERGDIVE | India’s Strategic Energy Intelligence Platform",
-    description:
-      "Explore insights on energy transition, oil & gas, power, sustainability and emerging technologies through ENERGDIVE — India's leading energy intelligence platform and magazine.",
+    siteName: "ENERGDIVE",
     images: [
       {
-        url: "public/og-image.jpg",
+        url: "/og-image.jpg",
         width: 1200,
         height: 630,
-        alt: "ENERGDIVE - Insights and Market Intelligence | ENERGDIVE Magazine",
+        alt: "ENERGDIVE - India's Energy Intelligence Platform",
       },
     ],
   },
 
   twitter: {
     card: "summary_large_image",
-    title: "ENERGDIVE | India’s Strategic Energy Intelligence Platform",
-    description:
-      "ENERGDIVE brings strategic insights on energy transition, policy, innovation, oil & gas, power, sustainability, and emerging energy technologies in India.",
     site: "@energdive",
     creator: "@energdive",
   },
