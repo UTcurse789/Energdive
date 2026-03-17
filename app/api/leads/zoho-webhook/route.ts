@@ -38,9 +38,18 @@ export async function POST(req: NextRequest) {
 
         // ── 2. Parse payload ─────────────────────────────────────────────
         const body = await req.json();
+        log(`Raw body keys: ${Object.keys(body).join(", ")}`);
+        log(`Raw phone fields: phone=${body.phone}, Phone=${body.Phone}, Mobile=${body.Mobile}, mobile=${body.mobile}, mobile_number=${body.mobile_number}, Mobile_Number=${body.Mobile_Number}`);
+
         const email = (body.email || "").trim().toLowerCase();
         const name = (body.name || body.first_name || "").trim();
-        const phone = (body.phone || "").trim();
+        // Check multiple phone field name variants — Zoho Form's "Mobile Number" maps
+        // to CRM field "Mobile", and the Deluge script sends it as "phone".
+        // Be resilient to any naming.
+        const phone = (
+            body.phone || body.Phone || body.Mobile || body.mobile ||
+            body.mobile_number || body.Mobile_Number || ""
+        ).toString().trim();
         const company = (body.company || "").trim();
         const crmLeadId = (body.crm_lead_id || "").trim();
 
@@ -92,7 +101,13 @@ export async function POST(req: NextRequest) {
         const communities = Array.from(parsedCommunities);
         const subCommunities = Array.from(parsedSubCommunities);
 
-        log(`Webhook received: ${email} | communities=[${communities}] | subs=[${subCommunities}] | phone=${phone}`);
+        // Preserve the raw community_portal values (e.g. "Oil & Gas-Upstream;Power Gen-Solar")
+        // so they can be sent to CRM later without regenerating wrong combinations.
+        const rawCommunityPortalValues = parseDelimitedString(
+            body.community_portal || body.Community_Portal || body["Community-Portal"]
+        );
+
+        log(`Webhook received: ${email} | communities=[${communities}] | subs=[${subCommunities}] | phone=${phone} | rawPortal=[${rawCommunityPortalValues}]`);
         await logEvent("WEBHOOK_RECEIVED", email, `Zoho Form webhook for ${name}`, { source: "zoho_form", communities, subCommunities });
 
         // ── 3. Check for existing verified user ──────────────────────────
@@ -127,17 +142,22 @@ export async function POST(req: NextRequest) {
         const industry = (body.industry || "").trim() || null;
         const city = (body.city || "").trim() || null;
         const country = (body.country || "").trim() || null;
+        // Store raw community_portal so magic-otp-verify can send paired values to CRM
+        const communityPortalStr = rawCommunityPortalValues.length > 0
+            ? rawCommunityPortalValues.join(";")
+            : null;
 
-        if (jobTitle || industry || city || country) {
+        if (jobTitle || industry || city || country || communityPortalStr) {
             await query(
                 `UPDATE pending_verifications
                  SET job_title = COALESCE($2, job_title),
                      industry  = COALESCE($3, industry),
                      city      = COALESCE($4, city),
                      country   = COALESCE($5, country),
+                     community_portal = COALESCE($6, community_portal),
                      updated_at = NOW()
                  WHERE id = $1`,
-                [pendingId, jobTitle, industry, city, country]
+                [pendingId, jobTitle, industry, city, country, communityPortalStr]
             );
         }
 
