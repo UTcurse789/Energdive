@@ -4,7 +4,7 @@ import { clerkClient } from "@clerk/nextjs/server";
 import { getUserByInternalId, writePendingCommunities } from "@/lib/queries/users";
 import { syncVerifiedUserToBrevo } from "@/lib/brevoSync";
 import { getFullUserProfile } from "@/lib/getFullUserProfile";
-import { upsertZohoLead } from "@/lib/zoho-leads";
+import { upsertZohoLead, createZohoLead, generateCommunityPortal } from "@/lib/zoho-leads";
 import { query } from "@/lib/db";
 import { logEvent } from "@/lib/system-logger";
 
@@ -106,6 +106,26 @@ export async function POST(req: Request) {
             }
         } catch (phoneErr: any) {
             console.warn(`[MAGIC-OTP-VERIFY] Phone transfer failed (non-fatal): ${phoneErr.message}`);
+        }
+
+        // ── Step 3.7: Transfer crm_lead_id from pending_verifications ────────
+        try {
+            const pvCrm = await query(
+                `SELECT crm_lead_id FROM pending_verifications
+                 WHERE email = $1 AND crm_lead_id IS NOT NULL AND crm_lead_id <> ''
+                 ORDER BY updated_at DESC LIMIT 1`,
+                [normalizedEmail]
+            );
+            if (pvCrm.rows.length > 0 && pvCrm.rows[0].crm_lead_id) {
+                await query(
+                    `UPDATE users SET crm_lead_id = COALESCE(crm_lead_id, $2), updated_at = NOW()
+                     WHERE id = $1 AND (crm_lead_id IS NULL OR crm_lead_id = '')`,
+                    [userId, pvCrm.rows[0].crm_lead_id]
+                );
+                log(`CRM Lead ID transferred from pending_verifications: ${pvCrm.rows[0].crm_lead_id}`);
+            }
+        } catch (crmErr: any) {
+            console.warn(`[MAGIC-OTP-VERIFY] crm_lead_id transfer failed (non-fatal): ${crmErr.message}`);
         }
 
         await logEvent(
@@ -353,7 +373,7 @@ export async function POST(req: Request) {
             const bFirstName = brevoData?.FIRSTNAME || nameParts[0] || "";
             const bLastName = brevoData?.LASTNAME || nameParts[1] || nameParts[0] || "";
 
-            const zohoLeadData = {
+            const zohoLeadData: any = {
                 First_Name: bFirstName,
                 Last_Name: bLastName,
                 Email: normalizedEmail,
@@ -373,9 +393,10 @@ export async function POST(req: Request) {
                 Country: fullUser.country || undefined,
             };
 
-            const zohoResult = await upsertZohoLead(zohoLeadData);
+            zohoLeadData.Owner = process.env.ZOHO_ITEN_MEDIA_OWNER_ID || "651593000000305001";
+            const zohoResult = await createZohoLead(zohoLeadData);
 
-            // Store the CRM lead ID back on the user row
+            // Store the NEW CRM lead ID back on the user row
             await query(
                 `UPDATE users
                  SET crm_lead_id = COALESCE(crm_lead_id, $2),
