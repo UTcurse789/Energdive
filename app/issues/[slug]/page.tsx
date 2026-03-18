@@ -19,7 +19,7 @@ const SECTION_ORDER = [
     { label: "Curtain Raiser", matchField: "content_tag", matchValue: "Curtain Raiser", fallbackTypeMatch: "curtain raiser", altTypeMatch: "curtain raiser" },
     { label: "Event Intelligence", matchField: "content_tag", matchValue: "Event Intelligence", fallbackTypeMatch: "event intelligence", altTypeMatch: "event intelligence" },
     { label: "Dashboard", matchField: "content_tag", matchValue: "Dashboard", fallbackTypeMatch: "dashboard", altTypeMatch: "dashboard" },
-    { label: "The Preview Brief", matchField: "content_tag", matchValue: "The Preview Brief", fallbackTypeMatch: "policy brief", altTypeMatch: "policy brief" },
+    { label: "The Preview Brief", matchField: "content_tag", matchValue: "The Preview Brief", fallbackTypeMatch: "The Preview Brief", altTypeMatch: "The Preview Brief" },
 ];
 
 function classifyContent(c: any): string | null {
