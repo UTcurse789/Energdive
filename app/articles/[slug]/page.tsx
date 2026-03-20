@@ -12,6 +12,7 @@ import { getLatestIssue } from "@/lib/api/getLatestIssue";
 import { ArrowRight, Calendar, ChevronRight, Printer } from "lucide-react";
 import { formatContentDate } from "@/lib/date";
 import ArticleBody from "@/components/ArticleBody";
+import { fetchDataBlocks } from "@/lib/parse-content-blocks";
 
 const STRAPI = "https://cms.energdive.com";
 
@@ -127,10 +128,14 @@ export default async function ArticlePage(props: any) {
         ? tagsData.map((t: any) => normalizeTag(t)).filter(Boolean)
         : [];
 
+    // Fetch chart/table data for any shortcodes in the content
+    const contentBlocks = articleData.Content || [];
+    const dataBlocks = await fetchDataBlocks(contentBlocks);
+
     const article = {
         title: articleData.Title,
         excerpt: articleData.Excerpt?.[0]?.children?.[0]?.text || "",
-        content: articleData.Content || [],
+        content: contentBlocks,
         image: articleData.FeaturedImage?.url
             ? strapiImageUrl(articleData.FeaturedImage.url)
             : "/magazine-default.jpg",
@@ -262,7 +267,7 @@ export default async function ArticlePage(props: any) {
         prose-li:marker:text-teal-500
         first:prose-p:first-letter:text-6xl first:prose-p:first-letter:font-serif first:prose-p:first-letter:font-bold first:prose-p:first-letter:float-left first:prose-p:first-letter:mr-3 first:prose-p:first-letter:mt-1 first:prose-p:first-letter:text-teal-700"
                             >
-                                <ArticleBody content={article.content} />
+                                <ArticleBody content={article.content} dataBlocks={dataBlocks} />
                             </div>
                         </article>
 
