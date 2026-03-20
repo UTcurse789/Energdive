@@ -34,6 +34,8 @@ const DataTable = dynamic(
 
 const STRAPI_BASE_URL = process.env.NEXT_PUBLIC_STRAPI_URL || "https://cms.energdive.com";
 
+const SHORTCODE_INLINE_RE = /\[(chart|table):([a-zA-Z0-9_-]+)\]/g;
+
 function isImageBlock(block: any): boolean {
     return block?.type === "image";
 }
@@ -45,22 +47,93 @@ function isNonEmptyParagraph(block: any): boolean {
     );
 }
 
-/** Ensure image URL is absolute and HTTPS — prepend Strapi base URL for relative paths */
+/** Ensure image URL is absolute and HTTPS */
 function resolveImageUrl(url: string | undefined | null): string {
     if (!url) return "";
     let resolved = url;
-
-    // Rewrite old Strapi IP-based URLs to the proper domain
     resolved = resolved.replace(
         /^https?:\/\/206\.189\.132\.187(?::1337)?/,
         "https://cms.energdive.com"
     );
-
     if (!resolved.startsWith("http://") && !resolved.startsWith("https://")) {
         resolved = `${STRAPI_BASE_URL}${resolved.startsWith("/") ? "" : "/"}${resolved}`;
     }
-    // Force HTTPS to prevent Mixed Content errors
     return resolved.replace("http://", "https://");
+}
+
+/** Render a shortcode component (chart or table) */
+function renderShortcode(
+    type: "chart" | "table",
+    name: string,
+    dataBlocks: DataBlocksMap,
+    key: string | number
+) {
+    const mapKey = `${type}:${name}`;
+    const config = dataBlocks[mapKey];
+
+    if (config) {
+        if (type === "chart") {
+            return (
+                <div key={key} className="my-10 not-prose">
+                    <ChartWrapper config={config as ChartConfig} />
+                </div>
+            );
+        }
+        if (type === "table") {
+            return (
+                <div key={key} className="my-10 not-prose">
+                    <DataTable config={config as TableConfig} />
+                </div>
+            );
+        }
+    }
+
+    return (
+        <div key={key} className="my-10 not-prose data-block-card data-block-empty">
+            <p>Data not available: {name}</p>
+        </div>
+    );
+}
+
+/**
+ * Check if a text string contains any shortcodes.
+ * Used for inline detection within paragraph text.
+ */
+function textContainsShortcode(text: string): boolean {
+    return SHORTCODE_INLINE_RE.test(text);
+}
+
+/**
+ * Split a text string into segments: plain text and shortcode references.
+ * e.g. "Hello [chart:foo] world" → ["Hello ", {type:"chart", name:"foo"}, " world"]
+ */
+function splitTextByShortcodes(
+    text: string
+): Array<string | { type: "chart" | "table"; name: string }> {
+    const segments: Array<string | { type: "chart" | "table"; name: string }> = [];
+    let lastIndex = 0;
+
+    SHORTCODE_INLINE_RE.lastIndex = 0;
+    let match: RegExpExecArray | null;
+
+    while ((match = SHORTCODE_INLINE_RE.exec(text)) !== null) {
+        // Text before this shortcode
+        if (match.index > lastIndex) {
+            segments.push(text.slice(lastIndex, match.index));
+        }
+        segments.push({
+            type: match[1] as "chart" | "table",
+            name: match[2],
+        });
+        lastIndex = match.index + match[0].length;
+    }
+
+    // Remaining text after last shortcode
+    if (lastIndex < text.length) {
+        segments.push(text.slice(lastIndex));
+    }
+
+    return segments;
 }
 
 interface ArticleBodyProps {
@@ -76,39 +149,58 @@ export default function ArticleBody({
 }: ArticleBodyProps) {
     if (!Array.isArray(content)) return null;
 
+    const hasDataBlocks = dataBlocks && Object.keys(dataBlocks).length > 0;
+
     return (
         <div>
             {content.map((block: any, i: number) => {
                 // ── Check for shortcode blocks ──
-                if (dataBlocks && Object.keys(dataBlocks).length > 0) {
+                if (hasDataBlocks) {
+                    // 1. Standalone shortcode block (entire block is one shortcode)
                     const shortcode = getShortcodeFromBlock(block);
                     if (shortcode) {
-                        const key = `${shortcode.type}:${shortcode.name}`;
-                        const config = dataBlocks[key];
-
-                        if (config) {
-                            if (shortcode.type === "chart") {
-                                return (
-                                    <div key={i} className="my-10 not-prose">
-                                        <ChartWrapper config={config as ChartConfig} />
-                                    </div>
-                                );
-                            }
-                            if (shortcode.type === "table") {
-                                return (
-                                    <div key={i} className="my-10 not-prose">
-                                        <DataTable config={config as TableConfig} />
-                                    </div>
-                                );
-                            }
-                        }
-
-                        // Shortcode found but data missing → show graceful fallback
-                        return (
-                            <div key={i} className="my-10 not-prose data-block-card data-block-empty">
-                                <p>Data not available: {shortcode.name}</p>
-                            </div>
+                        return renderShortcode(
+                            shortcode.type,
+                            shortcode.name,
+                            dataBlocks,
+                            i
                         );
+                    }
+
+                    // 2. Inline shortcodes within a paragraph/text block
+                    if (
+                        block?.type === "paragraph" &&
+                        Array.isArray(block.children)
+                    ) {
+                        const fullText = block.children
+                            .map((c: any) => c?.text ?? "")
+                            .join("");
+
+                        // Reset regex state
+                        SHORTCODE_INLINE_RE.lastIndex = 0;
+
+                        if (textContainsShortcode(fullText)) {
+                            const segments = splitTextByShortcodes(fullText);
+                            return (
+                                <div key={i}>
+                                    {segments.map((seg, j) => {
+                                        if (typeof seg === "string") {
+                                            // Render plain text as a paragraph
+                                            const trimmed = seg.trim();
+                                            if (!trimmed) return null;
+                                            return <p key={j}>{seg}</p>;
+                                        }
+                                        // Render the shortcode component
+                                        return renderShortcode(
+                                            seg.type,
+                                            seg.name,
+                                            dataBlocks,
+                                            `${i}-sc-${j}`
+                                        );
+                                    })}
+                                </div>
+                            );
+                        }
                     }
                 }
 
