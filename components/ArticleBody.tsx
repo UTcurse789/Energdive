@@ -2,6 +2,35 @@
 
 import { BlocksRenderer } from "@strapi/blocks-react-renderer";
 import { ShareButton } from "./ui/share-button";
+import dynamic from "next/dynamic";
+import { getShortcodeFromBlock } from "@/lib/parse-content-blocks";
+import type { ChartConfig, TableConfig, DataBlocksMap } from "@/types/data-blocks";
+
+const ChartWrapper = dynamic(
+  () => import("@/components/data-blocks/chart-wrapper"),
+  {
+    loading: () => (
+      <div className="data-block-card animate-pulse" style={{ height: 400 }}>
+        <div className="h-6 w-48 bg-gray-200 rounded mb-4" />
+        <div className="h-64 bg-gray-100 rounded" />
+      </div>
+    ),
+    ssr: false,
+  }
+);
+
+const DataTable = dynamic(
+  () => import("@/components/data-blocks/data-table"),
+  {
+    loading: () => (
+      <div className="data-block-card animate-pulse" style={{ height: 300 }}>
+        <div className="h-6 w-48 bg-gray-200 rounded mb-4" />
+        <div className="h-48 bg-gray-100 rounded" />
+      </div>
+    ),
+    ssr: false,
+  }
+);
 
 const STRAPI_BASE_URL = process.env.NEXT_PUBLIC_STRAPI_URL || "https://cms.energdive.com";
 
@@ -34,17 +63,60 @@ function resolveImageUrl(url: string | undefined | null): string {
     return resolved.replace("http://", "https://");
 }
 
-export default function ArticleBody({ content, enableSectionSharing = false }: { content: any; enableSectionSharing?: boolean }) {
+interface ArticleBodyProps {
+    content: any;
+    enableSectionSharing?: boolean;
+    dataBlocks?: DataBlocksMap;
+}
+
+export default function ArticleBody({
+    content,
+    enableSectionSharing = false,
+    dataBlocks,
+}: ArticleBodyProps) {
     if (!Array.isArray(content)) return null;
 
     return (
         <div>
             {content.map((block: any, i: number) => {
+                // ── Check for shortcode blocks ──
+                if (dataBlocks && Object.keys(dataBlocks).length > 0) {
+                    const shortcode = getShortcodeFromBlock(block);
+                    if (shortcode) {
+                        const key = `${shortcode.type}:${shortcode.name}`;
+                        const config = dataBlocks[key];
+
+                        if (config) {
+                            if (shortcode.type === "chart") {
+                                return (
+                                    <div key={i} className="my-10 not-prose">
+                                        <ChartWrapper config={config as ChartConfig} />
+                                    </div>
+                                );
+                            }
+                            if (shortcode.type === "table") {
+                                return (
+                                    <div key={i} className="my-10 not-prose">
+                                        <DataTable config={config as TableConfig} />
+                                    </div>
+                                );
+                            }
+                        }
+
+                        // Shortcode found but data missing → show graceful fallback
+                        return (
+                            <div key={i} className="my-10 not-prose data-block-card data-block-empty">
+                                <p>Data not available: {shortcode.name}</p>
+                            </div>
+                        );
+                    }
+                }
+
+                // ── Image caption detection ──
                 const isCaption =
                     isNonEmptyParagraph(block) && i > 0 && isImageBlock(content[i - 1]);
 
                 if (isCaption) {
-                    // Extract plain text from the paragraph children
                     const text = block.children
                         .map((child: any) => child?.text ?? "")
                         .join("");
@@ -68,7 +140,7 @@ export default function ArticleBody({ content, enableSectionSharing = false }: {
                     );
                 }
 
-                // Render all other blocks normally
+                // ── Render all other blocks normally ──
                 return (
                     <BlocksRenderer
                         key={i}

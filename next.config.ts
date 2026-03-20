@@ -80,8 +80,6 @@ const nextConfig: NextConfig = {
       {
         protocol: 'https',
         hostname: 'cdn.energdive.com',
-        port: '',
-        pathname: '/**',
       },
       {
         protocol: 'http',
