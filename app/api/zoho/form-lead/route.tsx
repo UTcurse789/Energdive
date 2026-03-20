@@ -118,7 +118,7 @@ export async function POST(req: NextRequest) {
     await query(
         `UPDATE pending_verifications
          SET drip_started_at = NOW(),
-             drip_next_send_at = NOW() + INTERVAL '5 minutes',
+             drip_next_send_at = NOW() + INTERVAL '1 hour',
              drip_step = 0
          WHERE id = $1 AND (drip_started_at IS NULL)`,
         [pendingId]
