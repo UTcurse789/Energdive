@@ -114,6 +114,17 @@ export async function POST(req: NextRequest) {
     const pendingId = result.rows[0]?.id;
     log(`Pending verification stored: id=${pendingId}`);
 
+    // ── 4b. Initialize abandoned cart drip sequence ───────────────────
+    await query(
+        `UPDATE pending_verifications
+         SET drip_started_at = NOW(),
+             drip_next_send_at = NOW() + INTERVAL '5 minutes',
+             drip_step = 0
+         WHERE id = $1 AND (drip_started_at IS NULL)`,
+        [pendingId]
+    );
+    log(`Drip sequence initialized for pending_id=${pendingId}`);
+
     // ── 5. Send magic link via Brevo ─────────────────────────────────
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://www.energdive.com";
     const magicLink = `${appUrl}/verify-account?token=${encodeURIComponent(magicToken)}`;

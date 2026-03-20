@@ -161,6 +161,17 @@ export async function POST(req: NextRequest) {
             );
         }
 
+        // ── 5. Initialize abandoned cart drip sequence ────────────────────
+        await (await import("@/lib/db")).query(
+            `UPDATE pending_verifications
+             SET drip_started_at = NOW(),
+                 drip_next_send_at = NOW() + INTERVAL '5 minutes',
+                 drip_step = 0
+             WHERE id = $1 AND (drip_started_at IS NULL)`,
+            [pendingId]
+        );
+        log(`Drip sequence initialized for pending_id=${pendingId}`);
+
         // ── 6. Send Magic Link email ─────────────────────────────────────
         const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://www.energdive.com";
         const magicLink = `${appUrl}/verify-account?token=${encodeURIComponent(token)}`;
