@@ -242,9 +242,29 @@ async function trySyncAfterVerification(clerkId: string) {
             const fullUser = await getFullUserProfile(clerkId);
             if (!fullUser) return;
 
+            // Read UTM data from users table
+            const { query } = await import("@/lib/db");
+            let utmData: Record<string, string | null> = {};
+            try {
+                const utmResult = await query(
+                    `SELECT utm_source, utm_medium, utm_campaign, utm_term, utm_content FROM users WHERE clerk_id = $1 LIMIT 1`,
+                    [clerkId]
+                );
+                if (utmResult.rows.length > 0) {
+                    utmData = utmResult.rows[0];
+                }
+            } catch (_) { /* non-fatal */ }
+
             // Sync to Brevo
             try {
-                await syncUserToBrevo(fullUser);
+                await syncUserToBrevo({
+                    ...fullUser,
+                    utm_source: utmData.utm_source,
+                    utm_medium: utmData.utm_medium,
+                    utm_campaign: utmData.utm_campaign,
+                    utm_term: utmData.utm_term,
+                    utm_content: utmData.utm_content,
+                });
                 console.log(`[VERIFY_SECOND] ✅ Synced to Brevo: ${status.email}`);
             } catch (brevoErr: any) {
                 console.warn(`[VERIFY_SECOND] Brevo sync failed (non-fatal): ${brevoErr.message}`);
@@ -282,6 +302,11 @@ async function trySyncAfterVerification(clerkId: string) {
                     Invite_Source: "EnergClub",
                     City: fullUser.state || undefined,
                     Country: fullUser.country || undefined,
+                    UTM_Source: utmData.utm_source || undefined,
+                    UTM_Medium: utmData.utm_medium || undefined,
+                    UTM_Campaign: utmData.utm_campaign || undefined,
+                    UTM_Term: utmData.utm_term || undefined,
+                    UTM_Content: utmData.utm_content || undefined,
                 };
 
                 await upsertZohoLead(leadData);

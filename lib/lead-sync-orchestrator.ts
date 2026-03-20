@@ -51,6 +51,14 @@ interface SyncBodyData {
     country?: string;
 }
 
+interface UtmData {
+    utm_source?: string | null;
+    utm_medium?: string | null;
+    utm_campaign?: string | null;
+    utm_term?: string | null;
+    utm_content?: string | null;
+}
+
 async function updateUserSyncState(
     clerkId: string,
     fields: Record<string, unknown>
@@ -110,7 +118,8 @@ export async function syncEnrichedLead(
     fullUser: SyncUserProfile,
     syncEmail: string,
     resolvedPhone: string | null,
-    bodyData: SyncBodyData
+    bodyData: SyncBodyData,
+    utmData?: UtmData
 ): Promise<SyncResult> {
     const clerkId = fullUser.clerk_id;
     const log = (msg: string) => console.log(`[SYNC_ORCHESTRATOR] ${msg}`);
@@ -122,7 +131,15 @@ export async function syncEnrichedLead(
 
     try {
         log(`Syncing to Brevo: ${syncEmail}`);
-        await syncUserToBrevo({ ...fullUser, email: syncEmail });
+        await syncUserToBrevo({
+            ...fullUser,
+            email: syncEmail,
+            utm_source: utmData?.utm_source || null,
+            utm_medium: utmData?.utm_medium || null,
+            utm_campaign: utmData?.utm_campaign || null,
+            utm_term: utmData?.utm_term || null,
+            utm_content: utmData?.utm_content || null,
+        });
 
         await updateUserSyncState(clerkId, {
             sync_status: "brevo_synced",
@@ -199,6 +216,11 @@ export async function syncEnrichedLead(
             Invite_Source: "EnergClub",
             City: fullUser.state || bodyData.state || undefined,
             Country: fullUser.country || bodyData.country || undefined,
+            UTM_Source: utmData?.utm_source || undefined,
+            UTM_Medium: utmData?.utm_medium || undefined,
+            UTM_Campaign: utmData?.utm_campaign || undefined,
+            UTM_Term: utmData?.utm_term || undefined,
+            UTM_Content: utmData?.utm_content || undefined,
         };
 
         log(`Upserting CRM lead for: ${syncEmail}`);

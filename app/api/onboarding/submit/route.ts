@@ -77,6 +77,32 @@ export async function POST(req: Request) {
             preferredFormats: body.preferredFormats,
         });
 
+        // ── Save UTM parameters to users table ─────────────────────
+        const utmSource = body.utm_source || null;
+        const utmMedium = body.utm_medium || null;
+        const utmCampaign = body.utm_campaign || null;
+        const utmTerm = body.utm_term || null;
+        const utmContent = body.utm_content || null;
+
+        if (utmSource || utmMedium || utmCampaign || utmTerm || utmContent) {
+            try {
+                await query(
+                    `UPDATE users SET
+                        utm_source = COALESCE(utm_source, $2),
+                        utm_medium = COALESCE(utm_medium, $3),
+                        utm_campaign = COALESCE(utm_campaign, $4),
+                        utm_term = COALESCE(utm_term, $5),
+                        utm_content = COALESCE(utm_content, $6),
+                        updated_at = NOW()
+                     WHERE clerk_id = $1`,
+                    [userId, utmSource, utmMedium, utmCampaign, utmTerm, utmContent]
+                );
+                console.log(`[ONBOARDING] UTM saved: src=${utmSource}, med=${utmMedium}, camp=${utmCampaign}`);
+            } catch (utmErr: any) {
+                console.warn(`[ONBOARDING] UTM save failed (non-fatal): ${utmErr.message}`);
+            }
+        }
+
         await (await clerkClient()).users.updateUser(userId, {
             firstName: body.firstName,
             lastName: body.lastName,
@@ -155,7 +181,8 @@ export async function POST(req: Request) {
                     { ...fullUser, email: syncEmail, clerk_id: userId },
                     syncEmail,
                     resolvedPhone,
-                    body
+                    body,
+                    { utm_source: utmSource, utm_medium: utmMedium, utm_campaign: utmCampaign, utm_term: utmTerm, utm_content: utmContent }
                 );
                 console.log("✅ Sync orchestrator result:", syncResult);
             } catch (syncErr: any) {
