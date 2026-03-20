@@ -88,10 +88,18 @@ function VerifyAccessContent() {
 
         try {
             // Step 1: Verify OTP and get Clerk ticket
+            const utmPayload = {
+                utm_source: localStorage.getItem("utm_source"),
+                utm_medium: localStorage.getItem("utm_medium"),
+                utm_campaign: localStorage.getItem("utm_campaign"),
+                utm_term: localStorage.getItem("utm_term"),
+                utm_content: localStorage.getItem("utm_content")
+            };
+
             const res = await fetch("/api/auth/magic-otp-verify", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ email, otp, userId: Number(userId) }),
+                body: JSON.stringify({ email, otp, userId: Number(userId), ...utmPayload }),
             });
             const data = await res.json();
 

@@ -31,7 +31,16 @@ export async function POST(req: Request) {
     const log = (msg: string) => console.log(`[MAGIC-OTP-VERIFY:${requestId}] ${msg}`);
 
     try {
-        const { email, otp, userId } = await req.json();
+        const { 
+            email, 
+            otp, 
+            userId,
+            utm_source,
+            utm_medium,
+            utm_campaign,
+            utm_term,
+            utm_content
+        } = await req.json();
 
         if (!email || !otp || !userId) {
             return NextResponse.json(
@@ -71,10 +80,15 @@ export async function POST(req: Request) {
             `UPDATE users
              SET verification_status = 'verified',
                  email_verified      = true,
-                 updated_at          = NOW()
+                 updated_at          = NOW(),
+                 utm_source          = COALESCE(utm_source, $2),
+                 utm_medium          = COALESCE(utm_medium, $3),
+                 utm_campaign        = COALESCE(utm_campaign, $4),
+                 utm_term            = COALESCE(utm_term, $5),
+                 utm_content         = COALESCE(utm_content, $6)
              WHERE id = $1
                AND (verification_status IS NULL OR verification_status <> 'verified')`,
-            [userId]
+            [userId, utm_source, utm_medium, utm_campaign, utm_term, utm_content]
         );
 
         log(`User marked as verified in DB: id=${userId}`);
@@ -140,6 +154,46 @@ export async function POST(req: Request) {
             }
         } catch (crmErr: any) {
             console.warn(`[MAGIC-OTP-VERIFY] crm_lead_id transfer failed (non-fatal): ${crmErr.message}`);
+        }
+
+        // ── Step 3.8: Transfer UTMs from pending_verifications (Zoho Form Webhook)
+        let finalUtmSource = utm_source;
+        let finalUtmMedium = utm_medium;
+        let finalUtmCampaign = utm_campaign;
+        let finalUtmTerm = utm_term;
+        let finalUtmContent = utm_content;
+
+        try {
+            const pvUtms = await query(
+                `SELECT utm_source, utm_medium, utm_campaign, utm_term, utm_content 
+                 FROM pending_verifications
+                 WHERE email = $1
+                 ORDER BY updated_at DESC LIMIT 1`,
+                [normalizedEmail]
+            );
+            if (pvUtms.rows.length > 0) {
+                const row = pvUtms.rows[0];
+                finalUtmSource = row.utm_source || utm_source;
+                finalUtmMedium = row.utm_medium || utm_medium;
+                finalUtmCampaign = row.utm_campaign || utm_campaign;
+                finalUtmTerm = row.utm_term || utm_term;
+                finalUtmContent = row.utm_content || utm_content;
+
+                // Update users row with webhook UTMs if present
+                await query(
+                    `UPDATE users SET
+                        utm_source = COALESCE(utm_source, $2),
+                        utm_medium = COALESCE(utm_medium, $3),
+                        utm_campaign = COALESCE(utm_campaign, $4),
+                        utm_term = COALESCE(utm_term, $5),
+                        utm_content = COALESCE(utm_content, $6),
+                        updated_at = NOW()
+                     WHERE id = $1`,
+                    [userId, finalUtmSource, finalUtmMedium, finalUtmCampaign, finalUtmTerm, finalUtmContent]
+                );
+            }
+        } catch (utmErr: any) {
+            console.warn(`[MAGIC-OTP-VERIFY] UTM transfer failed (non-fatal): ${utmErr.message}`);
         }
 
         await logEvent(
@@ -357,6 +411,11 @@ export async function POST(req: Request) {
                 subCommunities,
                 industries,
                 subIndustries,
+                utm_source: finalUtmSource,
+                utm_medium: finalUtmMedium,
+                utm_campaign: finalUtmCampaign,
+                utm_term: finalUtmTerm,
+                utm_content: finalUtmContent,
             });
 
             log(`✅ Synced to Brevo: ${normalizedEmail}`);
@@ -405,6 +464,11 @@ export async function POST(req: Request) {
                 Invite_Source: "EnergClub",
                 City: fullUser.state || undefined,
                 Country: fullUser.country || undefined,
+                UTM_Source: finalUtmSource || undefined,
+                UTM_Medium: finalUtmMedium || undefined,
+                UTM_Campaign: finalUtmCampaign || undefined,
+                UTM_Term: finalUtmTerm || undefined,
+                UTM_Content: finalUtmContent || undefined,
             };
 
             // Use original community_portal paired values from pending_verifications
