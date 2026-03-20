@@ -4,14 +4,13 @@
  * For CRM leads in `pending_verifications` table who signed up via Zoho
  * but never completed portal login.
  *
- * 7-step drip sequence:
- *   Step 1: 5 min    — Quick nudge
- *   Step 2: 1 hr     — Friendly reminder
- *   Step 3: 4 hrs    — "Just 30 sec left"
- *   Step 4: Next day 10:30 AM IST — Benefits explain
- *   Step 5: Day 3    11:00 AM IST — Social proof
- *   Step 6: Day 6    11:00 AM IST — Urgency
- *   Step 7: Day 15   4:00 PM IST  — Final call
+ * 6-step drip sequence:
+ *   Step 1: 1 hr     — Friendly reminder
+ *   Step 2: 4 hrs    — "Just 30 sec left"
+ *   Step 3: Next day 10:30 AM IST — Benefits explain
+ *   Step 4: Day 3    11:00 AM IST — Social proof
+ *   Step 5: Day 6    11:00 AM IST — Urgency
+ *   Step 6: Day 15   4:00 PM IST  — Final call
  */
 
 const BREVO_API_KEY = process.env.BREVO_API_KEY || "";
@@ -24,7 +23,7 @@ export interface DripEmailParams {
     name: string;
     magicLink: string;
     declineLink: string;
-    step: number; // 1-7
+    step: number; // 1-6
 }
 
 function getLogoUrl(): string {
@@ -79,23 +78,8 @@ function declineSection(link: string): string {
     </div>`;
 }
 
-// ── Step 1: Quick Nudge (5 min) ──────────────────────────────────────────────
+// ── Step 1: Friendly Reminder (1 hr) ─────────────────────────────────────────
 function step1(name: string, magicLink: string, declineLink: string): string {
-    return `
-      <h2 style="margin:0 0 16px;color:#111827;font-size:24px;font-weight:800;">Hi ${name},</h2>
-      <p style="margin:0 0 24px;color:#4B5563;font-size:16px;line-height:1.7;">
-        You just signed up for <strong>EnergClub</strong> — great choice! Your portal is ready and waiting. Just one quick click to get in.
-      </p>
-      <div style="background:#F9FAFB;border:1px solid #E5E7EB;border-radius:12px;padding:32px;text-align:center;margin-bottom:24px;">
-        <p style="margin:0 0 16px;color:#6B7280;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:1px;">You're Almost In</p>
-        ${ctaButton("Complete Setup Now &rarr;", magicLink)}
-        <p style="margin:16px 0 0;color:#9CA3AF;font-size:12px;">Takes less than 30 seconds — no password needed</p>
-      </div>
-      ${declineSection(declineLink)}`;
-}
-
-// ── Step 2: Friendly Reminder (1 hr) ─────────────────────────────────────────
-function step2(name: string, magicLink: string, declineLink: string): string {
     return `
       <h2 style="margin:0 0 16px;color:#111827;font-size:24px;font-weight:800;">Hi ${name},</h2>
       <p style="margin:0 0 24px;color:#4B5563;font-size:16px;line-height:1.7;">
@@ -112,8 +96,8 @@ function step2(name: string, magicLink: string, declineLink: string): string {
       ${declineSection(declineLink)}`;
 }
 
-// ── Step 3: "Just 30 sec left" (4 hrs) ───────────────────────────────────────
-function step3(name: string, magicLink: string, declineLink: string): string {
+// ── Step 2: "Just 30 sec left" (4 hrs) ───────────────────────────────────────
+function step2(name: string, magicLink: string, declineLink: string): string {
     return `
       <h2 style="margin:0 0 16px;color:#111827;font-size:24px;font-weight:800;">Just 30 seconds, ${name} ⏱️</h2>
       <p style="margin:0 0 24px;color:#4B5563;font-size:16px;line-height:1.7;">
@@ -130,8 +114,8 @@ function step3(name: string, magicLink: string, declineLink: string): string {
       ${declineSection(declineLink)}`;
 }
 
-// ── Step 4: Benefits Explain (Next day 10:30 AM) ─────────────────────────────
-function step4(name: string, magicLink: string, declineLink: string): string {
+// ── Step 3: Benefits Explain (Next day 10:30 AM) ─────────────────────────────
+function step3(name: string, magicLink: string, declineLink: string): string {
     return `
       <h2 style="margin:0 0 16px;color:#111827;font-size:24px;font-weight:800;">Here's what you're missing, ${name}</h2>
       <p style="margin:0 0 24px;color:#4B5563;font-size:16px;line-height:1.7;">
@@ -171,8 +155,8 @@ function step4(name: string, magicLink: string, declineLink: string): string {
       ${declineSection(declineLink)}`;
 }
 
-// ── Step 5: Social Proof (Day 3, 11 AM) ──────────────────────────────────────
-function step5(name: string, magicLink: string, declineLink: string): string {
+// ── Step 4: Social Proof (Day 3, 11 AM) ──────────────────────────────────────
+function step4(name: string, magicLink: string, declineLink: string): string {
     return `
       <h2 style="margin:0 0 16px;color:#111827;font-size:24px;font-weight:800;">${name}, you're in good company</h2>
       <p style="margin:0 0 24px;color:#4B5563;font-size:16px;line-height:1.7;">
@@ -208,8 +192,8 @@ function step5(name: string, magicLink: string, declineLink: string): string {
       ${declineSection(declineLink)}`;
 }
 
-// ── Step 6: Urgency (Day 6, 11 AM) ──────────────────────────────────────────
-function step6(name: string, magicLink: string, declineLink: string): string {
+// ── Step 5: Urgency (Day 6, 11 AM) ──────────────────────────────────────────
+function step5(name: string, magicLink: string, declineLink: string): string {
     return `
       <h2 style="margin:0 0 16px;color:#111827;font-size:24px;font-weight:800;">⚠️ ${name}, your access link is expiring soon</h2>
       <p style="margin:0 0 24px;color:#4B5563;font-size:16px;line-height:1.7;">
@@ -230,8 +214,8 @@ function step6(name: string, magicLink: string, declineLink: string): string {
       ${declineSection(declineLink)}`;
 }
 
-// ── Step 7: Final Call (Day 15, 4 PM) ────────────────────────────────────────
-function step7(name: string, magicLink: string, declineLink: string): string {
+// ── Step 6: Final Call (Day 15, 4 PM) ────────────────────────────────────────
+function step6(name: string, magicLink: string, declineLink: string): string {
     return `
       <h2 style="margin:0 0 16px;color:#111827;font-size:24px;font-weight:800;">Final call, ${name} 🔔</h2>
       <p style="margin:0 0 24px;color:#4B5563;font-size:16px;line-height:1.7;">
@@ -254,13 +238,12 @@ function step7(name: string, magicLink: string, declineLink: string): string {
 // ── Public API ───────────────────────────────────────────────────────────────
 
 const SUBJECTS: Record<number, string> = {
-    1: "Your EnergClub portal is ready — complete setup now 🔓",
-    2: "Your EnergClub access is still waiting 🔓",
-    3: "30 seconds to activate your membership ⏱️",
-    4: "Here's what you're missing at EnergClub",
-    5: "500+ professionals already joined EnergClub",
-    6: "⚠️ Your EnergClub access link is expiring soon",
-    7: "🔔 Final call — Your EnergClub membership",
+    1: "Your EnergClub access is ready 🔓",
+    2: "30 seconds to activate your membership ⏱️",
+    3: "Here's what you're missing at EnergClub",
+    4: "500+ professionals already joined EnergClub",
+    5: "⚠️ Your EnergClub access link is expiring soon",
+    6: "🔔 Final call — Your EnergClub membership",
 };
 
 const TEMPLATES: Record<number, (name: string, magicLink: string, declineLink: string) => string> = {
@@ -270,7 +253,6 @@ const TEMPLATES: Record<number, (name: string, magicLink: string, declineLink: s
     4: step4,
     5: step5,
     6: step6,
-    7: step7,
 };
 
 export async function sendDripEmail(params: DripEmailParams): Promise<void> {
@@ -280,7 +262,7 @@ export async function sendDripEmail(params: DripEmailParams): Promise<void> {
     }
 
     const step = params.step;
-    if (step < 1 || step > 7) {
+    if (step < 1 || step > 6) {
         console.error(`[DRIP] Invalid step: ${step}`);
         return;
     }
@@ -320,16 +302,15 @@ export async function sendDripEmail(params: DripEmailParams): Promise<void> {
  * Calculate the next send time for a given drip step.
  * All times are in IST (Asia/Kolkata).
  *
- * Step 1: drip_started_at + 5 min
- * Step 2: drip_started_at + 1 hr
- * Step 3: drip_started_at + 4 hrs
- * Step 4: Next day at 10:30 AM IST
- * Step 5: Day 3 at 11:00 AM IST
- * Step 6: Day 6 at 11:00 AM IST
- * Step 7: Day 15 at 4:00 PM IST
+ * Step 1: drip_started_at + 1 hr
+ * Step 2: drip_started_at + 4 hrs
+ * Step 3: Next day at 10:30 AM IST
+ * Step 4: Day 3 at 11:00 AM IST
+ * Step 5: Day 6 at 11:00 AM IST
+ * Step 6: Day 15 at 4:00 PM IST
  */
 export function calculateNextDripSend(dripStartedAt: Date, currentStep: number): Date | null {
-    if (currentStep >= 7) return null; // drip complete
+    if (currentStep >= 6) return null; // drip complete
 
     const nextStep = currentStep + 1;
     const startMs = dripStartedAt.getTime();
@@ -353,18 +334,16 @@ export function calculateNextDripSend(dripStartedAt: Date, currentStep: number):
 
     switch (nextStep) {
         case 1:
-            return new Date(startMs + 5 * 60 * 1000);       // +5 min
+            return new Date(startMs + 1 * 60 * 60 * 1000); // +1 hr
         case 2:
-            return new Date(startMs + 1 * 60 * 60 * 1000);  // +1 hr
+            return new Date(startMs + 4 * 60 * 60 * 1000); // +4 hrs
         case 3:
-            return new Date(startMs + 4 * 60 * 60 * 1000);  // +4 hrs
-        case 4:
             return istDate(1, 10, 30); // Next day 10:30 AM IST
-        case 5:
+        case 4:
             return istDate(3, 11, 0);  // Day 3 11:00 AM IST
-        case 6:
+        case 5:
             return istDate(6, 11, 0);  // Day 6 11:00 AM IST
-        case 7:
+        case 6:
             return istDate(15, 16, 0); // Day 15 4:00 PM IST
         default:
             return null;
