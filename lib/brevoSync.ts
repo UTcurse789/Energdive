@@ -59,6 +59,11 @@ export interface VerifiedUserBrevoPayload {
     subCommunities?: string[];
     industries?: string[];
     subIndustries?: string[];
+    utm_source?: string | null;
+    utm_medium?: string | null;
+    utm_campaign?: string | null;
+    utm_term?: string | null;
+    utm_content?: string | null;
 }
 
 /**
@@ -106,6 +111,12 @@ export async function syncVerifiedUserToBrevo(user: VerifiedUserBrevoPayload): P
         const valid = user.subIndustries.filter(c => c && c !== "undefined" && c !== "null");
         if (valid.length) attributes.SUB_INDUSTRY = valid.join(",");
     }
+
+    if (user.utm_source) attributes.UTM_SOURCE = user.utm_source;
+    if (user.utm_medium) attributes.UTM_MEDIUM = user.utm_medium;
+    if (user.utm_campaign) attributes.UTM_CAMPAIGN = user.utm_campaign;
+    if (user.utm_term) attributes.UTM_TERM = user.utm_term;
+    if (user.utm_content) attributes.UTM_CONTENT = user.utm_content;
 
     await axios.post(
         "https://api.brevo.com/v3/contacts",

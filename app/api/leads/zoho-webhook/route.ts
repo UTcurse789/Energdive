@@ -142,12 +142,19 @@ export async function POST(req: NextRequest) {
         const industry = (body.industry || "").trim() || null;
         const city = (body.city || "").trim() || null;
         const country = (body.country || "").trim() || null;
+        // UTMs sent from Zoho
+        const utmSource = (body.utm_source || "").trim() || null;
+        const utmMedium = (body.utm_medium || "").trim() || null;
+        const utmCampaign = (body.utm_campaign || "").trim() || null;
+        const utmTerm = (body.utm_term || "").trim() || null;
+        const utmContent = (body.utm_content || "").trim() || null;
+        
         // Store raw community_portal so magic-otp-verify can send paired values to CRM
         const communityPortalStr = rawCommunityPortalValues.length > 0
             ? rawCommunityPortalValues.join(";")
             : null;
 
-        if (jobTitle || industry || city || country || communityPortalStr) {
+        if (jobTitle || industry || city || country || communityPortalStr || utmSource || utmMedium || utmCampaign) {
             await query(
                 `UPDATE pending_verifications
                  SET job_title = COALESCE($2, job_title),
@@ -155,9 +162,14 @@ export async function POST(req: NextRequest) {
                      city      = COALESCE($4, city),
                      country   = COALESCE($5, country),
                      community_portal = COALESCE($6, community_portal),
+                     utm_source = COALESCE($7, utm_source),
+                     utm_medium = COALESCE($8, utm_medium),
+                     utm_campaign = COALESCE($9, utm_campaign),
+                     utm_term = COALESCE($10, utm_term),
+                     utm_content = COALESCE($11, utm_content),
                      updated_at = NOW()
                  WHERE id = $1`,
-                [pendingId, jobTitle, industry, city, country, communityPortalStr]
+                [pendingId, jobTitle, industry, city, country, communityPortalStr, utmSource, utmMedium, utmCampaign, utmTerm, utmContent]
             );
         }
 

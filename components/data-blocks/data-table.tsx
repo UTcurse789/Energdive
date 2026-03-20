@@ -170,8 +170,8 @@ export default function DataTable({ config }: { config: TableConfig }) {
                           asc: <ChevronUp className="w-3.5 h-3.5" />,
                           desc: <ChevronDown className="w-3.5 h-3.5" />,
                         }[header.column.getIsSorted() as string] ?? (
-                          <ChevronsUpDown className="w-3.5 h-3.5" style={{ opacity: 0.4 }} />
-                        )}
+                            <ChevronsUpDown className="w-3.5 h-3.5" style={{ opacity: 0.4 }} />
+                          )}
                       </span>
                     </div>
                   </th>
@@ -265,7 +265,7 @@ export default function DataTable({ config }: { config: TableConfig }) {
           fontWeight: 500,
         }}
       >
-        <span>Source: Energdive</span>
+
         <span>{config.table_data.length} rows</span>
       </div>
     </div>

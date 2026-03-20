@@ -51,6 +51,8 @@ import { Inter, Merriweather } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
 import SiteLayout from "@/components/layout/site-layout";
+import { UtmTracker } from "@/components/UtmTracker";
+import { Suspense } from "react";
 
 const sans = Inter({
   subsets: ["latin"],
@@ -172,6 +174,9 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
               style={{ display: "none", visibility: "hidden" }}
             />
           </noscript>
+          <Suspense fallback={null}>
+            <UtmTracker />
+          </Suspense>
           <SiteLayout>
             {children}
           </SiteLayout>

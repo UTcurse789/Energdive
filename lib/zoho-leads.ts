@@ -20,6 +20,11 @@ export interface ZohoLeadData {
     City?: string;
     Country?: string;
     Owner?: string;
+    UTM_Source?: string;
+    UTM_Medium?: string;
+    UTM_Campaign?: string;
+    UTM_Term?: string;
+    UTM_Content?: string;
 }
 
 /**
