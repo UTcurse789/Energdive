@@ -26,7 +26,12 @@ export default async function syncUserToBrevo(user: any) {
                     PREFERENCE: (user.preferred_formats || []).join(", "),
                     MEMBERSHIP_ID: user.membership_id || "",
                     VERIFICATION_STATUS: user.verification_status || "",
-                    SOURCE: "Portal"
+                    SOURCE: "Portal",
+                    ...(user.utm_source ? { UTM_SOURCE: user.utm_source } : {}),
+                    ...(user.utm_medium ? { UTM_MEDIUM: user.utm_medium } : {}),
+                    ...(user.utm_campaign ? { UTM_CAMPAIGN: user.utm_campaign } : {}),
+                    ...(user.utm_term ? { UTM_TERM: user.utm_term } : {}),
+                    ...(user.utm_content ? { UTM_CONTENT: user.utm_content } : {}),
                 },
                 listIds: [7],
                 updateEnabled: true
