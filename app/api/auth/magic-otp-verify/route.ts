@@ -464,11 +464,11 @@ export async function POST(req: Request) {
                 Invite_Source: "EnergClub",
                 City: fullUser.state || undefined,
                 Country: fullUser.country || undefined,
-                UTM_Source: finalUtmSource || undefined,
-                UTM_Medium: finalUtmMedium || undefined,
-                UTM_Campaign: finalUtmCampaign || undefined,
-                UTM_Term: finalUtmTerm || undefined,
-                UTM_Content: finalUtmContent || undefined,
+                Source: finalUtmSource || undefined,
+                Medium: finalUtmMedium || undefined,
+                Campaign: finalUtmCampaign || undefined,
+                Term: finalUtmTerm || undefined,
+                Content: finalUtmContent || undefined,
             };
 
             // Use original community_portal paired values from pending_verifications
