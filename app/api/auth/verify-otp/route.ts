@@ -393,6 +393,28 @@ export async function POST(req: NextRequest) {
 
         const fullUser = await loadVerifiedUserSnapshot(userId);
 
+        // Fetch UTMs from pending_verifications or users table
+        let pvUtmSource: string | undefined;
+        let pvUtmMedium: string | undefined;
+        let pvUtmCampaign: string | undefined;
+        let pvUtmTerm: string | undefined;
+        let pvUtmContent: string | undefined;
+        try {
+            const pvUtms = await query(
+                `SELECT utm_source, utm_medium, utm_campaign, utm_term, utm_content
+                 FROM pending_verifications WHERE LOWER(email) = LOWER($1)
+                 ORDER BY id DESC LIMIT 1`,
+                [normalizedEmail]
+            );
+            if (pvUtms.rows.length > 0) {
+                pvUtmSource = pvUtms.rows[0].utm_source || undefined;
+                pvUtmMedium = pvUtms.rows[0].utm_medium || undefined;
+                pvUtmCampaign = pvUtms.rows[0].utm_campaign || undefined;
+                pvUtmTerm = pvUtms.rows[0].utm_term || undefined;
+                pvUtmContent = pvUtms.rows[0].utm_content || undefined;
+            }
+        } catch (e) { /* non-fatal */ }
+
         try {
             await syncVerifiedUserToBrevo({
                 email: normalizedEmail,
@@ -404,6 +426,11 @@ export async function POST(req: NextRequest) {
                 source: "Portal",
                 communities: fullUser?.communities || [],
                 subCommunities: fullUser?.sub_communities || [],
+                utm_source: pvUtmSource,
+                utm_medium: pvUtmMedium,
+                utm_campaign: pvUtmCampaign,
+                utm_term: pvUtmTerm,
+                utm_content: pvUtmContent,
             });
         } catch (brevoError: unknown) {
             const message = brevoError instanceof Error ? brevoError.message : String(brevoError);
@@ -438,6 +465,11 @@ export async function POST(req: NextRequest) {
                 membershipId: fullUser?.membership_id || membershipId,
                 communities: bCommunities,
                 subCommunities: bSubCommunities,
+                utm_source: brevoData?.UTM_SOURCE || pvUtmSource,
+                utm_medium: brevoData?.UTM_MEDIUM || pvUtmMedium,
+                utm_campaign: brevoData?.UTM_CAMPAIGN || pvUtmCampaign,
+                utm_term: brevoData?.UTM_TERM || pvUtmTerm,
+                utm_content: brevoData?.UTM_CONTENT || pvUtmContent,
             });
 
             if (duplicateLeadId) {
