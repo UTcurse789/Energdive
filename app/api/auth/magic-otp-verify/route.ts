@@ -456,7 +456,7 @@ export async function POST(req: Request) {
                 Mobile: brevoData?.PHONE || userPhone || undefined,
                 Company: brevoData?.ORGANISATION || fullUser.organization || undefined,
                 Designation: brevoData?.JOB_TITLE || fullUser.job_title || undefined,
-                Lead_Source: "Portal Verified",
+                Lead_Source: "ENDV Portal CRM Lead",
                 Industry: brevoData?.INDUSTRY || industries[0] || undefined,
                 Industry_Sub_Category: brevoData?.SUB_INDUSTRY || subIndustries[0] || undefined,
                 Community: bCommunities.length > 0 ? bCommunities : undefined,

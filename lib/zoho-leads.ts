@@ -417,6 +417,11 @@ export interface DuplicateLeadPayload {
     membershipId?: string;
     communities?: string[];
     subCommunities?: string[];
+    utm_source?: string;
+    utm_medium?: string;
+    utm_campaign?: string;
+    utm_term?: string;
+    utm_content?: string;
 }
 
 /**
@@ -448,16 +453,23 @@ export async function createZohoDuplicateLead(
             Last_Name: lastName,
             Email: payload.email,
             Phone: payload.phone || null,
+            Mobile: payload.phone || null,
             Company: payload.company || null,
             Designation: payload.jobTitle || null,
-            Lead_Source: "Portal",
+            Lead_Source: "ENDV Portal CRM Lead",
             Industry: payload.industry || null,
             Industry_Sub_Category: payload.subIndustry || null,
             Community: payload.communities?.length ? payload.communities : null,
             Sub_Community: payload.subCommunities?.length ? payload.subCommunities : null,
             Community_Portal: communityPortalValues.length > 0 ? communityPortalValues : null,
+            Invite_Source: "EnergClub",
             Membership_ID: payload.membershipId || null,
             Frequency: payload.frequency || "Daily",
+            UTM_Source: payload.utm_source || null,
+            UTM_Medium: payload.utm_medium || null,
+            UTM_Campaign: payload.utm_campaign || null,
+            UTM_Term: payload.utm_term || null,
+            UTM_Content: payload.utm_content || null,
             Description: [
                 payload.membershipId ? `Membership ID: ${payload.membershipId}` : "",
                 payload.originalLeadId ? `Original Lead ID: ${payload.originalLeadId}` : "",

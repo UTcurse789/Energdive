@@ -11,7 +11,7 @@
 
 import { query } from "./db";
 import syncUserToBrevo from "./brevoSync";
-import { upsertZohoLead, createZohoDuplicateLead, ZohoLeadData } from "./zoho-leads";
+import { createZohoLead, createZohoDuplicateLead, ZohoLeadData } from "./zoho-leads";
 import { logEvent } from "./system-logger";
 
 export interface SyncResult {
@@ -177,6 +177,11 @@ export async function syncEnrichedLead(
                 membershipId: fullUser.membership_id || undefined,
                 communities: nonEmptyArray(fullUser.communities),
                 subCommunities: nonEmptyArray(fullUser.sub_communities),
+                utm_source: utmData?.utm_source || undefined,
+                utm_medium: utmData?.utm_medium || undefined,
+                utm_campaign: utmData?.utm_campaign || undefined,
+                utm_term: utmData?.utm_term || undefined,
+                utm_content: utmData?.utm_content || undefined,
             });
 
             if (!duplicateLeadId) {
@@ -201,6 +206,8 @@ export async function syncEnrichedLead(
             };
         }
 
+        const ITEN_MEDIA_OWNER = process.env.ZOHO_ITEN_MEDIA_OWNER_ID || "";
+
         const leadData: ZohoLeadData = {
             First_Name: fullUser.first_name || bodyData.firstName || "",
             Last_Name: fullUser.last_name || bodyData.lastName || "",
@@ -209,11 +216,12 @@ export async function syncEnrichedLead(
             Mobile: phone,
             Company: fullUser.organization || bodyData.organization || undefined,
             Designation: fullUser.job_title || bodyData.jobTitle || undefined,
-            Lead_Source: "Website Registration",
+            Lead_Source: "ENDV Portal Registration",
             Industry: fullUser.industries?.find(Boolean) || undefined,
             Industry_Sub_Category: fullUser.sub_industries?.find(Boolean) || undefined,
             Community_Portal: nonEmptyArray(fullUser.sub_communities),
             Invite_Source: "EnergClub",
+            Owner: ITEN_MEDIA_OWNER || undefined,
             City: fullUser.state || bodyData.state || undefined,
             Country: fullUser.country || bodyData.country || undefined,
             UTM_Source: utmData?.utm_source || undefined,
@@ -223,8 +231,8 @@ export async function syncEnrichedLead(
             UTM_Content: utmData?.utm_content || undefined,
         };
 
-        log(`Upserting CRM lead for: ${syncEmail}`);
-        const zohoResult = await upsertZohoLead(leadData);
+        log(`Creating NEW CRM lead for: ${syncEmail}`);
+        const zohoResult = await createZohoLead(leadData);
 
         await updateUserSyncState(clerkId, {
             crm_lead_id: zohoResult.id,
