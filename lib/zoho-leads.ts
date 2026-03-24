@@ -3,9 +3,9 @@ import { getZohoAccessToken } from "./zoho";
 const ZOHO_API_URL = `${process.env.ZOHO_API_DOMAIN || "https://www.zohoapis.in"}/crm/v2`;
 
 export interface ZohoLeadData {
-    Salutation?: string;
     First_Name: string;
     Last_Name: string;
+    Salutation?: string;
     Email: string;
     Phone?: string;
     Mobile?: string;
@@ -170,9 +170,9 @@ export async function upsertZohoLead(
         };
 
         const zohoRecord: Record<string, any> = {
-            Salutation: enrichedData.Salutation || null,
             First_Name: enrichedData.First_Name,
             Last_Name: enrichedData.Last_Name,
+            Salutation: enrichedData.Salutation || null,
             Email: enrichedData.Email,
             Phone: enrichedData.Phone || null,
             Mobile: enrichedData.Mobile || enrichedData.Phone || null,
@@ -326,9 +326,9 @@ export async function createZohoLead(
         };
 
         const zohoRecord: Record<string, any> = {
-            Salutation: enrichedData.Salutation || null,
             First_Name: enrichedData.First_Name,
             Last_Name: enrichedData.Last_Name,
+            Salutation: enrichedData.Salutation || null,
             Email: enrichedData.Email,
             Phone: enrichedData.Phone || null,
             Mobile: enrichedData.Mobile || enrichedData.Phone || null,
@@ -419,8 +419,8 @@ export async function createZohoLead(
 
 export interface DuplicateLeadPayload {
     email: string;
-    salutation?: string;
     name?: string;
+    salutation?: string;
     phone?: string;
     company?: string;
     jobTitle?: string;
@@ -464,9 +464,9 @@ export async function createZohoDuplicateLead(
             : [];
 
         const zohoRecord: Record<string, any> = {
-            Salutation: payload.salutation || null,
             First_Name: firstName,
             Last_Name: lastName,
+            Salutation: payload.salutation || null,
             Email: payload.email,
             Phone: payload.phone || null,
             Mobile: payload.phone || null,

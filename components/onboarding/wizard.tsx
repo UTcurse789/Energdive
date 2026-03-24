@@ -33,6 +33,7 @@ export default function OnboardingWizard() {
     // Centralized State
     const [formData, setFormData] = useState({
         // Step 1
+        salutation: "",
         firstName: user?.firstName || "",
         lastName: user?.lastName || "",
         phone: "",
