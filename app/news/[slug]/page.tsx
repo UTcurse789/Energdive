@@ -13,6 +13,7 @@ import { getLatestIssue } from "@/lib/api/getLatestIssue";
 import { ArrowRight, Calendar, ChevronRight, Printer } from "lucide-react";
 import { formatContentDate } from "@/lib/date";
 import ArticleBody from "@/components/ArticleBody";
+import { fetchDataBlocks } from "@/lib/parse-content-blocks";
 
 const STRAPI_BASE_URL = "https://cms.energdive.com";
 
@@ -156,10 +157,13 @@ export default async function NewsDetailPage({
 
     const latestIssue = await getLatestIssue();
 
+    const articleContent = attrs.Content || [];
+    const dataBlocks = await fetchDataBlocks(articleContent);
+
     const article = {
         title: attrs.Title,
         excerpt: attrs.Excerpt || [],
-        content: attrs.Content || [],
+        content: articleContent,
         image: attrs.FeaturedImage?.url
             ? strapiImageUrl(attrs.FeaturedImage.url)
             : "/magazine-default.jpg",
@@ -296,7 +300,7 @@ prose-li:marker:text-teal-500
 
 first:prose-p:first-letter:text-6xl first:prose-p:first-letter:font-serif first:prose-p:first-letter:font-bold first:prose-p:first-letter:float-left first:prose-p:first-letter:mr-3 first:prose-p:first-letter:mt-1 first:prose-p:first-letter:text-teal-700"
                             >
-                                <ArticleBody content={article.content} enableSectionSharing={true} />
+                                <ArticleBody content={article.content} enableSectionSharing={true} dataBlocks={dataBlocks} />
                             </div>
                         </article>
 

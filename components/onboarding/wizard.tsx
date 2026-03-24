@@ -66,9 +66,20 @@ export default function OnboardingWizard() {
 
     const handleFinalSubmit = async (finalStepData: Record<string, unknown>) => {
         setIsSubmitting(true);
+
+        // Retrieve UTM parameters stored by <UtmTracker />
+        const utmData = {
+            utm_source: localStorage.getItem("utm_source"),
+            utm_medium: localStorage.getItem("utm_medium"),
+            utm_campaign: localStorage.getItem("utm_campaign"),
+            utm_term: localStorage.getItem("utm_term"),
+            utm_content: localStorage.getItem("utm_content"),
+        };
+
         const completeData = {
             ...formData,
             ...finalStepData,
+            ...utmData,
             email: user?.emailAddresses?.[0]?.emailAddress || "",
         };
 

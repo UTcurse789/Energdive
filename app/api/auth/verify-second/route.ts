@@ -5,7 +5,7 @@ import { verifyOtp } from "@/lib/otp-store";
 import { updateVerificationStatus, getVerificationStatus } from "@/lib/queries/users";
 import syncUserToBrevo from "@/lib/brevoSync";
 import { getFullUserProfile } from "@/lib/getFullUserProfile";
-import { upsertZohoLead } from "@/lib/zoho-leads";
+import { upsertZohoLead, generateCommunityPortal } from "@/lib/zoho-leads";
 
 const clerk = createClerkClient({
     secretKey: process.env.CLERK_SECRET_KEY!,
@@ -242,9 +242,29 @@ async function trySyncAfterVerification(clerkId: string) {
             const fullUser = await getFullUserProfile(clerkId);
             if (!fullUser) return;
 
+            // Read UTM data from users table
+            const { query } = await import("@/lib/db");
+            let utmData: Record<string, string | null> = {};
+            try {
+                const utmResult = await query(
+                    `SELECT utm_source, utm_medium, utm_campaign, utm_term, utm_content FROM users WHERE clerk_id = $1 LIMIT 1`,
+                    [clerkId]
+                );
+                if (utmResult.rows.length > 0) {
+                    utmData = utmResult.rows[0];
+                }
+            } catch (_) { /* non-fatal */ }
+
             // Sync to Brevo
             try {
-                await syncUserToBrevo(fullUser);
+                await syncUserToBrevo({
+                    ...fullUser,
+                    utm_source: utmData.utm_source,
+                    utm_medium: utmData.utm_medium,
+                    utm_campaign: utmData.utm_campaign,
+                    utm_term: utmData.utm_term,
+                    utm_content: utmData.utm_content,
+                });
                 console.log(`[VERIFY_SECOND] ✅ Synced to Brevo: ${status.email}`);
             } catch (brevoErr: any) {
                 console.warn(`[VERIFY_SECOND] Brevo sync failed (non-fatal): ${brevoErr.message}`);
@@ -269,10 +289,24 @@ async function trySyncAfterVerification(clerkId: string) {
                     Lead_Source: "Website Registration",
                     Industry: fullUser.industries?.find((i: string | null) => !!i) || undefined,
                     Industry_Sub_Category: fullUser.sub_industries?.find((i: string | null) => !!i) || undefined,
-                    Community_Portal: toArray(fullUser.sub_communities),
+                    Community: toArray(fullUser.communities),
+                    Sub_Community: toArray(fullUser.sub_communities),
+                    Community_Portal: (() => {
+                        const comms = toArray(fullUser.communities);
+                        const subs = toArray(fullUser.sub_communities);
+                        if (comms && subs) {
+                            return generateCommunityPortal(comms, subs);
+                        }
+                        return undefined;
+                    })(),
                     Invite_Source: "EnergClub",
                     City: fullUser.state || undefined,
                     Country: fullUser.country || undefined,
+                    UTM_Source: utmData.utm_source || undefined,
+                    UTM_Medium: utmData.utm_medium || undefined,
+                    UTM_Campaign: utmData.utm_campaign || undefined,
+                    UTM_Term: utmData.utm_term || undefined,
+                    UTM_Content: utmData.utm_content || undefined,
                 };
 
                 await upsertZohoLead(leadData);

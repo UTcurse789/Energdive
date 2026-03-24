@@ -378,7 +378,7 @@ export async function sendMagicLinkEmail(
               <a href="${magicLink}" style="display:inline-block;background:#09B697;color:#ffffff;font-size:16px;font-weight:700;text-decoration:none;padding:16px 40px;border-radius:10px;">
                 Verify My Membership &rarr;
               </a>
-              <p style="margin:16px 0 0;color:#9CA3AF;font-size:12px;">This link expires in 24 hours.</p>
+              <p style="margin:16px 0 0;color:#9CA3AF;font-size:12px;">This link expires in 1 Week.</p>
             </div>
             <p style="margin:0 0 12px;color:#6B7280;font-size:14px;line-height:1.6;">
               After clicking, you'll receive a one-time code to complete your verification.

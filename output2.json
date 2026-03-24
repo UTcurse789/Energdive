@@ -1,0 +1,170 @@
+﻿[dotenv@17.3.1] injecting env (25) from .env -- tip: ≡ƒöÉ prevent committing .env to code: https://dotenvx.com/precommit
+Token obtained successfully.
+
+==============================================
+RECENT LEAD RAW ZOHO FIELDS:
+==============================================
+
+--- KEY FIELDS ---
+id:               651593000016959149
+Email:            project@elenor.in
+First_Name:       Sashikanta
+Last_Name:        Malik
+Phone:            null  <-- NOTE: Is this empty?
+Mobile:           +919777284960  <-- NOTE: Is this empty?
+Lead_Source:      On-Spot (Zoho Form)
+Community_Portal: []
+Community:        []
+Sub_Community:    []
+Industry:         Engineering
+Sub_Industry:     Designing & Services
+
+--- ALL FIELDS DUMP ---
+{
+  "Account": null,
+  "Owner": {
+    "name": "Siddhartha Mishra",
+    "id": "651593000001004001",
+    "email": "siddhartha@itenmedia.in"
+  },
+  "GCLID": null,
+  "$field_states": null,
+  "Community_Portal": [],
+  "$state": "save",
+  "$process_flow": true,
+  "Currency": "INR",
+  "Ad_Network": null,
+  "Street": null,
+  "ENERGDIVE_Lead": null,
+  "id": "651593000016959149",
+  "$approval": {
+    "delegate": false,
+    "takeover": false,
+    "approve": false,
+    "reject": false,
+    "resubmit": false
+  },
+  "Cost_per_Click": 0,
+  "First_Visited_URL": null,
+  "Created_Time": "2025-09-02T16:28:12+05:30",
+  "Query_Type": "Visit",
+  "Annual_Turnover_in_Cr": null,
+  "Ad_Click_Date": null,
+  "Portal_Membership_ID": null,
+  "Country": "India",
+  "Last_Visited_Time": null,
+  "Show": "PGID",
+  "Created_By": {
+    "name": "CRM ITEN Media",
+    "id": "651593000000305001",
+    "email": "crm@itenmedia.in"
+  },
+  "Description": null,
+  "Ad": null,
+  "Number_Of_Chats": null,
+  "Search_Partner_Network": null,
+  "$review_process": {
+    "approve": false,
+    "reject": false,
+    "resubmit": false
+  },
+  "Website": null,
+  "Average_Time_Spent_Minutes": null,
+  "Salutation": "Mr.",
+  "Full_Name": "Mr. Sashikanta Malik",
+  "Lead_Status": "Fresh Lead",
+  "Record_Image": null,
+  "leadchain0__Social_Lead_ID": null,
+  "Email_Opt_Out": false,
+  "Designation": "Project engineer",
+  "Interested_In": [],
+  "Keyword": null,
+  "Zia_Score": null,
+  "Invite_Source": null,
+  "Mobile": "+919777284960",
+  "$orchestration": false,
+  "I_m_Interested_in": [],
+  "Ad_Campaign_Name": null,
+  "Locked__s": false,
+  "Lead_Source": "On-Spot (Zoho Form)",
+  "Tag": [
+    {
+      "name": "PGID25 Visitor",
+      "id": "651593000012916101"
+    },
+    {
+      "name": "PGID25 Attended Visitor",
+      "id": "651593000017250110"
+    }
+  ],
+  "Reason_for_Conversion_Failure": null,
+  "Event_Attend_Date_Time": "2025-09-04T16:57:00+05:30",
+  "Company": "Elenor systems llp",
+  "Email": "project@elenor.in",
+  "$currency_symbol": "Γé╣",
+  "Visitor_Score": null,
+  "Account_Type": null,
+  "Purchasing_authority": null,
+  "Industry_Sub_Category": "Designing & Services",
+  "Last_Activity_Time": "2025-09-09T16:43:47+05:30",
+  "Industry": "Engineering",
+  "Description1": null,
+  "Unsubscribed_Mode": null,
+  "$converted": false,
+  "Exchange_Rate": 1,
+  "$locked_for_me": false,
+  "Zip_Code": null,
+  "$approved": true,
+  "Conversion_Exported_On": null,
+  "Event_Attend_Date": null,
+  "Days_Visited": null,
+  "Click_Type": null,
+  "Secondary_Phone": null,
+  "$editable": true,
+  "City": "Ahmedabad",
+  "Term": null,
+  "AdGroup_Name": null,
+  "Next_Follow_Up_Date": null,
+  "Campaign": null,
+  "State": "Gujarat",
+  "Content": null,
+  "Medium": null,
+  "$zia_owner_assignment": "owner_recommendation_unavailable",
+  "Secondary_Email": null,
+  "Rating": null,
+  "Twitter": null,
+  "Employees": null,
+  "$layout_id": {
+    "display_label": "Standard",
+    "name": "Standard",
+    "id": "651593000000000167"
+  },
+  "Source": null,
+  "First_Name": "Sashikanta",
+  "Conversion_Export_Status": null,
+  "Cost_per_Conversion": 0,
+  "Modified_By": {
+    "name": "CRM ITEN Media",
+    "id": "651593000000305001",
+    "email": "crm@itenmedia.in"
+  },
+  "$review": null,
+  "Heard_From": [
+    "Visiting Other Show"
+  ],
+  "Phone": null,
+  "Import_List_Name": null,
+  "Interested_Product": null,
+  "Sub_Community": [],
+  "Modified_Time": "2025-09-09T16:43:47+05:30",
+  "$converted_detail": {},
+  "Unsubscribed_Time": null,
+  "Device_Type": null,
+  "Portal_Status1": null,
+  "First_Visited_Time": null,
+  "Last_Name": "Malik",
+  "$in_merge": false,
+  "Referrer": null,
+  "$approval_state": "approved",
+  "Community": []
+}

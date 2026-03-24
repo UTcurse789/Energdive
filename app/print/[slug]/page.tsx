@@ -3,6 +3,7 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import { formatContentDate } from "@/lib/date";
 import ArticleBody from "@/components/ArticleBody";
+import { fetchDataBlocks } from "@/lib/parse-content-blocks";
 import PrintTrigger from "@/components/print/PrintTrigger";
 import { strapiImageUrl } from "@/lib/strapi-image";
 
@@ -49,6 +50,8 @@ export default async function PrintPage(
     const author = data.author?.name ?? null;
     const image = data.FeaturedImage?.url ? strapiImageUrl(data.FeaturedImage.url) : null;
     const articleUrl = `${SITE_URL}/articles/${slug}`;
+
+    const dataBlocks = await fetchDataBlocks(content);
 
     return (
         <>
@@ -99,7 +102,7 @@ export default async function PrintPage(
                     )}
                     {excerpt && <p className="print-excerpt">{excerpt}</p>}
                     <div className="print-body">
-                        <ArticleBody content={content} />
+                        <ArticleBody content={content} dataBlocks={dataBlocks} />
                     </div>
                 </div>
 
