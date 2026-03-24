@@ -449,6 +449,7 @@ export async function POST(req: Request) {
             const bLastName = brevoData?.LASTNAME || nameParts[1] || nameParts[0] || "";
 
             const zohoLeadData: any = {
+                Salutation: brevoData?.SALUTATION || fullUser.salutation || undefined,
                 First_Name: bFirstName,
                 Last_Name: bLastName,
                 Email: normalizedEmail,

@@ -13,6 +13,7 @@ export default async function syncUserToBrevo(user: any) {
             {
                 email: user.email,
                 attributes: {
+                    SALUTATION: user.salutation || "",
                     FIRSTNAME: user.first_name || "",
                     LASTNAME: user.last_name || "",
                     PHONE: user.phone && user.phone !== "undefined" && user.phone !== "null" ? user.phone : "",
@@ -54,6 +55,7 @@ export default async function syncUserToBrevo(user: any) {
 
 export interface VerifiedUserBrevoPayload {
     email: string;
+    salutation?: string;
     name?: string;
     phone?: string;
     company?: string;
@@ -97,6 +99,8 @@ export async function syncVerifiedUserToBrevo(user: VerifiedUserBrevoPayload): P
         SOURCE: user.source || "website",
         VERIFICATION_STATUS: "Verified",
     };
+
+    if (user.salutation) attributes.SALUTATION = user.salutation;
 
     // Include optional fields if provided (from Zoho lead data)
     if (user.jobTitle && user.jobTitle !== "undefined") attributes.JOB_TITLE = user.jobTitle;

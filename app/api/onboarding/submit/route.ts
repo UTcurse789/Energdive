@@ -62,6 +62,7 @@ export async function POST(req: Request) {
         // triggers membership_id auto-assignment via DB trigger.
         const dbUserId = await saveOnboardingProfile({
             clerkId: userId,
+            salutation: body.salutation,
             email: body.email,
             firstName: body.firstName,
             lastName: body.lastName,

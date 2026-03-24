@@ -3,6 +3,7 @@ import { getClient, query } from "@/lib/db";
 // ─── Types ───────────────────────────────────────────────────────────
 export interface OnboardingPayload {
     clerkId: string;
+    salutation?: string;
     email: string;
     firstName: string;
     lastName: string;
@@ -26,6 +27,7 @@ export interface OnboardingPayload {
 export interface UserProfile {
     id: number;
     clerk_id: string;
+    salutation: string | null;
     email: string;
     first_name: string | null;
     last_name: string | null;
@@ -65,12 +67,13 @@ export async function saveOnboardingProfile(
         // 1. Upsert user row
         const userResult = await client.query(
             `INSERT INTO users (
-                clerk_id, email, first_name, last_name, phone,
+                clerk_id, salutation, email, first_name, last_name, phone,
                 country, state, job_title, organization,
                 preferred_frequency, preferred_formats,
                 onboarding_completed, created_at
-            ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11, true, NOW())
+            ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12, true, NOW())
             ON CONFLICT (clerk_id) DO UPDATE SET
+                salutation          = EXCLUDED.salutation,
                 email               = EXCLUDED.email,
                 first_name          = EXCLUDED.first_name,
                 last_name           = EXCLUDED.last_name,
@@ -85,6 +88,7 @@ export async function saveOnboardingProfile(
             RETURNING id`,
             [
                 payload.clerkId,
+                payload.salutation || null,
                 payload.email,
                 payload.firstName,
                 payload.lastName,
@@ -165,7 +169,7 @@ export async function getUserProfile(
         // 1. User + industry join
         const userResult = await query(
             `SELECT
-                u.id, u.clerk_id, u.email,
+                u.id, u.clerk_id, u.salutation, u.email,
                 u.first_name, u.last_name, u.phone,
                 u.country, u.state, u.job_title, u.organization,
                 u.onboarding_completed, u.created_at,
@@ -218,6 +222,7 @@ export async function getUserProfile(
 // ─── Update Profile ──────────────────────────────────────────────
 export interface UpdateProfilePayload {
     clerkId: string;
+    salutation?: string;
     firstName?: string;
     lastName?: string;
     phone?: string;
@@ -248,6 +253,7 @@ export async function updateUserProfile(payload: UpdateProfilePayload): Promise<
         let idx = 1;
 
         const fields = [
+            { key: "salutation", val: payload.salutation },
             { key: "first_name", val: payload.firstName },
             { key: "last_name", val: payload.lastName },
             { key: "phone", val: payload.phone },
@@ -323,6 +329,7 @@ export async function updateUserProfile(payload: UpdateProfilePayload): Promise<
 
 export interface ProvisionPayload {
     clerkId: string;
+    salutation?: string;
     email: string;
     firstName: string;
     lastName: string;
@@ -362,12 +369,13 @@ export async function provisionUser(payload: ProvisionPayload): Promise<number> 
         // 1. Upsert user row — ON CONFLICT on clerk_id
         const userResult = await client.query(
             `INSERT INTO users (
-                clerk_id, email, first_name, last_name, phone,
+                clerk_id, salutation, email, first_name, last_name, phone,
                 country, state, job_title, organization,
                 onboarding_completed, magic_token, magic_token_expires_at,
                 source, created_at
-            ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9, true, $10, $11, $12, NOW())
+            ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10, true, $11, $12, $13, NOW())
             ON CONFLICT (clerk_id) DO UPDATE SET
+                salutation             = COALESCE(EXCLUDED.salutation, users.salutation),
                 email                  = EXCLUDED.email,
                 first_name             = EXCLUDED.first_name,
                 last_name              = EXCLUDED.last_name,
@@ -383,6 +391,7 @@ export async function provisionUser(payload: ProvisionPayload): Promise<number> 
             RETURNING id`,
             [
                 payload.clerkId,
+                payload.salutation || null,
                 payload.email,
                 payload.firstName,
                 payload.lastName,

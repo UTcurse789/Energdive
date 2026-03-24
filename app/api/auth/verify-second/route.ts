@@ -279,6 +279,7 @@ async function trySyncAfterVerification(clerkId: string) {
                 };
 
                 const leadData = {
+                    Salutation: fullUser.salutation || undefined,
                     First_Name: fullUser.first_name || "Unknown",
                     Last_Name: fullUser.last_name || "Unknown",
                     Email: fullUser.email,
