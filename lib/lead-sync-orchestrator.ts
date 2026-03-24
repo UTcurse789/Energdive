@@ -25,6 +25,7 @@ export interface SyncResult {
 
 interface SyncUserProfile {
     clerk_id: string;
+    salutation?: string | null;
     source?: string | null;
     phone?: string | null;
     first_name?: string | null;
@@ -42,6 +43,7 @@ interface SyncUserProfile {
 }
 
 interface SyncBodyData {
+    salutation?: string;
     phone?: string;
     firstName?: string;
     lastName?: string;
@@ -133,6 +135,7 @@ export async function syncEnrichedLead(
         log(`Syncing to Brevo: ${syncEmail}`);
         await syncUserToBrevo({
             ...fullUser,
+            salutation: bodyData.salutation || fullUser.salutation || null,
             email: syncEmail,
             utm_source: utmData?.utm_source || null,
             utm_medium: utmData?.utm_medium || null,
@@ -169,6 +172,7 @@ export async function syncEnrichedLead(
 
             const duplicateLeadId = await createZohoDuplicateLead({
                 email: syncEmail,
+                salutation: bodyData.salutation || fullUser.salutation || undefined,
                 name: `${fullUser.first_name || bodyData.firstName || ""} ${fullUser.last_name || bodyData.lastName || ""}`.trim(),
                 phone,
                 company: fullUser.organization || bodyData.organization || undefined,
@@ -209,6 +213,7 @@ export async function syncEnrichedLead(
         const ITEN_MEDIA_OWNER = process.env.ZOHO_ITEN_MEDIA_OWNER_ID || "";
 
         const leadData: ZohoLeadData = {
+            Salutation: bodyData.salutation || fullUser.salutation || undefined,
             First_Name: fullUser.first_name || bodyData.firstName || "",
             Last_Name: fullUser.last_name || bodyData.lastName || "",
             Email: syncEmail,

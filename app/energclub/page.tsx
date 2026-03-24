@@ -218,7 +218,7 @@ export default function EnergClubPage() {
                         An integrated digital platform for India's energy professionals. All figures, power, generation, markets, storage, policy, and one goal: To Access Insights, Fuel Innovation, and Sustain Power for a better ecosystem.
                     </p>
                     <Link href="/auth" className="bg-[#E5B866] text-black px-10 py-4 rounded-full font-bold uppercase tracking-widest hover:bg-white transition-colors duration-300 shadow-[0_0_20px_rgba(229,184,102,0.3)] inline-block">
-                        Join Nowx
+                        Join Now
                     </Link>
                 </div>
             </section>
