@@ -6,10 +6,10 @@ export async function getFullUserProfile(clerkId: string) {
     SELECT 
       u.id,
       u.clerk_id,
-      u.salutation,
       u.email,
       u.first_name,
       u.last_name,
+      u.salutation,
       u.phone,
       u.country,
       u.state,
