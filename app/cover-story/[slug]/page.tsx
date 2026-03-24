@@ -4,6 +4,7 @@ import { Header } from "@/components/layout/header";
 import { notFound } from "next/navigation";
 import { BlocksRenderer } from "@strapi/blocks-react-renderer";
 import ArticleBody from "@/components/ArticleBody";
+import { fetchDataBlocks } from "@/lib/parse-content-blocks";
 import { SidebarSubscribe } from "@/components/sidebar-subscribe";
 import { TagBadge } from "@/components/ui/tag-badge";
 import { ScrollProgress } from "@/components/ui/scroll-progress";
@@ -131,6 +132,8 @@ export default async function CoverStoryDetailPage({
         category: attrs.type_of_content?.name || attrs.type_of_content?.data?.attributes?.name || "Cover Story",
     };
 
+    const dataBlocks = await fetchDataBlocks(article.content);
+
     return (
         <div className="min-h-screen bg-white">
             <ScrollProgress />
@@ -182,7 +185,7 @@ export default async function CoverStoryDetailPage({
 
                         <article className="relative">
                             <div className="prose prose-lg max-w-none font-serif text-[18px] leading-[1.95] text-gray-800 prose-headings:font-bold prose-headings:text-gray-900 prose-headings:tracking-tight prose-h2:text-3xl prose-h2:mt-12 prose-h2:mb-4 prose-h2:border-b prose-h2:border-gray-100 prose-h2:pb-3 prose-h3:text-2xl prose-h3:mt-10 prose-h3:mb-3 prose-p:mb-6 prose-a:text-teal-600 prose-a:decoration-teal-300 hover:prose-a:text-teal-800 prose-strong:text-gray-900 prose-blockquote:border-l-teal-500 prose-blockquote:bg-teal-50/30 prose-blockquote:rounded-r-lg prose-blockquote:py-2 prose-img:rounded-lg prose-img:shadow-md prose-li:marker:text-teal-500 first:prose-p:first-letter:text-6xl first:prose-p:first-letter:font-serif first:prose-p:first-letter:font-bold first:prose-p:first-letter:float-left first:prose-p:first-letter:mr-3 first:prose-p:first-letter:mt-1 first:prose-p:first-letter:text-teal-700">
-                                <ArticleBody content={article.content} />
+                                <ArticleBody content={article.content} dataBlocks={dataBlocks} />
                             </div>
                         </article>
 

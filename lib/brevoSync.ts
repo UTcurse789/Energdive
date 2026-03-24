@@ -15,18 +15,23 @@ export default async function syncUserToBrevo(user: any) {
                 attributes: {
                     FIRSTNAME: user.first_name || "",
                     LASTNAME: user.last_name || "",
-                    PHONE: user.phone || "",
+                    PHONE: user.phone && user.phone !== "undefined" && user.phone !== "null" ? user.phone : "",
                     ORGANISATION: user.organization || "",
                     JOB_TITLE: user.job_title || "",
-                    COMMUNITY: (user.communities || []).join(","),
-                    SUB_COMMUNITY: (user.sub_communities || []).join(","),
-                    INDUSTRY: (user.industries || []).join(","),
-                    SUB_INDUSTRY: (user.sub_industries || []).join(","),
+                    COMMUNITY: (user.communities || []).filter((c: string) => c && c !== "undefined" && c !== "null").join(","),
+                    SUB_COMMUNITY: (user.sub_communities || []).filter((c: string) => c && c !== "undefined" && c !== "null").join(","),
+                    INDUSTRY: (user.industries || []).filter((c: string) => c && c !== "undefined" && c !== "null").join(","),
+                    SUB_INDUSTRY: (user.sub_industries || []).filter((c: string) => c && c !== "undefined" && c !== "null").join(","),
                     FREQUENCY: ((user.preferred_frequency || "daily").charAt(0).toUpperCase() + (user.preferred_frequency || "daily").slice(1)),
                     PREFERENCE: (user.preferred_formats || []).join(", "),
                     MEMBERSHIP_ID: user.membership_id || "",
                     VERIFICATION_STATUS: user.verification_status || "",
-                    SOURCE: "Portal"
+                    SOURCE: "Portal",
+                    ...(user.utm_source ? { UTM_SOURCE: user.utm_source } : {}),
+                    ...(user.utm_medium ? { UTM_MEDIUM: user.utm_medium } : {}),
+                    ...(user.utm_campaign ? { UTM_CAMPAIGN: user.utm_campaign } : {}),
+                    ...(user.utm_term ? { UTM_TERM: user.utm_term } : {}),
+                    ...(user.utm_content ? { UTM_CONTENT: user.utm_content } : {}),
                 },
                 listIds: [7],
                 updateEnabled: true
@@ -57,6 +62,13 @@ export interface VerifiedUserBrevoPayload {
     source?: string;
     communities?: string[];
     subCommunities?: string[];
+    industries?: string[];
+    subIndustries?: string[];
+    utm_source?: string | null;
+    utm_medium?: string | null;
+    utm_campaign?: string | null;
+    utm_term?: string | null;
+    utm_content?: string | null;
 }
 
 /**
@@ -79,7 +91,7 @@ export async function syncVerifiedUserToBrevo(user: VerifiedUserBrevoPayload): P
     const attributes: Record<string, string> = {
         FIRSTNAME: firstName,
         LASTNAME: lastName,
-        PHONE: user.phone || "",
+        PHONE: user.phone && user.phone !== "undefined" && user.phone !== "null" ? user.phone : "",
         ORGANISATION: user.company || "",
         MEMBERSHIP_ID: user.membershipId || "",
         SOURCE: user.source || "website",
@@ -87,9 +99,29 @@ export async function syncVerifiedUserToBrevo(user: VerifiedUserBrevoPayload): P
     };
 
     // Include optional fields if provided (from Zoho lead data)
-    if (user.jobTitle) attributes.JOB_TITLE = user.jobTitle;
-    if (user.communities?.length) attributes.COMMUNITY = user.communities.join(",");
-    if (user.subCommunities?.length) attributes.SUB_COMMUNITY = user.subCommunities.join(",");
+    if (user.jobTitle && user.jobTitle !== "undefined") attributes.JOB_TITLE = user.jobTitle;
+    if (user.communities?.length) {
+        const valid = user.communities.filter(c => c && c !== "undefined" && c !== "null");
+        if (valid.length) attributes.COMMUNITY = valid.join(",");
+    }
+    if (user.subCommunities?.length) {
+        const valid = user.subCommunities.filter(c => c && c !== "undefined" && c !== "null");
+        if (valid.length) attributes.SUB_COMMUNITY = valid.join(",");
+    }
+    if (user.industries?.length) {
+        const valid = user.industries.filter(c => c && c !== "undefined" && c !== "null");
+        if (valid.length) attributes.INDUSTRY = valid.join(",");
+    }
+    if (user.subIndustries?.length) {
+        const valid = user.subIndustries.filter(c => c && c !== "undefined" && c !== "null");
+        if (valid.length) attributes.SUB_INDUSTRY = valid.join(",");
+    }
+
+    if (user.utm_source) attributes.UTM_SOURCE = user.utm_source;
+    if (user.utm_medium) attributes.UTM_MEDIUM = user.utm_medium;
+    if (user.utm_campaign) attributes.UTM_CAMPAIGN = user.utm_campaign;
+    if (user.utm_term) attributes.UTM_TERM = user.utm_term;
+    if (user.utm_content) attributes.UTM_CONTENT = user.utm_content;
 
     await axios.post(
         "https://api.brevo.com/v3/contacts",
@@ -108,4 +140,34 @@ export async function syncVerifiedUserToBrevo(user: VerifiedUserBrevoPayload): P
     );
 
     console.log("✅ Brevo verified user synced:", user.email, "membership:", user.membershipId);
+}
+
+/**
+ * Fetch a contact's details from Brevo.
+ * This is used to pull enriched data (e.g., COMMUNITY, SUB_COMMUNITY)
+ * before posting to Zoho CRM.
+ */
+export async function getBrevoContact(email: string): Promise<Record<string, any> | null> {
+    if (!email || email.endsWith("@phone.energdive.com")) {
+        return null;
+    }
+
+    try {
+        const axios = (await import("axios")).default;
+        const response = await axios.get(
+            `https://api.brevo.com/v3/contacts/${encodeURIComponent(email)}`,
+            {
+                headers: {
+                    "api-key": process.env.BREVO_API_KEY!,
+                },
+            }
+        );
+        return response.data?.attributes || null;
+    } catch (err: any) {
+        if (err.response?.status === 404) {
+            return null; // Contact doesn't exist
+        }
+        console.error("❌ Failed to fetch Brevo contact:", err.response?.data || err.message);
+        return null;
+    }
 }

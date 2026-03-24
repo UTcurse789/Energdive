@@ -4,6 +4,7 @@ import { Header } from "@/components/layout/header";
 import { notFound } from "next/navigation";
 import { BlocksRenderer } from "@strapi/blocks-react-renderer";
 import ArticleBody from "@/components/ArticleBody";
+import { fetchDataBlocks } from "@/lib/parse-content-blocks";
 import { SidebarSubscribe } from "@/components/sidebar-subscribe";
 import { AdBanner } from "@/components/ads/AdBanner";
 import { TagBadge } from "@/components/ui/tag-badge";
@@ -175,6 +176,8 @@ export default async function FeaturedStoryDetailPage({
             "Featured Stories",
     };
 
+    const dataBlocks = await fetchDataBlocks(article.content);
+
     return (
         <div className="min-h-screen bg-white">
             <ScrollProgress />
@@ -261,7 +264,7 @@ prose-li:marker:text-teal-500
 
 first:prose-p:first-letter:text-6xl first:prose-p:first-letter:font-serif first:prose-p:first-letter:font-bold first:prose-p:first-letter:float-left first:prose-p:first-letter:mr-3 first:prose-p:first-letter:mt-1 first:prose-p:first-letter:text-teal-700"
                             >
-                                <ArticleBody content={article.content} enableSectionSharing={true} />
+                                <ArticleBody content={article.content} enableSectionSharing={true} dataBlocks={dataBlocks} />
                             </div>
                         </article>
 

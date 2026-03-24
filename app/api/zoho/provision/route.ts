@@ -4,6 +4,7 @@ import crypto from "crypto";
 import { provisionUser } from "@/lib/queries";
 import { sendPortalAccessEmail } from "@/lib/email";
 import { parseCommunityPortal } from "@/lib/zoho-leads";
+import { getZohoAccessToken } from "@/lib/zoho";
 
 const WEBHOOK_SECRET = process.env.ZOHO_WEBHOOK_SECRET || "";
 const MAGIC_TOKEN_TTL_HOURS = 24;
@@ -170,16 +171,49 @@ export async function POST(req: NextRequest) {
         log(`Raw body.community_portal=${body.community_portal}, body.Community_Portal=${body.Community_Portal}`);
 
         // Handle case-insensitive field names from Zoho Deluge
-        const rawPhone = body.phone || body.Phone;
-        const rawCompany = body.company || body.Company;
-        const rawDesignation = body.designation || body.Designation;
-        const rawCountry = body.country || body.Country;
-        const rawState = body.state || body.State;
-        const rawIndustry = body.industry || body.Industry;
-        const rawSubIndustry = body.sub_industry || body.Sub_Industry || body.Industry_Sub_Category;
-        const rawCommunity = body.community || body.Community;
-        const rawSubCommunity = body.sub_community || body.Sub_Community;
-        const rawCommunityPortal = body.community_portal || body.Community_Portal;
+        let rawPhone = body.phone || body.Phone;
+        let rawCompany = body.company || body.Company;
+        let rawDesignation = body.designation || body.Designation;
+        let rawCountry = body.country || body.Country;
+        let rawState = body.state || body.State;
+        let rawIndustry = body.industry || body.Industry;
+        let rawSubIndustry = body.sub_industry || body.Sub_Industry || body.Industry_Sub_Category;
+        let rawCommunity = body.community || body.Community;
+        let rawSubCommunity = body.sub_community || body.Sub_Community;
+        let rawCommunityPortal = body.community_portal || body.Community_Portal;
+
+        // --- BULLETPROOF FALLBACK ---
+        // If the Deluge script in Zoho CRM is outdated and didn't send community_portal or phone,
+        // we fetch the Lead directly from Zoho API to guarantee we have the correct data!
+        const leadIdStr = (body.crm_lead_id || body.lead_id || "").toString().trim();
+        if (leadIdStr && (!rawPhone || !rawCommunityPortal)) {
+            log(`Missing phone or community_portal in webhook payload. Fetching lead ${leadIdStr} directly from Zoho CRM...`);
+            try {
+                const token = await getZohoAccessToken();
+                const zohoUrl = `${process.env.ZOHO_API_DOMAIN || 'https://www.zohoapis.in'}/crm/v2/Leads/${leadIdStr}`;
+                const zohoRes = await fetch(zohoUrl, {
+                    headers: { Authorization: `Zoho-oauthtoken ${token}` }
+                });
+                if (zohoRes.ok) {
+                    const zohoData = await zohoRes.json();
+                    if (zohoData.data && zohoData.data.length > 0) {
+                        const lead = zohoData.data[0];
+                        log(`Zoho API hit successful. Lead data: Mobile=${lead.Mobile}, Phone=${lead.Phone}, Community_Portal=${lead.Community_Portal}`);
+                        
+                        rawPhone = rawPhone || lead.Mobile || lead.Phone;
+                        rawCommunityPortal = rawCommunityPortal || lead.Community_Portal;
+                        rawIndustry = rawIndustry || lead.Industry;
+                        rawSubIndustry = rawSubIndustry || lead.Industry_Sub_Category;
+                        rawCommunity = rawCommunity || lead.Community;
+                        rawSubCommunity = rawSubCommunity || lead.Sub_Community;
+                    }
+                } else {
+                    warn(`Zoho API fetch failed with status ${zohoRes.status}`);
+                }
+            } catch (zohoErr: any) {
+                warn(`Zoho API fetch threw error: ${zohoErr.message}`);
+            }
+        }
 
         // Parse community data — try direct fields first, then community_portal
         let communityNames = getAllStrings(rawCommunity);

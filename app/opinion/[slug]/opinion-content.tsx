@@ -77,7 +77,7 @@ export default function OpinionContent({ opinion, recommended }: any) {
 
                             {/* Main Heading: Matches Opinion Component Style */}
                             <h1 className="font-serif text-3xl md:text-5xl lg:text-6xl font-bold leading-[1.15] tracking-tight text-zinc-900 mb-8">
-                                &ldquo;{opinion.title}&rdquo;
+                                {opinion.title}
                             </h1>
 
                             <p className="text-xl md:text-2xl text-zinc-500 font-serif italic leading-relaxed border-l-4 border-[#00A651] pl-8">

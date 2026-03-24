@@ -70,14 +70,23 @@ function matchesActiveTab(values: string[] = [], activeTab: string) {
     const normalizedTab = normalizeText(activeTab);
     if (!normalizedTab) return true;
 
+    const tabWords = normalizedTab.split(" ").filter(Boolean);
+
     return values.some((value) => {
         const normalizedValue = normalizeText(value || "");
         if (!normalizedValue) return false;
-        return (
-            normalizedValue === normalizedTab ||
-            normalizedValue.includes(normalizedTab) ||
-            normalizedTab.includes(normalizedValue)
-        );
+
+        // Exact full-string match
+        if (normalizedValue === normalizedTab) return true;
+
+        const valueWords = normalizedValue.split(" ").filter(Boolean);
+
+        // Check if all tab words appear as complete words in the value
+        const tabMatchesInValue = tabWords.length > 0 && tabWords.every((tw) => valueWords.includes(tw));
+        // Check if all value words appear as complete words in the tab
+        const valueMatchesInTab = valueWords.length > 0 && valueWords.every((vw) => tabWords.includes(vw));
+
+        return tabMatchesInValue || valueMatchesInTab;
     });
 }
 
@@ -307,6 +316,21 @@ export default function SectorIntelligencePage() {
         return ["ALL", ...subCategoryStats.map(s => s.name)];
     }, [subCategoryStats]);
 
+    // Sorted version of tabs for rendering: tabs with content first, empty ones last
+    const sortedTabs = useMemo(() => {
+        if (subCategories.length <= 1) return subCategories;
+
+        const tabsWithoutAll = subCategories.filter((t) => t !== "ALL");
+        const tabCounts = tabsWithoutAll.map((tab) => {
+            const articleCount = articles.filter((r) => matchesActiveTab(r.sectors || [], tab)).length;
+            const videoCount = videos.filter((v) => matchesActiveTab([...(v.sectors || []), ...(v.tags || [])], tab)).length;
+            return { tab, total: articleCount + videoCount };
+        });
+        tabCounts.sort((a, b) => b.total - a.total);
+        console.log("[DEBUG sortedTabs]", { subCategoriesLen: subCategories.length, articlesLen: articles.length, videosLen: videos.length, tabCounts, result: ["ALL", ...tabCounts.map((t) => t.tab)] });
+        return ["ALL", ...tabCounts.map((t) => t.tab)];
+    }, [subCategories, articles, videos]);
+
     useEffect(() => {
         if (!subCategories.length) return;
 
@@ -485,36 +509,24 @@ export default function SectorIntelligencePage() {
             <section className="sticky top-[74px] z-10 bg-white/95 backdrop-blur-xl border-y border-gray-100 py-5 shadow-[0_6px_20px_rgba(15,23,42,0.06)]">
                 <div className="container mx-auto px-6 lg:px-16 max-w-[1400px] flex flex-col lg:flex-row gap-8 justify-between items-center">
 
+                    {/* DEBUG - REMOVE AFTER FIXING */}
+                    <div style={{background:"red",color:"white",padding:"8px",fontSize:"10px",marginBottom:"4px"}}>
+                        DEBUG: arts={articles.length} vids={videos.length} subCats={subCategories.length} sorted=[{sortedTabs.join(",")}]
+                    </div>
                     {/* Tabs */}
                     <div className="flex gap-3 overflow-x-auto no-scrollbar w-full lg:w-auto pb-2 lg:pb-0 pr-6 scroll-px-6 snap-x">
-                        <button
-                            onClick={() => setActiveTab("ALL")}
-                            className={`whitespace-nowrap px-6 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all duration-300 ${activeTab === "ALL"
-                                ? "bg-black text-white border-black scale-105 shadow-lg shadow-black/10"
-                                : "bg-transparent border-gray-200 text-gray-400 hover:border-black hover:text-black"
-                                }`}
-                        >
-                            ALL
-                        </button>
-                        {subCategoryStats.map((stat) => {
-                            const cat = stat.name;
-                            const hasContent = stat.count > 0;
-                            return (
-                                <button
-                                    key={cat}
-                                    onClick={() => hasContent && setActiveTab(cat)}
-                                    disabled={!hasContent}
-                                    className={`whitespace-nowrap px-6 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all duration-300 ${!hasContent
-                                        ? "opacity-40 cursor-not-allowed bg-transparent border-gray-200 text-gray-400"
-                                        : activeTab === cat
-                                            ? "bg-black text-white border-black scale-105 shadow-lg shadow-black/10"
-                                            : "bg-transparent border-gray-200 text-gray-400 hover:border-black hover:text-black"
-                                        }`}
-                                >
-                                    {cat}
-                                </button>
-                            );
-                        })}
+                        {sortedTabs.map((cat) => (
+                            <button
+                                key={cat}
+                                onClick={() => setActiveTab(cat)}
+                                className={`whitespace-nowrap px-6 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all duration-300 ${activeTab === cat
+                                    ? "bg-black text-white border-black scale-105 shadow-lg shadow-black/10"
+                                    : "bg-transparent border-gray-200 text-gray-400 hover:border-black hover:text-black"
+                                    }`}
+                            >
+                                {cat}
+                            </button>
+                        ))}
                     </div>
 
                     {/* Search */}
@@ -608,7 +620,7 @@ export default function SectorIntelligencePage() {
             </section>
 
             {/* VIDEOS SECTION */}
-            {videos.length > 0 && (
+            {filteredVideos.length > 0 && (
                 <section className="border-t border-gray-200 bg-white pb-30">
                     <div className="container mx-auto px-6 lg:px-16 max-w-[1400px] py-20">
 

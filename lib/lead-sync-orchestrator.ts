@@ -11,7 +11,7 @@
 
 import { query } from "./db";
 import syncUserToBrevo from "./brevoSync";
-import { upsertZohoLead, createZohoDuplicateLead, ZohoLeadData } from "./zoho-leads";
+import { createZohoLead, createZohoDuplicateLead, ZohoLeadData } from "./zoho-leads";
 import { logEvent } from "./system-logger";
 
 export interface SyncResult {
@@ -49,6 +49,14 @@ interface SyncBodyData {
     jobTitle?: string;
     state?: string;
     country?: string;
+}
+
+interface UtmData {
+    utm_source?: string | null;
+    utm_medium?: string | null;
+    utm_campaign?: string | null;
+    utm_term?: string | null;
+    utm_content?: string | null;
 }
 
 async function updateUserSyncState(
@@ -110,7 +118,8 @@ export async function syncEnrichedLead(
     fullUser: SyncUserProfile,
     syncEmail: string,
     resolvedPhone: string | null,
-    bodyData: SyncBodyData
+    bodyData: SyncBodyData,
+    utmData?: UtmData
 ): Promise<SyncResult> {
     const clerkId = fullUser.clerk_id;
     const log = (msg: string) => console.log(`[SYNC_ORCHESTRATOR] ${msg}`);
@@ -122,7 +131,15 @@ export async function syncEnrichedLead(
 
     try {
         log(`Syncing to Brevo: ${syncEmail}`);
-        await syncUserToBrevo({ ...fullUser, email: syncEmail });
+        await syncUserToBrevo({
+            ...fullUser,
+            email: syncEmail,
+            utm_source: utmData?.utm_source || null,
+            utm_medium: utmData?.utm_medium || null,
+            utm_campaign: utmData?.utm_campaign || null,
+            utm_term: utmData?.utm_term || null,
+            utm_content: utmData?.utm_content || null,
+        });
 
         await updateUserSyncState(clerkId, {
             sync_status: "brevo_synced",
@@ -160,6 +177,11 @@ export async function syncEnrichedLead(
                 membershipId: fullUser.membership_id || undefined,
                 communities: nonEmptyArray(fullUser.communities),
                 subCommunities: nonEmptyArray(fullUser.sub_communities),
+                utm_source: utmData?.utm_source || undefined,
+                utm_medium: utmData?.utm_medium || undefined,
+                utm_campaign: utmData?.utm_campaign || undefined,
+                utm_term: utmData?.utm_term || undefined,
+                utm_content: utmData?.utm_content || undefined,
             });
 
             if (!duplicateLeadId) {
@@ -184,6 +206,8 @@ export async function syncEnrichedLead(
             };
         }
 
+        const ITEN_MEDIA_OWNER = process.env.ZOHO_ITEN_MEDIA_OWNER_ID || "";
+
         const leadData: ZohoLeadData = {
             First_Name: fullUser.first_name || bodyData.firstName || "",
             Last_Name: fullUser.last_name || bodyData.lastName || "",
@@ -192,17 +216,23 @@ export async function syncEnrichedLead(
             Mobile: phone,
             Company: fullUser.organization || bodyData.organization || undefined,
             Designation: fullUser.job_title || bodyData.jobTitle || undefined,
-            Lead_Source: "Website Registration",
+            Lead_Source: "ENDV Portal Registration",
             Industry: fullUser.industries?.find(Boolean) || undefined,
             Industry_Sub_Category: fullUser.sub_industries?.find(Boolean) || undefined,
             Community_Portal: nonEmptyArray(fullUser.sub_communities),
             Invite_Source: "EnergClub",
+            Owner: ITEN_MEDIA_OWNER || undefined,
             City: fullUser.state || bodyData.state || undefined,
             Country: fullUser.country || bodyData.country || undefined,
+            UTM_Source: utmData?.utm_source || undefined,
+            UTM_Medium: utmData?.utm_medium || undefined,
+            UTM_Campaign: utmData?.utm_campaign || undefined,
+            UTM_Term: utmData?.utm_term || undefined,
+            UTM_Content: utmData?.utm_content || undefined,
         };
 
-        log(`Upserting CRM lead for: ${syncEmail}`);
-        const zohoResult = await upsertZohoLead(leadData);
+        log(`Creating NEW CRM lead for: ${syncEmail}`);
+        const zohoResult = await createZohoLead(leadData);
 
         await updateUserSyncState(clerkId, {
             crm_lead_id: zohoResult.id,

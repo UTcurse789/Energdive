@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BlocksRenderer, type BlocksContent } from '@strapi/blocks-react-renderer';
 import ArticleBody from "@/components/ArticleBody";
+import { fetchDataBlocks } from "@/lib/parse-content-blocks";
 import { ScrollProgress } from "@/components/ui/scroll-progress";
 import { DateChip } from "@/components/ui/date-chip";
 import { ShareButton } from "@/components/ui/share-button";
@@ -120,6 +121,8 @@ export default async function VideoDetailPage({ params }: { params: Promise<{ sl
         ? strapiImageUrl(video.author.avatar.url)
         : "/api/placeholder/40/40";
 
+    const dataBlocks = await fetchDataBlocks(description as any[] || []);
+
     return (
         <main className="min-h-screen bg-gray-50 text-black font-sans pb-20">
             <ScrollProgress />
@@ -185,7 +188,7 @@ export default async function VideoDetailPage({ params }: { params: Promise<{ sl
                         <section>
                             <h2 className="text-sm font-black uppercase tracking-widest text-gray-400 mb-6 border-b pb-2">Overview</h2>
                             <div className="prose prose-lg prose-teal max-w-none text-gray-700 leading-relaxed">
-                                <ArticleBody content={description} />
+                                <ArticleBody content={description} dataBlocks={dataBlocks} />
                             </div>
                         </section>
 
