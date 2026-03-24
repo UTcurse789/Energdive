@@ -59,7 +59,7 @@ export function OpinionSection({ opinions = [], interviews = [] }: { opinions: O
                     <div className="container mx-auto px-4 md:px-8 max-w-[1400px]">
                         <SectionHeading
                             title="Opinion"
-                            linkText="View Archive"
+                            linkText="View All"
                             linkHref="/opinion"
                         />
 
@@ -167,7 +167,7 @@ export function OpinionSection({ opinions = [], interviews = [] }: { opinions: O
                     <div className="container mx-auto px-4 md:px-8 max-w-[1400px]">
                         <SectionHeading
                             title="Interview"
-                            linkText="View Archive"
+                            linkText="View All"
                             linkHref="/interview"
                         />
 
