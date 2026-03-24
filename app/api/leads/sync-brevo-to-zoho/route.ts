@@ -75,8 +75,13 @@ export async function GET(req: Request) {
                     Industry_Sub_Category: attrs.SUB_INDUSTRY || undefined,
                     Community: bCommunities,
                     Sub_Community: bSubCommunities,
-                    Lead_Source: "Portal Verified",
+                    Lead_Source: "ENDV Portal CRM Lead",
                     Invite_Source: "EnergClub",
+                    UTM_Source: attrs.UTM_SOURCE || undefined,
+                    UTM_Medium: attrs.UTM_MEDIUM || undefined,
+                    UTM_Campaign: attrs.UTM_CAMPAIGN || undefined,
+                    UTM_Term: attrs.UTM_TERM || undefined,
+                    UTM_Content: attrs.UTM_CONTENT || undefined,
                     Owner: ITEN_MEDIA_OWNER,
                 });
 

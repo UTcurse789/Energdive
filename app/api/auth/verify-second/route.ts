@@ -302,11 +302,11 @@ async function trySyncAfterVerification(clerkId: string) {
                     Invite_Source: "EnergClub",
                     City: fullUser.state || undefined,
                     Country: fullUser.country || undefined,
-                    UTM_Source: utmData.utm_source || undefined,
-                    UTM_Medium: utmData.utm_medium || undefined,
-                    UTM_Campaign: utmData.utm_campaign || undefined,
-                    UTM_Term: utmData.utm_term || undefined,
-                    UTM_Content: utmData.utm_content || undefined,
+                    Source: utmData.utm_source || undefined,
+                    Medium: utmData.utm_medium || undefined,
+                    Campaign: utmData.utm_campaign || undefined,
+                    Term: utmData.utm_term || undefined,
+                    Content: utmData.utm_content || undefined,
                 };
 
                 await upsertZohoLead(leadData);
