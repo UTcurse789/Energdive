@@ -282,14 +282,39 @@ export default function SectorIntelligencePage() {
         };
     }, [slug, sectorInfo]);
 
-    const subCategories = useMemo(() => {
+    const subCategoryStats = useMemo(() => {
         const children = childSectors
             .map((c: any) => c?.name?.trim())
             .filter(Boolean)
             .map((name: string) => name.toUpperCase());
 
-        return ["ALL", ...Array.from(new Set(children))];
-    }, [childSectors]);
+        const uniqueChildren = Array.from(new Set(children));
+
+        const stats = uniqueChildren.map(cat => {
+            const matchingArticles = articles.filter(report => {
+                const reportTags = report.tags ? report.tags.map((t: any) => t.name) : [];
+                return matchesActiveTab([...(report.sectors || []), ...reportTags], cat);
+            });
+            const matchingVideos = videos.filter(video => matchesActiveTab([...(video.sectors || []), ...(video.tags || [])], cat));
+            return {
+                name: cat,
+                count: matchingArticles.length + matchingVideos.length
+            };
+        });
+
+        // Sort tabs with content first, then alphabetically
+        stats.sort((a, b) => {
+            if (a.count > 0 && b.count === 0) return -1;
+            if (a.count === 0 && b.count > 0) return 1;
+            return a.name.localeCompare(b.name);
+        });
+
+        return stats;
+    }, [childSectors, articles, videos]);
+
+    const subCategories = useMemo(() => {
+        return ["ALL", ...subCategoryStats.map(s => s.name)];
+    }, [subCategoryStats]);
 
     // Sorted version of tabs for rendering: tabs with content first, empty ones last
     const sortedTabs = useMemo(() => {

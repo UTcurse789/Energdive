@@ -4,6 +4,7 @@ import { AdBanner } from "@/components/ads/AdBanner";
 import { BentoGrid } from "@/components/ui/bento-grid";
 import { SectorBlock } from "@/components/ui/sector-block";
 import { OpinionSection } from "@/components/sections/opinion";
+import type { OpinionItem } from "@/components/sections/opinion";
 import { EventsSection } from "@/components/sections/events";
 import { HomepageVideos } from "@/components/sections/homepage-videos";
 import { PublicationShowcase } from "@/components/sections/PublicationShowcase";
@@ -45,6 +46,23 @@ function extractExcerpt(article: any): string {
     .filter(Boolean)
     .join(" ")
     .trim();
+}
+
+function mapOpinionItems(data: any[]): OpinionItem[] {
+  return data.map((item: any) => {
+    return {
+      id: item.id,
+      title: item.Title || "",
+      slug: item.slug || "",
+      excerpt: extractExcerpt(item),
+      image: extractImageUrl(item),
+      imageCaption: item.FeaturedImage?.caption || "",
+      authorName: item.author?.name || "Staff Writer",
+      authorAvatar: item.author?.avatar?.url ? strapiImageUrl(item.author.avatar.url) : "/default-avatar.png",
+      authorRole: item.author?.role || "Author",
+      date: formatContentDate(item.Date || item.publishedAt || item.createdAt),
+    };
+  });
 }
 
 function mapArticle(article: any, sectorName: string): Article {
@@ -95,11 +113,50 @@ async function getFeaturedContents() {
   }
 }
 
+async function getOpinionsAndInterviews() {
+  try {
+    const res = await fetch(
+      `${STRAPI_BASE}/api/contents` +
+      `?filters[type_of_content][name][$eq]=Opinion` +
+      `&pagination[pageSize]=60` +
+      `&populate[author][populate]=avatar` +
+      `&populate=FeaturedImage` +
+      `&populate[content_tag]=true` +
+      `&sort=Date:desc`,
+      { next: { revalidate: 120 } }
+    );
+    if (!res.ok) return { opinions: [], interviews: [] };
+    const json = await res.json();
+    const allItems = json.data || [];
+
+    const opinionItems: any[] = [];
+    const interviewItems: any[] = [];
+
+    allItems.forEach((item: any) => {
+        const tag = item.content_tag?.title || item.content_tag?.data?.attributes?.title || "";
+        if (tag.toLowerCase() === "interview") {
+            interviewItems.push(item);
+        } else {
+            opinionItems.push(item);
+        }
+    });
+
+    return {
+        opinions: mapOpinionItems(opinionItems.slice(0, 5)),
+        interviews: mapOpinionItems(interviewItems.slice(0, 5))
+    };
+  } catch (err) {
+    console.error("Opinion fetch error:", err);
+    return { opinions: [], interviews: [] };
+  }
+}
+
 export default async function Home() {
-  const [allContents, featuredContents, latestIssue] = await Promise.all([
+  const [allContents, featuredContents, latestIssue, { opinions, interviews }] = await Promise.all([
     getAllContents(),
     getFeaturedContents(),
     getLatestIssue(),
+    getOpinionsAndInterviews(),
   ]);
 
   // ── Bento: Featured articles fetched directly from Strapi ──
@@ -244,7 +301,7 @@ export default async function Home() {
         </div>
       </section>
 
-      <OpinionSection />
+      <OpinionSection opinions={opinions} interviews={interviews} />
 
       {/* Sector Blocks */}
       <div className="border-b border-border">
