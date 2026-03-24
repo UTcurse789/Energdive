@@ -179,6 +179,7 @@ export function Header() {
     const [mobileExpanded, setMobileExpanded] = useState<string | null>(null); // 'sectors' | 'magazine' | 'more'
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const [strapiBaseUrl, setStrapiBaseUrl] = useState(DEFAULT_STRAPI_BASE_URL);
+    const [tagCounts, setTagCounts] = useState<Record<string, number>>({});
 
     const brandGreen = "#00A651";
     const baseUrl = strapiBaseUrl;
@@ -204,6 +205,7 @@ export function Header() {
                     events?: any[];
                     issues?: StrapiIssueResponseItem[];
                     sectors?: any[];
+                    tagCounts?: Record<string, number>;
                 };
 
                 if (cancelled) return;
@@ -213,6 +215,7 @@ export function Header() {
                     : DEFAULT_STRAPI_BASE_URL;
 
                 setStrapiBaseUrl(resolvedBaseUrl);
+                setTagCounts(menuData.tagCounts || {});
                 setRealVideos(Array.isArray(menuData.videos) ? menuData.videos : []);
                 setRealEvents(Array.isArray(menuData.events) ? menuData.events : []);
 
@@ -486,18 +489,48 @@ export function Header() {
                                                 {activeSector.title} — Sub-Sectors
                                             </h4>
                                             <div className="grid grid-cols-2 gap-4">
-                                                {activeSector.subSectors?.map((sub: string) => (
-                                                    <Link
-                                                        key={sub}
-                                                        href={`/sectors/${activeSector.slug}?sub=${encodeURIComponent(sub.toLowerCase().replace(/\s+/g, "-"))}`}
-                                                        onClick={closeMenus}
-                                                        className="group px-5 py-4 bg-gray-50 border border-gray-100 rounded-lg hover:border-[#00A651] hover:bg-[#00A651]/5 transition-all"
-                                                    >
-                                                        <span className="text-[14px] font-bold text-gray-800 group-hover:text-[#00A651] transition-colors">
-                                                            {sub}
-                                                        </span>
-                                                    </Link>
-                                                ))}
+                                                {(() => {
+                                                    const subStats = (activeSector.subSectors || []).map((sub: string) => {
+                                                        const upperSub = sub.toUpperCase();
+                                                        const count = tagCounts[`${activeSector.slug}::${upperSub}`] || 0;
+                                                        return {
+                                                            name: sub,
+                                                            count
+                                                        };
+                                                    });
+
+                                                    subStats.sort((a: { name: string, count: number }, b: { name: string, count: number }) => {
+                                                        if (a.count > 0 && b.count === 0) return -1;
+                                                        if (a.count === 0 && b.count > 0) return 1;
+                                                        return a.name.localeCompare(b.name);
+                                                    });
+
+                                                    return subStats.map((stat: { name: string, count: number }) => {
+                                                        const sub = stat.name;
+                                                        const hasContent = stat.count > 0;
+                                                        return (
+                                                            <Link
+                                                                key={sub}
+                                                                href={hasContent ? `/sectors/${activeSector.slug}?sub=${encodeURIComponent(sub.toLowerCase().replace(/\s+/g, "-"))}` : "#"}
+                                                                onClick={(e) => { 
+                                                                    if (!hasContent) e.preventDefault(); 
+                                                                    else closeMenus(); 
+                                                                }}
+                                                                className={`group px-5 py-4 bg-gray-50 border border-gray-100 rounded-lg transition-all ${
+                                                                    hasContent 
+                                                                    ? "hover:border-[#00A651] hover:bg-[#00A651]/5" 
+                                                                    : "opacity-40 cursor-not-allowed"
+                                                                }`}
+                                                            >
+                                                                <span className={`text-[14px] font-bold transition-colors ${
+                                                                    hasContent ? "text-gray-800 group-hover:text-[#00A651]" : "text-gray-400"
+                                                                }`}>
+                                                                    {sub}
+                                                                </span>
+                                                            </Link>
+                                                        );
+                                                    });
+                                                })()}
                                             </div>
                                             <p className="mt-8 text-sm text-gray-500 leading-relaxed max-w-lg">
                                                 {activeSector.description}

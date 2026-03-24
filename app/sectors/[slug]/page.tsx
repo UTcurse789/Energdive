@@ -273,14 +273,39 @@ export default function SectorIntelligencePage() {
         };
     }, [slug, sectorInfo]);
 
-    const subCategories = useMemo(() => {
+    const subCategoryStats = useMemo(() => {
         const children = childSectors
             .map((c: any) => c?.name?.trim())
             .filter(Boolean)
             .map((name: string) => name.toUpperCase());
 
-        return ["ALL", ...Array.from(new Set(children))];
-    }, [childSectors]);
+        const uniqueChildren = Array.from(new Set(children));
+
+        const stats = uniqueChildren.map(cat => {
+            const matchingArticles = articles.filter(report => {
+                const reportTags = report.tags ? report.tags.map((t: any) => t.name) : [];
+                return matchesActiveTab([...(report.sectors || []), ...reportTags], cat);
+            });
+            const matchingVideos = videos.filter(video => matchesActiveTab([...(video.sectors || []), ...(video.tags || [])], cat));
+            return {
+                name: cat,
+                count: matchingArticles.length + matchingVideos.length
+            };
+        });
+
+        // Sort tabs with content first, then alphabetically
+        stats.sort((a, b) => {
+            if (a.count > 0 && b.count === 0) return -1;
+            if (a.count === 0 && b.count > 0) return 1;
+            return a.name.localeCompare(b.name);
+        });
+
+        return stats;
+    }, [childSectors, articles, videos]);
+
+    const subCategories = useMemo(() => {
+        return ["ALL", ...subCategoryStats.map(s => s.name)];
+    }, [subCategoryStats]);
 
     useEffect(() => {
         if (!subCategories.length) return;
@@ -429,7 +454,7 @@ export default function SectorIntelligencePage() {
                             {filteredReports.length} Articles
                         </div>
                         <div className="rounded-full border border-white/20 bg-white/5 px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-white backdrop-blur-sm">
-                            {videos.length} Videos
+                            {filteredVideos.length} Videos
                         </div>
                     </motion.div>
 
@@ -462,18 +487,34 @@ export default function SectorIntelligencePage() {
 
                     {/* Tabs */}
                     <div className="flex gap-3 overflow-x-auto no-scrollbar w-full lg:w-auto pb-2 lg:pb-0 pr-6 scroll-px-6 snap-x">
-                        {subCategories.map((cat) => (
-                            <button
-                                key={cat}
-                                onClick={() => setActiveTab(cat)}
-                                className={`whitespace-nowrap px-6 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all duration-300 ${activeTab === cat
-                                    ? "bg-black text-white border-black scale-105 shadow-lg shadow-black/10"
-                                    : "bg-transparent border-gray-200 text-gray-400 hover:border-black hover:text-black"
-                                    }`}
-                            >
-                                {cat}
-                            </button>
-                        ))}
+                        <button
+                            onClick={() => setActiveTab("ALL")}
+                            className={`whitespace-nowrap px-6 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all duration-300 ${activeTab === "ALL"
+                                ? "bg-black text-white border-black scale-105 shadow-lg shadow-black/10"
+                                : "bg-transparent border-gray-200 text-gray-400 hover:border-black hover:text-black"
+                                }`}
+                        >
+                            ALL
+                        </button>
+                        {subCategoryStats.map((stat) => {
+                            const cat = stat.name;
+                            const hasContent = stat.count > 0;
+                            return (
+                                <button
+                                    key={cat}
+                                    onClick={() => hasContent && setActiveTab(cat)}
+                                    disabled={!hasContent}
+                                    className={`whitespace-nowrap px-6 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all duration-300 ${!hasContent
+                                        ? "opacity-40 cursor-not-allowed bg-transparent border-gray-200 text-gray-400"
+                                        : activeTab === cat
+                                            ? "bg-black text-white border-black scale-105 shadow-lg shadow-black/10"
+                                            : "bg-transparent border-gray-200 text-gray-400 hover:border-black hover:text-black"
+                                        }`}
+                                >
+                                    {cat}
+                                </button>
+                            );
+                        })}
                     </div>
 
                     {/* Search */}
