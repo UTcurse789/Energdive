@@ -75,7 +75,6 @@ function matchesActiveTab(values: string[] = [], activeTab: string) {
     return values.some((value) => {
         const normalizedValue = normalizeText(value || "");
         if (!normalizedValue) return false;
-
         // Exact full-string match
         if (normalizedValue === normalizedTab) return true;
 
@@ -510,7 +509,7 @@ export default function SectorIntelligencePage() {
                 <div className="container mx-auto px-6 lg:px-16 max-w-[1400px] flex flex-col lg:flex-row gap-8 justify-between items-center">
 
                     {/* DEBUG - REMOVE AFTER FIXING */}
-                    <div style={{background:"red",color:"white",padding:"8px",fontSize:"10px",marginBottom:"4px"}}>
+                    <div style={{ background: "red", color: "white", padding: "8px", fontSize: "10px", marginBottom: "4px" }}>
                         DEBUG: arts={articles.length} vids={videos.length} subCats={subCategories.length} sorted=[{sortedTabs.join(",")}]
                     </div>
                     {/* Tabs */}
