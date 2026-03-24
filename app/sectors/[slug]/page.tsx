@@ -73,11 +73,7 @@ function matchesActiveTab(values: string[] = [], activeTab: string) {
     return values.some((value) => {
         const normalizedValue = normalizeText(value || "");
         if (!normalizedValue) return false;
-        return (
-            normalizedValue === normalizedTab ||
-            normalizedValue.includes(normalizedTab) ||
-            normalizedTab.includes(normalizedValue)
-        );
+        return normalizedValue === normalizedTab;
     });
 }
 
