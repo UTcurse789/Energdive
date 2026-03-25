@@ -5,6 +5,8 @@ import { getFullUserProfile } from "@/lib/getFullUserProfile";
 import { query } from "@/lib/db";
 import { sendWelcomeEmail, sendNewUserNotification } from "@/lib/email";
 import { syncEnrichedLead } from "@/lib/lead-sync-orchestrator";
+import { logConsent, extractIpAddress, updateUserConsentFields } from "@/lib/consent-logger";
+import { resolveDataSource } from "@/lib/data-provenance";
 
 /**
  * POST /api/onboarding/submit
@@ -77,6 +79,30 @@ export async function POST(req: Request) {
             preferredFrequency: body.preferredFrequency,
             preferredFormats: body.preferredFormats,
         });
+
+        // ── Log consent (DPDP compliance) ───────────────────────────
+        const clientIp = extractIpAddress(req);
+        const dataSource = resolveDataSource("website");
+        const consentTimestamp = body.consentTimestamp || null;
+        try {
+            await logConsent({
+                userId: dbUserId,
+                email: body.email,
+                source: dataSource,
+                ipAddress: clientIp,
+                consentPurpose: "registration",
+                metadata: {
+                    clerkId: userId,
+                    consentTimestamp,
+                    utm_source: body.utm_source || null,
+                    utm_campaign: body.utm_campaign || null,
+                },
+            });
+            await updateUserConsentFields(userId, "website", clientIp, consentTimestamp);
+            console.log(`[ONBOARDING] Consent logged for: ${body.email}, consent at: ${consentTimestamp}`);
+        } catch (consentErr: any) {
+            console.warn(`[ONBOARDING] Consent log failed (non-fatal): ${consentErr.message}`);
+        }
 
         // ── Save UTM parameters to users table ─────────────────────
         const utmSource = body.utm_source || null;

@@ -6,6 +6,8 @@ import { createZohoDuplicateLead } from "@/lib/zoho-leads";
 import { syncVerifiedUserToBrevo } from "@/lib/brevoSync";
 import { sendMembershipWelcomeEmail } from "@/lib/email";
 import { logEvent } from "@/lib/system-logger";
+import { logConsent, extractIpAddress } from "@/lib/consent-logger";
+import { resolveDataSource } from "@/lib/data-provenance";
 
 type PendingVerification = {
     id: number;
@@ -390,6 +392,44 @@ export async function POST(req: NextRequest) {
             membershipId,
             source: pending.source,
         });
+
+        // ── Log consent (DPDP compliance) ────────────────────────────
+        const clientIp = extractIpAddress(req);
+        const dataSource = resolveDataSource(pending.source);
+        try {
+            await logConsent({
+                userId,
+                email: normalizedEmail,
+                source: dataSource,
+                optInMethod: "double_optin",
+                ipAddress: clientIp,
+                consentPurpose: "registration",
+                metadata: {
+                    pendingVerificationId: pending.id,
+                    membershipId,
+                    originalSource: pending.source,
+                },
+            });
+
+            // Update user consent provenance columns
+            try {
+                await query(
+                    `UPDATE users SET
+                        consent_version = $2,
+                        consent_timestamp = NOW(),
+                        ip_address_at_consent = $3,
+                        data_source = $4,
+                        updated_at = NOW()
+                     WHERE id = $1`,
+                    [userId, "v2.1_T&C_Mar2026", clientIp, dataSource]
+                );
+            } catch (_) { /* non-fatal */ }
+
+            log(`Consent logged for: ${normalizedEmail}`);
+        } catch (consentErr: unknown) {
+            const msg = consentErr instanceof Error ? consentErr.message : String(consentErr);
+            console.warn(`[VERIFY-OTP:${requestId}] Consent log failed (non-fatal):`, msg);
+        }
 
         const fullUser = await loadVerifiedUserSnapshot(userId);
 

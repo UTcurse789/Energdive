@@ -6,6 +6,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { motion } from "framer-motion";
 import { Check, Loader2 } from "lucide-react";
 import { useState } from "react";
+import Link from "next/link";
+import { Checkbox } from "@/components/ui/checkbox";
 
 // ── Constants ────────────────────────────────────────────────────────
 const FREQUENCIES = [
@@ -48,6 +50,7 @@ export default function StepPreferences({
     const [selectedFormats, setSelectedFormats] = useState<Set<string>>(
         new Set(defaultValues.preferredFormats || [])
     );
+    const [consentAccepted, setConsentAccepted] = useState(false);
 
     const {
         setValue,
@@ -172,6 +175,41 @@ export default function StepPreferences({
                 </div>
             </div>
 
+            {/* ── Consent Checkbox ─────────────────────────────────── */}
+            <div className="flex items-start gap-2.5 pt-4">
+                <Checkbox
+                    id="consent-checkbox"
+                    checked={consentAccepted}
+                    onCheckedChange={(checked) => {
+                        const accepted = checked === true;
+                        setConsentAccepted(accepted);
+                        if (accepted) {
+                            // Generate explicitly formatted IST string (+05:30) for clarity in DB/logs
+                            const now = new Date();
+                            const istTime = new Date(now.getTime() + 330 * 60000); // Add 5 hours 30 mins
+                            const istString = istTime.toISOString().replace("Z", "+05:30");
+                            localStorage.setItem("consent_timestamp", istString);
+                        } else {
+                            localStorage.removeItem("consent_timestamp");
+                        }
+                    }}
+                    className="mt-0.5 border-zinc-300 data-[state=checked]:bg-[#0AB996] data-[state=checked]:border-[#0AB996]"
+                />
+                <label
+                    htmlFor="consent-checkbox"
+                    className="text-xs leading-relaxed text-zinc-500 cursor-pointer select-none"
+                >
+                    I agree to the{" "}
+                    <Link href="/terms" target="_blank" className="text-[#0AB996] hover:underline font-medium">
+                        Terms &amp; Conditions
+                    </Link>{" "}
+                    and{" "}
+                    <Link href="/privacy-policy" target="_blank" className="text-[#0AB996] hover:underline font-medium">
+                        Privacy Policy
+                    </Link>
+                </label>
+            </div>
+
             {/* ── Navigation ──────────────────────────────────────── */}
             <div className="flex justify-between pt-6 border-t border-zinc-100">
                 <button
@@ -184,7 +222,7 @@ export default function StepPreferences({
                 </button>
                 <button
                     type="submit"
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || !consentAccepted}
                     className="px-8 py-2.5 bg-[#0AB996] text-white font-semibold rounded-lg shadow-lg shadow-[#0AB996]/20 hover:bg-[#099c82] transition-all active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed flex items-center gap-2"
                 >
                     {isSubmitting ? (
