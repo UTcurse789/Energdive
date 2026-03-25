@@ -1,4 +1,5 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+import { NextResponse } from "next/server";
 
 const isProtectedRoute = createRouteMatcher(["/energclub/dashboard(.*)", "/dashboard(.*)", "/onboarding(.*)"]);
 
@@ -12,6 +13,21 @@ export default clerkMiddleware(async (auth, req) => {
     if (!userId && isProtectedRoute(req)) {
         return redirectToSignIn();
     }
+
+    // Forward client IP to downstream API routes via custom header.
+    // On Vercel Edge, req.ip is the real client IP.
+    // Locally, x-forwarded-for won't be set, so IP stays null (expected).
+    const clientIp =
+        (req as any).ip ||
+        req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+        req.headers.get("x-real-ip") ||
+        null;
+
+    const response = NextResponse.next();
+    if (clientIp) {
+        response.headers.set("x-client-ip", clientIp);
+    }
+    return response;
 });
 
 export const config = {

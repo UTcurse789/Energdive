@@ -82,6 +82,7 @@ export default function OnboardingWizard() {
             ...finalStepData,
             ...utmData,
             email: user?.emailAddresses?.[0]?.emailAddress || "",
+            consentTimestamp: localStorage.getItem("consent_timestamp"),
         };
 
         try {
