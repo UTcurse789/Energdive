@@ -7,16 +7,22 @@ import Image from "next/image";
 import Link from "next/link";
 import { X } from "lucide-react";
 
+import { usePathname } from "next/navigation";
+
 const DISMISSAL_COOLDOWN_MS = 60 * 60 * 1000; // 1 hour
-const POPUP_DELAY_MS = 30 * 1000; // 30 seconds
+const POPUP_DELAY_MS = 7 * 1000; // 7 seconds
 
 export default function AuthPromptModal() {
     const { isLoaded, isSignedIn } = useAuth();
     const [show, setShow] = useState(false);
+    const pathname = usePathname();
 
     useEffect(() => {
         // Only run on the client, and only if auth is loaded and user is NOT signed in
         if (!isLoaded || isSignedIn) return;
+
+        // Don't show modal on auth pages
+        if (pathname?.startsWith("/auth")) return;
 
         // Check if previously dismissed within the cooldown period
         const dismissedAt = localStorage.getItem("auth_prompt_dismissed_at");
@@ -27,13 +33,13 @@ export default function AuthPromptModal() {
             }
         }
 
-        // Set a timer to show the popup after 30 seconds
+        // Set a timer to show the popup after 7 seconds
         const timer = setTimeout(() => {
             setShow(true);
         }, POPUP_DELAY_MS);
 
         return () => clearTimeout(timer);
-    }, [isLoaded, isSignedIn]);
+    }, [isLoaded, isSignedIn, pathname]);
 
     const handleDismiss = () => {
         setShow(false);
@@ -97,6 +103,7 @@ export default function AuthPromptModal() {
                                 {/* Primary CTA */}
                                 <Link
                                     href="/auth"
+                                    onClick={handleDismiss}
                                     className="w-full h-12 rounded-xl bg-[#0AB996] hover:bg-[#099c82] text-white font-semibold flex items-center justify-center gap-2 transition-all shadow-lg shadow-[#0AB996]/20 active:scale-[0.98]"
                                 >
                                     REGISTER / LOGIN
