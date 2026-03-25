@@ -53,6 +53,7 @@ import "./globals.css";
 import SiteLayout from "@/components/layout/site-layout";
 import { UtmTracker } from "@/components/UtmTracker";
 import { Suspense } from "react";
+import AuthPromptModal from "@/components/ui/auth-prompt-modal";
 
 const sans = Inter({
   subsets: ["latin"],
@@ -177,6 +178,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
           <Suspense fallback={null}>
             <UtmTracker />
           </Suspense>
+          <AuthPromptModal />
           <SiteLayout>
             {children}
           </SiteLayout>
