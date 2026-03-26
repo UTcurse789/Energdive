@@ -152,7 +152,6 @@ export default function SubscribePage() {
 
                 </div>
             </main>
-            <Footer />
         </div>
     );
 }
