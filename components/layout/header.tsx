@@ -221,8 +221,8 @@ export function Header() {
 
                 const normalizedIssues: MagazineIssue[] = Array.isArray(menuData?.issues)
                     ? menuData.issues
-                            .map((item) => normalizeIssue(item, resolvedBaseUrl))
-                            .filter((issue: MagazineIssue | null): issue is MagazineIssue => issue !== null)
+                        .map((item) => normalizeIssue(item, resolvedBaseUrl))
+                        .filter((issue: MagazineIssue | null): issue is MagazineIssue => issue !== null)
                     : [];
 
                 normalizedIssues.sort((a, b) => b.sortDate - a.sortDate);
@@ -230,29 +230,27 @@ export function Header() {
 
                 if (Array.isArray(menuData.sectors)) {
                     const allSectors = menuData.sectors;
-                    // Only keep parent sectors (those that have children or match the known parent slugs)
-                    const PARENT_SLUGS = SECTORS.map(s => s.slug);
-                    const parentSectors = allSectors
-                        .filter((s: any) => PARENT_SLUGS.includes(s.slug))
-                        .map((s: any) => {
+                    const mergedSectors = SECTORS.map(dummySector => {
+                        const s = allSectors.find((s: any) => s.slug === dummySector.slug);
+                        if (s) {
                             const children = Array.isArray(s.children)
                                 ? s.children
                                 : Array.isArray(s.children?.data)
                                     ? s.children.data.map((c: any) => c?.attributes ? { ...c.attributes, id: c.id } : c)
                                     : [];
-                            const dummySector = SECTORS.find(ds => ds.slug === s.slug);
                             return {
-                                title: s.name || s.title || s.Title || dummySector?.title || '',
-                                slug: s.slug,
-                                description: dummySector?.description || '',
-                                heroImage: dummySector?.heroImage || '',
+                                title: s.name || s.title || s.Title || dummySector.title,
+                                slug: dummySector.slug,
+                                description: dummySector.description,
+                                heroImage: dummySector.heroImage,
                                 subSectors: children.map((c: any) => c.name?.trim()).filter(Boolean),
                             };
-                        })
-                        // Sort to match the original dummy order
-                        .sort((a: any, b: any) => PARENT_SLUGS.indexOf(a.slug) - PARENT_SLUGS.indexOf(b.slug));
-                    if (parentSectors.length > 0) {
-                        setRealSectors(parentSectors);
+                        }
+                        return { ...dummySector };
+                    });
+
+                    if (mergedSectors.length > 0) {
+                        setRealSectors(mergedSectors);
                     }
                 }
             } catch (e) {
@@ -512,19 +510,17 @@ export function Header() {
                                                             <Link
                                                                 key={sub}
                                                                 href={hasContent ? `/sectors/${activeSector.slug}?sub=${encodeURIComponent(sub.toLowerCase().replace(/\s+/g, "-"))}` : "#"}
-                                                                onClick={(e) => { 
-                                                                    if (!hasContent) e.preventDefault(); 
-                                                                    else closeMenus(); 
+                                                                onClick={(e) => {
+                                                                    if (!hasContent) e.preventDefault();
+                                                                    else closeMenus();
                                                                 }}
-                                                                className={`group px-5 py-4 bg-gray-50 border border-gray-100 rounded-lg transition-all ${
-                                                                    hasContent 
-                                                                    ? "hover:border-[#00A651] hover:bg-[#00A651]/5" 
-                                                                    : "opacity-40 cursor-not-allowed"
-                                                                }`}
+                                                                className={`group px-5 py-4 bg-gray-50 border border-gray-100 rounded-lg transition-all ${hasContent
+                                                                        ? "hover:border-[#00A651] hover:bg-[#00A651]/5"
+                                                                        : "opacity-40 cursor-not-allowed"
+                                                                    }`}
                                                             >
-                                                                <span className={`text-[14px] font-bold transition-colors ${
-                                                                    hasContent ? "text-gray-800 group-hover:text-[#00A651]" : "text-gray-400"
-                                                                }`}>
+                                                                <span className={`text-[14px] font-bold transition-colors ${hasContent ? "text-gray-800 group-hover:text-[#00A651]" : "text-gray-400"
+                                                                    }`}>
                                                                     {sub}
                                                                 </span>
                                                             </Link>
@@ -537,13 +533,33 @@ export function Header() {
                                             </p>
                                         </div>
                                     ) : (
-                                        <div className="flex items-center justify-center h-full">
-                                            <div className="text-center">
-                                                <h4 className="text-[12px] font-bold uppercase text-gray-400 tracking-widest mb-4">Trending Intelligence</h4>
-                                                <ul className="space-y-4 text-[14px] font-bold text-gray-700">
-                                                    <li className="hover:text-[#00A651] cursor-pointer">Global Energy Mix 2026</li>
-                                                    <li className="hover:text-[#00A651] cursor-pointer">Battery Storage Market</li>
-                                                </ul>
+                                        <div className="flex flex-col h-full">
+                                            <h4 className="text-[12px] font-bold uppercase border-b pb-3 mb-6 text-gray-400 tracking-widest">
+                                                Featured Sectors
+                                            </h4>
+                                            <div className="grid grid-cols-4 gap-4">
+                                                {displaySectors.slice(0, 8).map((sector) => (
+                                                    <Link
+                                                        key={sector.slug}
+                                                        href={`/sectors/${sector.slug}`}
+                                                        onClick={closeMenus}
+                                                        className="group flex flex-col gap-2 cursor-pointer"
+                                                    >
+                                                        <div className="relative w-full aspect-video bg-gray-100 rounded-lg overflow-hidden shadow-sm border border-gray-100">
+                                                            <Image 
+                                                                src={sector.heroImage || "/magazine-default.jpg"} 
+                                                                alt={sector.title} 
+                                                                fill 
+                                                                className="object-cover group-hover:scale-110 transition-transform duration-700 ease-out" 
+                                                            />
+                                                            <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                        </div>
+                                                        <div>
+                                                            <h5 className="text-[13px] font-bold text-gray-800 group-hover:text-[#00A651] transition-colors line-clamp-1">{sector.title}</h5>
+                                                            <p className="text-[11px] text-gray-400 mt-1 line-clamp-2 leading-relaxed font-medium">{sector.description}</p>
+                                                        </div>
+                                                    </Link>
+                                                ))}
                                             </div>
                                         </div>
                                     )}

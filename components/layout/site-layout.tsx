@@ -5,6 +5,7 @@ import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { EnergClubHeader } from "@/components/layout/energclub-header";
 import { AdBanner } from "@/components/ads/AdBanner";
+import ZohoSalesIQ from "@/components/ZohoSalesIQ";
 
 export default function SiteLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
@@ -34,6 +35,15 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
             </main>
 
             {!isEnergClub && <Footer />}
+
+            {/* Zoho Sales IQ - Only on specific pages */}
+            {(() => {
+                const allowedPaths = ["/about", "/energclub", "/subscribe", "/contact", "/reports"];
+                if (allowedPaths.some(path => pathname.startsWith(path))) {
+                    return <ZohoSalesIQ />;
+                }
+                return null;
+            })()}
         </>
     );
 }

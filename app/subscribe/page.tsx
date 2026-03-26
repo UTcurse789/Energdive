@@ -152,7 +152,7 @@ export default function SubscribePage() {
 
                 </div>
             </main>
-            <ZohoSalesIQ />
+            <Footer />
         </div>
     );
 }

@@ -8,7 +8,6 @@ import {
     Brain, Lightbulb, Share2, ArrowRight, CheckCircle2
 } from "lucide-react";
 import { title } from "process";
-import ZohoSalesIQ from "@/components/ZohoSalesIQ";
 
 // --- Components ---
 
@@ -405,7 +404,6 @@ export default function EnergClubPage() {
                     </div>
                 </div>
             </section>
-            <ZohoSalesIQ />
         </main>
     );
 }
