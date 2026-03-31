@@ -227,7 +227,7 @@ function HeroBannerAd({ ad, className }: { ad: Ad; className: string }) {
 
     const inner = (
         <div className={`relative w-full overflow-hidden rounded-2xl group ${className}`}>
-            <div className="relative w-full" style={{ aspectRatio: "21/6" }}>
+            <div className="relative w-full" style={{ aspectRatio: "10/1" }}>
                 <Image
                     src={imageUrl}
                     alt={ad.title || "Advertisement"}

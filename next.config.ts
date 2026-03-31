@@ -61,29 +61,35 @@ const nextConfig: NextConfig = {
       {
         protocol: "https",
         hostname: "images.unsplash.com",
+        pathname: '/**',
       },
       {
         protocol: "https",
         hostname: "i.pravatar.cc",
+        pathname: '/**',
       },
       {
         protocol: "https",
         hostname: "placehold.co",
+        pathname: '/**',
       },
 
       // ✅ STRAPI IMAGES (IMPORTANT)
       {
         protocol: 'https',
         hostname: 'cms.energdive.com',
+        pathname: '/**',
       },
       // ✅ CDN IMAGES
       {
         protocol: 'https',
         hostname: 'cdn.energdive.com',
+        pathname: '/**',
       },
       {
         protocol: 'http',
         hostname: 'cms.energdive.com',
+        pathname: '/**',
       },
       {
         protocol: 'http',
@@ -100,6 +106,7 @@ const nextConfig: NextConfig = {
       {
         protocol: "https",
         hostname: "img.youtube.com",
+        pathname: '/**',
       },
 
     ],
