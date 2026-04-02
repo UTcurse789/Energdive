@@ -25,6 +25,25 @@ export async function GET() {
         const tagCounts: Record<string, number> = {};
         const allItems = [...(articlesObj?.data || []), ...(allVideosObj?.data || [])];
         
+        const nameToSlug: Record<string, string> = {
+            "Oil & Gas": "oil-gas",
+            "Oil and Gas": "oil-gas",
+            "Power Generation": "power-generation",
+            "Renewables": "renewables",
+            "Renewable Energy": "renewables",
+            "Transmission": "transmission",
+            "Distribution": "distribution",
+            "Electricity Markets": "electricity-markets",
+            "Power Markets": "electricity-markets",
+            "New Energies": "new-energies",
+            "Energy Storage": "energy-storage",
+            "Sustainability & Safety": "sustainability-and-safety"
+        };
+        const normalizeSectorSlug = (name?: string) => {
+            if (!name) return null;
+            return nameToSlug[name] || name.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-");
+        };
+        
         allItems.forEach((item: any) => {
             const sectors = item?.attributes?.sectors?.data || item?.sectors || [];
             const tags = item?.attributes?.tags?.data || item?.tags || [];
@@ -34,7 +53,7 @@ export async function GET() {
             const tagNames = (Array.isArray(tags) ? tags : [])
                 .map((t: any) => t?.attributes?.name || t?.name);
             const sectorSlugs = (Array.isArray(sectors) ? sectors : [])
-                .map((s: any) => s?.attributes?.slug || s?.slug);
+                .map((s: any) => s?.attributes?.slug || s?.slug || normalizeSectorSlug(s?.attributes?.name || s?.name));
             
             sectorSlugs.forEach(slug => {
                 if (!slug) return;
