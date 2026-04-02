@@ -15,8 +15,8 @@ export function ZohoFormPage({ title, description, queryType }: ZohoFormPageProp
     const formSrc = `${ZOHO_FORM_BASE}?QueryType=${encodeURIComponent(queryType)}`;
 
     return (
-        <div className="min-h-screen bg-[#F7F9FB] text-zinc-900 selection:bg-[#00A651]/30">
-            <section className="relative h-[150px] sm:h-[200px] md:h-[260px] lg:h-[300px] overflow-hidden">
+        <div className="min-h-screen bg-[#F7F9FB] text-zinc-900 selection:bg-[#00A651]/30 pb-32 md:pb-48 lg:pb-64 flex flex-col gap-16 md:gap-24 lg:gap-32">
+            <section className="relative h-[150px] sm:h-[200px] md:h-[260px] lg:h-[300px] overflow-hidden shrink-0">
                 <Image
                     src="/advertise-breadrumb.jpg"
                     alt="ENERGDIVE background"
@@ -27,7 +27,7 @@ export function ZohoFormPage({ title, description, queryType }: ZohoFormPageProp
                 <div className="absolute inset-0 bg-zinc-900/45" />
             </section>
 
-            <section className="container mx-auto px-4 sm:px-6 lg:px-12 relative -mt-10 md:-mt-14 z-10 pb-16 md:pb-24">
+            <section className="container mx-auto px-4 sm:px-6 lg:px-12 relative z-10 flex-grow">
                 <div className="mx-auto max-w-5xl rounded-[28px] border border-zinc-200 bg-white p-6 sm:p-8 md:p-12 shadow-[0_20px_60px_rgba(2,6,23,0.08)]">
                     <Link
                         href="/advertise-with-us"
