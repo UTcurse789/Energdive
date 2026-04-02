@@ -25,7 +25,7 @@ const QUICK_LINKS = [
 const COMPANY = [
     { name: "About Us", href: "/about" },
     { name: "Contact", href: "/contact" },
-    { name: "Advertise", href: "/advertise" },
+    { name: "Advertise", href: "/advertise-with-us" },
     { name: "Terms of Service", href: "/terms" },
     { name: "Privacy Policy", href: "/privacy" },
 ];

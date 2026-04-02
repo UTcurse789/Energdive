@@ -334,7 +334,7 @@ export function Header() {
                             </a>
                         ))}
                     </div>
-                    <Link href="/advertise" className="flex items-center gap-2 uppercase cursor-pointer hover:text-gray-300 transition-colors">
+                    <Link href="/advertise-with-us" className="flex items-center gap-2 uppercase cursor-pointer hover:text-gray-300 transition-colors">
                         <Megaphone className="w-3.5 h-3.5" />
                         <span className="whitespace-nowrap uppercase hidden sm:inline">ADVERTISE WITH US</span>
                         <span className="whitespace-nowrap uppercase sm:hidden">ADVERTISE</span>

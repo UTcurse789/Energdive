@@ -30,7 +30,7 @@ export function ZohoFormPage({ title, description, queryType }: ZohoFormPageProp
             <section className="container mx-auto px-4 sm:px-6 lg:px-12 relative -mt-10 md:-mt-14 z-10 pb-16 md:pb-24">
                 <div className="mx-auto max-w-5xl rounded-[28px] border border-zinc-200 bg-white p-6 sm:p-8 md:p-12 shadow-[0_20px_60px_rgba(2,6,23,0.08)]">
                     <Link
-                        href="/advertise"
+                        href="/advertise-with-us"
                         className="inline-flex items-center gap-2 rounded-lg border border-zinc-200 px-3 py-2 text-xs font-bold uppercase tracking-wider text-zinc-500 transition-colors hover:border-[#00A651]/30 hover:text-[#00A651]"
                     >
                         <ArrowLeft size={14} />
