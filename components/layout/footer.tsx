@@ -71,7 +71,7 @@ export function Footer() {
                     <div className="lg:col-span-6">
                         <Link href="/" className="inline-block mb-6 group">
                             <NextImage
-                                src="/logo2-removebg-preview.png"
+                                src="/EnergDive Logo in White.png"
                                 alt="EnergDive"
                                 width={280}
                                 height={45}
