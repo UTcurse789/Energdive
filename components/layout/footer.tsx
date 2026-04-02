@@ -3,7 +3,7 @@
 import Link from "next/link";
 import NextImage from "next/image";
 import {
-    Twitter,
+    X,
     Linkedin,
     Youtube,
     Instagram,
@@ -31,11 +31,11 @@ const COMPANY = [
 ];
 
 const SOCIAL_ICONS = [
-    { Icon: Twitter, href: "#", label: "Twitter" },
-    { Icon: Linkedin, href: "#", label: "LinkedIn" },
-    { Icon: Youtube, href: "#", label: "YouTube" },
-    { Icon: Instagram, href: "#", label: "Instagram" },
-    { Icon: Facebook, href: "#", label: "Facebook" },
+    { Icon: Linkedin, href: "https://www.linkedin.com/company/energdive/", label: "LinkedIn" },
+    { Icon: X, href: "https://x.com/energdive", label: "Twitter" },
+    { Icon: Youtube, href: "https://www.youtube.com/@energdive", label: "YouTube" },
+    { Icon: Instagram, href: "https://www.instagram.com/energdiveindia", label: "Instagram" },
+    { Icon: Facebook, href: "https://www.facebook.com/energdive/", label: "Facebook" },
 ];
 
 const SECTOR_ORDER = [
@@ -71,11 +71,11 @@ export function Footer() {
                     <div className="lg:col-span-6">
                         <Link href="/" className="inline-block mb-6 group">
                             <NextImage
-                                src="/energdive-logo-white-rr.png"
+                                src="/logo2-removebg-preview.png"
                                 alt="EnergDive"
-                                width={300}
-                                height={55}
-                                className="w-[250px] md:w-[300] group-hover:opacity-100 transition-opacity"
+                                width={280}
+                                height={45}
+                                className="w-[200px] md:w-[250px] group-hover:opacity-100 transition-opacity"
                             />
                         </Link>
                         <p className="text-gray-500 text-[13px] leading-relaxed mb-7 max-w-sm">
@@ -144,7 +144,7 @@ export function Footer() {
                 {/* ─── Bottom Bar ─── */}
                 <div className="flex flex-col md:flex-row justify-between items-center gap-4 py-6 border-t border-white/[0.06]">
                     <p className="text-[11px] text-gray-600">
-                        &copy; {new Date().getFullYear()} EnergDive. All rights reserved. Published by ClariSector Technologies Pvt. Ltd.
+                        &copy; {new Date().getFullYear()} ENERGDIVE. All rights reserved. Published by ClariSector Technologies Pvt. Ltd.
                     </p>
                     <div className="flex items-center gap-5">
                         <Link href="/terms" className="text-[11px] text-gray-600 hover:text-gray-400 transition-colors">Terms</Link>
