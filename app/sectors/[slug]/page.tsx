@@ -21,12 +21,52 @@ import { strapiImageUrl } from "@/lib/strapi-image";
 ================================ */
 const STRAPI = process.env.NEXT_PUBLIC_STRAPI_URL;
 
+const slugToNameMap: Record<string, string[]> = {
+    "oil-gas": ["Oil & Gas", "Oil and Gas"],
+    "power-generation": ["Power Generation"],
+    "renewables": ["Renewables", "Renewable Energy"],
+    "transmission": ["Transmission"],
+    "distribution": ["Distribution"],
+    "electricity-markets": ["Electricity Markets", "Power Markets"],
+    "new-energies": ["New Energies"],
+    "energy-storage": ["Energy Storage"],
+    "sustainability-and-safety": ["Sustainability & Safety", "Sustainability", "Safety"],
+};
+
+function getSectorNames(slug: string) {
+    return slugToNameMap[slug] || [slug.replace(/-/g, " ")];
+}
+
 async function fetchSectorWithChildren(slug: string) {
     try {
-        const url = `${STRAPI}/api/sectors?filters[slug][$eq]=${slug}&populate=*`;
+        const names = getSectorNames(slug);
+        let filterStr = `filters[$or][0][slug][$eq]=${slug}`;
+        names.forEach((n, i) => {
+            filterStr += `&filters[$or][${i + 1}][name][$eq]=${encodeURIComponent(n)}`;
+        });
+        const url = `${STRAPI}/api/sectors?${filterStr}&populate=*`;
         const res = await fetch(url, { cache: "no-store" });
         const json = await res.json();
-        const raw = json?.data?.[0] || null;
+        
+        let bestMatch = null;
+        if (json?.data?.length) {
+            bestMatch = json.data.find((s: any) => {
+                const sSlug = s?.attributes?.slug || s?.slug;
+                return sSlug === slug;
+            });
+            if (!bestMatch) {
+                for (const name of names) {
+                    bestMatch = json.data.find((s: any) => {
+                        const sName = s?.attributes?.name || s?.name;
+                        return sName?.toLowerCase() === name.toLowerCase();
+                    });
+                    if (bestMatch) break;
+                }
+            }
+            if (!bestMatch) bestMatch = json.data[0];
+        }
+
+        const raw = bestMatch || null;
         if (!raw) return null;
         return raw?.attributes ? { id: raw.id, ...raw.attributes } : raw;
     } catch {
@@ -36,7 +76,12 @@ async function fetchSectorWithChildren(slug: string) {
 
 async function fetchSectorArticles(slug: string) {
     try {
-        const url = `${STRAPI}/api/contents?filters[$or][0][type_of_content][name][$eq]=Articles&filters[$or][1][type_of_content][name][$eq]=Featured Stories&filters[sectors][slug][$eq]=${slug}&populate=*&sort=Date:desc`;
+        const names = getSectorNames(slug);
+        let filterStr = `filters[$and][1][$or][0][sectors][slug][$eq]=${slug}`;
+        names.forEach((n, i) => {
+            filterStr += `&filters[$and][1][$or][${i + 1}][sectors][name][$containsi]=${encodeURIComponent(n)}`;
+        });
+        const url = `${STRAPI}/api/contents?filters[$and][0][$or][0][type_of_content][name][$eq]=Articles&filters[$and][0][$or][1][type_of_content][name][$eq]=Featured Stories&${filterStr}&populate=*&sort=Date:desc`;
         const res = await fetch(url, { next: { revalidate: 3600 } });
         const json = await res.json();
         return json?.data || [];
@@ -47,7 +92,12 @@ async function fetchSectorArticles(slug: string) {
 
 async function fetchSectorVideos(slug: string) {
     try {
-        const url = `${STRAPI}/api/videos?filters[sectors][slug][$eq]=${slug}&populate=*&sort=createdAt:desc`;
+        const names = getSectorNames(slug);
+        let filterStr = `filters[$or][0][sectors][slug][$eq]=${slug}`;
+        names.forEach((n, i) => {
+            filterStr += `&filters[$or][${i + 1}][sectors][name][$containsi]=${encodeURIComponent(n)}`;
+        });
+        const url = `${STRAPI}/api/videos?${filterStr}&populate=*&sort=createdAt:desc`;
         const res = await fetch(url, { next: { revalidate: 3600 } });
         const json = await res.json();
         return json?.data || [];

@@ -817,7 +817,7 @@ export function Header() {
                                                             eventImage = strapiImageUrl(rawUrl);
                                                         }
                                                     }
-                                                    const eventDate = event.date ? new Date(event.date) : null;
+                                                    const eventDate = event.parsedDate ? new Date(event.parsedDate) : (event.date ? new Date(event.date) : null);
                                                     const isValidDate = eventDate && !isNaN(eventDate.getTime());
                                                     const eventLocation = event.venue || event.location || "";
                                                     const eventHref = event.url && /^https?:\/\//.test(event.url)

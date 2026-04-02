@@ -45,15 +45,15 @@ async function fetchOpinions() {
 /** Extract content_tag title from various Strapi shapes */
 function extractContentTagTitle(contentTag: any): string | null {
   if (!contentTag) return null;
-  
+
   // Normalize data (handle .data or .attributes or direct)
   const d = contentTag.data?.attributes || contentTag.data || contentTag.attributes || contentTag;
-  
+
   if (Array.isArray(d)) {
     const first = d[0]?.attributes || d[0];
     return first?.title || first?.Title || null;
   }
-  
+
   return d.title || d.Title || null;
 }
 
@@ -186,14 +186,6 @@ export default function OpinionPage() {
               <p className="text-xl text-white/70 max-w-2xl mb-12">
                 Discover perspectives that matter with ENERGDIVE Opinion, where thought leaders share analysis, commentary, and forward-looking views on key energy and sustainability issues.
               </p>
-
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                className="flex items-center gap-3 bg-white text-black px-8 py-4 rounded-full font-bold text-sm uppercase"
-              >
-                Browse All Opinions
-                <ArrowRight className="w-4 h-4" />
-              </motion.button>
             </motion.div>
           </div>
         </section>
