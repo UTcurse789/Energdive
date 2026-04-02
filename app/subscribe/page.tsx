@@ -8,7 +8,7 @@ import ZohoSalesIQ from "@/components/ZohoSalesIQ";
 const STATS = [
     { label: "Active Readers", value: "10K+", icon: Users },
     { label: "Global Reach", value: "12+ Countries", icon: Globe },
-    { label: "Industry Awards", value: "08+", icon: Award },
+    { label: "SECTORS COVERED", value: "40+", icon: Award },
 ];
 
 const WHY_SUBSCRIBE = [
@@ -117,9 +117,14 @@ export default function SubscribePage() {
                         <div className="mt-16 p-8 rounded-2xl bg-slate-900 text-white relative overflow-hidden group">
                             <h4 className="text-xl font-bold mb-2">Bulk & Institutional Access</h4>
                             <p className="text-slate-400 text-sm mb-6">Equip your entire team with premium energy intelligence and regional reports.</p>
-                            <button className="flex items-center gap-2 text-[#00D9B1] text-xs font-black uppercase tracking-widest group-hover:gap-4 transition-all">
+                            <a
+                                href="https://forms.zohopublic.in/itenmedia1/form/ENERGDIVEEnquiriesForm/formperma/vGdZ0noLDdoGdPS8QIhuH69flKMawpU27Ws-TttbC1A"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-2 text-[#00D9B1] text-xs font-black uppercase tracking-widest group-hover:gap-4 transition-all"
+                            >
                                 Corporate Enquiry <ArrowUpRight size={16} />
-                            </button>
+                            </a>
                         </div>
                     </div>
 

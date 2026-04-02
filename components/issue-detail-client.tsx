@@ -26,13 +26,13 @@ export function IssueDetailClient({ issue }: IssueDetailClientProps) {
                         {/* Issue Header */}
                         <div className="mb-16">
                             <h1 className="text-4xl sm:text-5xl md:text-[54px] leading-[1.1] mb-4 text-[#1a1a1a]">
-                                {issue.month}/{itemYearFallback(issue.year)}
+                                {issue.month} {itemYearFallback(issue.year)}
                             </h1>
                             <p className="text-sm sm:text-base text-gray-500 tracking-wide font-sans">
                                 Volume {issue.volume}, Issue {String(issue.Issue || "").replace(/number/i, '').trim()}
                             </p>
                             {issue.subTitle && (
-                                <p className="mt-6 text-xl text-gray-700 italic">
+                                <p className="mt-6 text-3xl md:text-4xl text-[#1a1a1a] italic leading-snug">
                                     {issue.subTitle}
                                 </p>
                             )}
