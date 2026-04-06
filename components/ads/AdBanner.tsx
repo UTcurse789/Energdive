@@ -165,7 +165,7 @@ function BannerAd({ ad, className }: { ad: Ad; className: string }) {
     if (!imageUrl) return null;
 
     const content = (
-        <div className={`flex justify-center ${className}`}>
+        <div className={`flex justify-center group ${className}`}>
             <div className="relative overflow-hidden rounded-lg" style={{ maxWidth: 728, width: "100%" }}>
                 <div className="relative w-full" style={{ aspectRatio: "728/90" }}>
                     <Image
@@ -174,9 +174,12 @@ function BannerAd({ ad, className }: { ad: Ad; className: string }) {
                         fill
                         loading="lazy"
                         unoptimized
-                        className="object-cover"
+                        className="object-cover transition-transform duration-500 group-hover:scale-[1.015]"
                     />
                 </div>
+                <span className="absolute top-2 right-2 text-[8px] font-bold uppercase tracking-[0.15em] text-white/80 bg-black/25 backdrop-blur-md px-2 py-0.5 rounded-full pointer-events-none">
+                    Sponsored
+                </span>
             </div>
         </div>
     );
@@ -206,7 +209,7 @@ function CardAd({ ad, className }: { ad: Ad; className: string }) {
                     className="object-cover transition-transform duration-500 group-hover:scale-[1.02]"
                 />
             </div>
-            <span className="absolute top-3 left-3 text-[9px] font-bold uppercase tracking-[0.15em] text-white/80 bg-black/25 backdrop-blur-md px-2.5 py-1 rounded-full">
+            <span className="absolute top-3 right-3 text-[9px] font-bold uppercase tracking-[0.15em] text-white/80 bg-black/25 backdrop-blur-md px-2.5 py-1 rounded-full pointer-events-none">
                 Sponsored
             </span>
         </div>
@@ -226,20 +229,18 @@ function HeroBannerAd({ ad, className }: { ad: Ad; className: string }) {
     if (!imageUrl) return null;
 
     const inner = (
-        <div className={`relative w-full overflow-hidden rounded-2xl group ${className}`}>
-            <div className="relative w-full" style={{ aspectRatio: "10/1" }}>
-                <Image
+        <div className={`flex justify-center w-full group overflow-hidden ${className}`}>
+            <div className="relative inline-block rounded-2xl overflow-hidden">
+                <img
                     src={imageUrl}
                     alt={ad.title || "Advertisement"}
-                    fill
                     loading="lazy"
-                    unoptimized
-                    className="object-cover transition-transform duration-500 group-hover:scale-[1.015]"
+                    className="max-w-full h-auto object-contain transition-transform duration-500 group-hover:scale-[1.015]"
                 />
+                <span className="absolute top-3 right-3 text-[9px] font-bold uppercase tracking-[0.15em] text-white/80 bg-black/25 backdrop-blur-md px-2.5 py-1 rounded-full pointer-events-none">
+                    Sponsored
+                </span>
             </div>
-            <span className="absolute top-3 right-3 text-[9px] font-bold uppercase tracking-[0.15em] text-white/80 bg-black/25 backdrop-blur-md px-2.5 py-1 rounded-full">
-                Sponsored
-            </span>
         </div>
     );
 
@@ -283,7 +284,7 @@ function VerticalBannerAd({ ad, className }: { ad: Ad; className: string }) {
                     <p className="text-sm font-semibold text-white truncate">{ad.partner_name || ad.title}</p>
                 </div>
             </div>
-            <span className="absolute top-3 left-3 text-[9px] font-bold uppercase tracking-[0.15em] text-white/80 bg-black/25 backdrop-blur-md px-2.5 py-1 rounded-full">
+            <span className="absolute top-3 right-3 text-[9px] font-bold uppercase tracking-[0.15em] text-white/80 bg-black/25 backdrop-blur-md px-2.5 py-1 rounded-full pointer-events-none">
                 Sponsored
             </span>
         </div>
