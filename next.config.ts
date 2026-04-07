@@ -49,6 +49,26 @@ const nextConfig: NextConfig = {
     ];
   },
 
+  async redirects() {
+    return [
+      {
+        source: '/advertise-with-us',
+        destination: '/advertise',
+        permanent: true,
+      },
+      {
+        source: '/news/delhi-announces-new-ev-policy-to-curb-pollution-expand-charging-network-1',
+        destination: '/news/delhi-announces-new-ev-policy-to-curb-pollution-expand-charging-network',
+        permanent: true,
+      },
+      {
+        source: '/news/govt-steps-up-ev-charging-rollout-with-tighter-battery-standards-r-and-d-push-1',
+        destination: '/news/govt-steps-up-ev-charging-rollout-with-tighter-battery-standards-r-and-d-push',
+        permanent: true,
+      },
+    ];
+  },
+
   images: {
     // SVG support
     dangerouslyAllowSVG: true,
