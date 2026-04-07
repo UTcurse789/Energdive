@@ -15,6 +15,7 @@ export default async function syncUserToBrevo(user: any) {
                 attributes: {
                     FIRSTNAME: user.first_name || "",
                     LASTNAME: user.last_name || "",
+                    SALUTATION: user.salutation || "",
                     PHONE: user.phone && user.phone !== "undefined" && user.phone !== "null" ? user.phone : "",
                     ORGANISATION: user.organization || "",
                     JOB_TITLE: user.job_title || "",
@@ -55,6 +56,7 @@ export default async function syncUserToBrevo(user: any) {
 export interface VerifiedUserBrevoPayload {
     email: string;
     name?: string;
+    salutation?: string;
     phone?: string;
     company?: string;
     jobTitle?: string;
@@ -91,6 +93,7 @@ export async function syncVerifiedUserToBrevo(user: VerifiedUserBrevoPayload): P
     const attributes: Record<string, string> = {
         FIRSTNAME: firstName,
         LASTNAME: lastName,
+        SALUTATION: user.salutation || "",
         PHONE: user.phone && user.phone !== "undefined" && user.phone !== "null" ? user.phone : "",
         ORGANISATION: user.company || "",
         MEMBERSHIP_ID: user.membershipId || "",
