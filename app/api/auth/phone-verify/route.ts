@@ -89,7 +89,11 @@ export async function POST(req: Request) {
                 console.log(`[Auth Phone] Created new user: ${clerkUser.id}`);
             } catch (createErr: any) {
                 // If it failed because the externalId exists (but our queries missed it)
-                if (createErr.errors?.[0]?.code === 'form_identifier_exists') {
+                const isConflictError = 
+                    createErr.errors?.[0]?.code === 'form_identifier_exists' || 
+                    createErr.errors?.[0]?.message?.toLowerCase().includes('external id is taken');
+                
+                if (isConflictError) {
                     console.warn(`[Auth Phone] externalId exists but hidden from query — doing fallback search by exact email...`);
                     // The most reliable fallback is the exact placeholder email we would have generated
                     const fallbackSearch = await clerk.users.getUserList({ emailAddress: [placeholderEmail] });
@@ -97,7 +101,7 @@ export async function POST(req: Request) {
                         clerkUser = fallbackSearch.data[0];
                         console.log(`[Auth Phone] Found existing user via fallback email search: ${clerkUser.id}`);
                     } else {
-                        throw new Error(`User exists but could not be retrieved. Error: ${createErr.errors[0].message}`);
+                        throw new Error(`User exists but could not be retrieved. Error: ${createErr.errors?.[0]?.message || 'Unknown'}`);
                     }
                 } else {
                     console.error("[Auth Phone] createUser error:", JSON.stringify(createErr?.errors));

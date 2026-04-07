@@ -33,6 +33,7 @@ export default function OnboardingWizard() {
     // Centralized State
     const [formData, setFormData] = useState({
         // Step 1
+        salutation: "",
         firstName: user?.firstName || "",
         lastName: user?.lastName || "",
         phone: "",
@@ -81,6 +82,7 @@ export default function OnboardingWizard() {
             ...finalStepData,
             ...utmData,
             email: user?.emailAddresses?.[0]?.emailAddress || "",
+            consentTimestamp: localStorage.getItem("consent_timestamp"),
         };
 
         try {

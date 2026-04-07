@@ -6,7 +6,14 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { motion } from "framer-motion";
 import { COUNTRIES } from "@/data/countries";
 
+const SALUTATION_OPTIONS = [
+    "Mr.", "Mrs.", "Ms.", "Dr.", "Prof.",
+    "Capt.", "Col.", "Admiral", "Vice Admiral", "Brig.",
+    "Shri.", "Smt.", "H.E. Mr.", "H.E. Ms.", "H.E. Dr.",
+];
+
 const personalSchema = z.object({
+    salutation: z.string().min(1, "Salutation is required"),
     firstName: z.string().min(2, "First name is required"),
     lastName: z.string().min(2, "Last name is required"),
     country: z.string().min(2, "Country is required"),
@@ -24,6 +31,7 @@ export default function StepPersonal({ defaultValues, onNext }: StepPersonalProp
     const { register, handleSubmit, formState: { errors } } = useForm<PersonalData>({
         resolver: zodResolver(personalSchema),
         defaultValues: {
+            salutation: defaultValues.salutation || "",
             firstName: defaultValues.firstName || "",
             lastName: defaultValues.lastName || "",
             country: defaultValues.country || "India",
@@ -45,7 +53,22 @@ export default function StepPersonal({ defaultValues, onNext }: StepPersonalProp
         >
             <div className="space-y-4">
                 <h2 className="text-2xl font-bold text-zinc-900">Personal Details</h2>
-                <p className="text-zinc-500">Let's start with the basics to set up your profile.</p>
+                <p className="text-zinc-500">Let&apos;s start with the basics to set up your profile.</p>
+
+                {/* Salutation */}
+                <div className="space-y-1">
+                    <label className="block text-sm font-medium text-zinc-700">Salutation</label>
+                    <select
+                        {...register("salutation")}
+                        className="w-full px-4 py-2 border border-zinc-200 rounded-lg focus:ring-2 focus:ring-[#0AB996] outline-none transition-all bg-white"
+                    >
+                        <option value="">Select salutation</option>
+                        {SALUTATION_OPTIONS.map((s) => (
+                            <option key={s} value={s}>{s}</option>
+                        ))}
+                    </select>
+                    {errors.salutation && <p className="text-red-500 text-xs">{errors.salutation.message}</p>}
+                </div>
 
                 <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1">

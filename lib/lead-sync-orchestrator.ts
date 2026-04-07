@@ -26,6 +26,7 @@ export interface SyncResult {
 interface SyncUserProfile {
     clerk_id: string;
     source?: string | null;
+    salutation?: string | null;
     phone?: string | null;
     first_name?: string | null;
     last_name?: string | null;
@@ -43,6 +44,7 @@ interface SyncUserProfile {
 
 interface SyncBodyData {
     phone?: string;
+    salutation?: string;
     firstName?: string;
     lastName?: string;
     organization?: string;
@@ -211,6 +213,7 @@ export async function syncEnrichedLead(
         const leadData: ZohoLeadData = {
             First_Name: fullUser.first_name || bodyData.firstName || "",
             Last_Name: fullUser.last_name || bodyData.lastName || "",
+            Salutation: fullUser.salutation || bodyData.salutation || undefined,
             Email: syncEmail,
             Phone: phone,
             Mobile: phone,

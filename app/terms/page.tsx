@@ -21,10 +21,11 @@ const sections = [
     { id: "warranties", title: "13. Disclaimer of Warranties" },
     { id: "liability", title: "14. Limitation of Liability" },
     { id: "indemnification", title: "15. Indemnification" },
-    { id: "governing", title: "16. Governing Law & Jurisdiction" },
-    { id: "severability", title: "17. Severability" },
-    { id: "entire", title: "18. Entire Agreement" },
-    { id: "contact", title: "19. Contact Information" },
+    { id: "data-transfer", title: "16. Data Transfer & Cross-Platform Sharing" },
+    { id: "governing", title: "17. Governing Law & Jurisdiction" },
+    { id: "severability", title: "18. Severability" },
+    { id: "entire", title: "19. Entire Agreement" },
+    { id: "contact", title: "20. Contact Information" },
 ];
 
 export default function TermsPage() {
@@ -51,7 +52,7 @@ export default function TermsPage() {
                         <h1 className="text-5xl md:text-6xl font-black text-zinc-900 leading-[0.95] mb-4">
                             Terms & <span className="text-[#00A651]">Conditions</span>
                         </h1>
-                        <p className="text-zinc-500 text-lg">Last Updated: 3rd December 2026</p>
+                        <p className="text-zinc-500 text-lg">Last Updated: March 25, 2026</p>
                     </motion.div>
                 </section>
 
@@ -155,16 +156,32 @@ export default function TermsPage() {
                             <h2 id="indemnification" className="text-2xl font-black text-zinc-900 mt-12 mb-4 scroll-mt-[200px]">15. Indemnification</h2>
                             <p>You agree to indemnify energdive.com against claims arising from misuse or violations.</p>
 
-                            <h2 id="governing" className="text-2xl font-black text-zinc-900 mt-12 mb-4 scroll-mt-[200px]">16. Governing Law & Jurisdiction</h2>
+                            <h2 id="data-transfer" className="text-2xl font-black text-zinc-900 mt-12 mb-4 scroll-mt-[200px]">16. Data Transfer &amp; Cross-Platform Sharing</h2>
+                            <p>By using the Services, you acknowledge and consent to the transfer of your personal data to third-party platforms as necessary for service delivery:</p>
+                            <ul>
+                                <li><strong>CRM Systems (Zoho CRM):</strong> Your registration data, membership details, community preferences, and engagement data are transferred to our CRM for lead management, membership services, and communications.</li>
+                                <li><strong>Email Marketing (Brevo/Sendinblue):</strong> Your email address, name, and preference data are shared for newsletters, alerts, event notifications, and transactional emails.</li>
+                                <li><strong>Analytics Platforms:</strong> Anonymised usage data and session information may be shared with analytics providers for performance measurement.</li>
+                            </ul>
+                            <p>For data sourced from third-party platforms (including but not limited to Backstage, TradeIndia, Meta Ads, and Google Ads):</p>
+                            <ul>
+                                <li>We maintain written Data Processing Agreements (DPAs) with each data source provider.</li>
+                                <li>Third-party sourced data is clearly marked with its origin and is subject to re-consent before activation.</li>
+                                <li>Platform-specific restrictions on data portability and usage are respected at all times.</li>
+                                <li>You have the right to request details of any DPA under which your data was received.</li>
+                            </ul>
+                            <p>All cross-platform data transfers are conducted in compliance with the Digital Personal Data Protection (DPDP) Act, 2023 and with appropriate technical and organisational safeguards.</p>
+
+                            <h2 id="governing" className="text-2xl font-black text-zinc-900 mt-12 mb-4 scroll-mt-[200px]">17. Governing Law &amp; Jurisdiction</h2>
                             <p>These Terms are governed by the laws of India, with jurisdiction in New Delhi.</p>
 
-                            <h2 id="severability" className="text-2xl font-black text-zinc-900 mt-12 mb-4 scroll-mt-[200px]">17. Severability</h2>
+                            <h2 id="severability" className="text-2xl font-black text-zinc-900 mt-12 mb-4 scroll-mt-[200px]">18. Severability</h2>
                             <p>If any provision is invalid, remaining provisions remain effective.</p>
 
-                            <h2 id="entire" className="text-2xl font-black text-zinc-900 mt-12 mb-4 scroll-mt-[200px]">18. Entire Agreement</h2>
+                            <h2 id="entire" className="text-2xl font-black text-zinc-900 mt-12 mb-4 scroll-mt-[200px]">19. Entire Agreement</h2>
                             <p>These Terms constitute the complete agreement between you and energdive.com.</p>
 
-                            <h2 id="contact" className="text-2xl font-black text-zinc-900 mt-12 mb-4 scroll-mt-[200px]">19. Contact Information</h2>
+                            <h2 id="contact" className="text-2xl font-black text-zinc-900 mt-12 mb-4 scroll-mt-[200px]">20. Contact Information</h2>
                             <p>If you have questions about these Terms, contact us at <a href="mailto:legal@energdive.com" className="text-[#00A651] hover:underline">legal@energdive.com</a></p>
 
                             {/* CROSS LINKS */}
@@ -173,6 +190,9 @@ export default function TermsPage() {
                                 <div className="flex flex-wrap gap-3">
                                     <Link href="/privacy" className="inline-flex items-center gap-1.5 text-[12px] font-bold text-zinc-600 hover:text-[#00A651] transition-colors border border-zinc-200 px-4 py-2 rounded-lg">
                                         Privacy Policy <ArrowRight size={12} />
+                                    </Link>
+                                    <Link href="/data-retention" className="inline-flex items-center gap-1.5 text-[12px] font-bold text-zinc-600 hover:text-[#00A651] transition-colors border border-zinc-200 px-4 py-2 rounded-lg">
+                                        Data Retention Policy <ArrowRight size={12} />
                                     </Link>
                                     <Link href="/cookies" className="inline-flex items-center gap-1.5 text-[12px] font-bold text-zinc-600 hover:text-[#00A651] transition-colors border border-zinc-200 px-4 py-2 rounded-lg">
                                         Cookies Policy <ArrowRight size={12} />

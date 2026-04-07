@@ -5,6 +5,7 @@ const ZOHO_API_URL = `${process.env.ZOHO_API_DOMAIN || "https://www.zohoapis.in"
 export interface ZohoLeadData {
     First_Name: string;
     Last_Name: string;
+    Salutation?: string;
     Email: string;
     Phone?: string;
     Mobile?: string;
@@ -171,6 +172,7 @@ export async function upsertZohoLead(
         const zohoRecord: Record<string, any> = {
             First_Name: enrichedData.First_Name,
             Last_Name: enrichedData.Last_Name,
+            Salutation: enrichedData.Salutation || null,
             Email: enrichedData.Email,
             Phone: enrichedData.Phone || null,
             Mobile: enrichedData.Mobile || enrichedData.Phone || null,
@@ -185,6 +187,11 @@ export async function upsertZohoLead(
             Invite_Source: enrichedData.Invite_Source || null,
             City: enrichedData.City || null,
             Country: enrichedData.Country || null,
+            Source: enrichedData.UTM_Source || null,
+            Medium: enrichedData.UTM_Medium || null,
+            Campaign: enrichedData.UTM_Campaign || null,
+            Term: enrichedData.UTM_Term || null,
+            Content: enrichedData.UTM_Content || null,
         };
 
         if (enrichedData.Owner) {
@@ -321,8 +328,10 @@ export async function createZohoLead(
         const zohoRecord: Record<string, any> = {
             First_Name: enrichedData.First_Name,
             Last_Name: enrichedData.Last_Name,
+            Salutation: enrichedData.Salutation || null,
             Email: enrichedData.Email,
             Phone: enrichedData.Phone || null,
+            Mobile: enrichedData.Mobile || enrichedData.Phone || null,
             Company: enrichedData.Company || null,
             Designation: enrichedData.Designation || null,
             Lead_Source: enrichedData.Lead_Source || null,
@@ -334,6 +343,11 @@ export async function createZohoLead(
             Invite_Source: enrichedData.Invite_Source || null,
             City: enrichedData.City || null,
             Country: enrichedData.Country || null,
+            Source: enrichedData.UTM_Source || null,
+            Medium: enrichedData.UTM_Medium || null,
+            Campaign: enrichedData.UTM_Campaign || null,
+            Term: enrichedData.UTM_Term || null,
+            Content: enrichedData.UTM_Content || null,
         };
 
         // 3. Set Owner if specified
@@ -406,6 +420,7 @@ export async function createZohoLead(
 export interface DuplicateLeadPayload {
     email: string;
     name?: string;
+    salutation?: string;
     phone?: string;
     company?: string;
     jobTitle?: string;
@@ -451,6 +466,7 @@ export async function createZohoDuplicateLead(
         const zohoRecord: Record<string, any> = {
             First_Name: firstName,
             Last_Name: lastName,
+            Salutation: payload.salutation || null,
             Email: payload.email,
             Phone: payload.phone || null,
             Mobile: payload.phone || null,
@@ -465,11 +481,11 @@ export async function createZohoDuplicateLead(
             Invite_Source: "EnergClub",
             Membership_ID: payload.membershipId || null,
             Frequency: payload.frequency || "Daily",
-            UTM_Source: payload.utm_source || null,
-            UTM_Medium: payload.utm_medium || null,
-            UTM_Campaign: payload.utm_campaign || null,
-            UTM_Term: payload.utm_term || null,
-            UTM_Content: payload.utm_content || null,
+            Source: payload.utm_source || null,
+            Medium: payload.utm_medium || null,
+            Campaign: payload.utm_campaign || null,
+            Term: payload.utm_term || null,
+            Content: payload.utm_content || null,
             Description: [
                 payload.membershipId ? `Membership ID: ${payload.membershipId}` : "",
                 payload.originalLeadId ? `Original Lead ID: ${payload.originalLeadId}` : "",

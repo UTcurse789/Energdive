@@ -522,6 +522,7 @@ export default function UnifiedAuthPage() {
                                     </div>
                                 </div>
 
+
                                 {/* Error */}
                                 {error && (
                                     <motion.p
