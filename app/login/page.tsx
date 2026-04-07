@@ -2,6 +2,14 @@ import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { Button } from "@/components/ui/buttons";
 import Link from "next/link";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+    robots: {
+        index: false,
+        follow: false,
+    },
+};
 
 export default function LoginPage() {
     return (
