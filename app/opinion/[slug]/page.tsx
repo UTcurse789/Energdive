@@ -133,6 +133,7 @@
 import { notFound } from "next/navigation";
 import OpinionContent from "./opinion-content";
 import { strapiImageUrl } from "@/lib/strapi-image";
+import { ArticleJsonLd } from "@/components/seo/ArticleJsonLd";
 
 const STRAPI = process.env.NEXT_PUBLIC_STRAPI_URL;
 
@@ -192,5 +193,21 @@ export default async function OpinionDetailPage({ params }: { params: Promise<{ 
     author: { name: item?.author?.name }
   }));
 
-  return <OpinionContent opinion={opinion} recommended={recommended} />;
+  // Raw date for JSON-LD (needs ISO-8601, not formatted display string)
+  const rawDate = article.Date || article.attributes?.Date || article.publishedAt || article.createdAt || "";
+
+  return (
+    <>
+      <ArticleJsonLd
+        title={opinion.title}
+        datePublished={rawDate}
+        authorName={opinion.author?.name}
+        slug={slug}
+        imageUrl={opinion.featuredImage}
+        section="opinion"
+        description={opinion.excerpt}
+      />
+      <OpinionContent opinion={opinion} recommended={recommended} />
+    </>
+  );
 }

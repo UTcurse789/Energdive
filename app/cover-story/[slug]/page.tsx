@@ -13,6 +13,7 @@ import { ShareButton } from "@/components/ui/share-button";
 import { getLatestIssue } from "@/lib/api/getLatestIssue";
 import { ArrowRight, Calendar, ChevronRight } from "lucide-react";
 import { formatContentDate } from "@/lib/date";
+import { ArticleJsonLd } from "@/components/seo/ArticleJsonLd";
 
 const STRAPI_BASE_URL = process.env.NEXT_PUBLIC_STRAPI_URL || "https://cms.energdive.com";
 
@@ -134,8 +135,23 @@ export default async function CoverStoryDetailPage({
 
     const dataBlocks = await fetchDataBlocks(article.content);
 
+    // Raw date for JSON-LD (needs ISO-8601, not formatted display string)
+    const rawDate = attrs.Date || attrs.publishedAt || attrs.createdAt || "";
+    const excerptText = Array.isArray(attrs.Excerpt)
+        ? attrs.Excerpt[0]?.children?.[0]?.text || ""
+        : "";
+
     return (
         <div className="min-h-screen bg-white">
+            <ArticleJsonLd
+                title={article.title}
+                datePublished={rawDate}
+                authorName={article.author?.name}
+                slug={slug}
+                imageUrl={article.image}
+                section="cover-story"
+                description={excerptText}
+            />
             <ScrollProgress />
             <Header />
             <main className="pt-20 pb-24">
