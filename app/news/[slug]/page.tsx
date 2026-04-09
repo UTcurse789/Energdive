@@ -14,6 +14,7 @@ import { ArrowRight, Calendar, ChevronRight, Printer } from "lucide-react";
 import { formatContentDate } from "@/lib/date";
 import ArticleBody from "@/components/ArticleBody";
 import { fetchDataBlocks } from "@/lib/parse-content-blocks";
+import { ArticleJsonLd } from "@/components/seo/ArticleJsonLd";
 
 const STRAPI_BASE_URL = "https://cms.energdive.com";
 
@@ -185,8 +186,23 @@ export default async function NewsDetailPage({
             "News",
     };
 
+    // Raw date for JSON-LD (needs ISO-8601, not formatted display string)
+    const rawDate = attrs.Date || attrs.publishedAt || attrs.createdAt || "";
+    const excerptText = Array.isArray(attrs.Excerpt)
+        ? attrs.Excerpt[0]?.children?.[0]?.text || ""
+        : "";
+
     return (
         <div className="min-h-screen bg-white">
+            <ArticleJsonLd
+                title={article.title}
+                datePublished={rawDate}
+                authorName={article.author?.name}
+                slug={slug}
+                imageUrl={article.image}
+                section="news"
+                description={excerptText}
+            />
             <ScrollProgress />
             <Header />
 

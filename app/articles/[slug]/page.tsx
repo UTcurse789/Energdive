@@ -13,6 +13,7 @@ import { ArrowRight, Calendar, ChevronRight, Printer } from "lucide-react";
 import { formatContentDate } from "@/lib/date";
 import ArticleBody from "@/components/ArticleBody";
 import { fetchDataBlocks } from "@/lib/parse-content-blocks";
+import { ArticleJsonLd } from "@/components/seo/ArticleJsonLd";
 
 const STRAPI = "https://cms.energdive.com";
 
@@ -153,8 +154,20 @@ export default async function ArticlePage(props: any) {
         category: articleData.type_of_content?.name || "Article",
     };
 
+    // Raw date for JSON-LD (needs ISO-8601, not formatted display string)
+    const rawDate = articleData.Date || articleData.publishedAt || articleData.createdAt || "";
+
     return (
         <div className="min-h-screen bg-white">
+            <ArticleJsonLd
+                title={article.title}
+                datePublished={rawDate}
+                authorName={article.author?.name}
+                slug={slug}
+                imageUrl={article.image}
+                section="articles"
+                description={article.excerpt}
+            />
             <ScrollProgress />
             <Header />
 
