@@ -4,13 +4,12 @@
  * For CRM leads in `pending_verifications` table who signed up via Zoho
  * but never completed portal login.
  *
- * 6-step drip sequence:
+ * 5-step drip sequence:
  *   Step 1: 1 hr     — Friendly reminder
  *   Step 2: 4 hrs    — "Just 30 sec left"
  *   Step 3: Next day 10:30 AM IST — Benefits explain
  *   Step 4: Day 3    11:00 AM IST — Social proof
  *   Step 5: Day 6    11:00 AM IST — Urgency
- *   Step 6: Day 15   4:00 PM IST  — Final call
  */
 
 const BREVO_API_KEY = process.env.BREVO_API_KEY || "";
@@ -23,7 +22,7 @@ export interface DripEmailParams {
     name: string;
     magicLink: string;
     declineLink: string;
-    step: number; // 1-6
+    step: number; // 1-5
 }
 
 function getLogoUrl(): string {
@@ -73,7 +72,7 @@ function ctaButton(text: string, link: string): string {
 function declineSection(link: string): string {
     return `<div style="margin-top:32px;padding-top:24px;border-top:1px solid #F3F4F6;text-align:center;">
       <a href="${link}" style="display:inline-block;background:#F3F4F6;color:#6B7280;font-size:13px;font-weight:600;text-decoration:none;padding:12px 28px;border-radius:8px;border:1px solid #E5E7EB;">
-        I do not want to proceed with free EnergClub membership
+        I do not want to proceed with free ENERGClub membership
       </a>
     </div>`;
 }
@@ -83,7 +82,7 @@ function step1(name: string, magicLink: string, declineLink: string): string {
     return `
       <h2 style="margin:0 0 16px;color:#111827;font-size:24px;font-weight:800;">Hi ${name},</h2>
       <p style="margin:0 0 24px;color:#4B5563;font-size:16px;line-height:1.7;">
-        Thanks for signing up with <strong>EnergClub</strong>! Your free membership portal is ready — just click below to complete your setup.
+        Thanks for signing up with <strong>ENERGClub</strong>! Your free membership portal is ready — just click below to complete your setup.
       </p>
       <div style="background:#F9FAFB;border:1px solid #E5E7EB;border-radius:12px;padding:32px;text-align:center;margin-bottom:24px;">
         <p style="margin:0 0 16px;color:#6B7280;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:1px;">Complete Your Setup</p>
@@ -101,7 +100,7 @@ function step2(name: string, magicLink: string, declineLink: string): string {
     return `
       <h2 style="margin:0 0 16px;color:#111827;font-size:24px;font-weight:800;">Just 30 seconds, ${name} ⏱️</h2>
       <p style="margin:0 0 24px;color:#4B5563;font-size:16px;line-height:1.7;">
-        You're <strong>almost there!</strong> Your EnergClub membership is 90% complete — just one quick verification step left.
+        You're <strong>almost there!</strong> Your ENERGClub membership is 90% complete — just one quick verification step left.
       </p>
       <div style="background:#0a2e1f;border-radius:16px;padding:36px;text-align:center;margin-bottom:24px;">
         <p style="margin:0 0 8px;color:#09B697;font-size:48px;font-weight:900;">30 sec</p>
@@ -119,7 +118,7 @@ function step3(name: string, magicLink: string, declineLink: string): string {
     return `
       <h2 style="margin:0 0 16px;color:#111827;font-size:24px;font-weight:800;">Here's what you're missing, ${name}</h2>
       <p style="margin:0 0 24px;color:#4B5563;font-size:16px;line-height:1.7;">
-        Your EnergClub membership unlocks some powerful benefits — all completely <strong>free</strong>:
+        Your ENERGClub membership unlocks some powerful benefits — all completely <strong>free</strong>:
       </p>
       <div style="background:#F0FDF9;border:1px solid #09B697;border-radius:12px;padding:28px;margin-bottom:24px;">
         <table width="100%" cellpadding="0" cellspacing="0">
@@ -160,19 +159,19 @@ function step4(name: string, magicLink: string, declineLink: string): string {
     return `
       <h2 style="margin:0 0 16px;color:#111827;font-size:24px;font-weight:800;">${name}, you're in good company</h2>
       <p style="margin:0 0 24px;color:#4B5563;font-size:16px;line-height:1.7;">
-        Over <strong>500 energy professionals</strong> from across India are already using EnergClub to stay ahead. Here's what they value most:
+        Over <strong>1000+ energy professionals</strong> from across India are already using ENERGClub to stay ahead. Here's what they value most:
       </p>
       <div style="background:#F9FAFB;border:1px solid #E5E7EB;border-radius:12px;padding:24px;margin-bottom:24px;">
         <div style="border-left:4px solid #09B697;padding-left:16px;margin-bottom:20px;">
           <p style="margin:0;color:#374151;font-size:14px;font-style:italic;line-height:1.6;">
-            "EnergDive has become my go-to source for energy sector intelligence. The curated content saves me hours every week."
+            "ENERGDIVE has become my go-to source for energy sector intelligence. The curated content saves me hours every week."
           </p>
           <p style="margin:8px 0 0;color:#9CA3AF;font-size:12px;font-weight:600;">— Energy sector professional</p>
         </div>
         <table width="100%" cellpadding="0" cellspacing="0" style="text-align:center;">
           <tr>
             <td style="padding:12px;">
-              <p style="margin:0;color:#09B697;font-size:28px;font-weight:900;">500+</p>
+              <p style="margin:0;color:#09B697;font-size:28px;font-weight:900;">1000+</p>
               <p style="margin:4px 0 0;color:#6B7280;font-size:11px;font-weight:600;">MEMBERS</p>
             </td>
             <td style="padding:12px;">
@@ -195,9 +194,9 @@ function step4(name: string, magicLink: string, declineLink: string): string {
 // ── Step 5: Urgency (Day 6, 11 AM) ──────────────────────────────────────────
 function step5(name: string, magicLink: string, declineLink: string): string {
     return `
-      <h2 style="margin:0 0 16px;color:#111827;font-size:24px;font-weight:800;">⚠️ ${name}, your access link is expiring soon</h2>
+      <h2 style="margin:0 0 16px;color:#111827;font-size:24px;font-weight:800;">${name}, your access link is expiring soon</h2>
       <p style="margin:0 0 24px;color:#4B5563;font-size:16px;line-height:1.7;">
-        Your free EnergClub membership invitation won't be open forever. <strong>Complete your verification now</strong> before you lose access.
+        Your free ENERGClub membership invitation won't be open forever. <strong>Complete your verification now</strong> before you lose access.
       </p>
       <div style="background:#FEF2F2;border:1px solid #FECACA;border-radius:12px;padding:24px;margin-bottom:24px;text-align:center;">
         <p style="margin:0 0 8px;color:#991B1B;font-size:14px;font-weight:700;">⏰ Don't let your invitation expire</p>
@@ -214,36 +213,15 @@ function step5(name: string, magicLink: string, declineLink: string): string {
       ${declineSection(declineLink)}`;
 }
 
-// ── Step 6: Final Call (Day 15, 4 PM) ────────────────────────────────────────
-function step6(name: string, magicLink: string, declineLink: string): string {
-    return `
-      <h2 style="margin:0 0 16px;color:#111827;font-size:24px;font-weight:800;">Final call, ${name} 🔔</h2>
-      <p style="margin:0 0 24px;color:#4B5563;font-size:16px;line-height:1.7;">
-        This is our final reminder. Your <strong>free EnergClub membership</strong> is still waiting — but we won't be reaching out again.
-      </p>
-      <div style="background:#0a2e1f;border-radius:16px;padding:36px;text-align:center;margin-bottom:24px;">
-        <p style="margin:0 0 8px;color:#09B697;font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:2px;">Last Chance</p>
-        <p style="margin:0 0 24px;color:#ffffff;font-size:18px;line-height:1.6;">
-          After today, your reserved membership slot will be released.
-        </p>
-        ${ctaButton("Claim My Membership &rarr;", magicLink)}
-        <p style="margin:16px 0 0;color:#6B9E8C;font-size:13px;">This is your last verification link</p>
-      </div>
-      <p style="margin:0;color:#6B7280;font-size:14px;text-align:center;line-height:1.6;">
-        We hope to see you inside EnergClub. If not, we wish you well! 👋
-      </p>
-      ${declineSection(declineLink)}`;
-}
 
 // ── Public API ───────────────────────────────────────────────────────────────
 
 const SUBJECTS: Record<number, string> = {
-    1: "Your EnergClub access is ready 🔓",
-    2: "30 seconds to activate your membership ⏱️",
-    3: "Here's what you're missing at EnergClub",
-    4: "500+ professionals already joined EnergClub",
-    5: "⚠️ Your EnergClub access link is expiring soon",
-    6: "🔔 Final call — Your EnergClub membership",
+    1: "Your ENERGClub access is ready",
+    2: "30 seconds to activate your membership",
+    3: "Here's what you're missing at ENERGClub",
+    4: "500+ professionals already joined ENERGClub",
+    5: "Your ENERGClub access link is expiring soon",
 };
 
 const TEMPLATES: Record<number, (name: string, magicLink: string, declineLink: string) => string> = {
@@ -252,7 +230,6 @@ const TEMPLATES: Record<number, (name: string, magicLink: string, declineLink: s
     3: step3,
     4: step4,
     5: step5,
-    6: step6,
 };
 
 export async function sendDripEmail(params: DripEmailParams): Promise<void> {
@@ -262,7 +239,7 @@ export async function sendDripEmail(params: DripEmailParams): Promise<void> {
     }
 
     const step = params.step;
-    if (step < 1 || step > 6) {
+    if (step < 1 || step > 5) {
         console.error(`[DRIP] Invalid step: ${step}`);
         return;
     }
@@ -307,10 +284,9 @@ export async function sendDripEmail(params: DripEmailParams): Promise<void> {
  * Step 3: Next day at 10:30 AM IST
  * Step 4: Day 3 at 11:00 AM IST
  * Step 5: Day 6 at 11:00 AM IST
- * Step 6: Day 15 at 4:00 PM IST
  */
 export function calculateNextDripSend(dripStartedAt: Date, currentStep: number): Date | null {
-    if (currentStep >= 6) return null; // drip complete
+    if (currentStep >= 5) return null; // drip complete
 
     const nextStep = currentStep + 1;
     const startMs = dripStartedAt.getTime();
@@ -343,8 +319,6 @@ export function calculateNextDripSend(dripStartedAt: Date, currentStep: number):
             return istDate(3, 11, 0);  // Day 3 11:00 AM IST
         case 5:
             return istDate(6, 11, 0);  // Day 6 11:00 AM IST
-        case 6:
-            return istDate(15, 16, 0); // Day 15 4:00 PM IST
         default:
             return null;
     }

@@ -8,7 +8,7 @@ const CRON_SECRET = process.env.CRON_SECRET || "";
 
 /**
  * Process the abandoned cart drip email sequence.
- * 7-step drip schedule.
+ * 5-step drip schedule.
  */
 export async function processAbandonedCartDrip() {
     const requestId = crypto.randomUUID().slice(0, 8);
@@ -37,7 +37,7 @@ export async function processAbandonedCartDrip() {
               AND (drip_opted_out IS NULL OR drip_opted_out = false)
               AND drip_next_send_at IS NOT NULL
               AND drip_next_send_at <= NOW()
-              AND COALESCE(drip_step, 0) < 6
+              AND COALESCE(drip_step, 0) < 5
             ORDER BY drip_next_send_at ASC
             LIMIT 50
         `);
