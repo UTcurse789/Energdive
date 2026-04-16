@@ -52,8 +52,8 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [
       {
-        source: '/advertise-with-us',
-        destination: '/advertise',
+        source: '/advertise',
+        destination: '/advertise-with-us',
         permanent: true,
       },
       {
