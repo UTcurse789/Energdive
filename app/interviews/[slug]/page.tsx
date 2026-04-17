@@ -130,7 +130,7 @@
 // }
 
 
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import OpinionContent from "./opinion-content";
 import { strapiImageUrl } from "@/lib/strapi-image";
 import { ArticleJsonLd } from "@/components/seo/ArticleJsonLd";
@@ -139,7 +139,7 @@ const STRAPI = process.env.NEXT_PUBLIC_STRAPI_URL;
 
 async function getOpinion(slug: string) {
   const res = await fetch(
-    `${STRAPI}/api/contents?filters[slug][$eq]=${slug}&populate[author][populate]=avatar&populate=FeaturedImage&populate[content_tag]=true`,
+    `${STRAPI}/api/contents?filters[slug][$eq]=${slug}&populate[author][populate]=avatar&populate=FeaturedImage`,
     { next: { revalidate: 3600 } }
   );
   const json = await res.json();
@@ -148,24 +148,17 @@ async function getOpinion(slug: string) {
 
 async function getRecommended(currentSlug: string) {
   const res = await fetch(
-    `${STRAPI}/api/contents?filters[type_of_content][name][$eq]=Opinion&populate[author][populate]=avatar&populate=FeaturedImage&pagination[limit]=3&sort=Date:desc`,
+    `${STRAPI}/api/contents?filters[type_of_content][name][$eq]=Opinion&filters[content_tag][title][$eq]=Interview&populate[author][populate]=avatar&populate=FeaturedImage&pagination[limit]=4&sort=Date:desc`,
     { next: { revalidate: 3600 } }
   );
   const json = await res.json();
-  return json?.data?.filter((item: any) => item.slug !== currentSlug) ?? [];
+  return json?.data?.filter((item: any) => item.slug !== currentSlug)?.slice(0, 3) ?? [];
 }
 
 export default async function OpinionDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const article = await getOpinion(slug);
   if (!article) notFound();
-
-  // If this article is an Interview, redirect to the interviews route
-  const contentTag = article?.content_tag?.title || article?.content_tag?.Title ||
-    (Array.isArray(article?.content_tag) ? (article.content_tag[0]?.title || article.content_tag[0]?.Title) : null);
-  if (contentTag && contentTag.toLowerCase() === "interview") {
-    redirect(`/interviews/${slug}`);
-  }
 
   const recommendedRaw = await getRecommended(slug);
 
@@ -177,7 +170,7 @@ export default async function OpinionDetailPage({ params }: { params: Promise<{ 
     title: article.Title || article.attributes?.Title,
     excerpt: article?.Excerpt?.[0]?.children?.[0]?.text || article.attributes?.Excerpt?.[0]?.children?.[0]?.text || "",
     content: article?.Content || article.attributes?.Content || [],
-    category: "Opinion",
+    category: "Interview",
     readTime: "6 min read",
     featuredImage: (article.FeaturedImage?.url || article.attributes?.FeaturedImage?.data?.attributes?.url)
       ? strapiImageUrl(article.FeaturedImage?.url || article.attributes?.FeaturedImage?.data?.attributes?.url)
@@ -195,7 +188,7 @@ export default async function OpinionDetailPage({ params }: { params: Promise<{ 
     id: item.id,
     slug: item.slug,
     title: item.Title,
-    category: "Opinion",
+    category: "Interview",
     featuredImage: item?.FeaturedImage?.url ? strapiImageUrl(item.FeaturedImage.url) : "/placeholder.jpg",
     author: { name: item?.author?.name }
   }));
@@ -211,7 +204,7 @@ export default async function OpinionDetailPage({ params }: { params: Promise<{ 
         authorName={opinion.author?.name}
         slug={slug}
         imageUrl={opinion.featuredImage}
-        section="opinion"
+        section="interview"
         description={opinion.excerpt}
       />
       <OpinionContent opinion={opinion} recommended={recommended} />
