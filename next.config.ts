@@ -52,6 +52,11 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [
       {
+        source: '/author',
+        destination: '/authors',
+        permanent: true,
+      },
+      {
         source: '/advertise',
         destination: '/advertise-with-us',
         permanent: true,
@@ -64,6 +69,17 @@ const nextConfig: NextConfig = {
       {
         source: '/news/govt-steps-up-ev-charging-rollout-with-tighter-battery-standards-r-and-d-push-1',
         destination: '/news/govt-steps-up-ev-charging-rollout-with-tighter-battery-standards-r-and-d-push',
+        permanent: true,
+      },
+      // Redirect old singular /interview routes to plural /interviews
+      {
+        source: '/interview',
+        destination: '/interviews',
+        permanent: true,
+      },
+      {
+        source: '/interview/:slug',
+        destination: '/interviews/:slug',
         permanent: true,
       },
     ];

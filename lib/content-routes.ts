@@ -13,7 +13,7 @@ const ROUTE_MAP: Record<string, string> = {
   report: "reports",
   "cover story": "cover-story",
   "case study": "case-study",
-  interview: "interview",
+  interview: "interviews",
   editorial: "editorial",
   feature: "feature",
   "featured stories": "featured-stories",

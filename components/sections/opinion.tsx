@@ -168,7 +168,7 @@ export function OpinionSection({ opinions = [], interviews = [] }: { opinions: O
                         <SectionHeading
                             title="Interview"
                             linkText="View All"
-                            linkHref="/interview"
+                            linkHref="/interviews"
                         />
 
                         {/* Carousel: Content LEFT, Image RIGHT (mirrored) */}
@@ -176,7 +176,7 @@ export function OpinionSection({ opinions = [], interviews = [] }: { opinions: O
                             {/* Content Column - LEFT */}
                             <div className="lg:col-span-8 order-2 lg:order-1">
                                 <div className="flex flex-col items-start">
-                                    <Link href={`/interview/${currentInterview.slug}`} className="block mb-8">
+                                    <Link href={`/interviews/${currentInterview.slug}`} className="block mb-8">
                                         <h3 className="font-serif text-2xl md:text-3xl lg:text-4xl font-bold leading-[1.15] tracking-tight text-zinc-900 group-hover:text-[#00A651] transition-colors duration-300">
                                             &ldquo;{currentInterview.title}&rdquo;
                                         </h3>
@@ -224,7 +224,7 @@ export function OpinionSection({ opinions = [], interviews = [] }: { opinions: O
 
                             {/* Image Column - RIGHT */}
                             <div className="lg:col-span-4 flex justify-center lg:justify-end order-1 lg:order-2">
-                                <Link href={`/interview/${currentInterview.slug}`} className="relative w-full max-w-[400px] block cursor-pointer group/image">
+                                <Link href={`/interviews/${currentInterview.slug}`} className="relative w-full max-w-[400px] block cursor-pointer group/image">
                                     <div className="relative w-full h-[320px] sm:h-[400px] lg:h-[500px] border border-zinc-800 p-2 bg-white transition-transform duration-500 group-hover/image:scale-[1.02]">
                                         <div className="relative w-full h-full overflow-hidden border border-zinc-200">
                                             <Image

@@ -284,22 +284,22 @@ export default async function AuthorPage({
                             <p className="text-zinc-500 font-serif text-lg">No articles published yet.</p>
                         </div>
                     ) : (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-7">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-7">
                             {articles.map((article: any) => (
                                 <article
                                     key={article.id}
                                     className="group h-full rounded-3xl border border-zinc-200/80 bg-white overflow-hidden shadow-[0_12px_34px_rgba(15,23,42,0.06)] hover:shadow-[0_20px_50px_rgba(15,23,42,0.12)] transition-all duration-300"
                                 >
                                     <Link href={getContentRoute(article)} className="block h-full">
-                                        <div className="relative aspect-[16/10] overflow-hidden bg-zinc-100">
+                                        <div className="relative w-full overflow-hidden bg-zinc-100" style={{ aspectRatio: '4/3' }}>
                                             <Image
                                                 src={article.image}
                                                 alt={article.title}
                                                 fill
-                                                className="object-cover transition-transform duration-500 group-hover:scale-105"
+                                                className="object-cover object-top transition-transform duration-500 group-hover:scale-105"
                                             />
-                                            <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-transparent" />
-                                            <span className={`absolute left-4 top-4 rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] ${getCategoryBadgeTone(article.category)}`}>
+                                            <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-transparent pointer-events-none" />
+                                            <span className={`absolute left-4 top-4 rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] z-10 ${getCategoryBadgeTone(article.category)}`}>
                                                 {article.category}
                                             </span>
                                         </div>

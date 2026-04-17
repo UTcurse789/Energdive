@@ -4,23 +4,40 @@ const STRAPI_BASE = process.env.NEXT_PUBLIC_STRAPI_URL || "https://cms.energdive
 
 export async function GET() {
     try {
-        const [videosRes, eventsRes, issuesRes, sectorsRes, articlesRes, allVideosRes] = await Promise.all([
+        const [videosRes, eventsRes, issuesRes, sectorsRes, articlesRes, allVideosRes, opinionMenuRes] = await Promise.all([
             fetch(`${STRAPI_BASE}/api/videos?populate[0]=thumbnail&populate[1]=author.avatar&pagination[limit]=3&sort=createdAt:desc`, { next: { revalidate: 600 } }).catch(() => null),
             fetch(`${STRAPI_BASE}/api/events?populate=*&pagination[pageSize]=100`, { next: { revalidate: 600 } }).catch(() => null),
             fetch(`${STRAPI_BASE}/api/issues?populate=CoverImage&pagination[limit]=12`, { next: { revalidate: 600 } }).catch(() => null),
             fetch(`${STRAPI_BASE}/api/sectors?populate=children&pagination[pageSize]=100`, { next: { revalidate: 600 } }).catch(() => null),
             fetch(`${STRAPI_BASE}/api/contents?fields[0]=id&populate[sectors][fields][0]=name&populate[sectors][fields][1]=slug&populate[tags][fields][0]=name&pagination[pageSize]=500`, { next: { revalidate: 600 } }).catch(() => null),
             fetch(`${STRAPI_BASE}/api/videos?fields[0]=id&populate[sectors][fields][0]=name&populate[sectors][fields][1]=slug&populate[tags][fields][0]=name&pagination[pageSize]=500`, { next: { revalidate: 600 } }).catch(() => null),
+            // Opinion + Interview articles for the mega menu
+            fetch(`${STRAPI_BASE}/api/contents?filters[type_of_content][name][$eq]=Opinion&populate[FeaturedImage]=true&populate[content_tag]=true&populate[author][populate]=avatar&sort=Date:desc&pagination[limit]=10`, { next: { revalidate: 600 } }).catch(() => null),
         ]);
 
-        const [videos, events, issues, sectors, articlesObj, allVideosObj] = await Promise.all([
+        const [videos, events, issues, sectors, articlesObj, allVideosObj, opinionMenuObj] = await Promise.all([
             videosRes?.ok ? videosRes.json() : Promise.resolve({ data: [] }),
             eventsRes?.ok ? eventsRes.json() : Promise.resolve({ data: [] }),
             issuesRes?.ok ? issuesRes.json() : Promise.resolve({ data: [] }),
             sectorsRes?.ok ? sectorsRes.json() : Promise.resolve({ data: [] }),
             articlesRes?.ok ? articlesRes.json() : Promise.resolve({ data: [] }),
             allVideosRes?.ok ? allVideosRes.json() : Promise.resolve({ data: [] }),
+            opinionMenuRes?.ok ? opinionMenuRes.json() : Promise.resolve({ data: [] }),
         ]);
+
+        // Separate opinion articles vs interviews using content_tag
+        const allOpinionItems = opinionMenuObj?.data || [];
+        const opinionArticles: any[] = [];
+        const interviewArticles: any[] = [];
+        allOpinionItems.forEach((item: any) => {
+            const tag = item?.content_tag?.title || item?.content_tag?.Title ||
+                (Array.isArray(item?.content_tag) ? (item.content_tag[0]?.title || item.content_tag[0]?.Title) : null);
+            if (tag && tag.toLowerCase() === "interview") {
+                interviewArticles.push(item);
+            } else {
+                opinionArticles.push(item);
+            }
+        });
 
         const tagCounts: Record<string, number> = {};
         const allItems = [...(articlesObj?.data || []), ...(allVideosObj?.data || [])];
@@ -111,6 +128,8 @@ export async function GET() {
             issues: issues?.data || [],
             sectors: sectors?.data || [],
             tagCounts,
+            opinionArticles: opinionArticles.slice(0, 3),
+            interviewArticles: interviewArticles.slice(0, 3),
         });
     } catch (error) {
         console.error("Menu API error:", error);

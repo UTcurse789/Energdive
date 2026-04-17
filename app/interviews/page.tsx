@@ -29,10 +29,10 @@ function formatOpinionDate(value?: string) {
 }
 
 /* ================================
-   FETCH OPINIONS FROM STRAPI
+   FETCH INTERVIEWS FROM STRAPI
 ================================ */
 
-async function fetchOpinions() {
+async function fetchInterviews() {
   const res = await fetch(
     `${STRAPI}/api/contents?filters[type_of_content][name][$eq]=Opinion&populate[FeaturedImage]=true&populate[content_tag]=true&populate[author][populate]=avatar&sort=Date:desc`,
     { cache: "no-store" } // Force fresh fetch to bust old cached response without content_tag
@@ -57,8 +57,7 @@ function extractContentTagTitle(contentTag: any): string | null {
   return d.title || d.Title || null;
 }
 
-export default function OpinionPage() {
-  const [pureOpinions, setPureOpinions] = useState<any[]>([]);
+export default function InterviewsPage() {
   const [interviews, setInterviews] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -67,7 +66,7 @@ export default function OpinionPage() {
   const opacity = useTransform(scrollY, [0, 300], [1, 0]);
 
   useEffect(() => {
-    fetchOpinions().then((data) => {
+    fetchInterviews().then((data) => {
       const formatted = data.map((item: any) => {
         const contentTag = extractContentTagTitle(item.content_tag);
         return {
@@ -98,17 +97,15 @@ export default function OpinionPage() {
         };
       });
 
-      // Filter: only show items where content_tag is NOT "interview"
-      const opinionsList = formatted.filter(
-        (a: any) => !a.contentTag || a.contentTag.toLowerCase() !== "interview"
+      // Filter: ONLY show items with content_tag = Interview
+      const interviewsList = formatted.filter(
+        (a: any) => a.contentTag && a.contentTag.toLowerCase() === "interview"
       );
 
-      setPureOpinions(opinionsList);
+      setInterviews(interviewsList);
       setLoading(false);
     });
   }, []);
-
-  const displayedItems = pureOpinions;
 
   if (loading) return (
     <div className="min-h-screen bg-[#FDFDFD]">
@@ -143,15 +140,13 @@ export default function OpinionPage() {
 
   return (
     <div className="min-h-screen bg-[#FDFDFD] font-sans text-zinc-900 overflow-x-hidden">
-      {/* SiteLayout handles Header/Footer now */}
-
       <main className="relative pb-32">
         {/* HERO */}
         <section className="relative w-full min-h-[80vh] flex items-center bg-[#0a0a0a] overflow-hidden">
           <div className="absolute inset-0 z-0">
             <motion.div
               style={{ y: y1 }}
-              className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1473341304170-971dccb5ac1e?q=80&w=2070')] bg-cover bg-center opacity-40 scale-110"
+              className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1551818255-e6e10975bc17?q=80&w=2073')] bg-cover bg-center opacity-40 scale-110"
             />
             <div className="absolute inset-0 bg-linear-to-b from-black/60 via-black/20 to-[#FDFDFD]" />
           </div>
@@ -166,12 +161,12 @@ export default function OpinionPage() {
             >
               <h1 className="text-4xl sm:text-6xl md:text-8xl lg:text-[8rem] font-black leading-[0.85] tracking-tight uppercase mb-6 sm:mb-10">
                 <span className="text-[#00A651]">
-                  Opinion
+                  Interviews
                 </span>
               </h1>
 
               <p className="text-xl text-white/70 max-w-2xl mb-12">
-                Discover perspectives that matter with ENERGDIVE Opinion, where thought leaders share analysis, commentary, and forward-looking views on key energy and sustainability issues.
+                Gain direct insights from industry leaders, policymakers, and innovators driving the global energy transition forward.
               </p>
             </motion.div>
           </div>
@@ -179,23 +174,21 @@ export default function OpinionPage() {
 
         <div className="container mx-auto px-4 sm:px-6 lg:px-12 pt-12 sm:pt-20">
 
-
-
           {/* ── GRID ── */}
-          {displayedItems.length > 0 ? (
+          {interviews.length > 0 ? (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
               className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-y-12 sm:gap-y-20 gap-x-8 sm:gap-x-12"
             >
-              {displayedItems.map((item) => (
+              {interviews.map((item) => (
                 <motion.div
                   key={item.id}
                   className="group flex flex-col"
                 >
                   <Link
-                    href={`/opinion/${item.slug}`}
+                    href={`/interviews/${item.slug}`}
                     className="block overflow-hidden rounded-2xl mb-8"
                   >
                     <div className="relative aspect-3/4 bg-zinc-100 overflow-hidden">
@@ -218,7 +211,7 @@ export default function OpinionPage() {
                         <DateChip value={item.date} />
                       </span>
                     </div>
-                    <Link href={`/opinion/${item.slug}`}>
+                    <Link href={`/interviews/${item.slug}`}>
                       <h3 className="font-serif font-bold text-2xl leading-[1.1] group-hover:text-[#00A651] mb-6">
                         {item.title}
                       </h3>
@@ -244,12 +237,11 @@ export default function OpinionPage() {
             </motion.div>
           ) : (
             <div className="py-20 text-center">
-              <p className="text-gray-500 font-serif text-xl border-l-4 border-teal-500 inline-block pl-4">No opinions found.</p>
+              <p className="text-gray-500 font-serif text-xl border-l-4 border-teal-500 inline-block pl-4">No interviews found.</p>
             </div>
           )}
         </div>
       </main>
-
     </div>
   );
 }

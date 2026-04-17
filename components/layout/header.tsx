@@ -166,17 +166,20 @@ function normalizeIssue(item: StrapiIssueResponseItem, baseUrl: string): Magazin
 export function Header() {
     const pathname = usePathname();
     const [isScrolled, setIsScrolled] = useState(false);
-    const [activeMenu, setActiveMenu] = useState<string | null>(null); // 'sectors' | 'magazine' | 'more' | null
+    const [activeMenu, setActiveMenu] = useState<string | null>(null); // 'sectors' | 'magazine' | 'more' | 'opinion' | null
     const [magazineIssues, setMagazineIssues] = useState<MagazineIssue[]>([]);
     const [activeMagazineSection, setActiveMagazineSection] = useState<"latest" | "past">("latest");
     const [isLoginHovered, setIsLoginHovered] = useState(false);
     const [hoveredSector, setHoveredSector] = useState<string | null>(null);
     const [hoveredMoreItem, setHoveredMoreItem] = useState<string | null>(null);
+    const [hoveredOpinionItem, setHoveredOpinionItem] = useState<string | null>(null);
     const [realVideos, setRealVideos] = useState<any[]>([]);
     const [realEvents, setRealEvents] = useState<any[]>([]);
     const [realSectors, setRealSectors] = useState<any[] | null>(null);
+    const [opinionArticles, setOpinionArticles] = useState<any[]>([]);
+    const [interviewArticles, setInterviewArticles] = useState<any[]>([]);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-    const [mobileExpanded, setMobileExpanded] = useState<string | null>(null); // 'sectors' | 'magazine' | 'more'
+    const [mobileExpanded, setMobileExpanded] = useState<string | null>(null); // 'sectors' | 'magazine' | 'more' | 'opinion'
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const [strapiBaseUrl, setStrapiBaseUrl] = useState(DEFAULT_STRAPI_BASE_URL);
     const [tagCounts, setTagCounts] = useState<Record<string, number>>({});
@@ -206,6 +209,8 @@ export function Header() {
                     issues?: StrapiIssueResponseItem[];
                     sectors?: any[];
                     tagCounts?: Record<string, number>;
+                    opinionArticles?: any[];
+                    interviewArticles?: any[];
                 };
 
                 if (cancelled) return;
@@ -218,6 +223,8 @@ export function Header() {
                 setTagCounts(menuData.tagCounts || {});
                 setRealVideos(Array.isArray(menuData.videos) ? menuData.videos : []);
                 setRealEvents(Array.isArray(menuData.events) ? menuData.events : []);
+                setOpinionArticles(Array.isArray(menuData.opinionArticles) ? menuData.opinionArticles : []);
+                setInterviewArticles(Array.isArray(menuData.interviewArticles) ? menuData.interviewArticles : []);
 
                 const normalizedIssues: MagazineIssue[] = Array.isArray(menuData?.issues)
                     ? menuData.issues
@@ -263,7 +270,7 @@ export function Header() {
         };
     }, []);
 
-    const closeMenus = () => { setActiveMenu(null); setHoveredSector(null); setHoveredMoreItem(null); };
+    const closeMenus = () => { setActiveMenu(null); setHoveredSector(null); setHoveredMoreItem(null); setHoveredOpinionItem(null); };
     const closeAll = () => { closeMenus(); setMobileMenuOpen(false); setMobileExpanded(null); };
 
     // Close mega menu on route change
@@ -373,7 +380,11 @@ export function Header() {
 
                             <Link href="/news" className="text-[12px] xl:text-[13px] font-bold uppercase tracking-[1px] hover:opacity-70 whitespace-nowrap" onClick={closeMenus}>NEWS</Link>
                             <Link href="/reports" className="text-[12px] xl:text-[13px] font-bold uppercase tracking-[1px] hover:opacity-70 whitespace-nowrap" onClick={closeMenus}>REPORTS</Link>
-                            <Link href="/opinion" className="text-[12px] xl:text-[13px] font-bold uppercase tracking-[1px] hover:opacity-70 whitespace-nowrap" onClick={closeMenus}>OPINION</Link>
+                            <div className="relative group cursor-pointer" onMouseEnter={() => { setActiveMenu('opinion'); setHoveredOpinionItem('opinions'); setHoveredSector(null); setHoveredMoreItem(null); }}>
+                                <button className="flex items-center gap-1 text-[12px] xl:text-[13px] font-bold uppercase tracking-[1px] hover:opacity-70 whitespace-nowrap">
+                                    OPINION <ChevronDown className={cn("w-3 h-3 transition-transform", activeMenu === 'opinion' && "rotate-180")} />
+                                </button>
+                            </div>
 
                             {/* MAGAZINE MEGA MENU */}
                             <div className="relative group cursor-pointer" onMouseEnter={() => { setActiveMenu('magazine'); setActiveMagazineSection("latest"); setHoveredMoreItem(null); }}>
@@ -945,6 +956,130 @@ export function Header() {
                                 </div>
                             </>
                         )}
+
+                        {/* 4. OPINION CONTENT */}
+                        {activeMenu === 'opinion' && (
+                            <>
+                                <div className="w-1/4 bg-[#f8f8f8] border-r p-8">
+                                    <h3 className="text-[10px] font-black text-gray-400 uppercase mb-6 tracking-widest">Opinion & Interviews</h3>
+                                    <div className="flex flex-col gap-1">
+                                        <Link
+                                            href="/opinion"
+                                            onClick={closeMenus}
+                                            className={cn(
+                                                "px-4 py-3 text-[14px] font-bold text-gray-800 flex justify-between items-center transition-colors",
+                                                hoveredOpinionItem === "opinions"
+                                                    ? "bg-[#00A651] text-white"
+                                                    : "hover:bg-[#00A651] hover:text-white"
+                                            )}
+                                            onMouseEnter={() => setHoveredOpinionItem("opinions")}
+                                        >
+                                            Opinion Articles <ChevronRight size={14} />
+                                        </Link>
+                                        <Link
+                                            href="/interviews"
+                                            onClick={closeMenus}
+                                            className={cn(
+                                                "px-4 py-3 text-[14px] font-bold text-gray-800 flex justify-between items-center transition-colors",
+                                                hoveredOpinionItem === "interviews"
+                                                    ? "bg-[#00A651] text-white"
+                                                    : "hover:bg-[#00A651] hover:text-white"
+                                            )}
+                                            onMouseEnter={() => setHoveredOpinionItem("interviews")}
+                                        >
+                                            Interviews <ChevronRight size={14} />
+                                        </Link>
+                                    </div>
+                                </div>
+
+                                <div className="flex-1 p-12 overflow-y-auto">
+                                    {/* Opinion Articles hover content */}
+                                    {hoveredOpinionItem === "opinions" && (
+                                        <div>
+                                            <h4 className="text-[12px] font-bold uppercase text-gray-400 border-b pb-3 mb-6 tracking-widest">Latest Opinion Articles</h4>
+                                            <div className="grid grid-cols-3 gap-5">
+                                                {opinionArticles.length > 0 ? opinionArticles.slice(0, 3).map((item: any) => {
+                                                    const imgUrl = item?.FeaturedImage?.url ? strapiImageUrl(item.FeaturedImage.url) : "/magazine-default.jpg";
+                                                    const authorName = item?.author?.name || "Editorial Staff";
+                                                    const date = item?.Date ? formatContentDate(item.Date) : "";
+                                                    return (
+                                                        <Link key={item.id} href={`/opinion/${item.slug}`} onClick={closeMenus} className="group cursor-pointer block">
+                                                            <div className="relative w-full aspect-[4/3] bg-white rounded-xl overflow-hidden mb-3 border border-gray-100">
+                                                                <Image src={imgUrl} alt={item.Title || ""} fill className="object-contain p-1 group-hover:scale-105 transition-transform duration-500" />
+                                                            </div>
+                                                            <p className="text-[13px] font-bold text-gray-800 group-hover:text-[#00A651] transition-colors line-clamp-2 leading-snug">{item.Title}</p>
+                                                            <div className="flex items-center gap-2 mt-2">
+                                                                {item?.author?.avatar?.url && (
+                                                                    <div className="relative w-5 h-5 rounded-full overflow-hidden border border-gray-200 shrink-0">
+                                                                        <Image src={strapiImageUrl(item.author.avatar.url)} alt={authorName} fill className="object-cover" />
+                                                                    </div>
+                                                                )}
+                                                                <p className="text-[11px] text-gray-400">{authorName}</p>
+                                                                {date && <p className="text-[10px] text-gray-300">&middot; {date}</p>}
+                                                            </div>
+                                                        </Link>
+                                                    );
+                                                }) : (
+                                                    <p className="text-gray-400 text-sm italic col-span-3">Loading opinion articles...</p>
+                                                )}
+                                            </div>
+                                            <Link href="/opinion" onClick={closeMenus} className="mt-8 inline-flex items-center gap-1.5 text-[11px] font-bold text-[#00A651] uppercase tracking-widest hover:underline">
+                                                View All Opinion Articles <ArrowRight size={13} />
+                                            </Link>
+                                        </div>
+                                    )}
+
+                                    {/* Interviews hover content */}
+                                    {hoveredOpinionItem === "interviews" && (
+                                        <div>
+                                            <h4 className="text-[12px] font-bold uppercase text-gray-400 border-b pb-3 mb-6 tracking-widest">Latest Interviews</h4>
+                                            <div className="grid grid-cols-3 gap-5">
+                                                {interviewArticles.length > 0 ? interviewArticles.slice(0, 3).map((item: any) => {
+                                                    const imgUrl = item?.FeaturedImage?.url ? strapiImageUrl(item.FeaturedImage.url) : "/magazine-default.jpg";
+                                                    const authorName = item?.author?.name || "Editorial Staff";
+                                                    const date = item?.Date ? formatContentDate(item.Date) : "";
+                                                    return (
+                                                        <Link key={item.id} href={`/interviews/${item.slug}`} onClick={closeMenus} className="group cursor-pointer block">
+                                                            <div className="relative w-full aspect-[4/3] bg-white rounded-xl overflow-hidden mb-3 border border-gray-100">
+                                                                <Image src={imgUrl} alt={item.Title || ""} fill className="object-contain p-1 group-hover:scale-105 transition-transform duration-500" />
+                                                            </div>
+                                                            <p className="text-[13px] font-bold text-gray-800 group-hover:text-[#00A651] transition-colors line-clamp-2 leading-snug">{item.Title}</p>
+                                                            <div className="flex items-center gap-2 mt-2">
+                                                                {item?.author?.avatar?.url && (
+                                                                    <div className="relative w-5 h-5 rounded-full overflow-hidden border border-gray-200 shrink-0">
+                                                                        <Image src={strapiImageUrl(item.author.avatar.url)} alt={authorName} fill className="object-cover" />
+                                                                    </div>
+                                                                )}
+                                                                <p className="text-[11px] text-gray-400">{authorName}</p>
+                                                                {date && <p className="text-[10px] text-gray-300">&middot; {date}</p>}
+                                                            </div>
+                                                        </Link>
+                                                    );
+                                                }) : (
+                                                    <p className="text-gray-400 text-sm italic col-span-3">Loading interviews...</p>
+                                                )}
+                                            </div>
+                                            <Link href="/interviews" onClick={closeMenus} className="mt-8 inline-flex items-center gap-1.5 text-[11px] font-bold text-[#00A651] uppercase tracking-widest hover:underline">
+                                                View All Interviews <ArrowRight size={13} />
+                                            </Link>
+                                        </div>
+                                    )}
+
+                                    {/* Default content when nothing hovered */}
+                                    {!hoveredOpinionItem && (
+                                        <div className="flex items-center justify-center h-full">
+                                            <div className="text-center max-w-md">
+                                                <div className="w-16 h-16 rounded-2xl mx-auto mb-6 flex items-center justify-center" style={{ background: '#00A65115' }}>
+                                                    <Zap size={28} style={{ color: '#00A651' }} />
+                                                </div>
+                                                <h4 className="text-xl font-bold text-zinc-900 mb-2">Opinion & Interviews</h4>
+                                                <p className="text-gray-500 text-[14px] leading-relaxed">Hover over a category to preview the latest articles from our thought leaders.</p>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </>
+                        )}
                     </div>
                 </div>
 
@@ -1000,9 +1135,33 @@ export function Header() {
                                 <Link href="/reports" onClick={closeAll} className="px-6 py-4 text-[13px] font-bold uppercase tracking-[1px] hover:bg-gray-50 transition-colors border-t border-gray-100">
                                     REPORTS
                                 </Link>
-                                <Link href="/opinion" onClick={closeAll} className="px-6 py-4 text-[13px] font-bold uppercase tracking-[1px] hover:bg-gray-50 transition-colors border-t border-gray-100">
-                                    OPINION
-                                </Link>
+                                <div className="border-t border-gray-100">
+                                    <button
+                                        className="w-full flex items-center justify-between px-6 py-4 text-[13px] font-bold uppercase tracking-[1px] hover:bg-gray-50 transition-colors"
+                                        onClick={() => setMobileExpanded(mobileExpanded === 'opinion' ? null : 'opinion')}
+                                    >
+                                        OPINION
+                                        <ChevronDown className={cn("w-4 h-4 transition-transform", mobileExpanded === 'opinion' && "rotate-180")} />
+                                    </button>
+                                    <AnimatePresence>
+                                        {mobileExpanded === 'opinion' && (
+                                            <motion.div
+                                                initial={{ height: 0, opacity: 0 }}
+                                                animate={{ height: "auto", opacity: 1 }}
+                                                exit={{ height: 0, opacity: 0 }}
+                                                transition={{ duration: 0.2 }}
+                                                className="overflow-hidden bg-gray-50"
+                                            >
+                                                <Link href="/opinion" onClick={closeAll} className="block px-10 py-3 text-[13px] font-medium text-gray-700 hover:text-[#00A651] hover:bg-white transition-colors border-b border-gray-100">
+                                                    Opinion Articles
+                                                </Link>
+                                                <Link href="/interviews" onClick={closeAll} className="block px-10 py-3 text-[13px] font-medium text-gray-700 hover:text-[#00A651] hover:bg-white transition-colors border-b border-gray-100">
+                                                    Interviews
+                                                </Link>
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
+                                </div>
 
                                 {/* MAGAZINE - Expandable */}
                                 <div className="border-t border-gray-100">
