@@ -103,7 +103,7 @@ export default function InterviewPage() {
                         <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8">
                             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex-1">
                                 <h1 className="text-3xl sm:text-5xl md:text-7xl lg:text-[8vw] font-black tracking-tighter leading-[0.85] uppercase italic">
-                                    <span className="text-[#00A651]">Inter</span>views
+                                    <span className="text-[#00A651]">Inter</span>view
                                 </h1>
                             </motion.div>
                             <div className="lg:w-1/3 border-l-2 border-black pl-6 py-2">
@@ -148,7 +148,7 @@ export default function InterviewPage() {
 
                         <div className="lg:col-span-4 flex flex-col border-t lg:border-t-0 lg:border-l border-gray-200 pt-10 lg:pt-0 lg:pl-10">
                             <h3 className="text-sm md:text-base font-black uppercase tracking-[4px] mb-10 border-b-2 border-black pb-4">
-                                Recent Interviews
+                                Recent Interview
                             </h3>
                             <div className="space-y-8">
                                 {topInsights.map((item, idx) => (

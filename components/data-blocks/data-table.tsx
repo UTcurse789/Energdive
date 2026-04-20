@@ -9,6 +9,7 @@ import {
   getPaginationRowModel,
   flexRender,
   type ColumnDef,
+  type Row,
   type SortingState,
 } from "@tanstack/react-table";
 import {
@@ -22,12 +23,93 @@ import {
 } from "lucide-react";
 import type { TableConfig } from "@/types/data-blocks";
 
+type TableRow = Record<string, string | number | null>;
+
+const GROUPED_TABLE_KEYS = ["category", "metric", "value", "unit", "month"] as const;
+type GroupedTableField = (typeof GROUPED_TABLE_KEYS)[number];
+type GroupedTableFieldMap = Record<GroupedTableField, string>;
+
+function normalizeFieldKey(value: string): string {
+  return value.toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
+function formatTableValue(value: unknown): string {
+  if (value === null || value === undefined) return "NA";
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    return trimmed ? trimmed : "NA";
+  }
+  if (typeof value === "number") return value.toLocaleString();
+  return String(value);
+}
+
+function getGroupedTableFieldMap(config: TableConfig): GroupedTableFieldMap | null {
+  const lookup = new Map<string, string>();
+
+  config.columns.forEach((column) => {
+    lookup.set(normalizeFieldKey(column.key), column.key);
+    lookup.set(normalizeFieldKey(column.label), column.key);
+  });
+
+  const firstRow = config.table_data[0];
+  if (firstRow) {
+    Object.keys(firstRow).forEach((key) => {
+      if (!lookup.has(normalizeFieldKey(key))) {
+        lookup.set(normalizeFieldKey(key), key);
+      }
+    });
+  }
+
+  const resolved = {} as GroupedTableFieldMap;
+
+  for (const key of GROUPED_TABLE_KEYS) {
+    const actualKey = lookup.get(normalizeFieldKey(key));
+    if (!actualKey) return null;
+    resolved[key] = actualKey;
+  }
+
+  return resolved;
+}
+
+function groupVisibleRowsByCategory(rows: Row<TableRow>[], fieldMap: GroupedTableFieldMap) {
+  const groups: Array<{
+    category: string;
+    rows: Array<{ row: Row<TableRow>; visibleIndex: number }>;
+  }> = [];
+
+  let currentGroup:
+    | {
+      category: string;
+      rows: Array<{ row: Row<TableRow>; visibleIndex: number }>;
+    }
+    | null = null;
+
+  rows.forEach((row, visibleIndex) => {
+    const category = formatTableValue(row.original[fieldMap.category]);
+
+    if (currentGroup && currentGroup.category === category) {
+      currentGroup.rows.push({ row, visibleIndex });
+      return;
+    }
+
+    currentGroup = {
+      category,
+      rows: [{ row, visibleIndex }],
+    };
+    groups.push(currentGroup);
+  });
+
+  return groups;
+}
+
 export default function DataTable({ config }: { config: TableConfig }) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = useState("");
+  const groupedFieldMap = useMemo(() => getGroupedTableFieldMap(config), [config]);
+  const isGroupedTable = Boolean(groupedFieldMap);
 
   // Build column defs from CMS
-  const columns = useMemo<ColumnDef<Record<string, any>>[]>(
+  const columns = useMemo<ColumnDef<TableRow>[]>(
     () =>
       config.columns.map((col, idx) => ({
         id: col.key,
@@ -35,8 +117,7 @@ export default function DataTable({ config }: { config: TableConfig }) {
         header: col.label,
         cell: (info) => {
           const val = info.getValue();
-          if (typeof val === "number") return val.toLocaleString();
-          return val ?? "—";
+          return formatTableValue(val);
         },
         // First column is the "label" column (e.g. Country) — left-align, bold
         meta: { isLabelColumn: idx === 0 },
@@ -57,6 +138,13 @@ export default function DataTable({ config }: { config: TableConfig }) {
     initialState: { pagination: { pageSize: 10 } },
   });
 
+  const groupedVisibleRows = isGroupedTable
+    ? groupVisibleRowsByCategory(
+      table.getRowModel().rows as Row<TableRow>[],
+      groupedFieldMap as GroupedTableFieldMap
+    )
+    : [];
+
   // CSV download
   const downloadCSV = useCallback(() => {
     const headers = config.columns.map((c) => c.label);
@@ -64,7 +152,7 @@ export default function DataTable({ config }: { config: TableConfig }) {
     const rows = config.table_data.map((row) =>
       keys.map((k) => {
         const val = row[k];
-        const str = String(val ?? "");
+        const str = formatTableValue(val);
         return str.includes(",") || str.includes('"')
           ? `"${str.replace(/"/g, '""')}"`
           : str;
@@ -180,38 +268,100 @@ export default function DataTable({ config }: { config: TableConfig }) {
             ))}
           </thead>
           <tbody>
-            {table.getRowModel().rows.map((row, rowIdx) => (
-              <tr
-                key={row.id}
-                style={{
-                  backgroundColor: rowIdx % 2 === 0 ? "#ffffff" : "#f0fdfa",
-                  borderBottom: "1px solid #e5e7eb",
-                  transition: "background 0.15s ease",
-                }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLElement).style.backgroundColor = "#ccfbf1";
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLElement).style.backgroundColor =
-                    rowIdx % 2 === 0 ? "#ffffff" : "#f0fdfa";
-                }}
-              >
-                {row.getVisibleCells().map((cell, cellIdx) => (
-                  <td
-                    key={cell.id}
+            {isGroupedTable
+              ? groupedVisibleRows.map((group) =>
+                group.rows.map(({ row, visibleIndex }, rowIndex) => (
+                  <tr
+                    key={row.id}
                     style={{
-                      padding: "0.75rem 1rem",
-                      color: cellIdx === 0 ? "#111827" : "#374151",
-                      fontWeight: cellIdx === 0 ? 600 : 400,
-                      fontVariantNumeric: "tabular-nums",
-                      whiteSpace: "nowrap",
+                      backgroundColor: visibleIndex % 2 === 0 ? "#ffffff" : "#f0fdfa",
+                      borderBottom: "1px solid #e5e7eb",
+                      transition: "background 0.15s ease",
+                    }}
+                    onMouseEnter={(e) => {
+                      (e.currentTarget as HTMLElement).style.backgroundColor = "#ccfbf1";
+                    }}
+                    onMouseLeave={(e) => {
+                      (e.currentTarget as HTMLElement).style.backgroundColor =
+                        visibleIndex % 2 === 0 ? "#ffffff" : "#f0fdfa";
                     }}
                   >
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </td>
-                ))}
-              </tr>
-            ))}
+                    {rowIndex === 0 ? (
+                      <td
+                        rowSpan={group.rows.length}
+                        style={{
+                          padding: "0.75rem 1rem",
+                          color: "#111827",
+                          fontWeight: 600,
+                          fontVariantNumeric: "tabular-nums",
+                          whiteSpace: "normal",
+                          verticalAlign: "middle",
+                          borderRight: "1px solid #e5e7eb",
+                          backgroundColor: "#ffffff",
+                        }}
+                      >
+                        {group.category}
+                      </td>
+                    ) : null}
+                    {row.getVisibleCells().map((cell, cellIdx) => {
+                      if (
+                        normalizeFieldKey(cell.column.id) === normalizeFieldKey(
+                          (groupedFieldMap as GroupedTableFieldMap).category
+                        )
+                      ) {
+                        return null;
+                      }
+
+                      return (
+                        <td
+                          key={cell.id}
+                          style={{
+                            padding: "0.75rem 1rem",
+                            color: cellIdx === 0 ? "#111827" : "#374151",
+                            fontWeight: cellIdx === 0 ? 600 : 400,
+                            fontVariantNumeric: "tabular-nums",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))
+              )
+              : table.getRowModel().rows.map((row, rowIdx) => (
+                <tr
+                  key={row.id}
+                  style={{
+                    backgroundColor: rowIdx % 2 === 0 ? "#ffffff" : "#f0fdfa",
+                    borderBottom: "1px solid #e5e7eb",
+                    transition: "background 0.15s ease",
+                  }}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLElement).style.backgroundColor = "#ccfbf1";
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLElement).style.backgroundColor =
+                      rowIdx % 2 === 0 ? "#ffffff" : "#f0fdfa";
+                  }}
+                >
+                  {row.getVisibleCells().map((cell, cellIdx) => (
+                    <td
+                      key={cell.id}
+                      style={{
+                        padding: "0.75rem 1rem",
+                        color: cellIdx === 0 ? "#111827" : "#374151",
+                        fontWeight: cellIdx === 0 ? 600 : 400,
+                        fontVariantNumeric: "tabular-nums",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </td>
+                  ))}
+                </tr>
+              ))}
           </tbody>
         </table>
       </div>
