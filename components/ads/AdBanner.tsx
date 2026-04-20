@@ -35,7 +35,7 @@ function getImageUrl(media: any): string | null {
 interface AdBannerProps {
     placement: string;
     sectorSlug?: string;
-    variant?: "banner" | "card" | "hero" | "vertical" | "native";
+    variant?: "banner" | "card" | "hero" | "vertical" | "native" | "mobile_banner";
     className?: string;
 }
 
@@ -125,7 +125,79 @@ export function AdBanner({
         fetchAd();
     }, [placement, sectorSlug]);
 
-    if (!ad) return null;
+    // ─── Toggle this to false to hide skeleton placeholders in production ───
+    const SHOW_AD_SKELETONS = true;
+
+    // Skeleton dimensions map per variant
+    const skeletonConfig: Record<string, { w: string; h: string; ratio: string; label: string }> = {
+        banner:        { w: "728px", h: "90px",  ratio: "728/90",  label: "728×90 Leaderboard" },
+        card:          { w: "300px", h: "250px", ratio: "300/250", label: "300×250 Medium Rectangle" },
+        hero:          { w: "100%",  h: "auto",  ratio: "1200/300", label: "1200×300 Hero Banner" },
+        vertical:      { w: "300px", h: "600px", ratio: "300/600", label: "300×600 Half Page" },
+        native:        { w: "100%",  h: "80px",  ratio: "",        label: "Native Partner Ad" },
+        mobile_banner: { w: "320px", h: "100px", ratio: "320/100", label: "320×100 Mobile Banner" },
+    };
+
+    if (!ad) {
+        if (!SHOW_AD_SKELETONS) return null;
+
+        const config = skeletonConfig[variant] || skeletonConfig.banner;
+
+        // Native skeleton — different layout
+        if (variant === "native") {
+            return (
+                <div className={`mt-8 rounded-2xl border-2 border-dashed border-gray-300 bg-gray-50/80 p-6 sm:p-8 ${className}`}>
+                    <div className="flex items-center gap-5">
+                        <div className="w-14 h-14 sm:w-16 sm:h-16 shrink-0 rounded-xl bg-gray-200 animate-pulse flex items-center justify-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-gray-400"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><path d="m21 15-5-5L5 21" /></svg>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mb-1">Ad Placeholder</p>
+                            <p className="text-sm font-bold text-gray-500">{config.label}</p>
+                            <p className="text-xs text-gray-400 font-mono mt-0.5">placement: {placement}</p>
+                        </div>
+                        <div className="shrink-0 hidden sm:flex items-center gap-2 px-5 py-2.5 bg-gray-200 text-gray-400 text-xs font-bold uppercase tracking-wider rounded-full">
+                            Learn More →
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // All other skeleton variants
+        return (
+            <div className={`flex justify-center ${className}`}>
+                <div
+                    className="relative overflow-hidden rounded-lg border-2 border-dashed border-gray-300 bg-gray-50/80 flex flex-col items-center justify-center gap-2"
+                    style={{
+                        maxWidth: config.w,
+                        width: "100%",
+                        aspectRatio: config.ratio || undefined,
+                        minHeight: !config.ratio ? config.h : undefined,
+                    }}
+                >
+                    {/* Animated pulse background */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-gray-200/50 to-transparent animate-pulse" />
+                    
+                    {/* Icon */}
+                    <div className="relative z-10 w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-gray-400"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><path d="m21 15-5-5L5 21" /></svg>
+                    </div>
+                    
+                    {/* Text */}
+                    <p className="relative z-10 text-[11px] font-black uppercase tracking-[0.15em] text-gray-400">{config.label}</p>
+                    <p className="relative z-10 text-[10px] font-mono text-gray-400/80 bg-white/60 px-2 py-0.5 rounded">
+                        placement: <span className="text-gray-500 font-bold">{placement}</span>
+                    </p>
+
+                    {/* Corner badge */}
+                    <span className="absolute top-2 right-2 text-[8px] font-bold uppercase tracking-[0.15em] text-gray-400 bg-gray-200 px-2 py-0.5 rounded-full">
+                        Ad Slot
+                    </span>
+                </div>
+            </div>
+        );
+    }
 
     switch (variant) {
         case "banner":
@@ -138,6 +210,8 @@ export function AdBanner({
             return <VerticalBannerAd ad={ad} className={className} />;
         case "native":
             return <NativeBannerAd ad={ad} className={className} />;
+        case "mobile_banner":
+            return <MobileBannerAd ad={ad} className={className} />;
         default:
             return <BannerAd ad={ad} className={className} />;
     }
@@ -331,4 +405,37 @@ function NativeBannerAd({ ad, className }: { ad: Ad; className: string }) {
     );
 
     return wrapWithLink(ad.target_url, inner);
+}
+
+/* ═══════════════════════════════════════════
+   MOBILE BANNER — 320×100 mobile leaderboard
+   ═══════════════════════════════════════════ */
+
+function MobileBannerAd({ ad, className }: { ad: Ad; className: string }) {
+    const creative = ad.creative?.[0];
+    const imageUrl = getImageUrl(creative);
+
+    if (!imageUrl) return null;
+
+    const content = (
+        <div className={`flex justify-center group ${className}`}>
+            <div className="relative overflow-hidden rounded-lg" style={{ maxWidth: 320, width: "100%" }}>
+                <div className="relative w-full" style={{ aspectRatio: "320/100" }}>
+                    <Image
+                        src={imageUrl}
+                        alt={ad.title || "Advertisement"}
+                        fill
+                        loading="lazy"
+                        unoptimized
+                        className="object-cover transition-transform duration-500 group-hover:scale-[1.015]"
+                    />
+                </div>
+                <span className="absolute top-1.5 right-1.5 text-[7px] font-bold uppercase tracking-[0.15em] text-white/70 bg-black/25 backdrop-blur-md px-1.5 py-0.5 rounded-full pointer-events-none">
+                    Sponsored
+                </span>
+            </div>
+        </div>
+    );
+
+    return wrapWithLink(ad.target_url, content);
 }
