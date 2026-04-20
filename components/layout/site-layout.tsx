@@ -23,10 +23,17 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
         <>
             {isEnergClub ? <EnergClubHeader /> : <Header />}
 
-            {/* Header Banner Ad — 728×90 below navigation on all pages */}
+            {/* Header Banner Ad — 728×90 desktop / 320×100 mobile */}
             {!isEnergClub && (
                 <div className="w-full flex justify-center py-3 bg-white">
-                    <AdBanner placement="header_banner" variant="banner" />
+                    {/* Desktop: 728×90 Leaderboard */}
+                    <div className="hidden md:block">
+                        <AdBanner placement="header_banner" variant="banner" />
+                    </div>
+                    {/* Mobile: 320×100 Large Mobile Banner */}
+                    <div className="block md:hidden">
+                        <AdBanner placement="header_banner_mobile" variant="mobile_banner" />
+                    </div>
                 </div>
             )}
 

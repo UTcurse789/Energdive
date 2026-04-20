@@ -318,6 +318,13 @@ first:prose-p:first-letter:text-6xl first:prose-p:first-letter:font-serif first:
                             {/* ── Subscribe CTA ── */}
                             <SidebarSubscribe />
 
+                            {/* ── Sidebar Ad — 300×250 ── */}
+                            <AdBanner
+                                placement="article_sidebar"
+                                sectorSlug={sectorSlug}
+                                variant="card"
+                            />
+
                             {/* ── Latest Issue ── */}
                             {latestIssue && (
                                 <div className="rounded-xl border border-gray-100 bg-white p-5 shadow-sm">

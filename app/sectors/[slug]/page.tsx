@@ -555,7 +555,7 @@ export default function SectorIntelligencePage() {
             </section>
 
             {/* Sector Hero Ad Banner — no wrapper, so no empty space when ad is absent */}
-            <AdBanner placement="sector_hero" sectorSlug={slug} variant="banner" className="flex justify-center bg-[#fafafa] py-4 container mx-auto px-6 lg:px-16 max-w-[1400px]" />
+            <AdBanner placement="sector_banner" sectorSlug={slug} variant="banner" className="flex justify-center bg-[#fafafa] py-4 container mx-auto px-6 lg:px-16 max-w-[1400px]" />
 
             {/* STICKY NAVIGATION & FILTER */}
             <section className="sticky top-[74px] z-10 bg-white/95 backdrop-blur-xl border-y border-gray-100 py-5 shadow-[0_6px_20px_rgba(15,23,42,0.06)]">
@@ -602,7 +602,7 @@ export default function SectorIntelligencePage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-10 gap-y-16 mt-15 mb-15">
                     <AnimatePresence mode="popLayout">
                         {/* In-grid Ad Card — no wrapper so no empty space when ad is absent */}
-                        <AdBanner placement="sector_hero" sectorSlug={slug} variant="card" />
+                        <AdBanner placement="sector_card" sectorSlug={slug} variant="card" />
 
                         {filteredReports.map((report, idx) => (
                             <motion.div
