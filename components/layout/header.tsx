@@ -945,7 +945,7 @@ export function Header() {
                                                 <div className="w-16 h-16 rounded-2xl mx-auto mb-6 flex items-center justify-center" style={{ background: '#00A65115' }}>
                                                     <Zap size={28} style={{ color: '#00A651' }} />
                                                 </div>
-                                                <h4 className="text-xl font-bold text-zinc-900 mb-2">Explore EnergDive</h4>
+                                                <h4 className="text-xl font-bold text-zinc-900 mb-2">Explore ENERGDIVE</h4>
                                                 <p className="text-gray-500 text-[14px] leading-relaxed mb-6">Hover over any item to preview. Discover videos, events, learn about us, or get in touch.</p>
                                                 <Link href="/energclub" onClick={closeMenus} className="inline-flex items-center gap-2 px-6 py-3 bg-zinc-900 text-white text-[11px] font-bold uppercase tracking-wider rounded-lg hover:bg-zinc-800 transition-colors">
                                                     <Zap size={14} style={{ color: '#00A651' }} /> Join EnergClub
