@@ -25,9 +25,9 @@ import type { TableConfig } from "@/types/data-blocks";
 
 type TableRow = Record<string, string | number | null>;
 
-const GROUPED_TABLE_KEYS = ["category", "metric", "value", "unit", "month"] as const;
-type GroupedTableField = (typeof GROUPED_TABLE_KEYS)[number];
-type GroupedTableFieldMap = Record<GroupedTableField, string>;
+interface CategoryGroupingConfig {
+  categoryKey: string;
+}
 
 function normalizeFieldKey(value: string): string {
   return value.toLowerCase().replace(/[^a-z0-9]/g, "");
@@ -43,7 +43,7 @@ function formatTableValue(value: unknown): string {
   return String(value);
 }
 
-function getGroupedTableFieldMap(config: TableConfig): GroupedTableFieldMap | null {
+function getCategoryGroupingConfig(config: TableConfig): CategoryGroupingConfig | null {
   const lookup = new Map<string, string>();
 
   config.columns.forEach((column) => {
@@ -60,18 +60,13 @@ function getGroupedTableFieldMap(config: TableConfig): GroupedTableFieldMap | nu
     });
   }
 
-  const resolved = {} as GroupedTableFieldMap;
+  const categoryKey = lookup.get(normalizeFieldKey("category"));
+  if (!categoryKey) return null;
 
-  for (const key of GROUPED_TABLE_KEYS) {
-    const actualKey = lookup.get(normalizeFieldKey(key));
-    if (!actualKey) return null;
-    resolved[key] = actualKey;
-  }
-
-  return resolved;
+  return { categoryKey };
 }
 
-function groupVisibleRowsByCategory(rows: Row<TableRow>[], fieldMap: GroupedTableFieldMap) {
+function groupVisibleRowsByCategory(rows: Row<TableRow>[], config: CategoryGroupingConfig) {
   const groups: Array<{
     category: string;
     rows: Array<{ row: Row<TableRow>; visibleIndex: number }>;
@@ -85,7 +80,7 @@ function groupVisibleRowsByCategory(rows: Row<TableRow>[], fieldMap: GroupedTabl
     | null = null;
 
   rows.forEach((row, visibleIndex) => {
-    const category = formatTableValue(row.original[fieldMap.category]);
+    const category = formatTableValue(row.original[config.categoryKey]);
 
     if (currentGroup && currentGroup.category === category) {
       currentGroup.rows.push({ row, visibleIndex });
@@ -105,8 +100,8 @@ function groupVisibleRowsByCategory(rows: Row<TableRow>[], fieldMap: GroupedTabl
 export default function DataTable({ config }: { config: TableConfig }) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = useState("");
-  const groupedFieldMap = useMemo(() => getGroupedTableFieldMap(config), [config]);
-  const isGroupedTable = Boolean(groupedFieldMap);
+  const groupingConfig = useMemo(() => getCategoryGroupingConfig(config), [config]);
+  const isGroupedTable = Boolean(groupingConfig);
 
   // Build column defs from CMS
   const columns = useMemo<ColumnDef<TableRow>[]>(
@@ -141,7 +136,7 @@ export default function DataTable({ config }: { config: TableConfig }) {
   const groupedVisibleRows = isGroupedTable
     ? groupVisibleRowsByCategory(
       table.getRowModel().rows as Row<TableRow>[],
-      groupedFieldMap as GroupedTableFieldMap
+      groupingConfig as CategoryGroupingConfig
     )
     : [];
 
@@ -306,7 +301,7 @@ export default function DataTable({ config }: { config: TableConfig }) {
                     {row.getVisibleCells().map((cell, cellIdx) => {
                       if (
                         normalizeFieldKey(cell.column.id) === normalizeFieldKey(
-                          (groupedFieldMap as GroupedTableFieldMap).category
+                          (groupingConfig as CategoryGroupingConfig).categoryKey
                         )
                       ) {
                         return null;
