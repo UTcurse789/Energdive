@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/buttons";
 import { ScrollProgress } from "@/components/ui/scroll-progress";
 import { ShareButton } from "@/components/ui/share-button";
 import { slugify } from "@/lib/utils";
+import { TagBadge } from "@/components/ui/tag-badge";
 
 
 
@@ -190,6 +191,23 @@ export default function OpinionContent({ opinion, recommended }: any) {
                                 }
                             })}
                         </div>
+
+                        {/* Tags */}
+                        {opinion.tags?.length > 0 && (
+                            <div className="mt-12 pt-6 border-t border-zinc-100">
+                                <h4 className="text-xs uppercase tracking-widest text-zinc-400 mb-4 font-bold">Tags</h4>
+                                <div className="flex flex-wrap gap-2">
+                                    {opinion.tags.map((tag: any) => (
+                                        <TagBadge
+                                            key={tag.slug}
+                                            name={tag.name}
+                                            slug={tag.slug}
+                                            className="bg-zinc-50 text-zinc-700 px-3 py-1.5 text-xs font-medium uppercase tracking-wider rounded-full border border-zinc-200 hover:bg-[#00A651] hover:text-white hover:border-[#00A651] transition-all"
+                                        />
+                                    ))}
+                                </div>
+                            </div>
+                        )}
 
                         {/* Newsletter CTA Block */}
                         {/* <div className="mt-24 p-12 rounded-3xl bg-black text-white overflow-hidden relative">

@@ -135,11 +135,23 @@ import OpinionContent from "./opinion-content";
 import { strapiImageUrl } from "@/lib/strapi-image";
 import { ArticleJsonLd } from "@/components/seo/ArticleJsonLd";
 
+function slugifyTag(text: string): string {
+    return text.toLowerCase().trim().replace(/[^\w\s-]/g, "").replace(/[\s_]+/g, "-").replace(/-+/g, "-").replace(/^-+|-+$/g, "");
+}
+
+function normalizeTag(tag: any) {
+    const source = tag?.attributes || tag;
+    const name = source?.name || "";
+    const slug = source?.slug || (name ? slugifyTag(name) : "");
+    if (!name) return null;
+    return { name, slug };
+}
+
 const STRAPI = process.env.NEXT_PUBLIC_STRAPI_URL;
 
 async function getOpinion(slug: string) {
   const res = await fetch(
-    `${STRAPI}/api/contents?filters[slug][$eq]=${slug}&populate[author][populate]=avatar&populate=FeaturedImage`,
+    `${STRAPI}/api/contents?filters[slug][$eq]=${slug}&populate[author][populate]=avatar&populate=FeaturedImage&populate[tags]=true`,
     { next: { revalidate: 3600 } }
   );
   const json = await res.json();
@@ -162,16 +174,20 @@ export default async function OpinionDetailPage({ params }: { params: Promise<{ 
 
   const recommendedRaw = await getRecommended(slug);
 
-  // page.tsx mein mapping thodi safe kar dete hain
+  // Extract and normalize tags
+  const attrs = article.attributes || article;
+  const tagsData = attrs.tags?.data || attrs.tags || [];
+  const normalizedTags = Array.isArray(tagsData) ? tagsData.map((t: any) => normalizeTag(t)).filter(Boolean) : [];
+
   const opinion = {
     id: article.id,
     slug,
-    // Agar Strapi v4 use kar rahe ho toh article.attributes.Title ho sakta hai
     title: article.Title || article.attributes?.Title,
     excerpt: article?.Excerpt?.[0]?.children?.[0]?.text || article.attributes?.Excerpt?.[0]?.children?.[0]?.text || "",
     content: article?.Content || article.attributes?.Content || [],
     category: "Interview",
     readTime: "6 min read",
+    tags: normalizedTags,
     featuredImage: (article.FeaturedImage?.url || article.attributes?.FeaturedImage?.data?.attributes?.url)
       ? strapiImageUrl(article.FeaturedImage?.url || article.attributes?.FeaturedImage?.data?.attributes?.url)
       : "/placeholder.jpg",
