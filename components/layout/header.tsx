@@ -987,7 +987,7 @@ export function Header() {
                                             )}
                                             onMouseEnter={() => setHoveredOpinionItem("interviews")}
                                         >
-                                            Interviews <ChevronRight size={14} />
+                                            Interview <ChevronRight size={14} />
                                         </Link>
                                     </div>
                                 </div>
@@ -1032,7 +1032,7 @@ export function Header() {
                                     {/* Interviews hover content */}
                                     {hoveredOpinionItem === "interviews" && (
                                         <div>
-                                            <h4 className="text-[12px] font-bold uppercase text-gray-400 border-b pb-3 mb-6 tracking-widest">Latest Interviews</h4>
+                                            <h4 className="text-[12px] font-bold uppercase text-gray-400 border-b pb-3 mb-6 tracking-widest">Latest Interview</h4>
                                             <div className="grid grid-cols-3 gap-5">
                                                 {interviewArticles.length > 0 ? interviewArticles.slice(0, 3).map((item: any) => {
                                                     const imgUrl = item?.FeaturedImage?.url ? strapiImageUrl(item.FeaturedImage.url) : "/magazine-default.jpg";
@@ -1060,7 +1060,7 @@ export function Header() {
                                                 )}
                                             </div>
                                             <Link href="/interviews" onClick={closeMenus} className="mt-8 inline-flex items-center gap-1.5 text-[11px] font-bold text-[#00A651] uppercase tracking-widest hover:underline">
-                                                View All Interviews <ArrowRight size={13} />
+                                                View All Interview <ArrowRight size={13} />
                                             </Link>
                                         </div>
                                     )}

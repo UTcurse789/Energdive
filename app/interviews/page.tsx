@@ -161,7 +161,7 @@ export default function InterviewsPage() {
             >
               <h1 className="text-4xl sm:text-6xl md:text-8xl lg:text-[8rem] font-black leading-[0.85] tracking-tight uppercase mb-6 sm:mb-10">
                 <span className="text-[#00A651]">
-                  Interviews
+                  Interview
                 </span>
               </h1>
 
