@@ -271,7 +271,7 @@ export default async function Home() {
   return (
     <>
       {/* Homepage Hero Ad Banner */}
-      <AdBanner placement="home_platform_hero" variant="hero" />
+      <AdBanner placement="home_platform_hero" variant="banner" className="py-4" />
 
       {/* Cover Story (left) + Trending (right) — the original Hero */}
       <Hero topStories={heroTopStories} />
@@ -307,12 +307,20 @@ export default async function Home() {
       <div className="border-b border-border">
         <div className="container max-w-[1400px] mx-auto">
           {sectorsWithArticles.map((sector) => (
-            <SectorBlock
-              key={sector.slug}
-              title={sector.title}
-              slug={sector.slug}
-              articles={sector.articles}
-            />
+            <div key={sector.slug}>
+              <AdBanner
+                placement="sector_hero"
+                sectorSlug={sector.slug}
+                variant="banner"
+                showSkeleton={false}
+                className="py-6"
+              />
+              <SectorBlock
+                title={sector.title}
+                slug={sector.slug}
+                articles={sector.articles}
+              />
+            </div>
           ))}
 
           {/* View All Sectors Button */}

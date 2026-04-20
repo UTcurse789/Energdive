@@ -37,6 +37,31 @@ interface AdBannerProps {
     sectorSlug?: string;
     variant?: "banner" | "card" | "hero" | "vertical" | "native" | "mobile_banner";
     className?: string;
+    showSkeleton?: boolean;
+}
+
+function getRotationStorageKey(placement: string, sectorSlug?: string): string {
+    return `ad-rotation:${placement}:${sectorSlug || "global"}`;
+}
+
+function pickRotatingAd(ads: Ad[], placement: string, sectorSlug?: string): Ad | null {
+    if (ads.length === 0) return null;
+    if (ads.length === 1) return ads[0];
+
+    try {
+        const storageKey = getRotationStorageKey(placement, sectorSlug);
+        const lastAdId = window.sessionStorage.getItem(storageKey);
+        const lastIndex = lastAdId
+            ? ads.findIndex((ad) => String(ad.id) === lastAdId)
+            : -1;
+        const nextIndex = (lastIndex + 1 + ads.length) % ads.length;
+        const nextAd = ads[nextIndex];
+
+        window.sessionStorage.setItem(storageKey, String(nextAd.id));
+        return nextAd;
+    } catch {
+        return ads[0];
+    }
 }
 
 /**
@@ -49,6 +74,7 @@ export function AdBanner({
     sectorSlug,
     variant = "banner",
     className = "",
+    showSkeleton = true,
 }: AdBannerProps) {
     const [ad, setAd] = useState<Ad | null>(null);
 
@@ -115,7 +141,7 @@ export function AdBanner({
                 if (ads.length > 0) {
                     // Sort by priority DESC
                     ads.sort((a, b) => (b.priority ?? -1) - (a.priority ?? -1));
-                    setAd(ads[0]);
+                    setAd(pickRotatingAd(ads, placement, sectorSlug));
                 }
             } catch (err) {
                 console.error("[AdBanner] Failed to fetch ad:", err);
@@ -126,7 +152,7 @@ export function AdBanner({
     }, [placement, sectorSlug]);
 
     // ─── Toggle this to false to hide skeleton placeholders in production ───
-    const SHOW_AD_SKELETONS = true;
+    const SHOW_AD_SKELETONS = showSkeleton;
 
     // Skeleton dimensions map per variant
     const skeletonConfig: Record<string, { w: string; h: string; ratio: string; label: string }> = {
@@ -240,15 +266,15 @@ function BannerAd({ ad, className }: { ad: Ad; className: string }) {
 
     const content = (
         <div className={`flex justify-center group ${className}`}>
-            <div className="relative overflow-hidden rounded-lg" style={{ maxWidth: 728, width: "100%" }}>
-                <div className="relative w-full" style={{ aspectRatio: "728/90" }}>
+            <div className="relative overflow-hidden rounded-lg bg-white" style={{ maxWidth: 728, width: "100%" }}>
+                <div className="relative w-full bg-white" style={{ aspectRatio: "728/90" }}>
                     <Image
                         src={imageUrl}
                         alt={ad.title || "Advertisement"}
                         fill
                         loading="lazy"
                         unoptimized
-                        className="object-cover transition-transform duration-500 group-hover:scale-[1.015]"
+                        className="object-contain transition-transform duration-500 group-hover:scale-[1.015]"
                     />
                 </div>
                 <span className="absolute top-2 right-2 text-[8px] font-bold uppercase tracking-[0.15em] text-white/80 bg-black/25 backdrop-blur-md px-2 py-0.5 rounded-full pointer-events-none">
