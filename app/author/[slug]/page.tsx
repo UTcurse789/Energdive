@@ -117,7 +117,7 @@ export async function generateMetadata({
     const authorData = await getAuthorBySlug(slug);
 
     if (!authorData) {
-        return { title: "Author | Energdive" };
+        return { title: { absolute: "Author - ENERGDIVE" } };
     }
 
     const attrs = authorData.attributes || authorData;
@@ -134,11 +134,15 @@ export async function generateMetadata({
         ? authorBio.substring(0, 160)
         : `Read articles by ${authorName}${authorDesignation ? `, ${authorDesignation}` : ""} on Energdive.`;
 
+    const baseTitle = `${authorName}${authorDesignation ? ` - ${authorDesignation}` : ""}`;
+    const cleanBaseTitle = String(baseTitle).replace(/^['"“”‘’]+|['"“”‘’]+$/g, "").trim();
+    const shareTitle = `${cleanBaseTitle} - ENERGDIVE`;
+
     return {
-        title: `${authorName}${authorDesignation ? ` — ${authorDesignation}` : ""}`,
+        title: { absolute: shareTitle },
         description,
         openGraph: {
-            title: `${authorName} | ENERGDIVE`,
+            title: shareTitle,
             description,
             url: `https://www.energdive.com/author/${slug}`,
             siteName: "ENERGDIVE",
@@ -147,14 +151,14 @@ export async function generateMetadata({
                     url: avatarUrl,
                     width: 400,
                     height: 400,
-                    alt: authorName,
+                    alt: shareTitle,
                 },
             ],
             type: "profile",
         },
         twitter: {
             card: "summary",
-            title: `${authorName} | ENERGDIVE`,
+            title: shareTitle,
             description,
             images: [avatarUrl],
         },

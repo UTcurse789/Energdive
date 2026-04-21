@@ -29,8 +29,11 @@ export async function generateMetadata(
 ): Promise<Metadata> {
     const { slug } = await props.params;
     const data = await getArticle(slug);
+    const baseTitle = data?.Title || "Article";
+    const cleanBaseTitle = String(baseTitle).replace(/^['"“”‘’]+|['"“”‘’]+$/g, "").trim();
+    const shareTitle = `${cleanBaseTitle} - ENERGDIVE`;
     return {
-        title: data ? `${data.Title} | ${SITE_NAME}` : "Article | " + SITE_NAME,
+        title: { absolute: shareTitle },
         robots: { index: false, follow: false },
     };
 }

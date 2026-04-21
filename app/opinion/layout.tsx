@@ -1,7 +1,10 @@
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Energy Opinion & Expert Views India | Policy Leaders, Interviews & Insights | ENERGDIVE",
+  title: {
+    default: "Energy Opinion & Expert Views India | Policy Leaders, Interviews & Insights - ENERGDIVE",
+    template: "%s - ENERGDIVE",
+  },
   description: "Explore expert opinions, leadership perspectives, and exclusive interviews on India’s energy transition featuring policymakers, industry leaders, and visionaries shaping oil & gas, power, renewables, and sustainability.",
   keywords: [
     "energy opinion india",

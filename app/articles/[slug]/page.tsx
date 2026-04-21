@@ -67,10 +67,12 @@ export async function generateMetadata({
     const articleData = await getArticle(slug);
 
     if (!articleData) {
-        return { title: "Articles | Energdive" };
+        return { title: { absolute: "Articles - ENERGDIVE" } };
     }
 
-    const title = articleData.Title || "Articles | Energdive";
+    const baseTitle = articleData.Title || "Articles";
+    const cleanBaseTitle = String(baseTitle).replace(/^['"“”‘’]+|['"“”‘’]+$/g, "").trim();
+    const shareTitle = `${cleanBaseTitle} - ENERGDIVE`;
     const description =
         articleData.Excerpt?.[0]?.children?.[0]?.text ||
         "Read in-depth energy articles on Energdive.";
@@ -80,10 +82,10 @@ export async function generateMetadata({
         : "https://energdive.com/fav.jpg";
 
     return {
-        title,
+        title: { absolute: shareTitle },
         description,
         openGraph: {
-            title,
+            title: shareTitle,
             description,
             url: `https://energdive.com/articles/${slug}`,
             siteName: "Energdive",
@@ -92,14 +94,14 @@ export async function generateMetadata({
                     url: imageUrl,
                     width: 1200,
                     height: 630,
-                    alt: title,
+                    alt: shareTitle,
                 },
             ],
             type: "article",
         },
         twitter: {
             card: "summary_large_image",
-            title,
+            title: shareTitle,
             description,
             images: [imageUrl],
         },

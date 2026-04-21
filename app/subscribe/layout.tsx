@@ -1,7 +1,7 @@
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Subscribe to ENERGDIVE Magazine | India’s Energy Intelligence Platform",
+  title: { absolute: "Subscribe to ENERGDIVE Magazine | India’s Energy Intelligence Platform - ENERGDIVE" },
   description: "Subscribe to ENERGDIVE Magazine and get curated insights on India’s energy transition, policy, oil & gas, power, renewables, and sustainability delivered to your desk every month.",
   keywords: [
     "subscribe energdive",

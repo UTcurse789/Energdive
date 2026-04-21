@@ -62,11 +62,13 @@ export async function generateMetadata({
     const articleData = await getArticle(slug);
 
     if (!articleData) {
-        return { title: "Interview | Energdive" };
+        return { title: { absolute: "Interview - ENERGDIVE" } };
     }
 
     const attrs = articleData.attributes || articleData;
-    const title = attrs.Title || "Interview | Energdive";
+    const baseTitle = attrs.Title || "Interview";
+    const cleanBaseTitle = String(baseTitle).replace(/^['"“”‘’]+|['"“”‘’]+$/g, "").trim();
+    const shareTitle = `${cleanBaseTitle} - ENERGDIVE`;
     const excerptBlock = attrs.Excerpt;
     const description =
         (Array.isArray(excerptBlock)
@@ -78,10 +80,10 @@ export async function generateMetadata({
         : "https://energdive.com/fav.jpg";
 
     return {
-        title,
+        title: { absolute: shareTitle },
         description,
         openGraph: {
-            title,
+            title: shareTitle,
             description,
             url: `https://energdive.com/interview/${slug}`,
             siteName: "Energdive",
@@ -90,14 +92,14 @@ export async function generateMetadata({
                     url: imageUrl,
                     width: 1200,
                     height: 630,
-                    alt: title,
+                    alt: shareTitle,
                 },
             ],
             type: "article",
         },
         twitter: {
             card: "summary_large_image",
-            title,
+            title: shareTitle,
             description,
             images: [imageUrl],
         },
@@ -169,6 +171,7 @@ export default async function InterviewDetailPage({ params }: { params: Promise<
                                     placement="interview_left"
                                     sectorSlug={sectorSlug}
                                     variant="vertical"
+                                    showSkeleton={false}
                                 />
                             </div>
                         </div>
@@ -197,6 +200,7 @@ export default async function InterviewDetailPage({ params }: { params: Promise<
                                 placement="interview_right"
                                 sectorSlug={sectorSlug}
                                 variant="vertical"
+                                showSkeleton={false}
                             />
                             <SidebarSubscribe />
                             {latestIssue && (<div className="rounded-xl border border-gray-100 bg-white p-5 shadow-sm"><div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-widest text-[#00A651] bg-white/90 backdrop-blur-md px-4 py-2 rounded-full w-fit shadow-lg bg-linear-to-b from-white to-zinc-50 border border-white/20"><Calendar className="h-3.5 w-3.5 text-teal-500" />Latest Issue</div><Link href={`/issues/${latestIssue.slug}`} className="group block"><div className="relative aspect-3/4 w-full overflow-hidden rounded-lg border border-gray-100 shadow-md mb-4 transition-all duration-500 group-hover:shadow-xl group-hover:-translate-y-0.5"><Image src={latestIssue.coverImage} alt={latestIssue.title} fill className="object-contain bg-white p-1 transition-transform duration-700 group-hover:scale-[1.02]" /></div><h4 className="font-serif font-bold text-gray-900 group-hover:text-teal-600 transition-colors mb-1">{latestIssue.month} {latestIssue.year}</h4><span className="inline-flex items-center gap-1 text-xs font-bold text-teal-600 group-hover:gap-2 transition-all">Read Issue <ArrowRight className="h-3.5 w-3.5" /></span></Link></div>)}

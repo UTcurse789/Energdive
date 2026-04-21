@@ -1,7 +1,7 @@
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Energy Reports & Market Intelligence India | Policy, Data & Sector Analysis | ENERGDIVE",
+  title: { absolute: "Energy Reports & Market Intelligence India | Policy, Data & Sector Analysis - ENERGDIVE" },
   description: "Explore in-depth energy reports and market intelligence on India’s energy sector covering oil & gas, power, renewables, hydrogen, energy storage, carbon markets, policy analysis, and industry trends.",
   keywords: [
     "energy reports india",

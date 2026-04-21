@@ -92,7 +92,7 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://www.energdive.com"),
 
   title: {
-    template: "%s | ENERGDIVE",
+    template: "%s - ENERGDIVE",
     default: "ENERGDIVE - Insights and Market Intelligence | ENERGDIVE Magazine | India's Energy Intelligence Platform",
   },
 
