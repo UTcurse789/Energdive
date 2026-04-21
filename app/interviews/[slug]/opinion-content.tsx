@@ -121,7 +121,7 @@ export default function OpinionContent({ opinion, recommended }: any) {
                 {/* Content Area */}
                 <div className="relative">
                     <div className="relative max-w-[720px] mx-auto w-full">
-                        <div className="hidden 2xl:block absolute top-0 right-[calc(100%+3rem)] w-[300px]">
+                        <div className="hidden min-[1440px]:block absolute top-0 right-[calc(100%+2rem)] w-[300px]">
                             <div className="sticky top-24 w-[300px]">
                                 <AdBanner
                                     placement="interview_left"
@@ -132,7 +132,7 @@ export default function OpinionContent({ opinion, recommended }: any) {
                             </div>
                         </div>
 
-                        <div className="hidden 2xl:block absolute top-0 left-[calc(100%+3rem)] w-[300px]">
+                        <div className="hidden min-[1440px]:block absolute top-0 left-[calc(100%+2rem)] w-[300px]">
                             <div className="sticky top-24 w-[300px]">
                                 <AdBanner
                                     placement="interview_right"

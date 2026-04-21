@@ -2,12 +2,10 @@
 
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Play, Eye, Calendar, Filter, Loader2 } from "lucide-react";
+import { Play, Filter } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Header } from "@/components/layout/header";
-import { slugify } from "@/lib/utils";
 import { strapiImageUrl } from "@/lib/strapi-image";
 import { AdBanner } from "@/components/ads/AdBanner";
 
@@ -193,24 +191,32 @@ export default function VideosPage() {
                 )}
 
                 {/* Filter Section */}
-                <div className="py-12 flex flex-col md:flex-row md:items-center justify-between gap-6">
-                    <div className="flex items-center gap-3">
-                        <Filter size={18} className="text-teal-600" />
-                        <h2 className="text-sm font-black uppercase tracking-widest text-gray-400">Categories</h2>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                        {categories.map((cat) => (
-                            <button
-                                key={cat}
-                                onClick={() => setActiveCategory(cat)}
-                                className={`px-6 py-2 rounded-full text-xs font-bold uppercase tracking-widest transition-all border ${activeCategory === cat
-                                    ? "bg-black text-white border-black shadow-lg"
-                                    : "bg-white text-gray-500 border-gray-200 hover:border-teal-400"
-                                    }`}
-                            >
-                                {cat}
-                            </button>
-                        ))}
+                <div className="py-12 border-y border-gray-100">
+                    <div className="flex flex-col gap-5 xl:flex-row xl:items-center">
+                        <div className="flex items-center gap-3 shrink-0 xl:min-w-[180px]">
+                            <Filter size={18} className="text-teal-600" />
+                            <h2 className="text-sm font-black uppercase tracking-widest text-gray-400">Categories</h2>
+                        </div>
+
+                        <div className="min-w-0 flex-1">
+                            <div className="-mx-1 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                                <div className="flex w-max min-w-full gap-2 px-1">
+                                    {categories.map((cat) => (
+                                        <button
+                                            key={cat}
+                                            onClick={() => setActiveCategory(cat)}
+                                            className={`shrink-0 whitespace-nowrap rounded-full border px-6 py-2 text-xs font-bold uppercase tracking-widest transition-all ${
+                                                activeCategory === cat
+                                                    ? "border-black bg-black text-white shadow-lg"
+                                                    : "border-gray-200 bg-white text-gray-500 hover:border-teal-400"
+                                            }`}
+                                        >
+                                            {cat}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
