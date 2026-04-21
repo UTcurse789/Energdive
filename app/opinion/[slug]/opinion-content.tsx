@@ -127,6 +127,7 @@ export default function OpinionContent({ opinion, recommended }: any) {
                                     placement="Opinion_left"
                                     sectorSlug={opinion.sectorSlug}
                                     variant="vertical"
+                                    showSkeleton={false}
                                     className="w-[300px]"
                                 />
                             </div>
@@ -138,6 +139,7 @@ export default function OpinionContent({ opinion, recommended }: any) {
                                     placement="Opinion_right"
                                     sectorSlug={opinion.sectorSlug}
                                     variant="vertical"
+                                    showSkeleton={false}
                                     className="w-[300px]"
                                 />
                             </div>

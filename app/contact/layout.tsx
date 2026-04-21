@@ -1,7 +1,7 @@
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Contact ENERGDIVE | Editorial, Advertising & Support | India Energy Platform",
+  title: { absolute: "Contact ENERGDIVE | Editorial, Advertising & Support | India Energy Platform - ENERGDIVE" },
   description: "Get in touch with ENERGDIVE for editorial inquiries, advertising opportunities, partnerships, subscriptions, and general support. Connect with India’s leading energy intelligence platform.",
   keywords: [
     "contact energdive",

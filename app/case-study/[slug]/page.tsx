@@ -60,11 +60,13 @@ export async function generateMetadata({
     const articleData = await getArticle(slug);
 
     if (!articleData) {
-        return { title: "Case Study | Energdive" };
+        return { title: { absolute: "Case Study - ENERGDIVE" } };
     }
 
     const attrs = articleData.attributes || articleData;
-    const title = attrs.Title || "Case Study | Energdive";
+    const baseTitle = attrs.Title || "Case Study";
+    const cleanBaseTitle = String(baseTitle).replace(/^['"“”‘’]+|['"“”‘’]+$/g, "").trim();
+    const shareTitle = `${cleanBaseTitle} - ENERGDIVE`;
     const excerptBlock = attrs.Excerpt;
     const description =
         (Array.isArray(excerptBlock)
@@ -76,10 +78,10 @@ export async function generateMetadata({
         : "https://energdive.com/fav.jpg";
 
     return {
-        title,
+        title: { absolute: shareTitle },
         description,
         openGraph: {
-            title,
+            title: shareTitle,
             description,
             url: `https://energdive.com/case-study/${slug}`,
             siteName: "Energdive",
@@ -88,14 +90,14 @@ export async function generateMetadata({
                     url: imageUrl,
                     width: 1200,
                     height: 630,
-                    alt: title,
+                    alt: shareTitle,
                 },
             ],
             type: "article",
         },
         twitter: {
             card: "summary_large_image",
-            title,
+            title: shareTitle,
             description,
             images: [imageUrl],
         },

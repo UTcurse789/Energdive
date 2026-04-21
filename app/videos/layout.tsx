@@ -1,7 +1,7 @@
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Energy Videos India | Expert Talks, Interviews & Industry Insights | ENERGDIVE",
+  title: { absolute: "Energy Videos India | Expert Talks, Interviews & Industry Insights - ENERGDIVE" },
   description: "Watch energy video insights, expert conversations, and leadership interviews on India’s energy sector covering oil & gas, power, renewables, hydrogen, sustainability, and policy developments shaping the future.",
   keywords: [
     "energy videos india",

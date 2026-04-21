@@ -56,10 +56,12 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     const { video } = await getVideoData(slug);
 
     if (!video) {
-        return { title: "Video | ENERGDIVE" };
+        return { title: { absolute: "Video - ENERGDIVE" } };
     }
 
-    const title = video.title || "Video | ENERGDIVE";
+    const baseTitle = video.title || "Video";
+    const cleanBaseTitle = String(baseTitle).replace(/^['"“”‘’]+|['"“”‘’]+$/g, "").trim();
+    const shareTitle = `${cleanBaseTitle} - ENERGDIVE`;
     
     // Extract a plain text description from blocks content
     let description = "Watch this exclusive energy sector video on ENERGDIVE.";
@@ -76,10 +78,10 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
         : "/og-image.jpg";
 
     return {
-        title,
+        title: { absolute: shareTitle },
         description,
         openGraph: {
-            title,
+            title: shareTitle,
             description,
             url: `https://www.energdive.com/videos/${slug}`,
             siteName: "ENERGDIVE",
@@ -88,14 +90,14 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
                     url: imageUrl,
                     width: 1280,
                     height: 720,
-                    alt: title,
+                    alt: shareTitle,
                 },
             ],
             type: "video.other",
         },
         twitter: {
             card: "summary_large_image",
-            title,
+            title: shareTitle,
             description,
             images: [imageUrl],
         },

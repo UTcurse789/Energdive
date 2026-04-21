@@ -1,7 +1,7 @@
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Advertise with ENERGDIVE | Energy Media, Marketing & Industry Visibility Platform",
+  title: { absolute: "Advertise with ENERGDIVE | Energy Media, Marketing & Industry Visibility Platform - ENERGDIVE" },
   description: "Advertise with ENERGDIVE and position your brand at the forefront of India’s energy transition. Reach policymakers, industry leaders, and decision-makers through premium media, content, and strategic partnerships.",
   keywords: [
     "advertise energdive",

@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import type { Metadata } from "next";
 import { Tag, Play, ArrowUpRight } from "lucide-react";
 import { TagBadge } from "@/components/ui/tag-badge";
 import { slugify } from "@/lib/utils";
@@ -167,6 +168,49 @@ async function fetchTagVideos(tagSlug: string) {
 
 function getContentRoute(item: any) {
     return buildContentUrl({ slug: item.slug, contentType: item.contentType });
+}
+
+export async function generateMetadata({
+    params,
+}: {
+    params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+    const { slug } = await params;
+    const [{ articles, tagName }, videos] = await Promise.all([
+        fetchTagContent(slug),
+        fetchTagVideos(slug),
+    ]);
+
+    const cleanTagName = String(tagName).replace(/^['"“”‘’]+|['"“”‘’]+$/g, "").trim();
+    const shareTitle = `${cleanTagName} - ENERGDIVE`;
+    const description = `Explore all ENERGDIVE content tagged "${tagName}" including ${articles.length} articles and ${videos.length} videos.`;
+    const imageUrl = articles[0]?.image || videos[0]?.thumbnail || "https://www.energdive.com/og-image.jpg";
+
+    return {
+        title: { absolute: shareTitle },
+        description,
+        openGraph: {
+            title: shareTitle,
+            description,
+            url: `https://www.energdive.com/tags/${slug}`,
+            siteName: "ENERGDIVE",
+            images: [
+                {
+                    url: imageUrl,
+                    width: 1200,
+                    height: 630,
+                    alt: shareTitle,
+                },
+            ],
+            type: "website",
+        },
+        twitter: {
+            card: "summary_large_image",
+            title: shareTitle,
+            description,
+            images: [imageUrl],
+        },
+    };
 }
 
 export default async function TagPage({ params }: { params: Promise<{ slug: string }> }) {

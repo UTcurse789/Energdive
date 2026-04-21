@@ -263,6 +263,7 @@ import React from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { ScrollProgress } from "@/components/ui/scroll-progress";
@@ -317,6 +318,56 @@ async function getTrending() {
     } catch (e) {
         return [];
     }
+}
+
+export async function generateMetadata({
+    params,
+}: {
+    params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+    const { slug } = await params;
+    const article = await getReport(slug);
+
+    if (!article) {
+        return {
+            title: { absolute: "Report - ENERGDIVE" },
+            description: "Read in-depth energy reports on ENERGDIVE.",
+        };
+    }
+
+    const baseTitle = article.Title || "Report";
+    const cleanBaseTitle = String(baseTitle).replace(/^['"“”‘’]+|['"“”‘’]+$/g, "").trim();
+    const shareTitle = `${cleanBaseTitle} - ENERGDIVE`;
+    const excerpt = article.Excerpt?.[0]?.children?.[0]?.text || "Read in-depth energy reports on ENERGDIVE.";
+    const imageUrl = article.FeaturedImage?.url
+        ? strapiImageUrl(article.FeaturedImage.url)
+        : "https://energdive.com/fav.jpg";
+
+    return {
+        title: { absolute: shareTitle },
+        description: excerpt,
+        openGraph: {
+            title: shareTitle,
+            description: excerpt,
+            url: `https://www.energdive.com/reports/${slug}`,
+            siteName: "ENERGDIVE",
+            images: [
+                {
+                    url: imageUrl,
+                    width: 1200,
+                    height: 630,
+                    alt: shareTitle,
+                },
+            ],
+            type: "article",
+        },
+        twitter: {
+            card: "summary_large_image",
+            title: shareTitle,
+            description: excerpt,
+            images: [imageUrl],
+        },
+    };
 }
 
 /* ==========================================================
@@ -807,4 +858,3 @@ export default async function IntelligenceReportPage({ params }: { params: Promi
         </div>
     );
 }
-

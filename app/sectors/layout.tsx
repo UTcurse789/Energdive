@@ -1,7 +1,7 @@
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Energy Sectors India | Oil & Gas, Power, Renewables & Markets | ENERGDIVE",
+  title: { absolute: "Energy Sectors India | Oil & Gas, Power, Renewables & Markets - ENERGDIVE" },
   description: "Explore India’s interconnected energy sectors with ENERGDIVE covering oil & gas, power generation, renewables, transmission, distribution, electricity markets, new energies, energy storage, sustainability and safety.",
   keywords: [
     "energy sectors india",

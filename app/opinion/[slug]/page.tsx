@@ -134,6 +134,7 @@ import { notFound, redirect } from "next/navigation";
 import OpinionContent from "./opinion-content";
 import { strapiImageUrl } from "@/lib/strapi-image";
 import { ArticleJsonLd } from "@/components/seo/ArticleJsonLd";
+import type { Metadata } from "next";
 
 function slugifyTag(text: string): string {
     return text.toLowerCase().trim().replace(/[^\w\s-]/g, "").replace(/[\s_]+/g, "-").replace(/-+/g, "-").replace(/^-+|-+$/g, "");
@@ -156,6 +157,61 @@ async function getOpinion(slug: string) {
   );
   const json = await res.json();
   return json?.data?.[0] ?? null;
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const articleData = await getOpinion(slug);
+
+  if (!articleData) {
+    return { title: { absolute: "Opinion - ENERGDIVE" } };
+  }
+
+  const attrs = articleData.attributes || articleData;
+  const baseTitle = attrs.Title || "Opinion";
+  const cleanBaseTitle = String(baseTitle).replace(/^['"“”‘’]+|['"“”‘’]+$/g, "").trim();
+  const shareTitle = `${cleanBaseTitle} - ENERGDIVE`;
+  const excerptBlock = attrs.Excerpt;
+  const description =
+    (Array.isArray(excerptBlock)
+      ? excerptBlock[0]?.children?.[0]?.text
+      : null) || "Read expert opinions on energy policy and markets at Energdive.";
+
+  const imageUrl = attrs.FeaturedImage?.url
+    ? strapiImageUrl(attrs.FeaturedImage.url)
+    : attrs.FeaturedImage?.data?.attributes?.url
+      ? strapiImageUrl(attrs.FeaturedImage.data.attributes.url)
+      : "https://energdive.com/fav.jpg";
+
+  return {
+    title: { absolute: shareTitle },
+    description,
+    openGraph: {
+      title: shareTitle,
+      description,
+      url: `https://energdive.com/opinion/${slug}`,
+      siteName: "Energdive",
+      images: [
+        {
+          url: imageUrl,
+          width: 1200,
+          height: 630,
+          alt: shareTitle,
+        },
+      ],
+      type: "article",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: shareTitle,
+      description,
+      images: [imageUrl],
+    },
+  };
 }
 
 async function getRecommended(currentSlug: string) {

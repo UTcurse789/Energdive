@@ -1,7 +1,7 @@
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Energy Events & Conferences India | Oil & Gas, Power & Renewables | ENERGDIVE",
+  title: { absolute: "Energy Events & Conferences India | Oil & Gas, Power & Renewables - ENERGDIVE" },
   description: "Discover upcoming energy events, conferences, and exhibitions in India covering oil & gas, power, renewables, hydrogen, sustainability, and policy forums shaping the energy sector.",
   keywords: [
     "energy events india",

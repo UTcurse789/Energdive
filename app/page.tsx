@@ -101,8 +101,8 @@ async function getAllContents() {
 async function getFeaturedContents() {
   try {
     const res = await fetch(
-      `${STRAPI_BASE}/api/contents?filters[featured][$eq]=true&populate=*&sort=Date:desc&pagination[pageSize]=10`,
-      { next: { revalidate: 600 } } // 10 min ISR
+      `${STRAPI_BASE}/api/contents?filters[featured][$eq]=true&populate=*&sort[0]=updatedAt:desc&sort[1]=publishedAt:desc&pagination[pageSize]=10`,
+      { next: { revalidate: 60 } } // Keep featured picks fresh on the homepage
     );
     if (!res.ok) return [];
     const json = await res.json();
@@ -163,8 +163,8 @@ export default async function Home() {
   const finalBentoItems = featuredContents.length > 0
     ? featuredContents
       .sort((a: any, b: any) => {
-        const aDate = Date.parse(a.Date || a.publishedAt || a.createdAt || "") || 0;
-        const bDate = Date.parse(b.Date || b.publishedAt || b.createdAt || "") || 0;
+        const aDate = Date.parse(a.updatedAt || a.Date || a.publishedAt || a.createdAt || "") || 0;
+        const bDate = Date.parse(b.updatedAt || b.Date || b.publishedAt || b.createdAt || "") || 0;
         return bDate - aDate;
       })
       .map((article: any) => ({
@@ -289,14 +289,17 @@ export default async function Home() {
           <SectionHeading
             title="Featured"
           />
-          <div className="-mt-6 flex flex-col lg:flex-row gap-8 items-start">
-            <div className="flex-1 min-w-0">
-              <BentoGrid items={finalBentoItems} />
+          <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-12 xl:gap-10">
+            <div className="min-w-0 lg:col-span-9">
+              <BentoGrid items={finalBentoItems} className="py-0" />
             </div>
-            <AdBanner
-              placement="home_featured_partner"
-              variant="vertical"
-            />
+            <div className="w-full lg:col-span-3 lg:flex lg:justify-end">
+              <AdBanner
+                placement="home_featured_partner"
+                variant="vertical"
+                className="mx-auto lg:mx-0"
+              />
+            </div>
           </div>
         </div>
       </section>
