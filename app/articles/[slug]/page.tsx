@@ -14,6 +14,7 @@ import { formatContentDate } from "@/lib/date";
 import ArticleBody from "@/components/ArticleBody";
 import { fetchDataBlocks } from "@/lib/parse-content-blocks";
 import { ArticleJsonLd } from "@/components/seo/ArticleJsonLd";
+import { AdBanner } from "@/components/ads/AdBanner";
 
 const STRAPI = "https://cms.energdive.com";
 
@@ -117,6 +118,10 @@ export default async function ArticlePage(props: any) {
     const related = await getRelated(slug);
 
     const latestIssue = await getLatestIssue();
+    const sectorData = articleData.sectors || articleData.sector?.data?.attributes || null;
+    const sectorSlug: string | undefined = Array.isArray(sectorData)
+        ? sectorData[0]?.slug || undefined
+        : sectorData?.slug || undefined;
 
     // Tags
     const tagsData =
@@ -280,7 +285,24 @@ export default async function ArticlePage(props: any) {
         prose-li:marker:text-teal-500
         first:prose-p:first-letter:text-6xl first:prose-p:first-letter:font-serif first:prose-p:first-letter:font-bold first:prose-p:first-letter:float-left first:prose-p:first-letter:mr-3 first:prose-p:first-letter:mt-1 first:prose-p:first-letter:text-teal-700"
                             >
-                                <ArticleBody content={article.content} dataBlocks={dataBlocks} />
+                                <ArticleBody
+                                    content={article.content}
+                                    dataBlocks={dataBlocks}
+                                    midContentAds={[
+                                        {
+                                            placement: "article_mid_1",
+                                            afterParagraphFraction: 1 / 3,
+                                            sectorSlug,
+                                            variant: "banner",
+                                        },
+                                        {
+                                            placement: "article_mid_2",
+                                            afterParagraphFraction: 2 / 3,
+                                            sectorSlug,
+                                            variant: "banner",
+                                        },
+                                    ]}
+                                />
                             </div>
                         </article>
 
@@ -302,6 +324,12 @@ export default async function ArticlePage(props: any) {
                                 </div>
                             </div>
                         )}
+
+                        <AdBanner
+                            placement="article_partner_end"
+                            sectorSlug={sectorSlug}
+                            variant="native"
+                        />
                     </div>
 
                     {/* ═══════════════ SIDEBAR ═══════════════ */}
@@ -310,6 +338,12 @@ export default async function ArticlePage(props: any) {
 
                             {/* ── Subscribe CTA ── */}
                             <SidebarSubscribe />
+
+                            <AdBanner
+                                placement="article_sidebar"
+                                sectorSlug={sectorSlug}
+                                variant="card"
+                            />
 
                             {/* ── Latest Issue ── */}
                             {latestIssue && (

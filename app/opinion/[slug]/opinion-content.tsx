@@ -20,6 +20,7 @@ import { ScrollProgress } from "@/components/ui/scroll-progress";
 import { ShareButton } from "@/components/ui/share-button";
 import { slugify } from "@/lib/utils";
 import { TagBadge } from "@/components/ui/tag-badge";
+import { AdBanner } from "@/components/ads/AdBanner";
 
 
 
@@ -118,9 +119,31 @@ export default function OpinionContent({ opinion, recommended }: any) {
                 </header>
 
                 {/* Content Area */}
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 relative">
-                    {/* Main Article Column: STRICT 720px */}
-                    <div className="lg:col-span-8 lg:col-start-3 max-w-[720px] mx-auto w-full">
+                <div className="relative">
+                    <div className="relative max-w-[720px] mx-auto w-full">
+                        <div className="hidden 2xl:block absolute top-0 right-[calc(100%+3rem)] w-[300px]">
+                            <div className="sticky top-24 w-[300px]">
+                                <AdBanner
+                                    placement="Opinion_left"
+                                    sectorSlug={opinion.sectorSlug}
+                                    variant="vertical"
+                                    className="w-[300px]"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="hidden 2xl:block absolute top-0 left-[calc(100%+3rem)] w-[300px]">
+                            <div className="sticky top-24 w-[300px]">
+                                <AdBanner
+                                    placement="Opinion_right"
+                                    sectorSlug={opinion.sectorSlug}
+                                    variant="vertical"
+                                    className="w-[300px]"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Main Article Column: STRICT 720px */}
                         <div className="prose prose-zinc max-w-none">
                             {opinion.content?.map((block: any, i: number) => {
                                 const text = block.children?.map((c: any) => c.text).join("") || "";

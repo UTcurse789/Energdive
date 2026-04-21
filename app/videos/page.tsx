@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Header } from "@/components/layout/header";
 import { slugify } from "@/lib/utils";
 import { strapiImageUrl } from "@/lib/strapi-image";
+import { AdBanner } from "@/components/ads/AdBanner";
 
 // --- Types for our mapped data ---
 interface Video {
@@ -141,6 +142,7 @@ export default function VideosPage() {
     return (
         <main className="min-h-screen bg-gray-50 text-black font-sans pb-20">
             <div className="mx-auto px-6 max-w-[1400px]">
+                <AdBanner placement="Videos_top" variant="banner" className="py-4" />
 
                 {/* Header Section */}
                 <div className="text-center pt-16 pb-12">

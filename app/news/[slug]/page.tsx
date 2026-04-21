@@ -341,7 +341,7 @@ first:prose-p:first-letter:text-6xl first:prose-p:first-letter:font-serif first:
 
                         {/* Industry Partner Ad */}
                         <AdBanner
-                            placement="article_partner_end"
+                            placement="news_partner_end"
                             sectorSlug={sectorSlug}
                             variant="native"
                         />
@@ -356,7 +356,7 @@ first:prose-p:first-letter:text-6xl first:prose-p:first-letter:font-serif first:
 
                             {/* ── Sidebar Ad — 300×250 ── */}
                             <AdBanner
-                                placement="article_sidebar"
+                                placement="new_sidebar"
                                 sectorSlug={sectorSlug}
                                 variant="card"
                             />

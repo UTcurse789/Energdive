@@ -11,6 +11,7 @@ import { ShareButton } from "@/components/ui/share-button";
 import { ArrowLeft, Youtube, Tag, Printer } from "lucide-react";
 import { formatContentDate } from "@/lib/date";
 import { strapiImageUrl } from "@/lib/strapi-image";
+import { AdBanner } from "@/components/ads/AdBanner";
 
 function slugify(text: string): string {
     return text.toLowerCase().trim().replace(/[^\w\s-]/g, "").replace(/[\s_]+/g, "-").replace(/-+/g, "-").replace(/^-+|-+$/g, "");
@@ -116,6 +117,7 @@ export default async function VideoDetailPage({ params }: { params: Promise<{ sl
     const createdAt = formatContentDate(video.publishedAt);
     const description: BlocksContent = video.description;
     const category = video.sectors?.[0]?.name || "Energy";
+    const sectorSlug = video.sectors?.[0]?.slug || undefined;
     const authorName = video.author?.name || "Team ENERGDIVE";
     const authorAvatar = video.author?.avatar?.url
         ? strapiImageUrl(video.author.avatar.url)
@@ -191,6 +193,12 @@ export default async function VideoDetailPage({ params }: { params: Promise<{ sl
                                 <ArticleBody content={description} dataBlocks={dataBlocks} />
                             </div>
                         </section>
+
+                        <AdBanner
+                            placement="videos_partner_end"
+                            sectorSlug={sectorSlug}
+                            variant="native"
+                        />
 
                         {/* <section className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm flex items-start gap-6">
                             <div className="relative w-20 h-20 rounded-2xl overflow-hidden flex-0 bg-gray-50 border border-gray-100">
