@@ -31,7 +31,7 @@ function normalizeTag(tag: any) {
 }
 
 async function getArticle(slug: string) {
-    const url = `${STRAPI_BASE_URL}/api/contents?filters[slug][$eq]=${slug}&populate=*`;
+    const url = `${STRAPI_BASE_URL}/api/contents?filters[slug][$eq]=${slug}&populate[author][populate]=avatar&populate[FeaturedImage]=true&populate[tags]=true&populate[type_of_content]=true&populate[sectors]=true&populate[content_tag]=true&populate[issue]=true&populate[industries]=true&populate[Seo]=true`;
     const res = await fetch(url, { next: { revalidate: 3600 } });
     if (!res.ok) return null;
     const json = await res.json();
@@ -150,7 +150,21 @@ export default async function FeaturedStoryDetailPage({
         ? sectorData[0]?.slug || undefined
         : sectorData?.slug || undefined;
 
-    const author = attrs.author?.data?.attributes || attrs.author;
+    const authorRelation = attrs.author || attrs.Author;
+    const author =
+        authorRelation?.data?.attributes ||
+        authorRelation?.data?.[0]?.attributes ||
+        authorRelation?.attributes ||
+        authorRelation?.[0] ||
+        authorRelation ||
+        null;
+    const authorName = author?.name || author?.Name || null;
+    const authorAvatarUrl =
+        author?.avatar?.url ||
+        author?.avatar?.data?.attributes?.url ||
+        author?.Avatar?.url ||
+        author?.Avatar?.data?.attributes?.url ||
+        null;
 
     const latestIssue = await getLatestIssue();
 
@@ -162,14 +176,10 @@ export default async function FeaturedStoryDetailPage({
             ? strapiImageUrl(attrs.FeaturedImage.url)
             : "/magazine-default.jpg",
         date: formatContentDate(attrs.Date || attrs.publishedAt || attrs.createdAt),
-        author: author
+        author: authorName
             ? {
-                name: author.name,
-                avatar: author.avatar?.url
-                    ? strapiImageUrl(author.avatar.url)
-                    : author.avatar?.data?.attributes?.url
-                        ? strapiImageUrl(author.avatar.data.attributes.url)
-                        : null,
+                name: authorName,
+                avatar: authorAvatarUrl ? strapiImageUrl(authorAvatarUrl) : null,
             }
             : null,
         tags: normalizedTags,

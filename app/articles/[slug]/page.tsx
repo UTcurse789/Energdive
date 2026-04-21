@@ -36,7 +36,15 @@ async function getArticle(slug: string) {
     const url =
         `${STRAPI}/api/contents?` +
         `filters[slug][$eq]=${slug}` +
-        `&populate=*`;
+        `&populate[author][populate]=avatar` +
+        `&populate[FeaturedImage]=true` +
+        `&populate[tags]=true` +
+        `&populate[type_of_content]=true` +
+        `&populate[sectors]=true` +
+        `&populate[content_tag]=true` +
+        `&populate[issue]=true` +
+        `&populate[industries]=true` +
+        `&populate[Seo]=true`;
 
     const res = await fetch(url, { next: { revalidate: 3600 } });
     const json = await res.json();
@@ -139,6 +147,25 @@ export default async function ArticlePage(props: any) {
     // Fetch chart/table data for any shortcodes in the content
     const contentBlocks = articleData.Content || [];
     const dataBlocks = await fetchDataBlocks(contentBlocks);
+    const authorRelation =
+        articleData.author ||
+        articleData.Author ||
+        articleData.attributes?.author ||
+        articleData.attributes?.Author;
+    const author =
+        authorRelation?.data?.attributes ||
+        authorRelation?.data?.[0]?.attributes ||
+        authorRelation?.attributes ||
+        authorRelation?.[0] ||
+        authorRelation ||
+        null;
+    const authorName = author?.name || author?.Name || null;
+    const authorAvatarUrl =
+        author?.avatar?.url ||
+        author?.avatar?.data?.attributes?.url ||
+        author?.Avatar?.url ||
+        author?.Avatar?.data?.attributes?.url ||
+        null;
 
     const article = {
         title: articleData.Title,
@@ -148,14 +175,10 @@ export default async function ArticlePage(props: any) {
             ? strapiImageUrl(articleData.FeaturedImage.url)
             : "/magazine-default.jpg",
         date: formatContentDate(articleData.Date || articleData.publishedAt || articleData.createdAt),
-        author: articleData.author
+        author: authorName
             ? {
-                name: articleData.author.name,
-                avatar: articleData.author.avatar?.url
-                    ? strapiImageUrl(articleData.author.avatar.url)
-                    : articleData.author.avatar?.data?.attributes?.url
-                        ? strapiImageUrl(articleData.author.avatar.data.attributes.url)
-                        : null,
+                name: authorName,
+                avatar: authorAvatarUrl ? strapiImageUrl(authorAvatarUrl) : null,
             }
             : null,
         category: articleData.type_of_content?.name || "Article",
