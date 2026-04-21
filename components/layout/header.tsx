@@ -644,7 +644,7 @@ export function Header() {
                                                     alt={latestIssue?.title ?? "Latest issue"}
                                                     fill
                                                     sizes="256px"
-                                                    className="object-contain"
+                                                    className="object-fill"
                                                 />
                                             </div>
                                         </Link>
@@ -670,7 +670,7 @@ export function Header() {
                                                                     alt={issue.title}
                                                                     fill
                                                                     sizes="200px"
-                                                                    className="object-contain"
+                                                                    className="object-fill"
                                                                 />
                                                             </div>
                                                             <p className="mt-3 text-[13px] font-bold text-gray-800 group-hover:text-[#00A651] transition-colors line-clamp-1">
@@ -1004,8 +1004,14 @@ export function Header() {
                                                     const date = item?.Date ? formatContentDate(item.Date) : "";
                                                     return (
                                                         <Link key={item.id} href={`/opinion/${item.slug}`} onClick={closeMenus} className="group cursor-pointer block">
-                                                            <div className="relative w-full aspect-[4/3] bg-white rounded-xl overflow-hidden mb-3 border border-gray-100">
-                                                                <Image src={imgUrl} alt={item.Title || ""} fill className="object-contain p-1 group-hover:scale-105 transition-transform duration-500" />
+                                                            <div className="relative w-full h-[320px] bg-white rounded-xl overflow-hidden mb-3 border border-gray-100">
+                                                                <Image
+                                                                    src={imgUrl}
+                                                                    alt={item.Title || ""}
+                                                                    fill
+                                                                    sizes="(min-width: 1280px) 20vw, 30vw"
+                                                                    className="object-cover object-top"
+                                                                />
                                                             </div>
                                                             <p className="text-[13px] font-bold text-gray-800 group-hover:text-[#00A651] transition-colors line-clamp-2 leading-snug">{item.Title}</p>
                                                             <div className="flex items-center gap-2 mt-2">
@@ -1040,8 +1046,14 @@ export function Header() {
                                                     const date = item?.Date ? formatContentDate(item.Date) : "";
                                                     return (
                                                         <Link key={item.id} href={`/interviews/${item.slug}`} onClick={closeMenus} className="group cursor-pointer block">
-                                                            <div className="relative w-full aspect-[4/3] bg-white rounded-xl overflow-hidden mb-3 border border-gray-100">
-                                                                <Image src={imgUrl} alt={item.Title || ""} fill className="object-contain p-1 group-hover:scale-105 transition-transform duration-500" />
+                                                            <div className="relative w-full h-[320px] bg-white rounded-xl overflow-hidden mb-3 border border-gray-100">
+                                                                <Image
+                                                                    src={imgUrl}
+                                                                    alt={item.Title || ""}
+                                                                    fill
+                                                                    sizes="(min-width: 1280px) 20vw, 30vw"
+                                                                    className="object-cover object-top"
+                                                                />
                                                             </div>
                                                             <p className="text-[13px] font-bold text-gray-800 group-hover:text-[#00A651] transition-colors line-clamp-2 leading-snug">{item.Title}</p>
                                                             <div className="flex items-center gap-2 mt-2">

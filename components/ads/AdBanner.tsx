@@ -40,6 +40,11 @@ interface AdBannerProps {
     showSkeleton?: boolean;
 }
 
+function adHasRenderableMedia(ad: Ad, variant: NonNullable<AdBannerProps["variant"]>): boolean {
+    if (variant === "native") return true;
+    return Boolean(getImageUrl(ad.creative?.[0]));
+}
+
 function getRotationStorageKey(placement: string, sectorSlug?: string): string {
     return `ad-rotation:${placement}:${sectorSlug || "global"}`;
 }
@@ -138,18 +143,23 @@ export function AdBanner({
                     }
                 }
 
+                ads = ads.filter((ad) => adHasRenderableMedia(ad, variant));
+
                 if (ads.length > 0) {
                     // Sort by priority DESC
                     ads.sort((a, b) => (b.priority ?? -1) - (a.priority ?? -1));
                     setAd(pickRotatingAd(ads, placement, sectorSlug));
+                } else {
+                    setAd(null);
                 }
             } catch (err) {
                 console.error("[AdBanner] Failed to fetch ad:", err);
+                setAd(null);
             }
         }
 
         fetchAd();
-    }, [placement, sectorSlug]);
+    }, [placement, sectorSlug, variant]);
 
     // ─── Toggle this to false to hide skeleton placeholders in production ───
     const SHOW_AD_SKELETONS = showSkeleton;
