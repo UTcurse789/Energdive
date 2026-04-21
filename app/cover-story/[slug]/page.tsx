@@ -31,7 +31,7 @@ function normalizeTag(tag: any) {
 }
 
 async function getArticle(slug: string) {
-    const url = `${STRAPI_BASE_URL}/api/contents?filters[slug][$eq]=${slug}&populate=*`;
+    const url = `${STRAPI_BASE_URL}/api/contents?filters[slug][$eq]=${slug}&populate[author][populate]=avatar&populate[FeaturedImage]=true&populate[tags]=true&populate[type_of_content]=true&populate[sectors]=true&populate[content_tag]=true&populate[issue]=true&populate[industries]=true&populate[Seo]=true`;
     const res = await fetch(url, { next: { revalidate: 3600 } });
     if (!res.ok) return null;
     const json = await res.json();
@@ -119,7 +119,21 @@ export default async function CoverStoryDetailPage({
     const tagsData = attrs.tags?.data || attrs.tags || [];
     const normalizedTags = Array.isArray(tagsData) ? tagsData.map((t: any) => normalizeTag(t)).filter(Boolean) : [];
     const relatedArticles = await getRelated(slug);
-    const author = attrs.author?.data?.attributes || attrs.author;
+    const authorRelation = attrs.author || attrs.Author;
+    const author =
+        authorRelation?.data?.attributes ||
+        authorRelation?.data?.[0]?.attributes ||
+        authorRelation?.attributes ||
+        authorRelation?.[0] ||
+        authorRelation ||
+        null;
+    const authorName = author?.name || author?.Name || null;
+    const authorAvatarUrl =
+        author?.avatar?.url ||
+        author?.avatar?.data?.attributes?.url ||
+        author?.Avatar?.url ||
+        author?.Avatar?.data?.attributes?.url ||
+        null;
     const latestIssue = await getLatestIssue();
     const sectorData = attrs.sectors || attrs.sector?.data?.attributes || null;
     const sectorSlug: string | undefined = Array.isArray(sectorData)
@@ -132,10 +146,12 @@ export default async function CoverStoryDetailPage({
         content: attrs.Content || [],
         image: attrs.FeaturedImage?.url ? strapiImageUrl(attrs.FeaturedImage.url) : "/magazine-default.jpg",
         date: formatContentDate(attrs.Date || attrs.publishedAt || attrs.createdAt),
-        author: author ? {
-            name: author.name,
-            avatar: author.avatar?.url ? strapiImageUrl(author.avatar.url) : author.avatar?.data?.attributes?.url ? strapiImageUrl(author.avatar.data.attributes.url) : null,
-        } : null,
+        author: authorName
+            ? {
+                name: authorName,
+                avatar: authorAvatarUrl ? strapiImageUrl(authorAvatarUrl) : null,
+            }
+            : null,
         tags: normalizedTags,
         category: attrs.type_of_content?.name || attrs.type_of_content?.data?.attributes?.name || "Cover Story",
     };
