@@ -14,6 +14,7 @@ import { getLatestIssue } from "@/lib/api/getLatestIssue";
 import { ArrowRight, Calendar, ChevronRight } from "lucide-react";
 import { formatContentDate } from "@/lib/date";
 import { ArticleJsonLd } from "@/components/seo/ArticleJsonLd";
+import { AdBanner } from "@/components/ads/AdBanner";
 
 const STRAPI_BASE_URL = process.env.NEXT_PUBLIC_STRAPI_URL || "https://cms.energdive.com";
 
@@ -118,6 +119,10 @@ export default async function CoverStoryDetailPage({
     const relatedArticles = await getRelated(slug);
     const author = attrs.author?.data?.attributes || attrs.author;
     const latestIssue = await getLatestIssue();
+    const sectorData = attrs.sectors || attrs.sector?.data?.attributes || null;
+    const sectorSlug: string | undefined = Array.isArray(sectorData)
+        ? sectorData[0]?.slug || undefined
+        : sectorData?.slug || undefined;
 
     const article = {
         title: attrs.Title,
@@ -201,7 +206,30 @@ export default async function CoverStoryDetailPage({
 
                         <article className="relative">
                             <div className="prose prose-lg max-w-none font-serif text-[18px] leading-[1.95] text-gray-800 prose-headings:font-bold prose-headings:text-gray-900 prose-headings:tracking-tight prose-h2:text-3xl prose-h2:mt-12 prose-h2:mb-4 prose-h2:border-b prose-h2:border-gray-100 prose-h2:pb-3 prose-h3:text-2xl prose-h3:mt-10 prose-h3:mb-3 prose-p:mb-6 prose-a:text-teal-600 prose-a:decoration-teal-300 hover:prose-a:text-teal-800 prose-strong:text-gray-900 prose-blockquote:border-l-teal-500 prose-blockquote:bg-teal-50/30 prose-blockquote:rounded-r-lg prose-blockquote:py-2 prose-img:rounded-lg prose-img:shadow-md prose-li:marker:text-teal-500 first:prose-p:first-letter:text-6xl first:prose-p:first-letter:font-serif first:prose-p:first-letter:font-bold first:prose-p:first-letter:float-left first:prose-p:first-letter:mr-3 first:prose-p:first-letter:mt-1 first:prose-p:first-letter:text-teal-700">
-                                <ArticleBody content={article.content} dataBlocks={dataBlocks} />
+                                <ArticleBody
+                                    content={article.content}
+                                    dataBlocks={dataBlocks}
+                                    midContentAds={[
+                                        {
+                                            placement: "cover_story_mid_1",
+                                            afterParagraphFraction: 1 / 3,
+                                            sectorSlug,
+                                            variant: "banner",
+                                        },
+                                        {
+                                            placement: "cover_story_mid_2",
+                                            afterParagraphFraction: 2 / 3,
+                                            sectorSlug,
+                                            variant: "banner",
+                                        },
+                                        {
+                                            placement: "cover_story_mid_3",
+                                            afterParagraphFraction: 1,
+                                            sectorSlug,
+                                            variant: "banner",
+                                        },
+                                    ]}
+                                />
                             </div>
                         </article>
 
@@ -220,6 +248,11 @@ export default async function CoverStoryDetailPage({
                     <aside className="lg:col-span-4">
                         <div className="sticky top-24 space-y-8">
                             <SidebarSubscribe />
+                            <AdBanner
+                                placement="Cover_story_sidebar"
+                                sectorSlug={sectorSlug}
+                                variant="card"
+                            />
                             {latestIssue && (
                                 <div className="rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
                                     <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-widest text-[#00A651] bg-white/90 backdrop-blur-md px-4 py-2 rounded-full w-fit shadow-lg bg-linear-to-b from-white to-zinc-50 border border-white/20">

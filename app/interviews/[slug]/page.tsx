@@ -178,6 +178,10 @@ export default async function OpinionDetailPage({ params }: { params: Promise<{ 
   const attrs = article.attributes || article;
   const tagsData = attrs.tags?.data || attrs.tags || [];
   const normalizedTags = Array.isArray(tagsData) ? tagsData.map((t: any) => normalizeTag(t)).filter(Boolean) : [];
+  const sectorData = attrs.sectors || attrs.sector?.data?.attributes || null;
+  const sectorSlug: string | undefined = Array.isArray(sectorData)
+    ? sectorData[0]?.slug || undefined
+    : sectorData?.slug || undefined;
 
   const opinion = {
     id: article.id,
@@ -188,6 +192,7 @@ export default async function OpinionDetailPage({ params }: { params: Promise<{ 
     category: "Interview",
     readTime: "6 min read",
     tags: normalizedTags,
+    sectorSlug,
     featuredImage: (article.FeaturedImage?.url || article.attributes?.FeaturedImage?.data?.attributes?.url)
       ? strapiImageUrl(article.FeaturedImage?.url || article.attributes?.FeaturedImage?.data?.attributes?.url)
       : "/placeholder.jpg",

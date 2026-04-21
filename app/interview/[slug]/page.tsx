@@ -14,6 +14,7 @@ import { getLatestIssue } from "@/lib/api/getLatestIssue";
 import { ArrowRight, Calendar, ChevronRight } from "lucide-react";
 import { formatContentDate } from "@/lib/date";
 import { ArticleJsonLd } from "@/components/seo/ArticleJsonLd";
+import { AdBanner } from "@/components/ads/AdBanner";
 
 const STRAPI_BASE_URL = process.env.NEXT_PUBLIC_STRAPI_URL || "https://cms.energdive.com";
 
@@ -114,6 +115,10 @@ export default async function InterviewDetailPage({ params }: { params: Promise<
     const relatedArticles = await getRelated(slug);
     const author = attrs.author?.data?.attributes || attrs.author;
     const latestIssue = await getLatestIssue();
+    const sectorData = attrs.sectors || attrs.sector?.data?.attributes || null;
+    const sectorSlug: string | undefined = Array.isArray(sectorData)
+        ? sectorData[0]?.slug || undefined
+        : sectorData?.slug || undefined;
 
     const article = {
         title: attrs.Title,
@@ -157,7 +162,16 @@ export default async function InterviewDetailPage({ params }: { params: Promise<
                     </nav>
                 </div>
                 <div className="container mx-auto px-4 sm:px-6 grid grid-cols-1 lg:grid-cols-12 gap-8 sm:gap-12 max-w-7xl">
-                    <div className="lg:col-span-8">
+                    <div className="lg:col-span-8 relative">
+                        <div className="hidden 2xl:block absolute top-0 -left-[340px] w-[300px]">
+                            <div className="sticky top-24">
+                                <AdBanner
+                                    placement="interview_left"
+                                    sectorSlug={sectorSlug}
+                                    variant="vertical"
+                                />
+                            </div>
+                        </div>
                         <div className="flex items-center justify-between mb-5">
                             <div className="flex items-center gap-3">
                                 <span className="inline-block bg-teal-50 text-teal-700 text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full">{article.category}</span>
@@ -179,6 +193,11 @@ export default async function InterviewDetailPage({ params }: { params: Promise<
                     </div>
                     <aside className="lg:col-span-4">
                         <div className="sticky top-24 space-y-8">
+                            <AdBanner
+                                placement="interview_right"
+                                sectorSlug={sectorSlug}
+                                variant="vertical"
+                            />
                             <SidebarSubscribe />
                             {latestIssue && (<div className="rounded-xl border border-gray-100 bg-white p-5 shadow-sm"><div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-widest text-[#00A651] bg-white/90 backdrop-blur-md px-4 py-2 rounded-full w-fit shadow-lg bg-linear-to-b from-white to-zinc-50 border border-white/20"><Calendar className="h-3.5 w-3.5 text-teal-500" />Latest Issue</div><Link href={`/issues/${latestIssue.slug}`} className="group block"><div className="relative aspect-3/4 w-full overflow-hidden rounded-lg border border-gray-100 shadow-md mb-4 transition-all duration-500 group-hover:shadow-xl group-hover:-translate-y-0.5"><Image src={latestIssue.coverImage} alt={latestIssue.title} fill className="object-contain bg-white p-1 transition-transform duration-700 group-hover:scale-[1.02]" /></div><h4 className="font-serif font-bold text-gray-900 group-hover:text-teal-600 transition-colors mb-1">{latestIssue.month} {latestIssue.year}</h4><span className="inline-flex items-center gap-1 text-xs font-bold text-teal-600 group-hover:gap-2 transition-all">Read Issue <ArrowRight className="h-3.5 w-3.5" /></span></Link></div>)}
                             {relatedArticles.length > 0 && (<div><h3 className="mb-5 flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-gray-400"><span className="h-px flex-1 bg-gray-200" />Related Stories<span className="h-px flex-1 bg-gray-200" /></h3><div className="space-y-5">{relatedArticles.map((item: any) => { const r = item.attributes || item; const imgUrl = r.FeaturedImage?.url ? strapiImageUrl(r.FeaturedImage.url) : "/magazine-default.jpg"; const itemDate = formatContentDate(r.Date || r.publishedAt || item.publishedAt); return (<Link key={item.id} href={`/interview/${r.slug}`} className="group flex gap-4 rounded-lg p-2 -mx-2 transition-colors hover:bg-gray-50"><div className="relative w-24 h-20 shrink-0 overflow-hidden rounded-lg bg-gray-100"><Image src={imgUrl} alt="" fill className="object-contain bg-white p-0.5 transition-transform duration-500 group-hover:scale-[1.02]" /></div><div className="flex-1 min-w-0"><h4 className="font-serif font-bold text-sm leading-snug text-gray-900 group-hover:text-teal-600 transition-colors line-clamp-2 mb-1">{r.Title}</h4>{itemDate && <DateChip value={itemDate} className="text-[10px]" />}</div></Link>); })}</div></div>)}

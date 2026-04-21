@@ -1,8 +1,10 @@
 "use client";
 
+import { Fragment } from "react";
 import { BlocksRenderer } from "@strapi/blocks-react-renderer";
 import { ShareButton } from "./ui/share-button";
 import dynamic from "next/dynamic";
+import { AdBanner } from "@/components/ads/AdBanner";
 import { getShortcodeFromBlock } from "@/lib/parse-content-blocks";
 import type { ChartConfig, TableConfig, DataBlocksMap } from "@/types/data-blocks";
 
@@ -34,7 +36,7 @@ const DataTable = dynamic(
 
 const STRAPI_BASE_URL = process.env.NEXT_PUBLIC_STRAPI_URL || "https://cms.energdive.com";
 
-const SHORTCODE_INLINE_RE = /\[(chart|table):([a-zA-Z0-9_-]+)\]/g;
+const SHORTCODE_INLINE_PATTERN = String.raw`\[(chart|table):([a-zA-Z0-9_-]+)\]`;
 
 function isImageBlock(block: any): boolean {
     return block?.type === "image";
@@ -100,7 +102,7 @@ function renderShortcode(
  * Used for inline detection within paragraph text.
  */
 function textContainsShortcode(text: string): boolean {
-    return SHORTCODE_INLINE_RE.test(text);
+    return new RegExp(SHORTCODE_INLINE_PATTERN).test(text);
 }
 
 /**
@@ -113,10 +115,10 @@ function splitTextByShortcodes(
     const segments: Array<string | { type: "chart" | "table"; name: string }> = [];
     let lastIndex = 0;
 
-    SHORTCODE_INLINE_RE.lastIndex = 0;
+    const shortcodeInlineRegex = new RegExp(SHORTCODE_INLINE_PATTERN, "g");
     let match: RegExpExecArray | null;
 
-    while ((match = SHORTCODE_INLINE_RE.exec(text)) !== null) {
+    while ((match = shortcodeInlineRegex.exec(text)) !== null) {
         // Text before this shortcode
         if (match.index > lastIndex) {
             segments.push(text.slice(lastIndex, match.index));
@@ -136,20 +138,83 @@ function splitTextByShortcodes(
     return segments;
 }
 
+type AdBannerVariant = "banner" | "card" | "hero" | "vertical" | "native" | "mobile_banner";
+
+interface MidContentAdConfig {
+    placement: string;
+    afterParagraphFraction: number;
+    sectorSlug?: string;
+    variant?: AdBannerVariant;
+    showSkeleton?: boolean;
+    className?: string;
+}
+
+function getMidContentAdInsertions(
+    blocks: any[],
+    midContentAds: MidContentAdConfig[]
+): Map<number, MidContentAdConfig[]> {
+    if (!midContentAds.length) return new Map();
+
+    const eligibleParagraphIndices = blocks.reduce<number[]>((acc, block, index) => {
+        const isCaption = isNonEmptyParagraph(block) && index > 0 && isImageBlock(blocks[index - 1]);
+        if (isNonEmptyParagraph(block) && !isCaption) {
+            acc.push(index);
+        }
+        return acc;
+    }, []);
+
+    if (!eligibleParagraphIndices.length) return new Map();
+
+    const insertions = new Map<number, MidContentAdConfig[]>();
+
+    midContentAds.forEach((adConfig) => {
+        const boundedFraction = Math.min(1, Math.max(0, adConfig.afterParagraphFraction));
+        const paragraphPosition = Math.max(1, Math.ceil(eligibleParagraphIndices.length * boundedFraction));
+        const paragraphIndex = eligibleParagraphIndices[Math.min(eligibleParagraphIndices.length - 1, paragraphPosition - 1)];
+        const existingAds = insertions.get(paragraphIndex) || [];
+        existingAds.push(adConfig);
+        insertions.set(paragraphIndex, existingAds);
+    });
+
+    return insertions;
+}
+
 interface ArticleBodyProps {
     content: any;
     enableSectionSharing?: boolean;
     dataBlocks?: DataBlocksMap;
+    midContentAds?: MidContentAdConfig[];
 }
 
 export default function ArticleBody({
     content,
     enableSectionSharing = false,
     dataBlocks,
+    midContentAds = [],
 }: ArticleBodyProps) {
     if (!Array.isArray(content)) return null;
 
     const hasDataBlocks = dataBlocks && Object.keys(dataBlocks).length > 0;
+    const midContentAdInsertions = getMidContentAdInsertions(content, midContentAds);
+
+    const renderMidContentAds = (blockIndex: number) => {
+        const ads = midContentAdInsertions.get(blockIndex);
+        if (!ads?.length) return null;
+
+        return ads.map((adConfig, adIndex) => (
+            <div
+                key={`mid-content-ad-${blockIndex}-${adConfig.placement}-${adIndex}`}
+                className={`not-prose my-10 ${adConfig.className || ""}`.trim()}
+            >
+                <AdBanner
+                    placement={adConfig.placement}
+                    sectorSlug={adConfig.sectorSlug}
+                    variant={adConfig.variant || "banner"}
+                    showSkeleton={adConfig.showSkeleton}
+                />
+            </div>
+        ));
+    };
 
     return (
         <div>
@@ -176,29 +241,29 @@ export default function ArticleBody({
                             .map((c: any) => c?.text ?? "")
                             .join("");
 
-                        // Reset regex state
-                        SHORTCODE_INLINE_RE.lastIndex = 0;
-
                         if (textContainsShortcode(fullText)) {
                             const segments = splitTextByShortcodes(fullText);
                             return (
-                                <div key={i}>
-                                    {segments.map((seg, j) => {
-                                        if (typeof seg === "string") {
-                                            // Render plain text as a paragraph
-                                            const trimmed = seg.trim();
-                                            if (!trimmed) return null;
-                                            return <p key={j}>{seg}</p>;
-                                        }
-                                        // Render the shortcode component
-                                        return renderShortcode(
-                                            seg.type,
-                                            seg.name,
-                                            dataBlocks,
-                                            `${i}-sc-${j}`
-                                        );
-                                    })}
-                                </div>
+                                <Fragment key={i}>
+                                    <div>
+                                        {segments.map((seg, j) => {
+                                            if (typeof seg === "string") {
+                                                // Render plain text as a paragraph
+                                                const trimmed = seg.trim();
+                                                if (!trimmed) return null;
+                                                return <p key={j}>{seg}</p>;
+                                            }
+                                            // Render the shortcode component
+                                            return renderShortcode(
+                                                seg.type,
+                                                seg.name,
+                                                dataBlocks,
+                                                `${i}-sc-${j}`
+                                            );
+                                        })}
+                                    </div>
+                                    {renderMidContentAds(i)}
+                                </Fragment>
                             );
                         }
                     }
@@ -214,126 +279,130 @@ export default function ArticleBody({
                         .join("");
 
                     return (
-                        <p
-                            key={i}
-                            style={{
-                                fontSize: "0.875rem",
-                                color: "#6b7280",
-                                fontStyle: "italic",
-                                textAlign: "center",
-                                marginTop: "-0.25rem",
-                                marginBottom: "1.75rem",
-                                lineHeight: "1.6",
-                                fontFamily: "Georgia, serif",
-                            }}
-                        >
-                            {text}
-                        </p>
+                        <Fragment key={i}>
+                            <p
+                                style={{
+                                    fontSize: "0.875rem",
+                                    color: "#6b7280",
+                                    fontStyle: "italic",
+                                    textAlign: "center",
+                                    marginTop: "-0.25rem",
+                                    marginBottom: "1.75rem",
+                                    lineHeight: "1.6",
+                                    fontFamily: "Georgia, serif",
+                                }}
+                            >
+                                {text}
+                            </p>
+                            {renderMidContentAds(i)}
+                        </Fragment>
                     );
                 }
 
                 // ── Render all other blocks normally ──
                 return (
-                    <BlocksRenderer
-                        key={i}
-                        content={[block]}
-                        blocks={{
-                            quote: ({ children }: any) => (
-                                <blockquote
-                                    style={{
-                                        borderLeft: "4px solid #14b8a6",
-                                        backgroundColor: "rgba(204, 251, 241, 0.3)",
-                                        borderRadius: "0 0.5rem 0.5rem 0",
-                                        padding: "1rem 1.25rem",
-                                        margin: "1.5rem 0",
-                                        fontStyle: "italic",
-                                        color: "#374151",
-                                        fontFamily: "Georgia, serif",
-                                        lineHeight: "1.8",
-                                    }}
-                                >
-                                    {children}
-                                </blockquote>
-                            ),
-                            image: ({ image }: any) => {
-                                const src = resolveImageUrl(image?.url);
-                                const alt = image?.alternativeText || image?.name || "";
-                                const caption = image?.caption || "";
-                                return (
-                                    <figure style={{ margin: "2rem 0" }}>
-                                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                                        <img
-                                            src={src}
-                                            alt={alt}
-                                            style={{
-                                                width: "100%",
-                                                height: "auto",
-                                                borderRadius: "0.5rem",
-                                            }}
-                                        />
-                                        {caption && (
-                                            <figcaption
-                                                style={{
-                                                    fontSize: "0.875rem",
-                                                    color: "#6b7280",
-                                                    fontStyle: "italic",
-                                                    textAlign: "center",
-                                                    marginTop: "0.5rem",
-                                                    fontFamily: "Georgia, serif",
-                                                }}
-                                            >
-                                                {caption}
-                                            </figcaption>
-                                        )}
-                                    </figure>
-                                );
-                            },
-                            ...(enableSectionSharing ? {
-                                heading: ({ children, level }: any) => {
-                                    const extractText = (node: any): string => {
-                                        if (typeof node === 'string') return node;
-                                        if (Array.isArray(node)) return node.map(extractText).join('');
-                                        if (node && node.props && node.props.children) return extractText(node.props.children);
-                                        return '';
-                                    };
-                                    const text = extractText(children);
-                                    const sectionId = text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
-                                    const HeadingTag = `h${level}` as any;
-
+                    <Fragment key={i}>
+                        <BlocksRenderer
+                            content={[block]}
+                            blocks={{
+                                quote: ({ children }: any) => (
+                                    <blockquote
+                                        style={{
+                                            borderLeft: "4px solid #14b8a6",
+                                            backgroundColor: "rgba(204, 251, 241, 0.3)",
+                                            borderRadius: "0 0.5rem 0.5rem 0",
+                                            padding: "1rem 1.25rem",
+                                            margin: "1.5rem 0",
+                                            fontStyle: "italic",
+                                            color: "#374151",
+                                            fontFamily: "Georgia, serif",
+                                            lineHeight: "1.8",
+                                        }}
+                                    >
+                                        {children}
+                                    </blockquote>
+                                ),
+                                image: ({ image }: any) => {
+                                    const src = resolveImageUrl(image?.url);
+                                    const alt = image?.alternativeText || image?.name || "";
+                                    const caption = image?.caption || "";
                                     return (
-                                        <div id={sectionId} className="group relative flex items-start gap-4">
-                                            <div className="hidden sm:block absolute -left-6 top-2 w-3 h-3 bg-red-500 rounded-full shadow-[0_0_8px_rgba(239,68,68,0.6)]"></div>
-                                            <HeadingTag style={{ margin: 0, fontWeight: 'bold', color: '#18181b', flex: 1 }}>
-                                                {children}
-                                            </HeadingTag>
-                                            <ShareButton
-                                                title={text}
-                                                url={typeof window !== "undefined" ? `${window.location.origin}${window.location.pathname}#${sectionId}` : ""}
-                                                className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 hover:bg-zinc-100 rounded-full"
-                                                iconClassName="w-3.5 h-3.5 text-zinc-400 hover:text-red-500"
-                                                hideTextIcon={true}
+                                        <figure style={{ margin: "2rem 0" }}>
+                                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                                            <img
+                                                src={src}
+                                                alt={alt}
+                                                style={{
+                                                    width: "100%",
+                                                    height: "auto",
+                                                    borderRadius: "0.5rem",
+                                                }}
                                             />
-                                        </div>
+                                            {caption && (
+                                                <figcaption
+                                                    style={{
+                                                        fontSize: "0.875rem",
+                                                        color: "#6b7280",
+                                                        fontStyle: "italic",
+                                                        textAlign: "center",
+                                                        marginTop: "0.5rem",
+                                                        fontFamily: "Georgia, serif",
+                                                    }}
+                                                >
+                                                    {caption}
+                                                </figcaption>
+                                            )}
+                                        </figure>
                                     );
                                 },
-                            } : {}),
-                        }}
-                        modifiers={{
-                            italic: ({ children }) => (
-                                <em
-                                    style={{
-                                        fontSize: "0.90rem",
-                                        color: "#9ca3af",
-                                        display: "block",
-                                        textAlign: "center",
-                                        fontStyle: "italic",
-                                    }}
-                                >
-                                    {children}
-                                </em>
-                            ),
-                        }}
-                    />
+                                ...(enableSectionSharing ? {
+                                    heading: ({ children, level }: any) => {
+                                        const extractText = (node: any): string => {
+                                            if (typeof node === 'string') return node;
+                                            if (Array.isArray(node)) return node.map(extractText).join('');
+                                            if (node && node.props && node.props.children) return extractText(node.props.children);
+                                            return '';
+                                        };
+                                        const text = extractText(children);
+                                        const sectionId = text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+                                        const HeadingTag = `h${level}` as any;
+
+                                        return (
+                                            <div id={sectionId} className="group relative flex items-start gap-4">
+                                                <div className="hidden sm:block absolute -left-6 top-2 w-3 h-3 bg-red-500 rounded-full shadow-[0_0_8px_rgba(239,68,68,0.6)]"></div>
+                                                <HeadingTag style={{ margin: 0, fontWeight: 'bold', color: '#18181b', flex: 1 }}>
+                                                    {children}
+                                                </HeadingTag>
+                                                <ShareButton
+                                                    title={text}
+                                                    url={typeof window !== "undefined" ? `${window.location.origin}${window.location.pathname}#${sectionId}` : ""}
+                                                    className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 hover:bg-zinc-100 rounded-full"
+                                                    iconClassName="w-3.5 h-3.5 text-zinc-400 hover:text-red-500"
+                                                    hideTextIcon={true}
+                                                />
+                                            </div>
+                                        );
+                                    },
+                                } : {}),
+                            }}
+                            modifiers={{
+                                italic: ({ children }) => (
+                                    <em
+                                        style={{
+                                            fontSize: "0.90rem",
+                                            color: "#9ca3af",
+                                            display: "block",
+                                            textAlign: "center",
+                                            fontStyle: "italic",
+                                        }}
+                                    >
+                                        {children}
+                                    </em>
+                                ),
+                            }}
+                        />
+                        {renderMidContentAds(i)}
+                    </Fragment>
                 );
             })}
         </div>

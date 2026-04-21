@@ -10,6 +10,7 @@ import { DateChip } from "@/components/ui/date-chip";
 import { formatContentDate } from "@/lib/date";
 import { Skeleton } from "@/components/ui/skeleton";
 import { strapiImageUrl } from "@/lib/strapi-image";
+import { AdBanner } from "@/components/ads/AdBanner";
 
 const STRAPI_BASE_URL = "https://cms.energdive.com";
 
@@ -115,6 +116,8 @@ export default function ArchitectEditorialPage() {
             <Header />
 
             <main className="pt-[10px]">
+                <AdBanner placement="new_top" variant="banner" className="py-4" />
+
                 {/* 1. HERO BANNER */}
                 <section className="w-full py-12 md:py-20 bg-white border-b border-black">
                     <div className="container mx-auto px-4 sm:px-6 lg:px-12">
