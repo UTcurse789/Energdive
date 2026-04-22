@@ -10,10 +10,6 @@ import { DateChip } from "@/components/ui/date-chip";
 import { buildContentUrl } from "@/lib/content-routes";
 import { formatContentDate } from "@/lib/date";
 
-function slugify(text: string): string {
-    return text.toLowerCase().trim().replace(/[^\w\s-]/g, "").replace(/[\s_]+/g, "-").replace(/-+/g, "-").replace(/^-+|-+$/g, "");
-}
-
 const STRAPI_BASE = "https://cms.energdive.com";
 
 function getImageUrl(article: any): string {
@@ -207,16 +203,22 @@ export function Hero({ topStories: propTopStories }: HeroProps) {
                         </div>
 
                         <div className="space-y-6">
-                            {topStories.map((story, index) => (
+                            {topStories.map((story) => (
                                 <Link
                                     key={story.id}
                                     href={buildContentUrl({ slug: story.slug, type_of_content: story.type_of_content })}
                                     className="group flex gap-5 items-start border-b border-slate-50 pb-5 last:border-0"
                                 >
-                                    <span className="text-4xl font-serif font-light text-slate-200 group-hover:text-[#09B697]/30 transition-colors">
-                                        0{index + 1}
-                                    </span>
-                                    <div className="space-y-1.5">
+                                    <div className="relative h-20 w-28 shrink-0 overflow-hidden rounded-2xl bg-slate-100">
+                                        <Image
+                                            src={getImageUrl(story)}
+                                            alt={story.Title || "Latest news image"}
+                                            fill
+                                            sizes="112px"
+                                            className="object-cover transition-transform duration-500 group-hover:scale-105"
+                                        />
+                                    </div>
+                                    <div className="min-w-0 space-y-1.5">
                                         <p className="text-[9px] font-black text-[#09B697] uppercase tracking-widest">
                                             {story.sectors?.[0]?.name}
                                         </p>
@@ -257,7 +259,7 @@ function HeroSkeleton() {
                         <Skeleton className="h-8 w-full border-b pb-4" />
                         {[...Array(5)].map((_, i) => (
                             <div key={i} className="flex gap-5 pb-5 border-b last:border-0">
-                                <Skeleton className="h-10 w-10" />
+                                <Skeleton className="h-20 w-28 rounded-2xl shrink-0" />
                                 <div className="flex-1 space-y-2">
                                     <Skeleton className="h-3 w-24" />
                                     <Skeleton className="h-5 w-full" />
