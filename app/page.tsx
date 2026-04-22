@@ -7,19 +7,23 @@ import { OpinionSection } from "@/components/sections/opinion";
 import type { OpinionItem } from "@/components/sections/opinion";
 import { EventsSection } from "@/components/sections/events";
 import { HomepageVideos } from "@/components/sections/homepage-videos";
-import { PublicationShowcase } from "@/components/sections/PublicationShowcase";
 import { ARTICLES } from "@/data/dummy";
 import { SectionHeading } from "@/components/ui/section-heading";
-import { MarketTicker } from "@/components/features/ticker";
 import { Article } from "@/types";
 import { formatContentDate } from "@/lib/date";
 import { Publication2 } from "@/components/sections/publication2";
 import { getLatestIssue } from "@/lib/api/getLatestIssue";
 import { strapiImageUrl } from "@/lib/strapi-image";
+import { buildContentUrl } from "@/lib/content-routes";
 
 const STRAPI_BASE = "https://cms.energdive.com";
 
-const ALLOWED_SECTORS = ["Oil & Gas", "Power Generation", "New Energies", "Sustainability & Safety"];
+const HOMEPAGE_SECTORS = [
+  { title: "Oil & Gas", slug: "oil-gas" },
+  { title: "Power Generation", slug: "power-generation" },
+  { title: "New Energies", slug: "new-energies" },
+  { title: "Sustainability & Safety", slug: "sustainability-and-safety" },
+];
 
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -48,6 +52,27 @@ function extractExcerpt(article: any): string {
     .trim();
 }
 
+function getArticleTimestamp(article: any): number {
+  return Date.parse(article.publishedAt || article.Date || article.createdAt || "") || 0;
+}
+
+function isWithinLastTwoMonths(article: any): boolean {
+  const articleTimestamp = getArticleTimestamp(article);
+  if (!articleTimestamp) return false;
+
+  const cutoff = new Date();
+  cutoff.setMonth(cutoff.getMonth() - 2);
+  return articleTimestamp >= cutoff.getTime();
+}
+
+function compareSectorArticles(a: any, b: any): number {
+  const freshnessDiff = getArticleTimestamp(b) - getArticleTimestamp(a);
+  if (freshnessDiff !== 0) return freshnessDiff;
+
+  if (a.featured_in_sector === b.featured_in_sector) return 0;
+  return a.featured_in_sector ? -1 : 1;
+}
+
 function mapOpinionItems(data: any[]): OpinionItem[] {
   return data.map((item: any) => {
     return {
@@ -70,6 +95,11 @@ function mapArticle(article: any, sectorName: string): Article {
     id: String(article.id),
     title: article.Title || "",
     slug: article.slug || "",
+    href: buildContentUrl({
+      slug: article.slug || "",
+      type_of_content: article.type_of_content,
+    }),
+    contentType: article.type_of_content?.name || null,
     category: sectorName || "Energy",
     image: extractImageUrl(article),
     excerpt: extractExcerpt(article),
@@ -191,9 +221,7 @@ export default async function Home() {
     ? allContents
       .filter((a: any) => a.type_of_content?.name === "News")
       .sort((a: any, b: any) => {
-        const aDate = Date.parse(a.Date || a.publishedAt || a.createdAt || "") || 0;
-        const bDate = Date.parse(b.Date || b.publishedAt || b.createdAt || "") || 0;
-        return bDate - aDate;
+        return getArticleTimestamp(b) - getArticleTimestamp(a);
       })
       .slice(0, 6)
     : [];
@@ -211,11 +239,11 @@ export default async function Home() {
 
   // Fetch articles for each sector in parallel directly from Strapi
   const sectorFetchResults = await Promise.all(
-    ALLOWED_SECTORS.map(async (sectorName) => {
+    HOMEPAGE_SECTORS.map(async (sector) => {
       try {
         const res = await fetch(
-          `${STRAPI_BASE}/api/contents?filters[type_of_content][name][$eq]=Articles&filters[sectors][name][$eq]=${encodeURIComponent(sectorName)}&populate=*&sort=Date:desc&pagination[pageSize]=20`,
-          { next: { revalidate: 3600 } } // 1 hour ISR for sector articles
+          `${STRAPI_BASE}/api/contents?filters[type_of_content][name][$eq]=Articles&filters[sectors][name][$eq]=${encodeURIComponent(sector.title)}&populate=*&sort[0]=publishedAt:desc&sort[1]=Date:desc&sort[2]=createdAt:desc&pagination[pageSize]=40`,
+          { next: { revalidate: 60 } } // Keep homepage sector blocks close to real-time
         );
         if (!res.ok) return [];
         const json = await res.json();
@@ -226,44 +254,26 @@ export default async function Home() {
     })
   );
 
-  const sectorsWithArticles = ALLOWED_SECTORS.map((sectorName, idx) => {
-    const sectorArticles = sectorFetchResults[idx];
+  const sectorsWithArticles = HOMEPAGE_SECTORS.map((sector, idx) => {
+    const sectorArticles = sectorFetchResults[idx]
+      .filter((article: any) => !usedArticleIds.has(article.id))
+      .sort(compareSectorArticles);
 
-    // Filter out already-used articles
-    const available = sectorArticles.filter(
-      (article: any) => !usedArticleIds.has(article.id)
-    );
-
-    // Featured-in-sector articles first
-    const featured = available.filter(
-      (article: any) => article.featured_in_sector === true
-    );
-
-    // Non-featured sorted by date (newest first) to fill remaining slots
-    const nonFeatured = available
-      .filter((article: any) => article.featured_in_sector !== true)
-      .sort((a: any, b: any) => {
-        const aDate = Date.parse(a.Date || a.publishedAt || a.createdAt || "") || 0;
-        const bDate = Date.parse(b.Date || b.publishedAt || b.createdAt || "") || 0;
-        return bDate - aDate;
-      });
-
-    // Combine: featured first, then fill up to 4
-    const remaining = 4 - featured.length;
-    const combined = [...featured, ...nonFeatured.slice(0, Math.max(0, remaining))];
-    const finalArticles = combined.slice(0, 4);
+    const recentArticles = sectorArticles.filter(isWithinLastTwoMonths);
+    const olderArticles = sectorArticles.filter((article: any) => !isWithinLastTwoMonths(article));
+    const prioritizedArticles = recentArticles.length > 0
+      ? [...recentArticles, ...olderArticles]
+      : sectorArticles;
+    const finalArticles = prioritizedArticles.slice(0, 4);
 
     // Mark these as used so next sector won't pick them
     finalArticles.forEach((article: any) => usedArticleIds.add(article.id));
 
-    const articles = finalArticles.map((article: any) => mapArticle(article, sectorName));
-
-    let slug = sectorName.toLowerCase().replace(/ & /g, "-and-").replace(/ /g, "-");
-    if (slug === "oil-and-gas") slug = "oil-gas";
+    const articles = finalArticles.map((article: any) => mapArticle(article, sector.title));
 
     return {
-      title: sectorName,
-      slug,
+      title: sector.title,
+      slug: sector.slug,
       articles,
     };
   }).filter((s) => s.articles.length > 0);

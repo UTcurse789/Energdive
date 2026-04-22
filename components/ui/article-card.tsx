@@ -6,6 +6,7 @@ import { cn, slugify } from "@/lib/utils";
 import { Clock } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { DateChip } from "@/components/ui/date-chip";
+import { buildContentUrl } from "@/lib/content-routes";
 
 import { Article } from "@/types";
 
@@ -17,10 +18,15 @@ interface ArticleCardProps {
 
 export function ArticleCard({ article, className, variant = "vertical" }: ArticleCardProps) {
     const router = useRouter();
+    const articleHref =
+        article.href ||
+        (article.contentType
+            ? buildContentUrl({ slug: article.slug, contentType: article.contentType })
+            : `/news/${article.slug}`);
 
     return (
         <div
-            onClick={() => router.push(`/news/${article.slug}`)}
+            onClick={() => router.push(articleHref)}
             className={cn("group block h-full cursor-pointer", className)}
         >
             <article className={cn("flex flex-col h-full gap-4", variant === "horizontal" && "md:flex-row md:items-center")}>
