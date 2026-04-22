@@ -4,8 +4,7 @@ import React, { useState, useMemo, useEffect } from "react";
 import { buildContentUrl } from "@/lib/content-routes";
 import { useParams, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, ChevronRight, Clock, ArrowUpRight, Play, Printer } from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Search, ChevronRight, ArrowUpRight, Play, Printer } from "lucide-react";
 import { Header } from "@/components/layout/header";
 import { AdBanner } from "@/components/ads/AdBanner";
 import Image from "next/image";
@@ -13,29 +12,13 @@ import Link from "next/link";
 import { TagBadge } from "@/components/ui/tag-badge";
 import { DateChip } from "@/components/ui/date-chip";
 import { ShareButton } from "@/components/ui/share-button";
-import { formatContentDate } from "@/lib/date";
 import { strapiImageUrl } from "@/lib/strapi-image";
+import { buildSectorArticlesUrl, getSectorNames } from "@/lib/sector-content";
 
 /* ================================
    STRAPI CONFIG & HELPERS
 ================================ */
 const STRAPI = process.env.NEXT_PUBLIC_STRAPI_URL;
-
-const slugToNameMap: Record<string, string[]> = {
-    "oil-gas": ["Oil & Gas", "Oil and Gas"],
-    "power-generation": ["Power Generation"],
-    "renewables": ["Renewables", "Renewable Energy"],
-    "transmission": ["Transmission"],
-    "distribution": ["Distribution"],
-    "electricity-markets": ["Electricity Markets", "Power Markets"],
-    "new-energies": ["New Energies"],
-    "energy-storage": ["Energy Storage"],
-    "sustainability-and-safety": ["Sustainability & Safety", "Sustainability", "Safety"],
-};
-
-function getSectorNames(slug: string) {
-    return slugToNameMap[slug] || [slug.replace(/-/g, " ")];
-}
 
 async function fetchSectorWithChildren(slug: string) {
     try {
@@ -76,12 +59,7 @@ async function fetchSectorWithChildren(slug: string) {
 
 async function fetchSectorArticles(slug: string) {
     try {
-        const names = getSectorNames(slug);
-        let filterStr = `filters[$and][1][$or][0][sectors][slug][$eq]=${slug}`;
-        names.forEach((n, i) => {
-            filterStr += `&filters[$and][1][$or][${i + 1}][sectors][name][$containsi]=${encodeURIComponent(n)}`;
-        });
-        const url = `${STRAPI}/api/contents?filters[$and][0][$or][0][type_of_content][name][$eq]=Articles&filters[$and][0][$or][1][type_of_content][name][$eq]=Featured Stories&${filterStr}&populate=*&sort=Date:desc`;
+        const url = buildSectorArticlesUrl(slug);
         const res = await fetch(url, { next: { revalidate: 3600 } });
         const json = await res.json();
         return json?.data || [];

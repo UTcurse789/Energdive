@@ -15,8 +15,9 @@ import { Publication2 } from "@/components/sections/publication2";
 import { getLatestIssue } from "@/lib/api/getLatestIssue";
 import { strapiImageUrl } from "@/lib/strapi-image";
 import { buildContentUrl } from "@/lib/content-routes";
+import { buildSectorArticlesUrl } from "@/lib/sector-content";
 
-const STRAPI_BASE = "https://cms.energdive.com";
+const STRAPI_BASE = process.env.NEXT_PUBLIC_STRAPI_URL || "https://cms.energdive.com";
 
 const HOMEPAGE_SECTORS = [
   { title: "Oil & Gas", slug: "oil-gas" },
@@ -52,25 +53,12 @@ function extractExcerpt(article: any): string {
     .trim();
 }
 
+function getContentDateValue(article: any): string {
+  return article.Date || article.publishedAt || article.createdAt || "";
+}
+
 function getArticleTimestamp(article: any): number {
-  return Date.parse(article.publishedAt || article.Date || article.createdAt || "") || 0;
-}
-
-function isWithinLastTwoMonths(article: any): boolean {
-  const articleTimestamp = getArticleTimestamp(article);
-  if (!articleTimestamp) return false;
-
-  const cutoff = new Date();
-  cutoff.setMonth(cutoff.getMonth() - 2);
-  return articleTimestamp >= cutoff.getTime();
-}
-
-function compareSectorArticles(a: any, b: any): number {
-  const freshnessDiff = getArticleTimestamp(b) - getArticleTimestamp(a);
-  if (freshnessDiff !== 0) return freshnessDiff;
-
-  if (a.featured_in_sector === b.featured_in_sector) return 0;
-  return a.featured_in_sector ? -1 : 1;
+  return Date.parse(getContentDateValue(article)) || 0;
 }
 
 function mapOpinionItems(data: any[]): OpinionItem[] {
@@ -226,25 +214,11 @@ export default async function Home() {
       .slice(0, 6)
     : [];
 
-  // ── Sectors: Fetch articles PER SECTOR directly from Strapi ──
-  // Track IDs already used in hero & bento to avoid repeating them in sectors
-  const usedArticleIds = new Set<number>();
-  if (allContents) {
-    heroTopStories.forEach((a: any) => usedArticleIds.add(a.id));
-    allContents
-      .filter((a: any) => a.featured === true)
-      .slice(0, 6)
-      .forEach((a: any) => usedArticleIds.add(a.id));
-  }
-
   // Fetch articles for each sector in parallel directly from Strapi
   const sectorFetchResults = await Promise.all(
     HOMEPAGE_SECTORS.map(async (sector) => {
       try {
-        const res = await fetch(
-          `${STRAPI_BASE}/api/contents?filters[type_of_content][name][$eq]=Articles&filters[sectors][name][$eq]=${encodeURIComponent(sector.title)}&populate=*&sort[0]=publishedAt:desc&sort[1]=Date:desc&sort[2]=createdAt:desc&pagination[pageSize]=40`,
-          { next: { revalidate: 60 } } // Keep homepage sector blocks close to real-time
-        );
+        const res = await fetch(buildSectorArticlesUrl(sector.slug), { cache: "no-store" });
         if (!res.ok) return [];
         const json = await res.json();
         return json.data || [];
@@ -255,19 +229,8 @@ export default async function Home() {
   );
 
   const sectorsWithArticles = HOMEPAGE_SECTORS.map((sector, idx) => {
-    const sectorArticles = sectorFetchResults[idx]
-      .filter((article: any) => !usedArticleIds.has(article.id))
-      .sort(compareSectorArticles);
-
-    const recentArticles = sectorArticles.filter(isWithinLastTwoMonths);
-    const olderArticles = sectorArticles.filter((article: any) => !isWithinLastTwoMonths(article));
-    const prioritizedArticles = recentArticles.length > 0
-      ? [...recentArticles, ...olderArticles]
-      : sectorArticles;
-    const finalArticles = prioritizedArticles.slice(0, 4);
-
-    // Mark these as used so next sector won't pick them
-    finalArticles.forEach((article: any) => usedArticleIds.add(article.id));
+    const sectorArticles = sectorFetchResults[idx];
+    const finalArticles = sectorArticles.slice(0, 4);
 
     const articles = finalArticles.map((article: any) => mapArticle(article, sector.title));
 
