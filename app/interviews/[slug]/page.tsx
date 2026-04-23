@@ -130,17 +130,34 @@
 // }
 
 
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import OpinionContent from "./opinion-content";
 import { strapiImageUrl } from "@/lib/strapi-image";
 import { ArticleJsonLd } from "@/components/seo/ArticleJsonLd";
 import type { Metadata } from "next";
 
+type StrapiTag = {
+  name?: string;
+  slug?: string;
+  title?: string;
+  Title?: string;
+  data?: StrapiTag | StrapiTag[];
+  attributes?: StrapiTag;
+};
+
+type StrapiContentItem = {
+  slug?: string;
+  content_tag?: StrapiTag | StrapiTag[];
+  attributes?: {
+    content_tag?: StrapiTag | StrapiTag[];
+  };
+};
+
 function slugifyTag(text: string): string {
     return text.toLowerCase().trim().replace(/[^\w\s-]/g, "").replace(/[\s_]+/g, "-").replace(/-+/g, "-").replace(/^-+|-+$/g, "");
 }
 
-function normalizeTag(tag: any) {
+function normalizeTag(tag: StrapiTag | null | undefined) {
     const source = tag?.attributes || tag;
     const name = source?.name || "";
     const slug = source?.slug || (name ? slugifyTag(name) : "");
@@ -148,11 +165,36 @@ function normalizeTag(tag: any) {
     return { name, slug };
 }
 
+function extractContentTagTitle(contentTag: StrapiTag | StrapiTag[] | null | undefined): string | null {
+  if (!contentTag) return null;
+
+  if (Array.isArray(contentTag)) {
+    const first = contentTag[0]?.attributes || contentTag[0];
+    return first?.title || first?.Title || null;
+  }
+
+  const source = contentTag.data || contentTag.attributes || contentTag;
+
+  if (Array.isArray(source)) {
+    const first = source[0]?.attributes || source[0];
+    return first?.title || first?.Title || null;
+  }
+
+  const normalizedSource = source.attributes || source;
+  return normalizedSource.title || normalizedSource.Title || null;
+}
+
+function isInterviewContent(item: StrapiContentItem | null | undefined): boolean {
+  const attrs = item?.attributes || item;
+  const contentTag = extractContentTagTitle(attrs?.content_tag);
+  return contentTag?.toLowerCase() === "interview";
+}
+
 const STRAPI = process.env.NEXT_PUBLIC_STRAPI_URL;
 
 async function getOpinion(slug: string) {
   const res = await fetch(
-    `${STRAPI}/api/contents?filters[slug][$eq]=${slug}&populate[author][populate]=avatar&populate=FeaturedImage&populate[tags]=true`,
+    `${STRAPI}/api/contents?filters[slug][$eq]=${slug}&populate[author][populate]=avatar&populate=FeaturedImage&populate[content_tag]=true&populate[tags]=true`,
     { next: { revalidate: 3600 } }
   );
   const json = await res.json();
@@ -216,11 +258,16 @@ export async function generateMetadata({
 
 async function getRecommended(currentSlug: string) {
   const res = await fetch(
-    `${STRAPI}/api/contents?filters[type_of_content][name][$eq]=Opinion&filters[content_tag][title][$eq]=Interview&populate[author][populate]=avatar&populate=FeaturedImage&pagination[limit]=4&sort=Date:desc`,
+    `${STRAPI}/api/contents?filters[type_of_content][name][$eq]=Opinion&populate[author][populate]=avatar&populate=FeaturedImage&populate[content_tag]=true&pagination[limit]=12&sort=Date:desc`,
     { next: { revalidate: 3600 } }
   );
   const json = await res.json();
-  return json?.data?.filter((item: any) => item.slug !== currentSlug)?.slice(0, 3) ?? [];
+  const items = json?.data ?? [];
+
+  return items
+    .filter((item) => item.slug !== currentSlug)
+    .filter((item) => isInterviewContent(item))
+    .slice(0, 3);
 }
 
 export default async function OpinionDetailPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -228,12 +275,17 @@ export default async function OpinionDetailPage({ params }: { params: Promise<{ 
   const article = await getOpinion(slug);
   if (!article) notFound();
 
+  const contentTag = extractContentTagTitle((article.attributes || article)?.content_tag);
+  if (contentTag && contentTag.toLowerCase() !== "interview") {
+    redirect(`/opinion/${slug}`);
+  }
+
   const recommendedRaw = await getRecommended(slug);
 
   // Extract and normalize tags
   const attrs = article.attributes || article;
   const tagsData = attrs.tags?.data || attrs.tags || [];
-  const normalizedTags = Array.isArray(tagsData) ? tagsData.map((t: any) => normalizeTag(t)).filter(Boolean) : [];
+  const normalizedTags = Array.isArray(tagsData) ? tagsData.map((t) => normalizeTag(t)).filter(Boolean) : [];
   const sectorData = attrs.sectors || attrs.sector?.data?.attributes || null;
   const sectorSlug: string | undefined = Array.isArray(sectorData)
     ? sectorData[0]?.slug || undefined
@@ -261,7 +313,7 @@ export default async function OpinionDetailPage({ params }: { params: Promise<{ 
     }
   };
 
-  const recommended = recommendedRaw.map((item: any) => ({
+  const recommended = recommendedRaw.map((item) => ({
     id: item.id,
     slug: item.slug,
     title: item.Title,
