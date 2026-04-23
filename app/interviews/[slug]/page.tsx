@@ -265,8 +265,8 @@ async function getRecommended(currentSlug: string) {
   const items = json?.data ?? [];
 
   return items
-    .filter((item) => item.slug !== currentSlug)
-    .filter((item) => isInterviewContent(item))
+    .filter((item: StrapiContentItem) => item.slug !== currentSlug)
+    .filter((item: StrapiContentItem) => isInterviewContent(item))
     .slice(0, 3);
 }
 
@@ -285,7 +285,7 @@ export default async function OpinionDetailPage({ params }: { params: Promise<{ 
   // Extract and normalize tags
   const attrs = article.attributes || article;
   const tagsData = attrs.tags?.data || attrs.tags || [];
-  const normalizedTags = Array.isArray(tagsData) ? tagsData.map((t) => normalizeTag(t)).filter(Boolean) : [];
+  const normalizedTags = Array.isArray(tagsData) ? tagsData.map((t: StrapiTag) => normalizeTag(t)).filter(Boolean) : [];
   const sectorData = attrs.sectors || attrs.sector?.data?.attributes || null;
   const sectorSlug: string | undefined = Array.isArray(sectorData)
     ? sectorData[0]?.slug || undefined
@@ -313,7 +313,7 @@ export default async function OpinionDetailPage({ params }: { params: Promise<{ 
     }
   };
 
-  const recommended = recommendedRaw.map((item) => ({
+  const recommended = recommendedRaw.map((item: StrapiContentItem & Record<string, any>) => ({
     id: item.id,
     slug: item.slug,
     title: item.Title,
