@@ -52,6 +52,11 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [
       {
+        source: '/login',
+        destination: '/auth',
+        permanent: true,
+      },
+      {
         source: '/author',
         destination: '/authors',
         permanent: true,
