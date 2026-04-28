@@ -63,6 +63,7 @@ async function getRelated(slug: string) {
 }
 import type { Metadata } from "next";
 import { strapiImageUrl } from "@/lib/strapi-image";
+import { getCanonicalUrl } from "@/lib/seo";
 
 /* ================= METADATA (OG tags for WhatsApp / social) ================= */
 
@@ -81,21 +82,25 @@ export async function generateMetadata({
     const baseTitle = articleData.Title || "Articles";
     const cleanBaseTitle = String(baseTitle).replace(/^['"“”‘’]+|['"“”‘’]+$/g, "").trim();
     const shareTitle = `${cleanBaseTitle} - ENERGDIVE`;
+    const canonicalUrl = getCanonicalUrl(`/articles/${slug}`);
     const description =
         articleData.Excerpt?.[0]?.children?.[0]?.text ||
         "Read in-depth energy articles on Energdive.";
 
     const imageUrl = articleData.FeaturedImage?.url
         ? strapiImageUrl(articleData.FeaturedImage.url)
-        : "https://energdive.com/fav.jpg";
+        : getCanonicalUrl("/fav.jpg");
 
     return {
         title: { absolute: shareTitle },
         description,
+        alternates: {
+            canonical: canonicalUrl,
+        },
         openGraph: {
             title: shareTitle,
             description,
-            url: `https://energdive.com/articles/${slug}`,
+            url: canonicalUrl,
             siteName: "Energdive",
             images: [
                 {

@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import IssueDetailClient from "@/components/issue-detail-client";
 import { Issue, Section } from "@/types";
 import { getRoutePrefix, extractContentTypeName } from "@/lib/content-routes";
+import { getCanonicalUrl } from "@/lib/seo";
 
 const STRAPI_URL = "https://cms.energdive.com";
 
@@ -175,20 +176,24 @@ export async function generateMetadata({
 
     const cleanIssueTitle = String(issue.title).replace(/^['"“”‘’]+|['"“”‘’]+$/g, "").trim();
     const shareTitle = `${cleanIssueTitle} - ENERGDIVE`;
+    const canonicalUrl = getCanonicalUrl(`/issues/${slug}`);
     const description =
         issue.description?.trim() ||
         `Explore ${issue.title} featuring expert insights on India's energy transition.`;
     const imageUrl = issue.coverImage?.startsWith("http")
         ? issue.coverImage
-        : `https://www.energdive.com${issue.coverImage || "/fav.jpg"}`;
+        : getCanonicalUrl(issue.coverImage || "/fav.jpg");
 
     return {
         title: { absolute: shareTitle },
         description,
+        alternates: {
+            canonical: canonicalUrl,
+        },
         openGraph: {
             title: shareTitle,
             description,
-            url: `https://www.energdive.com/issues/${slug}`,
+            url: canonicalUrl,
             siteName: "ENERGDIVE",
             images: [
                 {

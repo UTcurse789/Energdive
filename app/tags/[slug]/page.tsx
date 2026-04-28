@@ -8,6 +8,7 @@ import { DateChip } from "@/components/ui/date-chip";
 import { formatContentDate } from "@/lib/date";
 import { buildContentUrl } from "@/lib/content-routes";
 import { strapiImageUrl } from "@/lib/strapi-image";
+import { getCanonicalUrl } from "@/lib/seo";
 
 const STRAPI_BASE = process.env.NEXT_PUBLIC_STRAPI_URL || "https://cms.energdive.com";
 
@@ -183,16 +184,20 @@ export async function generateMetadata({
 
     const cleanTagName = String(tagName).replace(/^['"“”‘’]+|['"“”‘’]+$/g, "").trim();
     const shareTitle = `${cleanTagName} - ENERGDIVE`;
+    const canonicalUrl = getCanonicalUrl(`/tags/${slug}`);
     const description = `Explore all ENERGDIVE content tagged "${tagName}" including ${articles.length} articles and ${videos.length} videos.`;
-    const imageUrl = articles[0]?.image || videos[0]?.thumbnail || "https://www.energdive.com/og-image.jpg";
+    const imageUrl = articles[0]?.image || videos[0]?.thumbnail || getCanonicalUrl("/og-image.jpg");
 
     return {
         title: { absolute: shareTitle },
         description,
+        alternates: {
+            canonical: canonicalUrl,
+        },
         openGraph: {
             title: shareTitle,
             description,
-            url: `https://www.energdive.com/tags/${slug}`,
+            url: canonicalUrl,
             siteName: "ENERGDIVE",
             images: [
                 {
