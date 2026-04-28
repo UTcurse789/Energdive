@@ -11,6 +11,16 @@ import { getCanonicalUrl } from "@/lib/seo";
 
 const STRAPI_BASE = process.env.NEXT_PUBLIC_STRAPI_URL || "https://cms.energdive.com";
 
+type EventImage = {
+    url?: string;
+    formats?: {
+        large?: { url?: string };
+        medium?: { url?: string };
+        small?: { url?: string };
+        thumbnail?: { url?: string };
+    };
+};
+
 type EventRecord = {
     id: number | string;
     title?: string;
@@ -23,15 +33,7 @@ type EventRecord = {
     mapUrl?: string;
     occurrence?: string;
     description?: RichTextBlock[];
-    image?: Array<{
-        url?: string;
-        formats?: {
-            large?: { url?: string };
-            medium?: { url?: string };
-            small?: { url?: string };
-            thumbnail?: { url?: string };
-        };
-    }> | { url?: string };
+    image?: EventImage[] | EventImage;
 };
 
 type RichTextChild = {
