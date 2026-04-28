@@ -135,6 +135,7 @@ import OpinionContent from "./opinion-content";
 import { strapiImageUrl } from "@/lib/strapi-image";
 import { ArticleJsonLd } from "@/components/seo/ArticleJsonLd";
 import type { Metadata } from "next";
+import { getCanonicalUrl } from "@/lib/seo";
 
 type StrapiTag = {
   name?: string;
@@ -213,29 +214,38 @@ export async function generateMetadata({
     return { title: { absolute: "Interview - ENERGDIVE" } };
   }
 
+  const interviewContent = isInterviewContent(articleData);
   const attrs = articleData.attributes || articleData;
-  const baseTitle = attrs.Title || "Interview";
+  const baseTitle = attrs.Title || (interviewContent ? "Interview" : "Opinion");
   const cleanBaseTitle = String(baseTitle).replace(/^['"“”‘’]+|['"“”‘’]+$/g, "").trim();
   const shareTitle = `${cleanBaseTitle} - ENERGDIVE`;
+  const canonicalUrl = getCanonicalUrl(interviewContent ? `/interviews/${slug}` : `/opinion/${slug}`);
   const excerptBlock = attrs.Excerpt;
   const description =
     (Array.isArray(excerptBlock)
       ? excerptBlock[0]?.children?.[0]?.text
-      : null) || "Read exclusive interviews with energy leaders at Energdive.";
+      : null) || (
+        interviewContent
+          ? "Read exclusive interviews with energy leaders at Energdive."
+          : "Read expert opinions on energy policy and markets at Energdive."
+      );
 
   const imageUrl = attrs.FeaturedImage?.url
     ? strapiImageUrl(attrs.FeaturedImage.url)
     : attrs.FeaturedImage?.data?.attributes?.url
       ? strapiImageUrl(attrs.FeaturedImage.data.attributes.url)
-      : "https://energdive.com/fav.jpg";
+      : getCanonicalUrl("/fav.jpg");
 
   return {
     title: { absolute: shareTitle },
     description,
+    alternates: {
+      canonical: canonicalUrl,
+    },
     openGraph: {
       title: shareTitle,
       description,
-      url: `https://energdive.com/interviews/${slug}`,
+      url: canonicalUrl,
       siteName: "Energdive",
       images: [
         {
@@ -333,7 +343,7 @@ export default async function OpinionDetailPage({ params }: { params: Promise<{ 
         authorName={opinion.author?.name}
         slug={slug}
         imageUrl={opinion.featuredImage}
-        section="interview"
+        section="interviews"
         description={opinion.excerpt}
       />
       <OpinionContent opinion={opinion} recommended={recommended} />

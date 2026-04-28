@@ -12,6 +12,7 @@ import { ArrowLeft, Youtube, Tag, Printer } from "lucide-react";
 import { formatContentDate } from "@/lib/date";
 import { strapiImageUrl } from "@/lib/strapi-image";
 import { AdBanner } from "@/components/ads/AdBanner";
+import { getCanonicalUrl } from "@/lib/seo";
 
 function slugify(text: string): string {
     return text.toLowerCase().trim().replace(/[^\w\s-]/g, "").replace(/[\s_]+/g, "-").replace(/-+/g, "-").replace(/^-+|-+$/g, "");
@@ -62,6 +63,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     const baseTitle = video.title || "Video";
     const cleanBaseTitle = String(baseTitle).replace(/^['"“”‘’]+|['"“”‘’]+$/g, "").trim();
     const shareTitle = `${cleanBaseTitle} - ENERGDIVE`;
+    const canonicalUrl = getCanonicalUrl(`/videos/${slug}`);
     
     // Extract a plain text description from blocks content
     let description = "Watch this exclusive energy sector video on ENERGDIVE.";
@@ -75,15 +77,18 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
     const imageUrl = video.youtubeId 
         ? `https://img.youtube.com/vi/${video.youtubeId}/maxresdefault.jpg`
-        : "/og-image.jpg";
+        : getCanonicalUrl("/og-image.jpg");
 
     return {
         title: { absolute: shareTitle },
         description,
+        alternates: {
+            canonical: canonicalUrl,
+        },
         openGraph: {
             title: shareTitle,
             description,
-            url: `https://www.energdive.com/videos/${slug}`,
+            url: canonicalUrl,
             siteName: "ENERGDIVE",
             images: [
                 {

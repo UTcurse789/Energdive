@@ -286,6 +286,7 @@ import {
 import { formatContentDate } from "@/lib/date";
 import { ShareButton } from "@/components/ui/share-button";
 import { strapiImageUrl } from "@/lib/strapi-image";
+import { getCanonicalUrl } from "@/lib/seo";
 
 const STRAPI = process.env.NEXT_PUBLIC_STRAPI_URL;
 
@@ -338,18 +339,22 @@ export async function generateMetadata({
     const baseTitle = article.Title || "Report";
     const cleanBaseTitle = String(baseTitle).replace(/^['"“”‘’]+|['"“”‘’]+$/g, "").trim();
     const shareTitle = `${cleanBaseTitle} - ENERGDIVE`;
+    const canonicalUrl = getCanonicalUrl(`/reports/${slug}`);
     const excerpt = article.Excerpt?.[0]?.children?.[0]?.text || "Read in-depth energy reports on ENERGDIVE.";
     const imageUrl = article.FeaturedImage?.url
         ? strapiImageUrl(article.FeaturedImage.url)
-        : "https://energdive.com/fav.jpg";
+        : getCanonicalUrl("/fav.jpg");
 
     return {
         title: { absolute: shareTitle },
         description: excerpt,
+        alternates: {
+            canonical: canonicalUrl,
+        },
         openGraph: {
             title: shareTitle,
             description: excerpt,
-            url: `https://www.energdive.com/reports/${slug}`,
+            url: canonicalUrl,
             siteName: "ENERGDIVE",
             images: [
                 {

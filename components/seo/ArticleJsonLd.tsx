@@ -1,3 +1,5 @@
+import { getCanonicalUrl } from "@/lib/seo";
+
 /**
  * NewsArticle JSON-LD structured data component.
  *
@@ -43,6 +45,8 @@ export function ArticleJsonLd({
         }
     })();
 
+    const canonicalUrl = getCanonicalUrl(`/${section}/${slug}`);
+
     const jsonLd = {
         "@context": "https://schema.org",
         "@type": "NewsArticle",
@@ -61,12 +65,12 @@ export function ArticleJsonLd({
             name: "Energdive",
             logo: {
                 "@type": "ImageObject",
-                url: "https://energdive.com/fav.jpg",
+                url: getCanonicalUrl("/fav.jpg"),
             },
         },
         mainEntityOfPage: {
             "@type": "WebPage",
-            "@id": `https://energdive.com/${section}/${slug}`,
+            "@id": canonicalUrl,
         },
         ...(description ? { description } : {}),
     };
