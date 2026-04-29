@@ -4,10 +4,11 @@ import { markTokenUsed } from "@/lib/magic-link-db";
 import { query, getClient } from "@/lib/db";
 import { createZohoDuplicateLead } from "@/lib/zoho-leads";
 import { syncVerifiedUserToBrevo } from "@/lib/brevoSync";
-import { sendMembershipWelcomeEmail } from "@/lib/email";
+import { sendMembershipWelcomeCardEmail } from "@/lib/email";
 import { logEvent } from "@/lib/system-logger";
 import { logConsent, extractIpAddress } from "@/lib/consent-logger";
 import { resolveDataSource } from "@/lib/data-provenance";
+import { issueMagicToken } from "@/lib/queries";
 
 type PendingVerification = {
     id: number;
@@ -108,6 +109,7 @@ async function loadVerifiedUserSnapshot(userId: number) {
           u.email,
           u.first_name,
           u.last_name,
+          u.created_at,
           u.phone,
           u.organization,
           u.job_title,
@@ -423,7 +425,7 @@ export async function POST(req: NextRequest) {
                      WHERE id = $1`,
                     [userId, "v2.1_T&C_Mar2026", clientIp, dataSource]
                 );
-            } catch (_) { /* non-fatal */ }
+            } catch { /* non-fatal */ }
 
             log(`Consent logged for: ${normalizedEmail}`);
         } catch (consentErr: unknown) {
@@ -432,6 +434,7 @@ export async function POST(req: NextRequest) {
         }
 
         const fullUser = await loadVerifiedUserSnapshot(userId);
+        const { token: accessToken } = await issueMagicToken(userId);
 
         // Fetch UTMs from pending_verifications or users table
         let pvUtmSource: string | undefined;
@@ -453,7 +456,7 @@ export async function POST(req: NextRequest) {
                 pvUtmTerm = pvUtms.rows[0].utm_term || undefined;
                 pvUtmContent = pvUtms.rows[0].utm_content || undefined;
             }
-        } catch (e) { /* non-fatal */ }
+        } catch { /* non-fatal */ }
 
         try {
             await syncVerifiedUserToBrevo({
@@ -478,12 +481,12 @@ export async function POST(req: NextRequest) {
         }
 
         // Fetch from Brevo to ensure we have the latest enriched data
-        let brevoData: Record<string, any> | null = null;
+        let brevoData: Record<string, string | undefined> | null = null;
         try {
             const { getBrevoContact } = await import("@/lib/brevoSync");
             brevoData = await getBrevoContact(normalizedEmail);
-        } catch (e) {
-            console.warn(`[VERIFY-OTP:${requestId}] Could not fetch Brevo contact`, e);
+        } catch (brevoLookupError: unknown) {
+            console.warn(`[VERIFY-OTP:${requestId}] Could not fetch Brevo contact`, brevoLookupError);
         }
 
         const bCommunities = brevoData?.COMMUNITY ? brevoData.COMMUNITY.split(",").map((s: string) => s.trim()).filter(Boolean) : fullUser?.communities || [];
@@ -528,10 +531,23 @@ export async function POST(req: NextRequest) {
         }
 
         try {
-            await sendMembershipWelcomeEmail(
+            const primaryCommunity =
+                bSubCommunities[0] ||
+                bCommunities[0] ||
+                fullUser?.sub_communities?.[0] ||
+                fullUser?.communities?.[0] ||
+                null;
+
+            await sendMembershipWelcomeCardEmail(
                 normalizedEmail,
                 pending.name || "Member",
-                membershipId
+                membershipId,
+                {
+                    company: brevoData?.ORGANISATION || fullUser?.organization || pending.company || null,
+                    community: primaryCommunity,
+                    joinedAt: fullUser?.created_at || new Date(),
+                    accessToken,
+                }
             );
         } catch (emailError: unknown) {
             const message = emailError instanceof Error ? emailError.message : String(emailError);
