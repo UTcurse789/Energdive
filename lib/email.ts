@@ -9,14 +9,44 @@ const BREVO_API_KEY = process.env.BREVO_API_KEY || "";
 const BREVO_API_URL = "https://api.brevo.com/v3/smtp/email";
 const FROM_EMAIL = process.env.FROM_EMAIL || "no-reply@info.energdive.com";
 const FROM_NAME = process.env.FROM_NAME || "ENERGDIVE";
-import fs from 'fs';
-import path from 'path';
+
+import { buildMembershipCardHtml } from "./_card-template";
+import { generateMembershipCardPdf } from "./membership-pdf";
 
 interface SendEmailOptions {
     to: string;
     toName?: string;
     subject: string;
     htmlContent: string;
+    attachment?: { name: string; content: string }[];
+}
+
+interface MembershipWelcomeEmailDetails {
+    company?: string | null;
+    community?: string | null;
+    joinedAt?: string | Date | null;
+    accessToken?: string | null;
+}
+
+function escapeHtml(value: string): string {
+    return value
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+}
+
+function formatMembershipDate(value?: string | Date | null): string {
+    const date = value ? new Date(value) : new Date();
+    const safeDate = Number.isNaN(date.getTime()) ? new Date() : date;
+
+    return new Intl.DateTimeFormat("en-GB", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+        timeZone: "Asia/Kolkata",
+    }).format(safeDate);
 }
 
 /**
@@ -29,12 +59,15 @@ async function sendEmail(options: SendEmailOptions): Promise<void> {
         return;
     }
 
-    const body = {
+    const body: Record<string, unknown> = {
         sender: { name: FROM_NAME, email: FROM_EMAIL },
         to: [{ email: options.to, name: options.toName || options.to }],
         subject: options.subject,
         htmlContent: options.htmlContent,
     };
+    if (options.attachment && options.attachment.length > 0) {
+        body.attachment = options.attachment;
+    }
 
     const res = await fetch(BREVO_API_URL, {
         method: "POST",
@@ -59,7 +92,7 @@ export async function sendPortalAccessEmail(
     firstName: string,
     magicLink: string
 ): Promise<void> {
-    const subject = "Your EnergDive Portal Access is Ready";
+    const subject = "Your ENERGDive Portal Access is Ready";
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://www.energdive.com";
     const logoUrl = `${appUrl}/logo2-removebg-preview.png`;
@@ -93,7 +126,7 @@ export async function sendPortalAccessEmail(
                                 Hello ${firstName},
                             </h2>
                             <p style="margin:0 0 24px;color:#4B5563;font-size:16px;line-height:1.7;">
-                                Your exclusive access to the <strong>EnergDive Intelligence Portal</strong> is now active.
+                                Your exclusive access to the <strong>ENERGDive Intelligence Portal</strong> is now active.
                             </p>
 
                             <div style="background-color:#F9FAFB;border:1px solid #E5E7EB;border-radius:12px;padding:32px;text-align:center;margin-bottom:24px;">
@@ -125,7 +158,7 @@ export async function sendPortalAccessEmail(
                     <tr>
                         <td style="background-color:#F9FAFB;padding:32px 40px;text-align:center;border-top:1px solid #F3F4F6;">
                             <p style="margin:0 0 8px;color:#111827;font-size:13px;font-weight:700;">
-                                EnergDive Intelligence
+                                ENERGDive Intelligence
                             </p>
                             <p style="margin:0 0 12px;color:#9CA3AF;font-size:12px;">
                                 <a href="https://energdive.com/unsubscribe?email=${encodeURIComponent(to)}" style="color:#9CA3AF;text-decoration:underline;">Unsubscribe</a>
@@ -158,7 +191,6 @@ export async function sendWelcomeEmail(
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://www.energdive.com";
     const logoUrl = `${appUrl}/logo2-removebg-preview.png`;
-    const dashboardUrl = `${appUrl}/dashboard`;
 
     const htmlContent = `
 <!DOCTYPE html>
@@ -350,54 +382,70 @@ export async function sendMagicLinkEmail(
     name: string,
     magicLink: string
 ): Promise<void> {
-    const subject = "Verify your EnergClub membership";
+    const subject = "Verify your ENERGClub membership";
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://www.energdive.com";
     const logoUrl = `${appUrl}/logo2-removebg-preview.png`;
 
     const htmlContent = `
 <!DOCTYPE html>
 <html>
-<head><meta charset="utf-8" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <title>${subject}</title>
+</head>
 <body style="margin:0;padding:0;background:#0B0F19;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
   <table width="100%" cellpadding="0" cellspacing="0" style="background:#0B0F19;padding:40px 20px;">
-    <tr><td align="center">
-      <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 20px 40px rgba(0,0,0,0.3);">
-        <tr>
-          <td style="background:#0a2e1f;padding:40px;text-align:center;border-bottom:4px solid #09B697;">
-            <img src="${logoUrl}" alt="EnergDive" width="180" style="display:block;margin:0 auto;max-width:200px;height:auto;" />
-          </td>
-        </tr>
-        <tr>
-          <td style="padding:48px 40px;">
-            <h2 style="margin:0 0 16px;color:#111827;font-size:24px;font-weight:800;">Hi ${name},</h2>
-            <p style="margin:0 0 24px;color:#4B5563;font-size:16px;line-height:1.7;">
-              Thank you for registering with <strong>EnergClub</strong>. Click the button below to verify your membership and get access to the portal.
-            </p>
-            <div style="background:#F9FAFB;border:1px solid #E5E7EB;border-radius:12px;padding:32px;text-align:center;margin-bottom:24px;">
-              <p style="margin:0 0 16px;color:#6B7280;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:1px;">Step 1 of 2 — Click to Verify</p>
-              <a href="${magicLink}" style="display:inline-block;background:#09B697;color:#ffffff;font-size:16px;font-weight:700;text-decoration:none;padding:16px 40px;border-radius:10px;">
-                Verify My Membership &rarr;
-              </a>
-              <p style="margin:16px 0 0;color:#9CA3AF;font-size:12px;">This link expires in 1 Week.</p>
-            </div>
-            <p style="margin:0 0 12px;color:#6B7280;font-size:14px;line-height:1.6;">
-              After clicking, you'll receive a one-time code to complete your verification.
-            </p>
-            <hr style="border:none;border-top:1px solid #F3F4F6;margin:24px 0;" />
-            <p style="margin:0;color:#9CA3AF;font-size:12px;">
-              Can't click? Copy this link:<br/>
-              <a href="${magicLink}" style="color:#09B697;">${magicLink}</a>
-            </p>
-          </td>
-        </tr>
-        <tr>
-          <td style="background:#F9FAFB;padding:24px 40px;text-align:center;border-top:1px solid #F3F4F6;">
-            <p style="margin:0 0 8px;color:#111827;font-size:13px;font-weight:700;">EnergDive Intelligence</p>
-            <p style="margin:0;color:#9CA3AF;font-size:11px;">&copy; ${new Date().getFullYear()} ENERGDIVE. All rights reserved.</p>
-          </td>
-        </tr>
-      </table>
-    </td></tr>
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 20px 40px rgba(0,0,0,0.3);">
+          <tr>
+            <td style="background:#0a2e1f;padding:40px;text-align:center;border-bottom:4px solid #09B697;">
+              ${logoUrl
+            ? `<img src="${logoUrl}" alt="EnergDive Logo" width="180" style="display:block;margin:0 auto;max-width:200px;height:auto;" />`
+            : `<h1 style="color:#ffffff;margin:0;font-size:24px;">ENERGDIVE</h1>`
+        }
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:48px 40px;">
+              <h2 style="margin:0 0 16px;color:#111827;font-size:24px;font-weight:800;">Hi ${name},</h2>
+              <p style="margin:0 0 20px;color:#4B5563;font-size:16px;line-height:1.7;">
+                Please confirm your email to continue your ENERGClub membership setup.
+              </p>
+              <div style="background:#F9FAFB;border:1px solid #E5E7EB;border-radius:12px;padding:24px;margin-bottom:24px;">
+                <p style="margin:0 0 12px;color:#111827;font-size:14px;font-weight:700;">Step 1 of 2</p>
+                <p style="margin:0;color:#6B7280;font-size:14px;line-height:1.7;">
+                  Click the secure link below. We will then send a 4-digit verification code to complete your sign-up.
+                </p>
+              </div>
+              <div style="text-align:center;margin-bottom:24px;">
+                <a href="${magicLink}" style="display:inline-block;background:#09B697;color:#ffffff;font-size:16px;font-weight:700;text-decoration:none;padding:16px 40px;border-radius:10px;box-shadow:0 4px 12px rgba(9,182,151,0.3);">
+                  Verify Email &rarr;
+                </a>
+              </div>
+              <p style="margin:0 0 24px;color:#9CA3AF;font-size:13px;line-height:1.6;">
+                This is a single-use verification link. If you did not request this, you can ignore this email.
+              </p>
+              <hr style="border:none;border-top:1px solid #F3F4F6;margin:24px 0;" />
+              <p style="margin:0;color:#9CA3AF;font-size:12px;line-height:1.5;">
+                Copy and paste this link into your browser:<br />
+                <a href="${magicLink}" style="color:#09B697;text-decoration:underline;">${magicLink}</a>
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="background:#F9FAFB;padding:24px 40px;text-align:center;border-top:1px solid #F3F4F6;">
+              <p style="margin:0 0 8px;color:#111827;font-size:13px;font-weight:700;">ENERGDive Intelligence</p>
+              <p style="margin:0 0 12px;color:#9CA3AF;font-size:12px;">
+                <a href="https://energdive.com/unsubscribe?email=${encodeURIComponent(to)}" style="color:#9CA3AF;text-decoration:underline;">Unsubscribe</a>
+              </p>
+              <p style="margin:0;color:#9CA3AF;font-size:11px;">&copy; ${new Date().getFullYear()} ENERGDIVE. All rights reserved.</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
   </table>
 </body>
 </html>`;
@@ -414,7 +462,7 @@ export async function sendOtpEmail(
     name: string,
     otp: string
 ): Promise<void> {
-    const subject = "Your EnergClub verification code";
+    const subject = "Your ENERGClub verification code";
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://www.energdive.com";
     const logoUrl = `${appUrl}/logo2-removebg-preview.png`;
 
@@ -438,7 +486,7 @@ export async function sendOtpEmail(
           <td style="padding:48px 40px;">
             <h2 style="margin:0 0 16px;color:#111827;font-size:24px;font-weight:800;">Hi ${name},</h2>
             <p style="margin:0 0 32px;color:#4B5563;font-size:16px;line-height:1.7;">
-              Here is your <strong>one-time verification code</strong> to complete your EnergClub membership:
+              Here is your <strong>one-time verification code</strong> to complete your ENERGClub membership:
             </p>
             <div style="background:#0a2e1f;border-radius:16px;padding:40px;text-align:center;margin-bottom:32px;">
               <p style="margin:0 0 8px;color:#09B697;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;">Your Verification Code</p>
@@ -458,7 +506,7 @@ export async function sendOtpEmail(
         </tr>
         <tr>
           <td style="background:#F9FAFB;padding:24px 40px;text-align:center;border-top:1px solid #F3F4F6;">
-            <p style="margin:0 0 8px;color:#111827;font-size:13px;font-weight:700;">EnergDive Intelligence</p>
+            <p style="margin:0 0 8px;color:#111827;font-size:13px;font-weight:700;">ENERGDive Intelligence</p>
             <p style="margin:0;color:#9CA3AF;font-size:11px;">&copy; ${new Date().getFullYear()} ENERGDIVE. All rights reserved.</p>
           </td>
         </tr>
@@ -479,7 +527,7 @@ export async function sendMembershipWelcomeEmail(
     name: string,
     membershipId: string
 ): Promise<void> {
-    const subject = `Welcome to EnergClub — Your Membership ID: ${membershipId}`;
+    const subject = `Welcome to ENERGClub — Your Membership ID: ${membershipId}`;
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://www.energdive.com";
     const logoUrl = `${appUrl}/logo2-removebg-preview.png`;
     const dashboardUrl = `${appUrl}/dashboard`;
@@ -499,9 +547,9 @@ export async function sendMembershipWelcomeEmail(
         </tr>
         <tr>
           <td style="padding:48px 40px;">
-            <h2 style="margin:0 0 8px;color:#111827;font-size:28px;font-weight:900;">Welcome to EnergClub, ${name}! 🎉</h2>
+            <h2 style="margin:0 0 8px;color:#111827;font-size:28px;font-weight:900;">Welcome to ENERGClub, ${name}! 🎉</h2>
             <p style="margin:0 0 32px;color:#4B5563;font-size:16px;line-height:1.7;">
-              Your membership has been verified. Here is your official EnergClub Membership ID:
+              Your membership has been verified. Here is your official ENERGClub Membership ID:
             </p>
             <div style="background:#0a2e1f;border-radius:16px;padding:36px;text-align:center;margin-bottom:32px;">
               <p style="margin:0 0 12px;color:#09B697;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;">Your Membership ID</p>
@@ -521,7 +569,7 @@ export async function sendMembershipWelcomeEmail(
         </tr>
         <tr>
           <td style="background:#F9FAFB;padding:24px 40px;text-align:center;border-top:1px solid #F3F4F6;">
-            <p style="margin:0 0 8px;color:#111827;font-size:13px;font-weight:700;">EnergDive Intelligence</p>
+            <p style="margin:0 0 8px;color:#111827;font-size:13px;font-weight:700;">ENERGDive Intelligence</p>
             <p style="margin:0;color:#9CA3AF;font-size:11px;">&copy; ${new Date().getFullYear()} ENERGDIVE. All rights reserved.</p>
           </td>
         </tr>
@@ -532,4 +580,90 @@ export async function sendMembershipWelcomeEmail(
 </html>`;
 
     await sendEmail({ to, toName: name, subject, htmlContent });
+}
+
+export async function sendMembershipWelcomeCardEmail(
+    to: string,
+    name: string,
+    membershipId: string,
+    details: MembershipWelcomeEmailDetails = {}
+): Promise<void> {
+    const subject = `Welcome to ENERGClub — Your Membership ID: ${membershipId}`;
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://www.energdive.com";
+    const logoUrl = `${appUrl}/energclub.png`;
+    const supportEmail = process.env.SUPPORT_EMAIL || "info@energdive.com";
+    const memberName = escapeHtml(name.trim() || "Member");
+    const company = escapeHtml((details.company || "Not provided").trim());
+    const community = escapeHtml((details.community || "Member Community").trim());
+    const safeMembershipId = escapeHtml(membershipId);
+    const joinDate = formatMembershipDate(details.joinedAt);
+    const dashboardUrl = details.accessToken
+        ? `${appUrl}/membership-access?token=${encodeURIComponent(details.accessToken)}`
+        : `${appUrl}/dashboard`;
+    // ── QR Code generation ──────────────────────────────────────────
+    // QR encodes the Membership ID for quick identity verification.
+    // Email clients block base64 data: URIs → use public QR API for email.
+    // PDF uses locally generated data URI (works fine in PDFs).
+
+    const qrData = safeMembershipId;
+
+    // Public QR URL for email HTML
+    const qrPublicUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&format=png&data=${encodeURIComponent(qrData)}`;
+
+    // Local data URI for PDF
+    let qrDataUri: string | null = null;
+    try {
+        const QRCode = await import("qrcode");
+        qrDataUri = await (QRCode as any).toDataURL(qrData, {
+            type: "image/png",
+            errorCorrectionLevel: "M",
+            margin: 1,
+            width: 360,
+            color: { dark: "#111111", light: "#FFFFFF" },
+        });
+    } catch (qrErr) {
+        console.error("[EMAIL] QR generation failed (non-fatal):", qrErr);
+    }
+
+    const qrBlock = `<img src="${qrPublicUrl}" alt="Membership QR" width="160" height="160" style="display:block;width:160px;height:160px;border:0;" />`;
+
+    const htmlContent = buildMembershipCardHtml({
+        memberName,
+        company,
+        community,
+        membershipId: safeMembershipId,
+        joinDate,
+        qrBlock,
+        dashboardUrl,
+        logoUrl,
+        supportEmail,
+        appUrl,
+        toEmail: to,
+        subject,
+    });
+
+    // Generate PDF attachment
+    let attachment: { name: string; content: string }[] | undefined;
+    try {
+        const pdfBase64 = await generateMembershipCardPdf({
+            memberName,
+            company,
+            community,
+            membershipId: safeMembershipId,
+            joinDate,
+            qrImageUrl: qrDataUri,
+        });
+        attachment = [
+            {
+                name: `EnergClub-Membership-${safeMembershipId}.pdf`,
+                content: pdfBase64,
+            },
+        ];
+        console.log(`[EMAIL] PDF membership card generated for ${safeMembershipId}`);
+    } catch (pdfErr) {
+        // Non-fatal — send email without PDF if generation fails
+        console.error("[EMAIL] PDF generation failed (sending email without attachment):", pdfErr);
+    }
+
+    await sendEmail({ to, toName: name, subject, htmlContent, attachment });
 }

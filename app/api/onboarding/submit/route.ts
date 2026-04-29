@@ -1,9 +1,9 @@
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
-import { saveOnboardingProfile } from "@/lib/queries";
+import { issueMagicToken, saveOnboardingProfile } from "@/lib/queries";
 import { getFullUserProfile } from "@/lib/getFullUserProfile";
 import { query } from "@/lib/db";
-import { sendWelcomeEmail, sendNewUserNotification } from "@/lib/email";
+import { sendMembershipWelcomeCardEmail, sendWelcomeEmail } from "@/lib/email";
 import { syncEnrichedLead } from "@/lib/lead-sync-orchestrator";
 import { logConsent, extractIpAddress, updateUserConsentFields } from "@/lib/consent-logger";
 import { resolveDataSource } from "@/lib/data-provenance";
@@ -52,12 +52,13 @@ export async function POST(req: Request) {
         let resolvedPhone = body.phone?.trim() || null;
         try {
             const clerkUser = await (await clerkClient()).users.getUser(userId);
-            const metaPhone = (clerkUser.publicMetadata as any)?.phone as string | undefined;
+            const publicMetadata = clerkUser.publicMetadata as Record<string, unknown>;
+            const metaPhone = typeof publicMetadata.phone === "string" ? publicMetadata.phone : undefined;
             if (metaPhone && !resolvedPhone) {
                 resolvedPhone = metaPhone;
                 console.log(`[ONBOARDING] Recovered phone from Clerk metadata: ${resolvedPhone}`);
             }
-        } catch (_) { /* non-fatal */ }
+        } catch { /* non-fatal */ }
 
         // ── Save to DB (atomic transaction) ─────────────────────────
         // saveOnboardingProfile also sets verification_status='verified' and
@@ -100,8 +101,9 @@ export async function POST(req: Request) {
             });
             await updateUserConsentFields(userId, "website", clientIp, consentTimestamp);
             console.log(`[ONBOARDING] Consent logged for: ${body.email}, consent at: ${consentTimestamp}`);
-        } catch (consentErr: any) {
-            console.warn(`[ONBOARDING] Consent log failed (non-fatal): ${consentErr.message}`);
+        } catch (consentErr: unknown) {
+            const message = consentErr instanceof Error ? consentErr.message : String(consentErr);
+            console.warn(`[ONBOARDING] Consent log failed (non-fatal): ${message}`);
         }
 
         // ── Save UTM parameters to users table ─────────────────────
@@ -125,8 +127,9 @@ export async function POST(req: Request) {
                     [userId, utmSource, utmMedium, utmCampaign, utmTerm, utmContent]
                 );
                 console.log(`[ONBOARDING] UTM saved: src=${utmSource}, med=${utmMedium}, camp=${utmCampaign}`);
-            } catch (utmErr: any) {
-                console.warn(`[ONBOARDING] UTM save failed (non-fatal): ${utmErr.message}`);
+            } catch (utmErr: unknown) {
+                const message = utmErr instanceof Error ? utmErr.message : String(utmErr);
+                console.warn(`[ONBOARDING] UTM save failed (non-fatal): ${message}`);
             }
         }
 
@@ -159,7 +162,7 @@ export async function POST(req: Request) {
                     if (clerkEmail && !clerkEmail.endsWith('@phone.energdive.com')) {
                         syncEmail = clerkEmail;
                     }
-                } catch (_) { /* non-fatal */ }
+                } catch { /* non-fatal */ }
             }
 
             // Update DB email from dummy → real
@@ -171,7 +174,7 @@ export async function POST(req: Request) {
                     );
                     console.log(`[ONBOARDING] Replaced dummy email with real: ${syncEmail}`);
                     fullUser.email = syncEmail; // update in-memory too
-                } catch (_) { /* non-fatal */ }
+                } catch { /* non-fatal */ }
             }
         }
 
@@ -202,6 +205,49 @@ export async function POST(req: Request) {
         }
 
         // ── Sync to Brevo → CRM (sequential, enriched) ─────────────
+        if (!isDummyEmail) {
+            try {
+                let membershipId = fullUser.membership_id as string | null | undefined;
+                if (!membershipId) {
+                    const membershipResult = await query(
+                        `SELECT membership_id FROM users WHERE id = $1 LIMIT 1`,
+                        [dbUserId]
+                    );
+                    membershipId = membershipResult.rows[0]?.membership_id || null;
+                }
+
+                if (membershipId) {
+                    const { token: accessToken } = await issueMagicToken(dbUserId);
+                    const primaryCommunity =
+                        fullUser.sub_communities?.[0] ||
+                        fullUser.communities?.[0] ||
+                        null;
+                    const memberName =
+                        `${fullUser.first_name || body.firstName || ""} ${fullUser.last_name || body.lastName || ""}`.trim() ||
+                        fullUser.first_name ||
+                        body.firstName ||
+                        "Member";
+
+                    await sendMembershipWelcomeCardEmail(
+                        syncEmail,
+                        memberName,
+                        membershipId,
+                        {
+                            company: fullUser.organization || body.organization || null,
+                            community: primaryCommunity,
+                            joinedAt: fullUser.created_at || new Date(),
+                            accessToken,
+                        }
+                    );
+                    console.log("âœ… Membership card email sent to:", syncEmail);
+                } else {
+                    console.warn("[ONBOARDING] Membership card email skipped: membership_id missing");
+                }
+            } catch (emailErr) {
+                console.error("âš ï¸ Membership card email failed:", emailErr);
+            }
+        }
+
         if (canSyncExternally) {
             try {
                 const syncResult = await syncEnrichedLead(

@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import { getClient, query } from "@/lib/db";
 
 // ─── Types ───────────────────────────────────────────────────────────
@@ -565,6 +566,25 @@ export interface MagicTokenUser {
     email: string;
     first_name: string | null;
     last_name: string | null;
+}
+
+export async function issueMagicToken(
+    userId: number,
+    validDays: number = 180
+): Promise<{ token: string; expiresAt: Date }> {
+    const token = crypto.randomBytes(32).toString("base64url");
+    const expiresAt = new Date(Date.now() + validDays * 24 * 60 * 60 * 1000);
+
+    await query(
+        `UPDATE users
+         SET magic_token = $1,
+             magic_token_expires_at = $2,
+             updated_at = NOW()
+         WHERE id = $3`,
+        [token, expiresAt, userId]
+    );
+
+    return { token, expiresAt };
 }
 
 /**
