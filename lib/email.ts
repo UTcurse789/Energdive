@@ -303,7 +303,7 @@ export async function sendPreferenceDigestEmail(
     const subject = `Your ENERGDIVE ${displayFrequency} Briefing`;
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://www.energdive.com";
     const logoUrl = `${appUrl}/Energdive-Logo.png`;
-    const bannerUrl = `${appUrl}/email-banner.jpg`;
+    const bannerUrl = `https://cdn.energdive.com/email_banner_80ffbb1268.jpg`;
     const manageUrl = `${appUrl}/dashboard/settings`;
     const unsubscribeUrl = `${appUrl}/unsubscribe?email=${encodeURIComponent(to)}`;
     const yr = new Date().getFullYear();
