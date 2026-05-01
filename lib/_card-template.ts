@@ -173,7 +173,6 @@ Visit your dashboard to update your profile and explore member benefits.
 <table width="100%" cellpadding="0" cellspacing="0" class="bb"><tr>
 <td valign="middle">
 <img src="${p.appUrl}/energclub.png" alt="EnergClub - EnergDive" width="160" style="display:block;max-width:160px;height:auto;"/>
-<div style="color:#a1a1aa;font-size:9px;letter-spacing:3px;text-transform:uppercase;margin-top:4px;">Powering Progress</div>
 </td>
 <td align="right" valign="middle" style="color:#a1a1aa;font-size:11px;line-height:1.8;">
 &copy; ${yr} ENERGClub. All rights reserved.<br/>

@@ -329,7 +329,7 @@ export async function sendPreferenceDigestEmail(
     let topStoriesHtml = "";
     if (newsSection && newsSection.items.length > 0) {
         const topItems = newsSection.items;
-        
+
         const rowsHtml = [];
         for (let i = 0; i < topItems.length; i += 3) {
             const rowItems = topItems.slice(i, i + 3);
@@ -346,10 +346,10 @@ export async function sendPreferenceDigestEmail(
                     </table>
                 </td>`;
             }).join("");
-            
+
             let filler = "";
             if (rowItems.length < 3) {
-                for(let f = rowItems.length; f < 3; f++) {
+                for (let f = rowItems.length; f < 3; f++) {
                     filler += `<td class="story-col" width="33%" valign="top" style="padding:0"></td>`;
                 }
             }
@@ -491,8 +491,8 @@ export async function sendPreferenceDigestEmail(
                 <tr><td style="background:#ffffff;padding:0;">
                     <table width="100%" cellpadding="0" cellspacing="0"><tr>
                         <td class="stack-col hero-text" valign="top" style="padding:40px 0 20px 40px;width:50%;">
-                            <img src="${logoUrl}" alt="ENERGDIVE" width="160" style="display:block;max-width:160px;height:auto;margin-bottom:32px;" />
-                            <h1 style="margin:0 0 12px;color:#0a6c4c;font-size:32px;font-weight:900;line-height:1.15;letter-spacing:-0.5px;">${displayFrequency} Briefing</h1>
+                            <img src="${logoUrl}" alt="ENERGDIVE" width="220" style="display:block;max-width:220px;height:auto;margin-bottom:32px;" />
+                            <h1 style="margin:0 0 12px;color:#0a6c4c;font-size:18px;font-weight:900;line-height:1.15;letter-spacing:-0.5px;">${displayFrequency} Briefing</h1>
                             <p style="margin:0 0 24px;color:#4b5563;font-size:16px;line-height:1.5;">Essential updates for a<br/>changing energy world.</p>
                             <p style="margin:0;color:#0a6c4c;font-size:12px;font-weight:800;letter-spacing:0.5px;">${todayDate}</p>
                         </td>

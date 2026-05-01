@@ -31,7 +31,7 @@ function buildDailyBriefingHtml(): { subject: string; html: string } {
   const subject = `Your ENERGDIVE ${displayFrequency} Briefing`;
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://www.energdive.com";
   const logoUrl = `${appUrl}/Energdive-Logo.png`;
-  const bannerUrl = `https://cdn.energdive.com/email_banner_80ffbb1268.jpg`;
+  const bannerUrl = `https://cdn.energdive.com/email_banner_removebg_preview_80e2da0393.png`;
   const manageUrl = `${appUrl}/dashboard/settings`;
   const unsubscribeUrl = `${appUrl}/unsubscribe?email=${encodeURIComponent(TO_EMAIL)}`;
   const yr = new Date().getFullYear();
@@ -187,6 +187,17 @@ function buildDailyBriefingHtml(): { subject: string; html: string } {
                 <!-- FOOTER -->
                 <tr><td style="background:#ffffff;padding:24px 40px 40px;" class="section-pad">
                     <table width="100%" cellpadding="0" cellspacing="0"><tr><td style="border-top:1px solid #f3f4f6;padding-top:32px;">
+                        <!-- SPONSOR BANNER -->
+                        <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:32px;border:1px solid #f3f4f6;border-radius:12px;background:#ffffff;box-shadow:0 4px 6px rgba(0,0,0,0.02);overflow:hidden;">
+                            <tr><td style="padding:8px 16px;border-bottom:1px solid #f3f4f6;">
+                                <p style="margin:0;color:#6b7280;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">Sponsored</p>
+                            </td></tr>
+                            <tr><td style="padding:0;">
+                                <a href="https://bharatfiresafety.com/book-your-space.html" target="_blank" style="display:block;">
+                                    <img src="https://cdn.energdive.com/mail_adv_banner_b05de0ccbd.jpg" alt="Sponsor Banner" style="display:block;width:100%;max-width:100%;height:auto;" />
+                                </a>
+                            </td></tr>
+                        </table>
                         <table width="100%" cellpadding="0" cellspacing="0">
                             <tr>
                                 <td class="footer-left" valign="top" style="width:60%;">

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import axios from "axios";
+import { query } from "@/lib/db";
 
 const BREVO_SUBSCRIBERS_LIST_ID = 7;
 const BREVO_UNSUBSCRIBERS_LIST_ID = 8;
@@ -28,7 +29,6 @@ export async function POST(req: Request) {
             );
         }
 
-        // Current timestamp in ISO format
         const unsubDate = new Date().toISOString();
 
         await axios.put(
@@ -49,17 +49,28 @@ export async function POST(req: Request) {
             }
         );
 
-        console.log("✅ Contact unsubscribed in Brevo:", email);
+        await query(
+            `UPDATE users
+             SET content_digest_opted_out = true,
+                 updated_at = NOW()
+             WHERE LOWER(email) = $1`,
+            [email]
+        );
+
+        console.log("Contact unsubscribed in Brevo:", email);
 
         return NextResponse.json({
             success: true,
             message: "You have been successfully unsubscribed.",
         });
-    } catch (err: any) {
-        console.error(
-            "❌ Unsubscribe API error:",
-            err.response?.data || err.message
-        );
+    } catch (err: unknown) {
+        const details =
+            err && typeof err === "object" && "response" in err
+                ? (err as { response?: { data?: unknown } }).response?.data
+                : undefined;
+        const message = err instanceof Error ? err.message : String(err);
+
+        console.error("Unsubscribe API error:", details || message);
 
         return NextResponse.json(
             { error: "Something went wrong. Please try again later." },

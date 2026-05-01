@@ -452,8 +452,8 @@ function buildSections(
     const usedKeys = new Set<string>();
 
     for (const format of formats) {
-        if (format !== "News Briefing") {
-            continue; // Only process News Briefing
+        if (format !== "News Briefing" && format !== "Upcoming Events") {
+            continue; // Only process News Briefing and Upcoming Events
         }
 
         if (frequency === "monthly") {
@@ -461,7 +461,7 @@ function buildSections(
         }
 
         let limit = perFormatLimit;
-        if (frequency === "weekly") {
+        if (frequency === "weekly" && format === "News Briefing") {
             limit = 9;
         }
 
@@ -658,8 +658,8 @@ export async function processPreferenceDigests(
             continue;
         }
 
-        // Hardcode formats to ONLY include News Briefing
-        const formats = ["News Briefing"] as DigestFormat[];
+        // Hardcode formats to ONLY include News Briefing and Upcoming Events
+        const formats = ["News Briefing", "Upcoming Events"] as DigestFormat[];
         const since = getDueWindowStart(row, now);
         const sections = buildSections(formats, since, catalog, frequency);
         const itemKeys = sections.flatMap((section) => section.items.map((item) => item.key));
@@ -745,8 +745,8 @@ export async function sendPreferenceDigestPreview(
         return { success: false, items: 0 };
     }
 
-    // Force formats to ONLY be News Briefing
-    const formats = ["News Briefing"] as DigestFormat[];
+    // Force formats to ONLY be News Briefing and Upcoming Events
+    const formats = ["News Briefing", "Upcoming Events"] as DigestFormat[];
     const mockRow = { preferred_frequency: frequency } as any;
     const since = getDueWindowStart(mockRow, new Date());
     const catalog = await loadDigestCatalog(since);

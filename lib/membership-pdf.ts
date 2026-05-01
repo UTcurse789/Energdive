@@ -93,7 +93,7 @@ export async function generateMembershipCardPdf(
     if (logoBytes) {
         try {
             const logoImage = await doc.embedPng(logoBytes);
-            const logoDims = logoImage.scaleToFit(130, 40);
+            const logoDims = logoImage.scaleToFit(150, 60);
             page.drawImage(logoImage, {
                 x: cardX + 24,
                 y: logoY,

@@ -38,6 +38,9 @@ export interface UserProfile {
     organization: string | null;
     onboarding_completed: boolean;
     created_at: string;
+    preferred_frequency: string | null;
+    preferred_formats: string[];
+    content_digest_opted_out: boolean;
     industry_id: number | null;
     industry_name: string | null;
     sub_industry_id: number | null;
@@ -173,6 +176,8 @@ export async function getUserProfile(
                 u.first_name, u.last_name, u.phone,
                 u.country, u.state, u.job_title, u.organization,
                 u.onboarding_completed, u.created_at,
+                u.preferred_frequency, u.preferred_formats,
+                COALESCE(u.content_digest_opted_out, false) AS content_digest_opted_out,
                 u.membership_id, u.verification_status,
                 ui.industry_id,
                 ind.name  AS industry_name,
@@ -235,6 +240,7 @@ export interface UpdateProfilePayload {
     communitySelections?: { communityId: number; subCommunityId: number }[];
     preferredFrequency?: string;
     preferredFormats?: string[];
+    contentDigestOptedOut?: boolean;
 }
 
 /**
@@ -263,6 +269,7 @@ export async function updateUserProfile(payload: UpdateProfilePayload): Promise<
             { key: "organization", val: payload.organization },
             { key: "preferred_frequency", val: payload.preferredFrequency },
             { key: "preferred_formats", val: payload.preferredFormats },
+            { key: "content_digest_opted_out", val: payload.contentDigestOptedOut },
         ];
 
         for (const f of fields) {
