@@ -400,7 +400,7 @@ async function fetchRecentContents(earliestPublishedAt?: Date): Promise<DigestIt
     return (json?.data || [])
         .map(normalizeContentItem)
         .filter((item: DigestItem | null): item is DigestItem => Boolean(item))
-        .sort((a, b) => b.publishedAt.getTime() - a.publishedAt.getTime());
+        .sort((a: DigestItem, b: DigestItem) => b.publishedAt.getTime() - a.publishedAt.getTime());
 }
 
 async function fetchUpcomingEvents(earliestPublishedAt?: Date): Promise<DigestItem[]> {
@@ -427,7 +427,7 @@ async function fetchUpcomingEvents(earliestPublishedAt?: Date): Promise<DigestIt
     return (json?.data || [])
         .map(normalizeEventItem)
         .filter((item: DigestItem | null): item is DigestItem => Boolean(item))
-        .sort((a, b) => b.publishedAt.getTime() - a.publishedAt.getTime());
+        .sort((a: DigestItem, b: DigestItem) => b.publishedAt.getTime() - a.publishedAt.getTime());
 }
 
 async function loadDigestCatalog(earliestPublishedAt?: Date): Promise<DigestItem[]> {
@@ -437,7 +437,7 @@ async function loadDigestCatalog(earliestPublishedAt?: Date): Promise<DigestItem
     ]);
 
     return [...contents, ...events].sort(
-        (a, b) => b.publishedAt.getTime() - a.publishedAt.getTime()
+        (a: DigestItem, b: DigestItem) => b.publishedAt.getTime() - a.publishedAt.getTime()
     );
 }
 
@@ -742,7 +742,7 @@ export async function sendPreferenceDigestPreview(
 
     // Disable monthly entirely
     if (frequency === "monthly") {
-        return { success: false, items: 0 };
+        return { success: false, items: 0, email, frequency: "monthly", formats: [] };
     }
 
     // Force formats to ONLY be News Briefing and Upcoming Events
