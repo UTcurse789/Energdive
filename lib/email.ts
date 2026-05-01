@@ -297,13 +297,14 @@ export async function sendPreferenceDigestEmail(
     to: string,
     firstName: string,
     frequency: string,
-    sections: PreferenceDigestSection[]
+    sections: PreferenceDigestSection[],
+    sponsor?: { imageUrl: string; targetUrl: string } | null
 ): Promise<void> {
     const displayFrequency = `${frequency.charAt(0).toUpperCase()}${frequency.slice(1)}`;
     const subject = `Your ENERGDIVE ${displayFrequency} Briefing`;
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://www.energdive.com";
     const logoUrl = `${appUrl}/Energdive-Logo.png`;
-    const bannerUrl = `https://cdn.energdive.com/email_banner_80ffbb1268.jpg`;
+    const bannerUrl = `https://cdn.energdive.com/email_banner_removebg_preview_80e2da0393.png`;
     const manageUrl = `${appUrl}/dashboard/settings`;
     const unsubscribeUrl = `${appUrl}/unsubscribe?email=${encodeURIComponent(to)}`;
     const yr = new Date().getFullYear();
@@ -327,30 +328,41 @@ export async function sendPreferenceDigestEmail(
     const categoryLabels = ["POLICY", "MARKET", "ENERGY SECURITY", "INDUSTRY", "RENEWABLES", "TECH"];
     let topStoriesHtml = "";
     if (newsSection && newsSection.items.length > 0) {
-        const topItems = newsSection.items.slice(0, 3);
-        const cols = topItems
-            .map((item, i) => {
-                const label = categoryLabels[i] || escapeHtml(item.badge).toUpperCase();
-                return `<td class="story-col" width="33%" valign="top" style="padding:0 ${i === 1 ? '8' : '0'}px;">
+        const topItems = newsSection.items;
+        
+        const rowsHtml = [];
+        for (let i = 0; i < topItems.length; i += 3) {
+            const rowItems = topItems.slice(i, i + 3);
+            const cols = rowItems.map((item, idx) => {
+                return `<td class="story-col" width="33%" valign="top" style="padding:0 ${idx === 1 ? '8' : '0'}px; padding-bottom:16px;">
                     <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #f3f4f6;border-radius:12px;background:#ffffff;box-shadow:0 4px 6px rgba(0,0,0,0.02);">
                         <tr><td style="position:relative;">
                             ${item.imageUrl ? `<img src="${item.imageUrl}" alt="${escapeHtml(item.title)}" width="186" style="display:block;width:100%;height:140px;object-fit:cover;border-top-left-radius:12px;border-top-right-radius:12px;" />` : `<div style="width:100%;height:140px;background:#f3f4f6;border-top-left-radius:12px;border-top-right-radius:12px;"></div>`}
-                            <div style="position:absolute;top:12px;left:12px;width:24px;height:24px;background:#0a6c4c;color:#fff;font-size:11px;font-weight:800;line-height:24px;text-align:center;border-radius:50%;">0${i + 1}</div>
                         </td></tr>
                         <tr><td style="padding:16px;">
-                            <p style="margin:0 0 8px;color:#0a6c4c;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;">${label}</p>
                             <p style="margin:0 0 12px;color:#111827;font-size:13px;font-weight:700;line-height:1.4;"><a href="${item.href}" style="color:#111827;text-decoration:none;">${escapeHtml(item.title)}</a></p>
-                            <a href="${item.href}" style="color:#0a6c4c;font-size:12px;font-weight:700;text-decoration:none;">Read more &rarr;</a>
+                            <a href="${item.href}" style="display:inline-block;padding:6px 12px;background-color:#0a6c4c;color:#ffffff;font-size:12px;font-weight:700;text-decoration:none;border-radius:4px;">Read more &rarr;</a>
                         </td></tr>
                     </table>
                 </td>`;
-            })
-            .join("");
+            }).join("");
+            
+            let filler = "";
+            if (rowItems.length < 3) {
+                for(let f = rowItems.length; f < 3; f++) {
+                    filler += `<td class="story-col" width="33%" valign="top" style="padding:0"></td>`;
+                }
+            }
+            rowsHtml.push(`<tr>${cols}${filler}</tr>`);
+        }
 
         topStoriesHtml = `
-            <tr><td class="section-pad" style="padding:0 40px 32px;">
+            <tr><td class="section-pad" style="padding:0 40px 16px;">
                 <h3 style="margin:0 0 20px;color:#111827;font-size:18px;font-weight:800;">Top Stories</h3>
-                <table width="100%" cellpadding="0" cellspacing="0"><tr>${cols}</tr></table>
+                <table width="100%" cellpadding="0" cellspacing="0">${rowsHtml.join("")}</table>
+                <div style="text-align:center;margin-top:16px;margin-bottom:16px;">
+                    <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://www.energdive.com'}/news" style="display:inline-block;padding:12px 24px;background-color:#111827;color:#ffffff;font-size:14px;font-weight:700;text-decoration:none;border-radius:6px;">Check more</a>
+                </div>
             </td></tr>`;
     }
 
@@ -367,7 +379,7 @@ export async function sendPreferenceDigestEmail(
                         </td>
                         <td valign="top">
                             <p style="margin:0 0 10px;color:#111827;font-size:13px;font-weight:700;line-height:1.4;"><a href="${item.href}" style="color:#111827;text-decoration:none;">${escapeHtml(item.title)}</a></p>
-                            <a href="${item.href}" style="color:#0a6c4c;font-size:12px;font-weight:700;text-decoration:none;">Read more &rarr;</a>
+                            <a href="${item.href}" style="display:inline-block;padding:6px 12px;background-color:#0a6c4c;color:#ffffff;font-size:12px;font-weight:700;text-decoration:none;border-radius:4px;">Read more &rarr;</a>
                         </td>
                     </tr>
                 </table>
@@ -392,16 +404,9 @@ export async function sendPreferenceDigestEmail(
                         <tr>
                             ${item.imageUrl ? `<td class="insight-img" width="160" style="padding:0;"><img src="${item.imageUrl}" alt="${escapeHtml(item.title)}" width="160" style="display:block;width:160px;height:120px;object-fit:cover;" /></td>` : ""}
                             <td class="insight-text" style="padding:16px 20px;" valign="middle">
-                                <p style="margin:0 0 6px;color:#0a6c4c;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;">${badgeLabel}</p>
                                 <p style="margin:0 0 6px;color:#111827;font-size:14px;font-weight:700;line-height:1.4;"><a href="${item.href}" style="color:#111827;text-decoration:none;">${escapeHtml(item.title)}</a></p>
-                                <table width="100%" cellpadding="0" cellspacing="0"><tr>
-                                    <td valign="top" style="padding-right:16px;">
-                                        <p style="margin:0;color:#6b7280;font-size:12px;line-height:1.5;">${escapeHtml(item.crispLine)}</p>
-                                    </td>
-                                    <td valign="bottom" align="right" width="80">
-                                        <a href="${item.href}" style="color:#0a6c4c;font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap;">Read more &rarr;</a>
-                                    </td>
-                                </tr></table>
+                                <p style="margin:0 0 12px;color:#6b7280;font-size:12px;line-height:1.5;">${escapeHtml(item.crispLine)}</p>
+                                <a href="${item.href}" style="display:inline-block;padding:6px 12px;background-color:#0a6c4c;color:#ffffff;font-size:11px;font-weight:700;text-decoration:none;border-radius:4px;">Read more &rarr;</a>
                             </td>
                         </tr>
                     </table>
@@ -423,11 +428,10 @@ export async function sendPreferenceDigestEmail(
                 .map((item) => `<tr><td style="padding:0 0 14px;">
                     <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #f3f4f6;border-radius:12px;overflow:hidden;background:#ffffff;box-shadow:0 4px 6px rgba(0,0,0,0.02);">
                         <tr>
-                            ${item.imageUrl ? `<td class="other-img" width="140" style="padding:0;"><img src="${item.imageUrl}" alt="${escapeHtml(item.title)}" width="140" style="display:block;width:140px;height:100px;object-fit:cover;" /></td>` : ""}
+                            ${item.imageUrl ? `<td class="other-img" width="140" style="padding:0;"><img src="${item.imageUrl}" alt="${escapeHtml(item.title)}" width="140" style="display:block;width:140px;height:auto;object-fit:contain;" /></td>` : ""}
                             <td class="other-text" style="padding:16px 20px;" valign="middle">
-                                <p style="margin:0 0 4px;color:#0a6c4c;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;">${escapeHtml(item.badge).toUpperCase()}</p>
-                                <p style="margin:0 0 6px;color:#111827;font-size:14px;font-weight:700;line-height:1.4;"><a href="${item.href}" style="color:#111827;text-decoration:none;">${escapeHtml(item.title)}</a></p>
-                                <a href="${item.href}" style="color:#0a6c4c;font-size:12px;font-weight:700;text-decoration:none;">Read more &rarr;</a>
+                                <p style="margin:0 0 10px;color:#111827;font-size:14px;font-weight:700;line-height:1.4;"><a href="${item.href}" style="color:#111827;text-decoration:none;">${escapeHtml(item.title)}</a></p>
+                                <a href="${item.href}" style="display:inline-block;padding:6px 12px;background-color:#0a6c4c;color:#ffffff;font-size:12px;font-weight:700;text-decoration:none;border-radius:4px;">Read more &rarr;</a>
                             </td>
                         </tr>
                     </table>
@@ -462,18 +466,18 @@ export async function sendPreferenceDigestEmail(
             .story-col { display: block !important; width: 100% !important; padding: 0 0 16px 0 !important; }
             .story-col table { width: 100% !important; }
             .opinion-col { display: block !important; width: 100% !important; padding: 0 0 16px 0 !important; }
-            .insight-img { display: block !important; width: 100% !important; }
-            .insight-img img { width: 100% !important; height: 180px !important; }
-            .insight-text { display: block !important; width: 100% !important; }
+            .insight-img { display: block !important; width: 100% !important; padding: 16px !important; box-sizing: border-box !important; }
+            .insight-img img { width: 100% !important; height: auto !important; max-height: 180px !important; border-radius: 8px !important; }
+            .insight-text { display: block !important; width: 100% !important; padding: 0 16px 16px !important; box-sizing: border-box !important; }
             .footer-left { display: block !important; width: 100% !important; text-align: center !important; padding-bottom: 20px !important; }
             .footer-left img { margin: 0 auto 12px !important; }
             .footer-left p { text-align: center !important; }
             .footer-left table { margin: 0 auto !important; }
             .footer-right { display: block !important; width: 100% !important; text-align: center !important; }
             .footer-right p { text-align: center !important; }
-            .other-img { display: block !important; width: 100% !important; }
-            .other-img img { width: 100% !important; height: 160px !important; }
-            .other-text { display: block !important; width: 100% !important; }
+            .other-img { display: block !important; width: 100% !important; padding: 16px !important; box-sizing: border-box !important; }
+            .other-img img { width: 100% !important; height: auto !important; max-height: 160px !important; border-radius: 8px !important; object-fit: contain !important; }
+            .other-text { display: block !important; width: 100% !important; padding: 0 16px 16px !important; box-sizing: border-box !important; }
             h1 { font-size: 26px !important; }
         }
     </style>
@@ -516,6 +520,19 @@ export async function sendPreferenceDigestEmail(
                 <!-- ═══ FOOTER ═══ -->
                 <tr><td style="background:#ffffff;padding:24px 40px 40px;" class="section-pad">
                     <table width="100%" cellpadding="0" cellspacing="0"><tr><td style="border-top:1px solid #f3f4f6;padding-top:32px;">
+                        ${sponsor ? `
+                        <!-- SPONSOR BANNER -->
+                        <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:32px;border:1px solid #f3f4f6;border-radius:12px;background:#ffffff;box-shadow:0 4px 6px rgba(0,0,0,0.02);overflow:hidden;">
+                            <tr><td style="padding:8px 16px;border-bottom:1px solid #f3f4f6;">
+                                <p style="margin:0;color:#6b7280;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">Sponsored</p>
+                            </td></tr>
+                            <tr><td style="padding:0;">
+                                <a href="${sponsor.targetUrl}" target="_blank" style="display:block;">
+                                    <img src="${sponsor.imageUrl}" alt="Sponsor Banner" style="display:block;width:100%;max-width:100%;height:auto;" />
+                                </a>
+                            </td></tr>
+                        </table>
+                        ` : ""}
                         <table width="100%" cellpadding="0" cellspacing="0">
                             <tr>
                                 <td class="footer-left" valign="top" style="width:60%;">
