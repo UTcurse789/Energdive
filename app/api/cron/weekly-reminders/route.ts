@@ -7,8 +7,7 @@ const CRON_SECRET = process.env.CRON_SECRET || "";
  * POST /api/cron/weekly-reminders
  *
  * Cron job: Send reminder emails to users with verification_status = 'pending_verification'.
- * Maximum 4 emails per week per user, cycling through 4 template strategies.
- * Resets the weekly count every 7 days.
+ * Maximum 4 total emails per user, cycling through 4 template strategies once.
  *
  * Protected by CRON_SECRET header.
  * Should be called every ~6 hours by an external cron service (if not using instrumentation background timer).
