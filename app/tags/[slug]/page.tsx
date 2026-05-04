@@ -9,6 +9,7 @@ import { formatContentDate } from "@/lib/date";
 import { buildContentUrl } from "@/lib/content-routes";
 import { strapiImageUrl } from "@/lib/strapi-image";
 import { getCanonicalUrl } from "@/lib/seo";
+import { getOpinionContentKind } from "@/lib/content-tags";
 
 const STRAPI_BASE = process.env.NEXT_PUBLIC_STRAPI_URL || "https://cms.energdive.com";
 
@@ -56,13 +57,13 @@ function resolveImage(item: any) {
 async function fetchTagContent(tagSlug: string) {
     try {
         // Try slug-based filter first
-        let res = await fetch(
+        const res = await fetch(
             `${STRAPI_BASE}/api/contents?filters[tags][slug][$eq]=${encodeURIComponent(tagSlug)}&populate=*&sort=Date:desc&pagination[pageSize]=50`,
             { next: { revalidate: 3600 } }
         );
         if (!res.ok) return { articles: [], tagName: tagSlug };
 
-        let json = await res.json();
+        const json = await res.json();
         let rawData = json.data || [];
 
         // Fallback: if slug filter returned nothing, try matching by tag name
@@ -113,11 +114,19 @@ async function fetchTagContent(tagSlug: string) {
                     image: resolveImage(entry),
                     date: formatContentDate(attrs.Date || attrs.date || attrs.publishedAt || attrs.createdAt),
                     excerpt,
-                    contentType:
-                        attrs.type_of_content?.name ||
-                        attrs.type_of_content?.data?.attributes?.name ||
-                        attrs.type_of_content ||
-                        "Articles",
+                    contentType: (() => {
+                        const baseType =
+                            attrs.type_of_content?.name ||
+                            attrs.type_of_content?.data?.attributes?.name ||
+                            attrs.type_of_content ||
+                            "Articles";
+                        if (String(baseType).toLowerCase() !== "opinion") return baseType;
+
+                        const kind = getOpinionContentKind(attrs);
+                        if (kind === "interview") return "Interview";
+                        if (kind === "editorial") return "Editorial";
+                        return "Opinion";
+                    })(),
                     sector: firstSector?.name || "",
                     tags: getTagList(entry),
                 };

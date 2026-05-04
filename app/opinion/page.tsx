@@ -5,28 +5,17 @@ import Image from "next/image";
 import Link from "next/link";
 import {
   motion,
-  AnimatePresence,
   useScroll,
   useTransform,
 } from "framer-motion";
-import { ArrowUpRight, ArrowRight } from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
 import { slugify } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DateChip } from "@/components/ui/date-chip";
 import { strapiImageUrl } from "@/lib/strapi-image";
+import { getOpinionContentKind } from "@/lib/content-tags";
 
 const STRAPI = process.env.NEXT_PUBLIC_STRAPI_URL;
-
-function formatOpinionDate(value?: string) {
-  if (!value) return "";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-
-  const day = String(date.getDate()).padStart(2, "0");
-  const month = date.toLocaleString("en-US", { month: "short" }).toUpperCase();
-  const year = date.getFullYear();
-  return `${day} ${month} ${year}`;
-}
 
 /* ================================
    FETCH OPINIONS FROM STRAPI
@@ -59,7 +48,6 @@ function extractContentTagTitle(contentTag: any): string | null {
 
 export default function OpinionPage() {
   const [pureOpinions, setPureOpinions] = useState<any[]>([]);
-  const [interviews, setInterviews] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   const { scrollY } = useScroll();
@@ -100,7 +88,7 @@ export default function OpinionPage() {
 
       // Filter: only show items where content_tag is NOT "interview"
       const opinionsList = formatted.filter(
-        (a: any) => !a.contentTag || a.contentTag.toLowerCase() !== "interview"
+        (a: any) => getOpinionContentKind({ content_tag: a.contentTag ? { title: a.contentTag } : null }) === "opinion"
       );
 
       setPureOpinions(opinionsList);

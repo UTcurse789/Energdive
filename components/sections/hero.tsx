@@ -158,7 +158,7 @@ export function Hero({ topStories: propTopStories }: HeroProps) {
                                     )}
                                 </div>
 
-                                <Link href={buildContentUrl({ slug: featured.slug, type_of_content: featured.type_of_content })} className="block group/title">
+                                <Link href={buildContentUrl({ slug: featured.slug, type_of_content: featured.type_of_content, content_tag: featured.content_tag })} className="block group/title">
                                     <h1 className="text-2xl sm:text-3xl md:text-5xl font-serif font-bold leading-[1.15] text-[#1a1a1a] transition-colors duration-300 group-hover/title:text-[#09B697]">
                                         {featured.Title}
                                     </h1>
@@ -206,7 +206,7 @@ export function Hero({ topStories: propTopStories }: HeroProps) {
                             {topStories.map((story) => (
                                 <Link
                                     key={story.id}
-                                    href={buildContentUrl({ slug: story.slug, type_of_content: story.type_of_content })}
+                                    href={buildContentUrl({ slug: story.slug, type_of_content: story.type_of_content, content_tag: story.content_tag })}
                                     className="group flex gap-5 items-start border-b border-slate-50 pb-5 last:border-0"
                                 >
                                     <div className="relative h-20 w-28 shrink-0 overflow-hidden rounded-2xl bg-slate-100">

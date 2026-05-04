@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getOpinionContentKind } from "@/lib/content-tags";
 
 const STRAPI_BASE = process.env.NEXT_PUBLIC_STRAPI_URL || "https://cms.energdive.com";
 
@@ -30,11 +31,12 @@ export async function GET() {
         const opinionArticles: any[] = [];
         const interviewArticles: any[] = [];
         allOpinionItems.forEach((item: any) => {
-            const tag = item?.content_tag?.title || item?.content_tag?.Title ||
-                (Array.isArray(item?.content_tag) ? (item.content_tag[0]?.title || item.content_tag[0]?.Title) : null);
-            if (tag && tag.toLowerCase() === "interview") {
+            const kind = getOpinionContentKind(item);
+            if (kind === "interview") {
                 interviewArticles.push(item);
-            } else {
+                return;
+            }
+            if (kind !== "editorial") {
                 opinionArticles.push(item);
             }
         });
@@ -141,6 +143,8 @@ export async function GET() {
                 issues: [],
                 sectors: [],
                 tagCounts: {},
+                opinionArticles: [],
+                interviewArticles: [],
             },
             { status: 200 }
         );

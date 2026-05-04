@@ -1,45 +1,8 @@
 import { fetchStrapi, StrapiCollection } from '@/lib/strapi';
-
-interface ContentEntry {
-  slug: string;
-  type_of_content: any;
-  publishedAt: string;
-  updatedAt: string;
-  Date: string;
-}
-
-function getPrefix(typeName: string): string {
-  const map: Record<string, string> = {
-    news: '/news',
-    articles: '/articles',
-    opinion: '/opinion',
-    interview: '/interview',
-    'cover story': '/cover-story',
-    'case study': '/case-study',
-    editorial: '/editorial',
-    feature: '/feature',
-    'featured stories': '/featured-stories',
-    reports: '/reports',
-  };
-  return map[typeName.toLowerCase().trim()] || '/articles';
-}
-
-function extractTypeName(typeOfContent: any): string {
-  if (!typeOfContent) return 'news';
-  // Strapi v5 array shape
-  if (Array.isArray(typeOfContent)) {
-    return typeOfContent[0]?.Name ?? typeOfContent[0]?.name ?? 'news';
-  }
-  // v4 nested data shape
-  if (typeOfContent.data?.attributes?.name) {
-    return typeOfContent.data.attributes.name;
-  }
-  // Flat object shape
-  return typeOfContent.Name ?? typeOfContent.name ?? 'news';
-}
+import { buildContentUrl } from '@/lib/content-routes';
 
 async function getAllContent(): Promise<
-  { slug: string; type: string; publishedAt: string; updatedAt: string }[]
+  { slug: string; path: string; publishedAt: string; updatedAt: string }[]
 > {
   const allItems: any[] = [];
   let page = 1;
@@ -50,7 +13,7 @@ async function getAllContent(): Promise<
     while (true) {
       const res = await fetchStrapi<StrapiCollection<any>>('contents', {
         fields: ['slug', 'publishedAt', 'updatedAt', 'Date'],
-        populate: ['type_of_content'],
+        populate: ['type_of_content', 'content_tag'],
         sort: ['publishedAt:desc'],
         pagination: { page, pageSize },
       });
@@ -71,10 +34,13 @@ async function getAllContent(): Promise<
 
   return allItems.map((item: any) => {
     const attrs = item.attributes || item;
-    const typeName = extractTypeName(attrs.type_of_content);
     return {
       slug: attrs.slug,
-      type: typeName,
+      path: buildContentUrl({
+        slug: attrs.slug,
+        type_of_content: attrs.type_of_content,
+        content_tag: attrs.content_tag,
+      }),
       publishedAt: attrs.Date || attrs.publishedAt || attrs.createdAt,
       updatedAt: attrs.updatedAt || attrs.Date || attrs.publishedAt || attrs.createdAt,
     };
@@ -88,7 +54,7 @@ export async function GET() {
   const urls = articles
     .map(
       (a) =>
-        `<url><loc>${baseUrl}${getPrefix(a.type)}/${a.slug}</loc><lastmod>${new Date(a.updatedAt || a.publishedAt).toISOString()}</lastmod><changefreq>monthly</changefreq><priority>0.70</priority></url>`
+        `<url><loc>${baseUrl}${a.path}</loc><lastmod>${new Date(a.updatedAt || a.publishedAt).toISOString()}</lastmod><changefreq>monthly</changefreq><priority>0.70</priority></url>`
     )
     .join('');
 
