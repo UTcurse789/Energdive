@@ -38,17 +38,17 @@ export const metadata: Metadata = {
     },
   },
   alternates: {
-    canonical: "https://www.energdive.com/events",
+    canonical: "https://energdive.com/events",
   },
   openGraph: {
     title: "Energy Events & Conferences India | ENERGDIVE",
     description: "Explore upcoming energy events, conferences, and exhibitions shaping India’s energy ecosystem across oil & gas, power, renewables, and sustainability.",
-    url: "https://www.energdive.com/events",
+    url: "https://energdive.com/events",
     type: "website",
     siteName: "ENERGDIVE",
     images: [
       {
-        url: "https://www.energdive.com/og-image.jpg",
+        url: "https://energdive.com/og-image.jpg",
         width: 1200,
         height: 630,
       },

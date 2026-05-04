@@ -1,4 +1,4 @@
-const SITE_URL = "https://www.energdive.com";
+const SITE_URL = "https://energdive.com";
 
 function normalizePath(path: string): string {
   if (!path) return "/";

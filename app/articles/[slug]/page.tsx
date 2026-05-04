@@ -191,12 +191,14 @@ export default async function ArticlePage(props: any) {
 
     // Raw date for JSON-LD (needs ISO-8601, not formatted display string)
     const rawDate = articleData.Date || articleData.publishedAt || articleData.createdAt || "";
+    const modifiedDate = articleData.updatedAt || rawDate;
 
     return (
         <div className="min-h-screen bg-white">
             <ArticleJsonLd
                 title={article.title}
                 datePublished={rawDate}
+                dateModified={modifiedDate}
                 authorName={article.author?.name}
                 slug={slug}
                 imageUrl={article.image}

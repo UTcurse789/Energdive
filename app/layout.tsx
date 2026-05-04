@@ -89,7 +89,7 @@ const serif = Merriweather({
 // };
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://www.energdive.com"),
+  metadataBase: new URL("https://energdive.com"),
 
   title: {
     template: "%s - ENERGDIVE",

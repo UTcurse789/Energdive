@@ -4,20 +4,20 @@ export default function Head() {
       <link
         rel="alternate"
         type="application/rss+xml"
-        title="ENERGDIVE RSS Feed"
-        href="/rss.xml"
+        title="EnergDive News"
+        href="https://energdive.com/rss/news.xml"
       />
       <link
         rel="alternate"
         type="application/rss+xml"
-        title="ENERGDIVE News RSS Feed"
-        href="/rss/news.xml"
+        title="EnergDive Articles"
+        href="https://energdive.com/rss/articles.xml"
       />
       <link
         rel="alternate"
         type="application/rss+xml"
-        title="ENERGDIVE Articles RSS Feed"
-        href="/rss/articles.xml"
+        title="EnergDive Feed"
+        href="https://energdive.com/rss.xml"
       />
     </>
   );

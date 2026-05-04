@@ -205,6 +205,7 @@ export default async function NewsDetailPage({
 
     // Raw date for JSON-LD (needs ISO-8601, not formatted display string)
     const rawDate = attrs.Date || attrs.publishedAt || attrs.createdAt || "";
+    const modifiedDate = attrs.updatedAt || rawDate;
     const excerptText = Array.isArray(attrs.Excerpt)
         ? attrs.Excerpt[0]?.children?.[0]?.text || ""
         : "";
@@ -214,6 +215,7 @@ export default async function NewsDetailPage({
             <ArticleJsonLd
                 title={article.title}
                 datePublished={rawDate}
+                dateModified={modifiedDate}
                 authorName={article.author?.name}
                 slug={slug}
                 imageUrl={article.image}

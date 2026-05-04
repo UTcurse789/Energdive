@@ -51,17 +51,17 @@ export const metadata: Metadata = {
     },
   },
   alternates: {
-    canonical: "https://www.energdive.com/sectors",
+    canonical: "https://energdive.com/sectors",
   },
   openGraph: {
     title: "Energy Sectors India | ENERGDIVE",
     description: "Discover insights across India’s energy sectors including oil & gas, power, renewables, markets, storage, sustainability and emerging technologies.",
-    url: "https://www.energdive.com/sectors",
+    url: "https://energdive.com/sectors",
     type: "website",
     siteName: "ENERGDIVE",
     images: [
       {
-        url: "https://www.energdive.com/og-image.jpg",
+        url: "https://energdive.com/og-image.jpg",
         width: 1200,
         height: 630,
       },

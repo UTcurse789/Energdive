@@ -1,15 +1,27 @@
 import { fetchStrapi, StrapiCollection } from '@/lib/strapi';
 
-interface NewsItem {
+interface NewsItemAttributes {
   slug: string;
   Title: string;
+  title?: string;
   publishedAt: string;
   Date: string;
+  createdAt?: string;
+}
+
+interface NewsItemEntry {
+  attributes?: Partial<NewsItemAttributes>;
+  slug?: string;
+  Title?: string;
+  title?: string;
+  publishedAt?: string;
+  Date?: string;
+  createdAt?: string;
 }
 
 async function getRecentNews(): Promise<{ slug: string; title: string; publishedAt: string }[]> {
   try {
-    const res = await fetchStrapi<StrapiCollection<any>>('contents', {
+    const res = await fetchStrapi<StrapiCollection<NewsItemEntry>>('contents', {
       filters: {
         type_of_content: {
           name: { $eq: 'News' },
@@ -20,14 +32,23 @@ async function getRecentNews(): Promise<{ slug: string; title: string; published
       pagination: { pageSize: 100 },
     });
 
-    return (res.data || []).map((item: any) => {
-      const attrs = item.attributes || item;
-      return {
-        slug: attrs.slug,
-        title: attrs.Title || attrs.title || 'Untitled',
-        publishedAt: attrs.Date || attrs.publishedAt || attrs.createdAt,
-      };
-    });
+    return (res.data || [])
+      .map((item) => {
+        const attrs = item.attributes || item;
+        const slug = attrs.slug;
+        const title = attrs.Title || attrs.title || 'Untitled';
+        const publishedAt = attrs.Date || attrs.publishedAt || attrs.createdAt;
+
+        if (!slug || !publishedAt) {
+          return null;
+        }
+
+        return { slug, title, publishedAt };
+      })
+      .filter(
+        (item): item is { slug: string; title: string; publishedAt: string } =>
+          item !== null
+      );
   } catch (err) {
     console.error('Sitemap news fetch error:', err);
     return [];
@@ -58,7 +79,7 @@ export async function GET() {
   <url>
     <loc>${baseUrl}/news/${a.slug}</loc>
     <news:news>
-      <news:publication><news:name>ENERGDIVE</news:name><news:language>en</news:language></news:publication>
+      <news:publication><news:name>EnergDive</news:name><news:language>en</news:language></news:publication>
       <news:publication_date>${new Date(a.publishedAt).toISOString()}</news:publication_date>
       <news:title>${escapeXml(a.title)}</news:title>
     </news:news>
