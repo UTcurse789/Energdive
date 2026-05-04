@@ -7,8 +7,8 @@ export const SITEMAP_CACHE_CONTROL =
   "public, max-age=600, stale-while-revalidate=300";
 
 const STRAPI_BASE_URL =
-  process.env.NEXT_PUBLIC_STRAPI_API_URL ||
   process.env.NEXT_PUBLIC_STRAPI_URL ||
+  process.env.NEXT_PUBLIC_STRAPI_API_URL ||
   "https://cms.energdive.com";
 
 interface SitemapContentAttributes {
@@ -99,16 +99,32 @@ export async function getAllSitemapContent(): Promise<SitemapContentEntry[]> {
 
   try {
     while (true) {
-      const query = qs.stringify({
-        fields: ["slug", "Title", "title", "publishedAt", "updatedAt", "Date", "createdAt"],
+      const baseParams = {
         populate: ["type_of_content", "content_tag"],
         sort: ["publishedAt:desc", "updatedAt:desc", "Date:desc"],
         pagination: { page, pageSize },
-      }, { encodeValuesOnly: true });
+      };
+      const primaryQuery = qs.stringify(baseParams, { encodeValuesOnly: true });
 
-      const res = await fetch(`${STRAPI_BASE_URL}/api/contents?${query}`, {
+      let res = await fetch(`${STRAPI_BASE_URL}/api/contents?${primaryQuery}`, {
         next: { revalidate: SITEMAP_REVALIDATE },
       });
+
+      // Fallback to populate=* in case the CMS/public role behaves differently
+      // for explicit relation populate syntax on production.
+      if (!res.ok) {
+        const fallbackQuery = qs.stringify(
+          {
+            populate: "*",
+            sort: ["publishedAt:desc", "updatedAt:desc", "Date:desc"],
+            pagination: { page, pageSize },
+          },
+          { encodeValuesOnly: true }
+        );
+        res = await fetch(`${STRAPI_BASE_URL}/api/contents?${fallbackQuery}`, {
+          next: { revalidate: SITEMAP_REVALIDATE },
+        });
+      }
 
       if (!res.ok) {
         throw new Error(`Strapi sitemap fetch failed (${res.status}): ${res.statusText}`);
