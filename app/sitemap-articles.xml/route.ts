@@ -3,11 +3,10 @@ import {
   isArticleEntry,
   SITEMAP_BASE_URL,
   SITEMAP_CACHE_CONTROL,
-  SITEMAP_REVALIDATE,
   toIsoDate,
 } from "@/lib/sitemap-content";
 
-export const revalidate = SITEMAP_REVALIDATE;
+export const revalidate = 600;
 
 export async function GET() {
   const articles = (await getAllSitemapContent()).filter(isArticleEntry);
