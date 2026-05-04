@@ -1,6 +1,6 @@
-import { createRssResponse, RSS_REVALIDATE } from "@/lib/rss";
+import { createRssResponse } from "@/lib/rss";
 
-export const revalidate = RSS_REVALIDATE;
+export const revalidate = 3600;
 
 export async function GET() {
   return createRssResponse({
