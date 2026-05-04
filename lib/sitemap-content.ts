@@ -1,10 +1,15 @@
+import qs from "qs";
 import { buildContentUrl } from "@/lib/content-routes";
-import { fetchStrapi, StrapiCollection } from "@/lib/strapi";
 
 export const SITEMAP_BASE_URL = "https://www.energdive.com";
 export const SITEMAP_REVALIDATE = 600;
 export const SITEMAP_CACHE_CONTROL =
   "public, max-age=600, stale-while-revalidate=300";
+
+const STRAPI_BASE_URL =
+  process.env.NEXT_PUBLIC_STRAPI_API_URL ||
+  process.env.NEXT_PUBLIC_STRAPI_URL ||
+  "https://cms.energdive.com";
 
 interface SitemapContentAttributes {
   slug?: string;
@@ -38,6 +43,19 @@ export interface SitemapContentEntry {
   section: string;
   publishedAt: string;
   updatedAt: string;
+}
+
+interface SitemapContentResponse {
+  data?: unknown[];
+  meta?: {
+    pagination?: {
+      pageCount?: number;
+    };
+  };
+}
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" ? (value as Record<string, unknown>) : null;
 }
 
 function getAttributes(item: SitemapContentApiItem): SitemapContentAttributes {
@@ -81,20 +99,29 @@ export async function getAllSitemapContent(): Promise<SitemapContentEntry[]> {
 
   try {
     while (true) {
-      const res = await fetchStrapi<StrapiCollection<SitemapContentApiItem>>("contents", {
+      const query = qs.stringify({
         fields: ["slug", "Title", "title", "publishedAt", "updatedAt", "Date", "createdAt"],
         populate: ["type_of_content", "content_tag"],
         sort: ["publishedAt:desc", "updatedAt:desc", "Date:desc"],
         pagination: { page, pageSize },
+      }, { encodeValuesOnly: true });
+
+      const res = await fetch(`${STRAPI_BASE_URL}/api/contents?${query}`, {
+        next: { revalidate: SITEMAP_REVALIDATE },
       });
 
-      const items = (res.data || [])
-        .map((item) => {
-          if (!item || typeof item !== "object") {
-            return null;
-          }
+      if (!res.ok) {
+        throw new Error(`Strapi sitemap fetch failed (${res.status}): ${res.statusText}`);
+      }
 
-          return getAttributes(item as SitemapContentApiItem);
+      const json = (await res.json()) as SitemapContentResponse;
+      const items = (json.data || [])
+        .map((item) => {
+          const record = asRecord(item);
+          if (!record) return null;
+
+          const attrs = asRecord(record.attributes);
+          return (attrs || record) as SitemapContentApiItem;
         })
         .filter((item): item is SitemapContentApiItem => item !== null);
 
@@ -102,7 +129,7 @@ export async function getAllSitemapContent(): Promise<SitemapContentEntry[]> {
 
       allItems.push(...items);
 
-      const totalPages = res.meta?.pagination?.pageCount ?? 1;
+      const totalPages = json.meta?.pagination?.pageCount ?? 1;
       if (page >= totalPages) break;
       page += 1;
     }
