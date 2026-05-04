@@ -16,7 +16,7 @@ export function startCronScheduler() {
 
     // Run abandoned cart drip processing every 5 minutes
     const abandonedCartIntervalMs = 5 * 60 * 1000;
-    setInterval(async () => {
+    const abandonedCartTimer = setInterval(async () => {
         try {
             console.log("[CRON-SCHEDULER] Firing abandoned cart drip processor...");
             await processAbandonedCartDrip();
@@ -24,10 +24,11 @@ export function startCronScheduler() {
             console.error("[CRON-SCHEDULER] Abandoned cart processing failed:", error);
         }
     }, abandonedCartIntervalMs);
+    abandonedCartTimer.unref?.();
 
     // Run weekly reminders every 6 hours
     const weeklyRemindersIntervalMs = 6 * 60 * 60 * 1000;
-    setInterval(async () => {
+    const weeklyRemindersTimer = setInterval(async () => {
         try {
             console.log("[CRON-SCHEDULER] Firing weekly reminders processor...");
             await processWeeklyReminders();
@@ -35,4 +36,5 @@ export function startCronScheduler() {
             console.error("[CRON-SCHEDULER] Weekly reminders processing failed:", error);
         }
     }, weeklyRemindersIntervalMs);
+    weeklyRemindersTimer.unref?.();
 }
