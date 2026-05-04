@@ -1,7 +1,41 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyOtp } from "@/lib/otp-store";
 import { query, getClient } from "@/lib/db";
-import { sendMembershipWelcomeEmail } from "@/lib/email";
+import { sendMembershipWelcomeCardEmail } from "@/lib/email";
+import { issueMagicToken } from "@/lib/queries";
+
+function getPrimaryCommunityLabel(value: unknown): string | null {
+    if (!value) {
+        return null;
+    }
+
+    if (Array.isArray(value)) {
+        return value.map((item) => String(item).trim()).find(Boolean) || null;
+    }
+
+    if (typeof value === "string") {
+        const trimmed = value.trim();
+        if (!trimmed) {
+            return null;
+        }
+
+        try {
+            const parsed = JSON.parse(trimmed);
+            if (Array.isArray(parsed)) {
+                return parsed.map((item) => String(item).trim()).find(Boolean) || null;
+            }
+        } catch {
+            // Fall through to delimiter parsing.
+        }
+
+        return trimmed
+            .split(/[;,]/)
+            .map((item) => item.trim())
+            .find(Boolean) || null;
+    }
+
+    return null;
+}
 
 /**
  * POST /api/auth/confirm-otp
@@ -19,7 +53,7 @@ import { sendMembershipWelcomeEmail } from "@/lib/email";
  *
  * Body: { pendingId: number, otp: string }
  */
-export async function POST(req: NextRequest, { params }: { params: Promise<Record<string, string>> }) {
+export async function POST(req: NextRequest) {
     const requestId = Math.random().toString(36).slice(2, 8);
     const log = (msg: string) => console.log(`[CONFIRM-OTP:${requestId}] ${msg}`);
 
@@ -146,10 +180,22 @@ export async function POST(req: NextRequest, { params }: { params: Promise<Recor
         // NOTE: Brevo sync and CRM sync are deferred to /api/onboarding/submit
         // to ensure full enriched data (job_title, community, etc.) is available.
         try {
-            await sendMembershipWelcomeEmail(pending.email, pending.name || "Member", membershipId);
+            const { token: accessToken } = await issueMagicToken(userId);
+            await sendMembershipWelcomeCardEmail(
+                pending.email,
+                pending.name || "Member",
+                membershipId,
+                {
+                    company: pending.company || null,
+                    community: getPrimaryCommunityLabel(pending.community_portal),
+                    joinedAt: new Date(),
+                    accessToken,
+                }
+            );
             log(`Welcome email sent to ${pending.email}`);
-        } catch (emailErr: any) {
-            console.warn(`[CONFIRM-OTP:${requestId}] Welcome email failed (non-fatal):`, emailErr.message);
+        } catch (emailErr: unknown) {
+            const message = emailErr instanceof Error ? emailErr.message : String(emailErr);
+            console.warn(`[CONFIRM-OTP:${requestId}] Welcome email failed (non-fatal):`, message);
         }
 
         return NextResponse.json({
@@ -158,10 +204,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<Recor
             membershipId,
             message: "Verification complete. Welcome to EnergClub!",
         });
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error(`[CONFIRM-OTP:${requestId}] Unhandled error:`, error);
         return NextResponse.json(
-            { error: "Internal server error", details: error.message },
+            { error: "Internal server error", details: error instanceof Error ? error.message : String(error) },
             { status: 500 }
         );
     }
