@@ -88,7 +88,16 @@ export async function getAllSitemapContent(): Promise<SitemapContentEntry[]> {
         pagination: { page, pageSize },
       });
 
-      const items = (res.data || []).map((item) => item.attributes ?? {}).filter(Boolean);
+      const items = (res.data || [])
+        .map((item) => {
+          if (!item || typeof item !== "object") {
+            return null;
+          }
+
+          return getAttributes(item as SitemapContentApiItem);
+        })
+        .filter((item): item is SitemapContentApiItem => item !== null);
+
       if (items.length === 0) break;
 
       allItems.push(...items);
