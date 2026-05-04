@@ -248,7 +248,7 @@ export default async function Home() {
   return (
     <>
       {/* Homepage Hero Ad Banner */}
-      <AdBanner placement="home_platform_hero" variant="banner" className="-mt-8 pb-4 md:-mt-10 md:pb-5" />
+      <AdBanner placement="home_platform_hero" variant="banner" className="pb-4 md:pb-5" />
 
       {/* Cover Story (left) + Trending (right) — the original Hero */}
       <Hero topStories={heroTopStories} />
