@@ -65,10 +65,6 @@ function HeroAd({ ad }: { ad: Advertisement }) {
                     className="object-cover transition-transform duration-500 group-hover:scale-[1.015]"
                 />
             </div>
-            {/* Subtle "Partner" label */}
-            <span className="absolute top-3 right-3 text-[9px] font-bold uppercase tracking-[0.15em] text-white/70 bg-black/30 backdrop-blur-md px-2.5 py-1 rounded-full">
-                Partner
-            </span>
         </Wrapper>
     );
 }
@@ -132,11 +128,6 @@ function VerticalAd({ ad }: { ad: Advertisement }) {
                     </p>
                 </div>
             </div>
-
-            {/* Top "Partner" badge */}
-            <span className="absolute top-3 left-3 text-[9px] font-bold uppercase tracking-[0.15em] text-white/80 bg-black/25 backdrop-blur-md px-2.5 py-1 rounded-full">
-                Partner
-            </span>
         </Wrapper>
     );
 }
