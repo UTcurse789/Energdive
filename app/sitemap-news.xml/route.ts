@@ -1,5 +1,5 @@
 import {
-  escapeXml,
+  escapeXml as escapeXmlValue,
   getAllSitemapContent,
   isNewsEntry,
   SITEMAP_BASE_URL,
@@ -20,7 +20,7 @@ export async function GET() {
     <news:news>
       <news:publication><news:name>EnergDive</news:name><news:language>en</news:language></news:publication>
       <news:publication_date>${toIsoDate(a.publishedAt)}</news:publication_date>
-      <news:title>${escapeXml(a.title)}</news:title>
+      <news:title>${escapeXmlValue(a.title)}</news:title>
     </news:news>
     <lastmod>${toIsoDate(a.updatedAt)}</lastmod>
     <priority>0.90</priority>
