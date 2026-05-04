@@ -2,6 +2,7 @@ import { query } from "@/lib/db";
 import { createMagicLink } from "@/lib/magic-link-db";
 import { sendDripEmail, calculateNextDripSend } from "@/lib/abandoned-cart-emails";
 import { getReminderSendWindowStatus, sendReminderEmail } from "@/lib/reminder-emails";
+import { processPreferenceDigests } from "@/lib/preference-digests";
 import crypto from "crypto";
 
 const CRON_SECRET = process.env.CRON_SECRET || "";
@@ -87,15 +88,16 @@ export async function processAbandonedCartDrip() {
 
                 sent++;
                 log(`Sent drip step ${nextStep} to ${lead.email}`);
-            } catch (err: any) {
+            } catch (err: unknown) {
+                const message = err instanceof Error ? err.message : String(err);
                 errors++;
-                console.error(`[ABANDONED-CART:${requestId}] Failed for ${lead.email}:`, err.message);
+                console.error(`[ABANDONED-CART:${requestId}] Failed for ${lead.email}:`, message);
             }
         }
 
         log(`Done. Sent: ${sent}, Errors: ${errors}`);
         return { success: true, processed, sent, errors };
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error(`[ABANDONED-CART:${requestId}] Fatal error:`, error);
         throw error;
     }
@@ -190,16 +192,37 @@ export async function processWeeklyReminders() {
 
                 sent++;
                 log(`Sent reminder #${reminderNumber} to ${user.email}`);
-            } catch (err: any) {
+            } catch (err: unknown) {
+                const message = err instanceof Error ? err.message : String(err);
                 errors++;
-                console.error(`[WEEKLY-REMINDER:${requestId}] Failed for ${user.email}:`, err.message);
+                console.error(`[WEEKLY-REMINDER:${requestId}] Failed for ${user.email}:`, message);
             }
         }
 
         log(`Done. Sent: ${sent}, Errors: ${errors}`);
         return { success: true, processed, sent, errors };
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error(`[WEEKLY-REMINDER:${requestId}] Fatal error:`, error);
+        throw error;
+    }
+}
+
+/**
+ * Send personalized content digests based on onboarding subscription preferences.
+ * Users receive at most one digest per daily/weekly/monthly period, and only
+ * when new matching content exists since their previous digest.
+ */
+export async function processContentPreferenceDigests(limit = 100) {
+    const requestId = crypto.randomUUID().slice(0, 8);
+    const log = (msg: string) => console.log(`[CONTENT-DIGEST:${requestId}] ${msg}`);
+
+    try {
+        log(`Starting content digest cron with limit ${limit}...`);
+        const result = await processPreferenceDigests({ limit });
+        log(`Done. Due: ${result.due}, Sent: ${result.sent}, Skipped: ${result.skipped}, Errors: ${result.errors}`);
+        return result;
+    } catch (error: unknown) {
+        console.error(`[CONTENT-DIGEST:${requestId}] Fatal error:`, error);
         throw error;
     }
 }

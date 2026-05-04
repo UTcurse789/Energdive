@@ -22,6 +22,9 @@ export interface DashboardProfile {
     job_title: string | null;
     organization: string | null;
     onboarding_completed: boolean;
+    preferred_frequency: string | null;
+    preferred_formats: string[];
+    content_digest_opted_out: boolean;
     industry_id: number | null;
     industry_name: string | null;
     sub_industry_id: number | null;

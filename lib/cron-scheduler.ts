@@ -1,4 +1,4 @@
-import { processAbandonedCartDrip, processWeeklyReminders } from "./cron-jobs";
+import { processAbandonedCartDrip, processContentPreferenceDigests, processWeeklyReminders } from "./cron-jobs";
 
 let isStarted = false;
 
@@ -37,4 +37,29 @@ export function startCronScheduler() {
         }
     }, weeklyRemindersIntervalMs);
     weeklyRemindersTimer.unref?.();
+
+    // Run preference digests once daily at 4 PM IST (10:30 UTC)
+    // Check every 5 minutes, fire only inside the 4 PM IST window
+    let lastDigestDate = "";
+    const digestCheckIntervalMs = 5 * 60 * 1000;
+    const digestTimer = setInterval(async () => {
+        try {
+            // Current time in IST
+            const nowUtc = new Date();
+            const istMs = nowUtc.getTime() + 5.5 * 60 * 60 * 1000;
+            const istDate = new Date(istMs);
+            const istHour = istDate.getUTCHours();
+            const todayKey = istDate.toISOString().slice(0, 10); // YYYY-MM-DD
+
+            // Only fire between 16:00–16:59 IST, once per day
+            if (istHour === 16 && lastDigestDate !== todayKey) {
+                lastDigestDate = todayKey;
+                console.log(`[CRON-SCHEDULER] Firing daily preference digest at 4 PM IST (${todayKey})...`);
+                await processContentPreferenceDigests();
+            }
+        } catch (error) {
+            console.error("[CRON-SCHEDULER] Preference digest processing failed:", error);
+        }
+    }, digestCheckIntervalMs);
+    digestTimer.unref?.();
 }

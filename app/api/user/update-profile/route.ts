@@ -29,6 +29,9 @@ export async function POST(req: Request) {
             industryId: body.industryId,
             subIndustryId: body.subIndustryId,
             communitySelections: body.communitySelections,
+            preferredFrequency: body.preferredFrequency,
+            preferredFormats: body.preferredFormats,
+            contentDigestOptedOut: body.contentDigestOptedOut,
         });
 
         // Sync updated profile to Brevo
