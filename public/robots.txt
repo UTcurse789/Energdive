@@ -29,3 +29,5 @@ Disallow: /
 
 Sitemap: https://energdive.com/sitemap.xml
 Sitemap: https://energdive.com/sitemap-news.xml
+Sitemap: https://energdive.com/sitemap-articles.xml
+Sitemap: https://energdive.com/sitemap-static.xml

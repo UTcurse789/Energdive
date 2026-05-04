@@ -52,6 +52,17 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [
       {
+        source: "/:path*",
+        has: [
+          {
+            type: "host",
+            value: "www.energdive.com",
+          },
+        ],
+        destination: "https://energdive.com/:path*",
+        statusCode: 301,
+      },
+      {
         source: '/login',
         destination: '/auth',
         permanent: true,

@@ -130,7 +130,7 @@ export async function generateMetadata({
     const avatarData = attrs.avatar?.data?.attributes || attrs.avatar;
     const avatarUrl = avatarData?.url
         ? (avatarData.url.startsWith("http") ? avatarData.url : strapiImageUrl(avatarData.url))
-        : "https://www.energdive.com/og-image.jpg";
+        : "https://energdive.com/og-image.jpg";
 
     const description = authorBio
         ? authorBio.substring(0, 160)

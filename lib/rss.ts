@@ -4,7 +4,7 @@ import { strapiMediaUrl } from "@/lib/strapi-image";
 
 export const RSS_REVALIDATE = 3600;
 
-const DEFAULT_SITE_URL = "https://www.energdive.com";
+const DEFAULT_SITE_URL = "https://energdive.com";
 
 type JsonRecord = Record<string, unknown>;
 

@@ -30,17 +30,17 @@ export const metadata: Metadata = {
     },
   },
   alternates: {
-    canonical: "https://www.energdive.com/contact",
+    canonical: "https://energdive.com/contact",
   },
   openGraph: {
     title: "Contact ENERGDIVE | Energy Intelligence Platform",
     description: "Reach out to ENERGDIVE for editorial queries, advertising opportunities, partnerships, and support across India’s energy ecosystem.",
-    url: "https://www.energdive.com/contact",
+    url: "https://energdive.com/contact",
     type: "website",
     siteName: "ENERGDIVE",
     images: [
       {
-        url: "https://www.energdive.com/og-image.jpg",
+        url: "https://energdive.com/og-image.jpg",
         width: 1200,
         height: 630,
       },

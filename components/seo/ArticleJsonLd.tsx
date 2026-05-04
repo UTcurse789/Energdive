@@ -1,3 +1,4 @@
+import Script from "next/script";
 import { getCanonicalUrl } from "@/lib/seo";
 
 /**
@@ -13,6 +14,8 @@ interface ArticleJsonLdProps {
     title: string;
     /** ISO-8601 date string (e.g. "2026-04-08") or raw Date string from Strapi */
     datePublished: string;
+    /** ISO-8601 updated date string */
+    dateModified?: string;
     /** Author display name */
     authorName?: string | null;
     /** Article slug used to build the canonical URL */
@@ -28,55 +31,60 @@ interface ArticleJsonLdProps {
 export function ArticleJsonLd({
     title,
     datePublished,
+    dateModified,
     authorName,
     slug,
     imageUrl,
     section,
     description,
 }: ArticleJsonLdProps) {
-    // Normalise the date to ISO-8601 — Strapi may return "2026-04-08" or a
-    // full ISO string; Date constructor handles both.
-    const isoDate = (() => {
+    const toIsoDate = (value: string) => {
         try {
-            const d = new Date(datePublished);
-            return Number.isNaN(d.getTime()) ? datePublished : d.toISOString();
+            const d = new Date(value);
+            return Number.isNaN(d.getTime()) ? value : d.toISOString();
         } catch {
-            return datePublished;
+            return value;
         }
-    })();
+    };
+
+    const toAbsoluteUrl = (value: string) => {
+        if (!value) return getCanonicalUrl("/og-image.jpg");
+        if (value.startsWith("http://") || value.startsWith("https://")) return value;
+        return getCanonicalUrl(value);
+    };
 
     const canonicalUrl = getCanonicalUrl(`/${section}/${slug}`);
+    const publishedIsoDate = toIsoDate(datePublished);
+    const modifiedIsoDate = toIsoDate(dateModified || datePublished);
+    const normalizedImageUrl = toAbsoluteUrl(imageUrl);
+    const normalizedDescription = description?.trim();
 
     const jsonLd = {
         "@context": "https://schema.org",
         "@type": "NewsArticle",
         headline: title,
-        image: [imageUrl],
-        datePublished: isoDate,
-        dateModified: isoDate,
-        author: [
-            {
-                "@type": "Person",
-                name: authorName || "Energdive Editorial",
-            },
-        ],
+        datePublished: publishedIsoDate,
+        dateModified: modifiedIsoDate,
+        author: {
+            "@type": "Person",
+            name: authorName || "EnergDive Editorial",
+        },
         publisher: {
             "@type": "Organization",
-            name: "Energdive",
+            name: "EnergDive",
             logo: {
                 "@type": "ImageObject",
-                url: getCanonicalUrl("/fav.jpg"),
+                url: getCanonicalUrl("/logo.png"),
             },
         },
-        mainEntityOfPage: {
-            "@type": "WebPage",
-            "@id": canonicalUrl,
-        },
-        ...(description ? { description } : {}),
+        image: normalizedImageUrl,
+        url: canonicalUrl,
+        ...(normalizedDescription ? { description: normalizedDescription } : {}),
     };
 
     return (
-        <script
+        <Script
+            id={`news-article-json-ld-${section}-${slug}`}
             type="application/ld+json"
             dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />

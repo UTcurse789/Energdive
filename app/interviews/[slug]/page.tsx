@@ -319,12 +319,14 @@ export default async function OpinionDetailPage({ params }: { params: Promise<{ 
 
   // Raw date for JSON-LD (needs ISO-8601, not formatted display string)
   const rawDate = article.Date || article.attributes?.Date || article.publishedAt || article.createdAt || "";
+  const modifiedDate = article.updatedAt || article.attributes?.updatedAt || rawDate;
 
   return (
     <>
       <ArticleJsonLd
         title={opinion.title}
         datePublished={rawDate}
+        dateModified={modifiedDate}
         authorName={opinion.author?.name}
         slug={slug}
         imageUrl={opinion.featuredImage}

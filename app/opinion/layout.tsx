@@ -38,17 +38,17 @@ export const metadata: Metadata = {
     },
   },
   alternates: {
-    canonical: "https://www.energdive.com/opinion",
+    canonical: "https://energdive.com/opinion",
   },
   openGraph: {
     title: "Energy Opinion & Expert Views India | ENERGDIVE",
     description: "Read expert opinions, commentary, and perspectives shaping India’s energy transition and sustainability agenda.",
-    url: "https://www.energdive.com/opinion",
+    url: "https://energdive.com/opinion",
     type: "website",
     siteName: "ENERGDIVE",
     images: [
       {
-        url: "https://www.energdive.com/og-image.jpg",
+        url: "https://energdive.com/og-image.jpg",
         width: 1200,
         height: 630,
       },

@@ -38,17 +38,17 @@ export const metadata: Metadata = {
     },
   },
   alternates: {
-    canonical: "https://www.energdive.com/videos",
+    canonical: "https://energdive.com/videos",
   },
   openGraph: {
     title: "Energy Videos & Expert Talks India | ENERGDIVE",
     description: "Watch expert conversations and leadership insights shaping India’s energy transition across oil & gas, power, renewables, and sustainability.",
-    url: "https://www.energdive.com/videos",
+    url: "https://energdive.com/videos",
     type: "website",
     siteName: "ENERGDIVE",
     images: [
       {
-        url: "https://www.energdive.com/og-image.jpg",
+        url: "https://energdive.com/og-image.jpg",
         width: 1200,
         height: 630,
       },

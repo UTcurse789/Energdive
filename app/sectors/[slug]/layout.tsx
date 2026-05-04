@@ -50,17 +50,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         },
       },
       alternates: {
-        canonical: "https://www.energdive.com/sectors/oil-gas",
+        canonical: "https://energdive.com/sectors/oil-gas",
       },
       openGraph: {
         title: "Oil & Gas Industry India | ENERGDIVE",
         description: "Get insights on India’s oil & gas sector including upstream, refining, pipelines, petrochemicals and energy markets shaping the industry’s future.",
-        url: "https://www.energdive.com/sectors/oil-gas",
+        url: "https://energdive.com/sectors/oil-gas",
         type: "website",
         siteName: "ENERGDIVE",
         images: [
           {
-            url: "https://www.energdive.com/og-image.jpg",
+            url: "https://energdive.com/og-image.jpg",
             width: 1200,
             height: 630,
           },
@@ -126,17 +126,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         },
       },
       alternates: {
-        canonical: "https://www.energdive.com/sectors/power-generation",
+        canonical: "https://energdive.com/sectors/power-generation",
       },
       openGraph: {
         title: "Power Generation India | ENERGDIVE",
         description: "Explore insights on India’s power generation sector including thermal, nuclear, utilities, grid innovation, and energy transition.",
-        url: "https://www.energdive.com/sectors/power-generation",
+        url: "https://energdive.com/sectors/power-generation",
         type: "website",
         siteName: "ENERGDIVE",
         images: [
           {
-            url: "https://www.energdive.com/og-image.jpg",
+            url: "https://energdive.com/og-image.jpg",
             width: 1200,
             height: 630,
           },
@@ -200,17 +200,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         },
       },
       alternates: {
-        canonical: "https://www.energdive.com/sectors/renewables",
+        canonical: "https://energdive.com/sectors/renewables",
       },
       openGraph: {
         title: "Renewable Energy India | ENERGDIVE",
         description: "Track India’s renewable energy growth across solar, wind, hydro, and bioenergy with insights on policy, investments, and market developments.",
-        url: "https://www.energdive.com/sectors/renewables",
+        url: "https://energdive.com/sectors/renewables",
         type: "website",
         siteName: "ENERGDIVE",
         images: [
           {
-            url: "https://www.energdive.com/og-image.jpg",
+            url: "https://energdive.com/og-image.jpg",
             width: 1200,
             height: 630,
           },
@@ -274,17 +274,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         },
       },
       alternates: {
-        canonical: "https://www.energdive.com/sectors/transmission",
+        canonical: "https://energdive.com/sectors/transmission",
       },
       openGraph: {
         title: "Power Transmission India | ENERGDIVE",
         description: "Track grid expansion, smart grid technologies, and transmission infrastructure shaping India’s evolving power system.",
-        url: "https://www.energdive.com/sectors/transmission",
+        url: "https://energdive.com/sectors/transmission",
         type: "website",
         siteName: "ENERGDIVE",
         images: [
           {
-            url: "https://www.energdive.com/og-image.jpg",
+            url: "https://energdive.com/og-image.jpg",
             width: 1200,
             height: 630,
           },
@@ -350,17 +350,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         },
       },
       alternates: {
-        canonical: "https://www.energdive.com/sectors/distribution",
+        canonical: "https://energdive.com/sectors/distribution",
       },
       openGraph: {
         title: "Power Distribution India | ENERGDIVE",
         description: "Track smart meters, EV charging, and digital utilities transforming India’s power distribution and consumer energy ecosystem.",
-        url: "https://www.energdive.com/sectors/distribution",
+        url: "https://energdive.com/sectors/distribution",
         type: "website",
         siteName: "ENERGDIVE",
         images: [
           {
-            url: "https://www.energdive.com/og-image.jpg",
+            url: "https://energdive.com/og-image.jpg",
             width: 1200,
             height: 630,
           },
@@ -425,17 +425,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         },
       },
       alternates: {
-        canonical: "https://www.energdive.com/sectors/electricity-markets",
+        canonical: "https://energdive.com/sectors/electricity-markets",
       },
       openGraph: {
         title: "Electricity Markets India | ENERGDIVE",
         description: "Understand power trading, carbon markets, and electricity pricing trends shaping India’s evolving energy markets.",
-        url: "https://www.energdive.com/sectors/electricity-markets",
+        url: "https://energdive.com/sectors/electricity-markets",
         type: "website",
         siteName: "ENERGDIVE",
         images: [
           {
-            url: "https://www.energdive.com/og-image.jpg",
+            url: "https://energdive.com/og-image.jpg",
             width: 1200,
             height: 630,
           },
@@ -498,17 +498,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         },
       },
       alternates: {
-        canonical: "https://www.energdive.com/sectors/new-energies",
+        canonical: "https://energdive.com/sectors/new-energies",
       },
       openGraph: {
         title: "New Energy India | ENERGDIVE",
         description: "Track green hydrogen, e-fuels, and emerging low-carbon technologies shaping India’s next phase of energy transition.",
-        url: "https://www.energdive.com/sectors/new-energies",
+        url: "https://energdive.com/sectors/new-energies",
         type: "website",
         siteName: "ENERGDIVE",
         images: [
           {
-            url: "https://www.energdive.com/og-image.jpg",
+            url: "https://energdive.com/og-image.jpg",
             width: 1200,
             height: 630,
           },
@@ -572,17 +572,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         },
       },
       alternates: {
-        canonical: "https://www.energdive.com/sectors/energy-storage",
+        canonical: "https://energdive.com/sectors/energy-storage",
       },
       openGraph: {
         title: "Energy Storage India | ENERGDIVE",
         description: "Track battery storage, pumped hydro, and long-duration energy storage solutions shaping India’s grid flexibility and renewable integration.",
-        url: "https://www.energdive.com/sectors/energy-storage",
+        url: "https://energdive.com/sectors/energy-storage",
         type: "website",
         siteName: "ENERGDIVE",
         images: [
           {
-            url: "https://www.energdive.com/og-image.jpg",
+            url: "https://energdive.com/og-image.jpg",
             width: 1200,
             height: 630,
           },
@@ -646,17 +646,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         },
       },
       alternates: {
-        canonical: "https://www.energdive.com/sectors/sustainability-and-safety",
+        canonical: "https://energdive.com/sectors/sustainability-and-safety",
       },
       openGraph: {
         title: "Sustainability & Safety in Energy India | ENERGDIVE",
         description: "Explore energy sustainability, HSE practices, and safety innovations shaping responsible and resilient energy systems in India.",
-        url: "https://www.energdive.com/sectors/sustainability-and-safety",
+        url: "https://energdive.com/sectors/sustainability-and-safety",
         type: "website",
         siteName: "ENERGDIVE",
         images: [
           {
-            url: "https://www.energdive.com/og-image.jpg",
+            url: "https://energdive.com/og-image.jpg",
             width: 1200,
             height: 630,
           },
@@ -688,12 +688,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     title: `${formattedTitle} | ENERGDIVE`,
     description: `Insights and intelligence for the ${formattedTitle} sector in India's energy transition.`,
     alternates: {
-      canonical: `https://www.energdive.com/sectors/${slug}`,
+      canonical: `https://energdive.com/sectors/${slug}`,
     },
     openGraph: {
       title: `${formattedTitle} | ENERGDIVE`,
       description: `Insights and intelligence for the ${formattedTitle} sector in India's energy transition.`,
-      url: `https://www.energdive.com/sectors/${slug}`,
+      url: `https://energdive.com/sectors/${slug}`,
     }
   };
 }
