@@ -27,7 +27,7 @@ Disallow: /
 User-agent: meta-externalagent
 Disallow: /
 
-Sitemap: https://energdive.com/sitemap.xml
-Sitemap: https://energdive.com/sitemap-news.xml
-Sitemap: https://energdive.com/sitemap-articles.xml
-Sitemap: https://energdive.com/sitemap-static.xml
+Sitemap: https://www.energdive.com/sitemap.xml
+Sitemap: https://www.energdive.com/sitemap-news.xml
+Sitemap: https://www.energdive.com/sitemap-articles.xml
+Sitemap: https://www.energdive.com/sitemap-static.xml

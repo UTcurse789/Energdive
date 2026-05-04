@@ -31,17 +31,17 @@ export const metadata: Metadata = {
     },
   },
   alternates: {
-    canonical: "https://energdive.com/subscribe",
+    canonical: "https://www.energdive.com/subscribe",
   },
   openGraph: {
     title: "Subscribe to ENERGDIVE Magazine",
     description: "Get monthly insights on India’s energy transition, policy, and industry trends by subscribing to ENERGDIVE Magazine.",
-    url: "https://energdive.com/subscribe",
+    url: "https://www.energdive.com/subscribe",
     type: "website",
     siteName: "ENERGDIVE",
     images: [
       {
-        url: "https://energdive.com/og-image.jpg",
+        url: "https://www.energdive.com/og-image.jpg",
         width: 1200,
         height: 630,
       },

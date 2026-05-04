@@ -39,17 +39,17 @@ export const metadata: Metadata = {
     },
   },
   alternates: {
-    canonical: "https://energdive.com/news",
+    canonical: "https://www.energdive.com/news",
   },
   openGraph: {
     title: "Energy News India | ENERGDIVE",
     description: "Explore the latest energy news covering oil & gas, power, renewables, hydrogen, sustainability and policy developments shaping India's energy sector.",
-    url: "https://energdive.com/news",
+    url: "https://www.energdive.com/news",
     type: "website",
     siteName: "ENERGDIVE",
     images: [
       {
-        url: "https://energdive.com/og-image.jpg",
+        url: "https://www.energdive.com/og-image.jpg",
         width: 1200,
         height: 630,
       },

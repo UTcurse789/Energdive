@@ -32,17 +32,17 @@ export const metadata: Metadata = {
     },
   },
   alternates: {
-    canonical: "https://energdive.com/advertise-with-us",
+    canonical: "https://www.energdive.com/advertise-with-us",
   },
   openGraph: {
     title: "Advertise with ENERGDIVE | Energy Media Platform",
     description: "Partner with ENERGDIVE to position your brand at the center of India’s energy transition through strategic media, content, and industry engagement.",
-    url: "https://energdive.com/advertise-with-us",
+    url: "https://www.energdive.com/advertise-with-us",
     type: "website",
     siteName: "ENERGDIVE",
     images: [
       {
-        url: "https://energdive.com/og-image.jpg",
+        url: "https://www.energdive.com/og-image.jpg",
         width: 1200,
         height: 630,
       },

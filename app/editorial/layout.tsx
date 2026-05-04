@@ -28,18 +28,18 @@ export const metadata: Metadata = {
     },
   },
   alternates: {
-    canonical: "https://energdive.com/editorial",
+    canonical: "https://www.energdive.com/editorial",
   },
   openGraph: {
     title: "Energy Editorials & Policy Commentary India | ENERGDIVE",
     description:
       "Explore ENERGDIVE editorials on energy policy, markets, leadership, and India's transition priorities.",
-    url: "https://energdive.com/editorial",
+    url: "https://www.energdive.com/editorial",
     type: "website",
     siteName: "ENERGDIVE",
     images: [
       {
-        url: "https://energdive.com/og-image.jpg",
+        url: "https://www.energdive.com/og-image.jpg",
         width: 1200,
         height: 630,
       },

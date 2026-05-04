@@ -36,17 +36,17 @@ export const metadata: Metadata = {
     },
   },
   alternates: {
-    canonical: "https://energdive.com/energclub",
+    canonical: "https://www.energdive.com/energclub",
   },
   openGraph: {
     title: "ENERGClub | India’s Energy Network & Community Platform",
     description: "Join ENERGClub — an exclusive energy ecosystem connecting leaders, policymakers, and innovators shaping India’s energy future.",
-    url: "https://energdive.com/energclub",
+    url: "https://www.energdive.com/energclub",
     type: "website",
     siteName: "ENERGClub",
     images: [
       {
-        url: "https://energdive.com/og-image.jpg",
+        url: "https://www.energdive.com/og-image.jpg",
         width: 1200,
         height: 630,
       },

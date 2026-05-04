@@ -1,5 +1,5 @@
 export async function GET() {
-  const baseUrl = 'https://energdive.com';
+  const baseUrl = 'https://www.energdive.com';
   const now = new Date().toISOString();
 
   const pages = [

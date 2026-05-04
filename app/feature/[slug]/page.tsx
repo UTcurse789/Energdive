@@ -76,7 +76,7 @@ export async function generateMetadata({
 
     const imageUrl = attrs.FeaturedImage?.url
         ? strapiImageUrl(attrs.FeaturedImage.url)
-        : "https://energdive.com/fav.jpg";
+        : "https://www.energdive.com/fav.jpg";
 
     return {
         title: { absolute: shareTitle },
@@ -84,7 +84,7 @@ export async function generateMetadata({
         openGraph: {
             title: shareTitle,
             description,
-            url: `https://energdive.com/feature/${slug}`,
+            url: `https://www.energdive.com/feature/${slug}`,
             siteName: "Energdive",
             images: [
                 {
