@@ -1,4 +1,11 @@
-import { fetchStrapi, StrapiCollection } from '@/lib/strapi';
+import {
+  escapeXml,
+  getAllSitemapContent,
+  isNewsEntry,
+  SITEMAP_BASE_URL,
+  SITEMAP_CACHE_CONTROL,
+  toIsoDate,
+} from "@/lib/sitemap-content";
 
 // ---------------------------------------------------------------------------
 // Types

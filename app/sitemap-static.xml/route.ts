@@ -1,11 +1,13 @@
 export async function GET() {
-  const baseUrl = 'https://energdive.com';
+  const baseUrl = 'https://www.energdive.com';
   const now = new Date().toISOString();
 
   const pages = [
     { url: '/', priority: '1.00', changefreq: 'daily' },
     { url: '/news', priority: '0.90', changefreq: 'hourly' },
     { url: '/opinion', priority: '0.80', changefreq: 'daily' },
+    { url: '/editorial', priority: '0.80', changefreq: 'daily' },
+    { url: '/interviews', priority: '0.80', changefreq: 'daily' },
     { url: '/articles', priority: '0.80', changefreq: 'daily' },
     { url: '/reports', priority: '0.80', changefreq: 'weekly' },
     { url: '/videos', priority: '0.70', changefreq: 'daily' },

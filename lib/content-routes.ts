@@ -5,6 +5,8 @@
  * Import this everywhere instead of maintaining local copies.
  */
 
+import { extractContentTagTitle } from "@/lib/content-tags";
+
 const ROUTE_MAP: Record<string, string> = {
   news: "news",
   articles: "articles",
@@ -27,8 +29,16 @@ const ROUTE_MAP: Record<string, string> = {
  * Returns the URL route prefix for a given content-type name.
  * e.g. "Cover Story" → "cover-story"
  */
-export function getRoutePrefix(contentTypeName: string): string {
-  return ROUTE_MAP[contentTypeName.toLowerCase().trim()] ?? "news";
+export function getRoutePrefix(contentTypeName: string, contentTag?: any): string {
+  const normalizedType = contentTypeName.toLowerCase().trim();
+  const normalizedTag = extractContentTagTitle(contentTag)?.toLowerCase().trim();
+
+  if (normalizedType === "opinion") {
+    if (normalizedTag === "interview") return "interviews";
+    if (normalizedTag === "editorial") return "editorial";
+  }
+
+  return ROUTE_MAP[normalizedType] ?? "news";
 }
 
 /**
@@ -62,12 +72,13 @@ export function buildContentUrl(item: {
   type_of_content?: any;
   contentType?: string;
   category?: string;
+  content_tag?: any;
 }): string {
   const typeName =
     item.contentType ??
     extractContentTypeName(item.type_of_content) ??
     item.category ??
     "news";
-  const prefix = getRoutePrefix(typeName);
+  const prefix = getRoutePrefix(typeName, item.content_tag);
   return `/${prefix}/${item.slug}`;
 }

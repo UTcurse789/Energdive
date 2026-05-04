@@ -1,15 +1,11 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useState, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { ChevronLeft, ChevronRight, ArrowUpRight } from "lucide-react";
 import { slugify } from "@/lib/utils";
-import { formatContentDate } from "@/lib/date";
-import { strapiImageUrl } from "@/lib/strapi-image";
-
-const STRAPI_BASE = process.env.NEXT_PUBLIC_STRAPI_URL || "https://cms.energdive.com";
 
 export interface OpinionItem {
     id: number;
@@ -26,7 +22,13 @@ export interface OpinionItem {
 
 
 
-export function OpinionSection({ opinions = [], interviews = [] }: { opinions: OpinionItem[], interviews: OpinionItem[] }) {
+export function OpinionSection({
+    opinions = [],
+    interviews = [],
+}: {
+    opinions: OpinionItem[],
+    interviews: OpinionItem[],
+}) {
     const [opinionIndex, setOpinionIndex] = useState(0);
     const [interviewIndex, setInterviewIndex] = useState(0);
 

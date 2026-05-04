@@ -174,7 +174,7 @@ function VerifyAccountContent() {
                         </div>
                     )}
 
-                    <a href="/login" className="inline-block w-full bg-[#0AB996] text-white px-6 py-3 rounded-lg text-sm font-semibold hover:bg-[#099e82] transition-colors shadow-lg shadow-[#0AB996]/20">
+                    <a href="/auth" className="inline-block w-full bg-[#0AB996] text-white px-6 py-3 rounded-lg text-sm font-semibold hover:bg-[#099e82] transition-colors shadow-lg shadow-[#0AB996]/20">
                         Go to Dashboard →
                     </a>
                 </div>

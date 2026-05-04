@@ -6,11 +6,11 @@ import ArticleBody from "@/components/ArticleBody";
 import { fetchDataBlocks } from "@/lib/parse-content-blocks";
 import PrintTrigger from "@/components/print/PrintTrigger";
 import { strapiImageUrl } from "@/lib/strapi-image";
+import { getCanonicalUrl } from "@/lib/seo";
 
 /* ─── Strapi ─── */
 const STRAPI = "http://206.189.132.187:1337";
 const SITE_NAME = "Energdive";
-const SITE_URL = "https://energdive.com";
 
 /* ─── Data ─── */
 async function getArticle(slug: string) {
@@ -34,6 +34,9 @@ export async function generateMetadata(
     const shareTitle = `${cleanBaseTitle} - ENERGDIVE`;
     return {
         title: { absolute: shareTitle },
+        alternates: {
+            canonical: getCanonicalUrl(`/articles/${slug}`),
+        },
         robots: { index: false, follow: false },
     };
 }
@@ -52,7 +55,7 @@ export default async function PrintPage(
     const date = formatContentDate(data.Date ?? data.publishedAt ?? data.createdAt);
     const author = data.author?.name ?? null;
     const image = data.FeaturedImage?.url ? strapiImageUrl(data.FeaturedImage.url) : null;
-    const articleUrl = `${SITE_URL}/articles/${slug}`;
+    const articleUrl = getCanonicalUrl(`/articles/${slug}`);
 
     const dataBlocks = await fetchDataBlocks(content);
 

@@ -6,7 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { formatContentDate } from "@/lib/date";
-import { Search, ChevronDown, Facebook, Twitter, Linkedin, Megaphone, ChevronRight, Zap, Menu, X, MapPin, Mail, Phone, Play, Calendar, Globe, ArrowRight, Youtube, Instagram } from "lucide-react";
+import { Search, ChevronDown, Facebook, Linkedin, Megaphone, ChevronRight, Zap, Menu, X, MapPin, Mail, Phone, Play, ArrowRight, Youtube, Instagram } from "lucide-react";
 import { SECTORS } from "@/data/dummy";
 import { motion, AnimatePresence } from "framer-motion";
 import { SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
@@ -80,8 +80,6 @@ const MONTH_TO_INDEX: Record<string, number> = {
     dec: 11,
 };
 
-const DEFAULT_STRAPI_BASE_URL = process.env.NEXT_PUBLIC_STRAPI_URL || "https://cms.energdive.com";
-
 function getMonthIndex(month: unknown): number {
     if (typeof month !== "string") return -1;
     const normalized = month.trim().toLowerCase();
@@ -114,7 +112,7 @@ function toIssueSlug(month: string, year: string, fallbackId: unknown): string {
     return `${monthPart}-${year}`;
 }
 
-function normalizeIssue(item: StrapiIssueResponseItem, baseUrl: string): MagazineIssue | null {
+function normalizeIssue(item: StrapiIssueResponseItem): MagazineIssue | null {
     const month = String(item?.Month ?? "").trim();
     const year = String(item?.Year ?? "").trim();
 
@@ -181,12 +179,9 @@ export function Header() {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [mobileExpanded, setMobileExpanded] = useState<string | null>(null); // 'sectors' | 'magazine' | 'more' | 'opinion'
     const [isSearchOpen, setIsSearchOpen] = useState(false);
-    const [strapiBaseUrl, setStrapiBaseUrl] = useState(DEFAULT_STRAPI_BASE_URL);
     const [tagCounts, setTagCounts] = useState<Record<string, number>>({});
 
     const brandGreen = "#00A651";
-    const baseUrl = strapiBaseUrl;
-
     useEffect(() => {
         const handleScroll = () => setIsScrolled(window.scrollY > 10);
         window.addEventListener("scroll", handleScroll);
@@ -203,7 +198,6 @@ export function Header() {
                 if (!res.ok) return;
 
                 const menuData = await res.json() as {
-                    baseUrl?: string;
                     videos?: any[];
                     events?: any[];
                     issues?: StrapiIssueResponseItem[];
@@ -215,11 +209,6 @@ export function Header() {
 
                 if (cancelled) return;
 
-                const resolvedBaseUrl = typeof menuData.baseUrl === "string" && menuData.baseUrl.trim()
-                    ? menuData.baseUrl
-                    : DEFAULT_STRAPI_BASE_URL;
-
-                setStrapiBaseUrl(resolvedBaseUrl);
                 setTagCounts(menuData.tagCounts || {});
                 setRealVideos(Array.isArray(menuData.videos) ? menuData.videos : []);
                 setRealEvents(Array.isArray(menuData.events) ? menuData.events : []);
@@ -228,7 +217,7 @@ export function Header() {
 
                 const normalizedIssues: MagazineIssue[] = Array.isArray(menuData?.issues)
                     ? menuData.issues
-                        .map((item) => normalizeIssue(item, resolvedBaseUrl))
+                        .map((item) => normalizeIssue(item))
                         .filter((issue: MagazineIssue | null): issue is MagazineIssue => issue !== null)
                     : [];
 

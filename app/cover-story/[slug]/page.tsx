@@ -77,7 +77,7 @@ export async function generateMetadata({
 
     const imageUrl = attrs.FeaturedImage?.url
         ? strapiImageUrl(attrs.FeaturedImage.url)
-        : "https://energdive.com/fav.jpg";
+        : "https://www.energdive.com/fav.jpg";
 
     return {
         title: { absolute: shareTitle },
@@ -85,7 +85,7 @@ export async function generateMetadata({
         openGraph: {
             title: shareTitle,
             description,
-            url: `https://energdive.com/cover-story/${slug}`,
+            url: `https://www.energdive.com/cover-story/${slug}`,
             siteName: "Energdive",
             images: [
                 {
@@ -160,6 +160,7 @@ export default async function CoverStoryDetailPage({
 
     // Raw date for JSON-LD (needs ISO-8601, not formatted display string)
     const rawDate = attrs.Date || attrs.publishedAt || attrs.createdAt || "";
+    const modifiedDate = attrs.updatedAt || rawDate;
     const excerptText = Array.isArray(attrs.Excerpt)
         ? attrs.Excerpt[0]?.children?.[0]?.text || ""
         : "";
@@ -169,6 +170,7 @@ export default async function CoverStoryDetailPage({
             <ArticleJsonLd
                 title={article.title}
                 datePublished={rawDate}
+                dateModified={modifiedDate}
                 authorName={article.author?.name}
                 slug={slug}
                 imageUrl={article.image}

@@ -5,9 +5,6 @@ import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import {
-    Linkedin,
-    Twitter,
-    Share2,
     ChevronLeft,
     Bookmark,
     Quote,
@@ -36,6 +33,17 @@ function renderInlineChildren(children: any[]) {
 }
 
 export default function OpinionContent({ opinion, recommended }: any) {
+    const sectionPath = opinion.sectionPath || "/opinion";
+    const backLabel = opinion.backLabel || "Back to Opinions";
+    const footerTitle = opinion.footerTitle || (
+        <>
+            More Opinion <br /> & Analysis.
+        </>
+    );
+    const footerLinkLabel = opinion.footerLinkLabel || "Explore All";
+    const leftAdPlacement = opinion.leftAdPlacement || "Opinion_left";
+    const rightAdPlacement = opinion.rightAdPlacement || "Opinion_right";
+
     return (
         <div className="bg-[#FDFDFD] min-h-screen selection:bg-[#00A651]/10 antialiased">
             <ScrollProgress />
@@ -44,11 +52,11 @@ export default function OpinionContent({ opinion, recommended }: any) {
                 {/* Navigation */}
                 <nav className="flex items-center justify-between mb-16 border-b border-zinc-100 pb-6">
                     <Link
-                        href="/opinion"
+                        href={sectionPath}
                         className="group flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 hover:text-[#00A651] transition-all"
                     >
                         <ChevronLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-                        Back to Opinions
+                        {backLabel}
                     </Link>
                     <div className="flex items-center gap-2">
                         <Link
@@ -124,7 +132,7 @@ export default function OpinionContent({ opinion, recommended }: any) {
                         <div className="hidden min-[1440px]:block absolute top-0 right-[calc(100%+2rem)] w-[300px]">
                             <div className="sticky top-24 w-[300px]">
                                 <AdBanner
-                                    placement="Opinion_left"
+                                    placement={leftAdPlacement}
                                     sectorSlug={opinion.sectorSlug}
                                     variant="vertical"
                                     showSkeleton={false}
@@ -136,7 +144,7 @@ export default function OpinionContent({ opinion, recommended }: any) {
                         <div className="hidden min-[1440px]:block absolute top-0 left-[calc(100%+2rem)] w-[300px]">
                             <div className="sticky top-24 w-[300px]">
                                 <AdBanner
-                                    placement="Opinion_right"
+                                    placement={rightAdPlacement}
                                     sectorSlug={opinion.sectorSlug}
                                     variant="vertical"
                                     showSkeleton={false}
@@ -165,7 +173,7 @@ export default function OpinionContent({ opinion, recommended }: any) {
                                                 <div className="bg-zinc-50 p-12 rounded-3xl relative overflow-hidden">
                                                     <Quote className="absolute -top-4 -left-4 w-24 h-24 text-zinc-200/40" />
                                                     <p className="text-2xl font-bold italic tracking-tight text-zinc-900 leading-tight relative z-10">
-                                                        "{text}"
+                                                        &ldquo;{text}&rdquo;
                                                     </p>
                                                 </div>
                                             </blockquote>
@@ -253,14 +261,14 @@ export default function OpinionContent({ opinion, recommended }: any) {
             <footer className="mt-40 bg-zinc-50 py-24 border-t border-zinc-100">
                 <div className="container mx-auto px-4 max-w-7xl">
                     <div className="flex justify-between items-end mb-16">
-                        <h4 className="text-5xl font-black uppercase italic tracking-tighter">More Opinion <br /> & Analysis.</h4>
-                        <Link href="/opinion" className="text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2 hover:text-[#00A651]">
-                            Explore All <ArrowRight size={14} />
+                        <h4 className="text-5xl font-black uppercase italic tracking-tighter">{footerTitle}</h4>
+                        <Link href={sectionPath} className="text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2 hover:text-[#00A651]">
+                            {footerLinkLabel} <ArrowRight size={14} />
                         </Link>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
                         {recommended?.map((item: any) => (
-                            <Link key={item.id} href={`/opinion/${item.slug}`} className="group space-y-6">
+                            <Link key={item.id} href={`${sectionPath}/${item.slug}`} className="group space-y-6">
                                 <div className="relative aspect-3/4 overflow-hidden rounded-xl grayscale group-hover:grayscale-0 transition-all duration-700">
                                     {item.featuredImage && (
                                         <Image src={item.featuredImage} alt={item.title} fill className="object-cover group-hover:scale-105 transition-transform duration-700" />

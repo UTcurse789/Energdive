@@ -23,7 +23,7 @@
 //     default: "Energdive | Premium Energy & Business News",
 //   },
 //   description: "Analysis, news, and insights on Energy, Power, Oil & Gas, and Renewables.",
-//   metadataBase: new URL("https://energdive.com"),
+//   metadataBase: new URL("https://www.energdive.com"),
 // };
 
 // export default function RootLayout({
@@ -75,7 +75,7 @@ const serif = Merriweather({
 //     default: "Energdive | Insights and Market Intelligence",
 //   },
 //   description: "Analysis, news, and insights on Energy, Power, Oil & Gas, and Renewables.",
-//   metadataBase: new URL("https://energdive.com"),
+//   metadataBase: new URL("https://www.energdive.com"),
 //   // Explicitly defining icons
 //   icons: {
 //     icon: [

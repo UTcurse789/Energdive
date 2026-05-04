@@ -1,14 +1,17 @@
 /**
- * Weekly verification reminder email templates.
+ * Verification reminder email templates.
  *
  * For users in `users` table with verification_status = 'pending_verification'.
- * Sends up to 4 reminder emails per week, cycling through different strategies.
+ * Sends up to 4 total reminder emails, then stops permanently unless data is reset manually.
  */
 
 const BREVO_API_KEY = process.env.BREVO_API_KEY || "";
 const BREVO_API_URL = "https://api.brevo.com/v3/smtp/email";
 const FROM_EMAIL = process.env.FROM_EMAIL || "no-reply@info.energdive.com";
 const FROM_NAME = process.env.FROM_NAME || "ENERGDIVE";
+const REMINDER_TIME_ZONE = "Asia/Kolkata";
+const REMINDER_START_MINUTES = 6 * 60; // 6:00 AM IST
+const REMINDER_END_MINUTES = 19 * 60; // 7:00 PM IST
 
 interface ReminderEmailParams {
     to: string;
@@ -16,6 +19,51 @@ interface ReminderEmailParams {
     magicLink: string;
     declineLink: string;
     reminderNumber: number; // 1-4
+}
+
+interface ReminderSendWindowStatus {
+    allowed: boolean;
+    currentMinutes: number;
+    localTimeLabel: string;
+    timeZone: string;
+    windowLabel: string;
+}
+
+function getReminderTimeParts(date: Date, timeZone: string): { hour: number; minute: number } {
+    const formatter = new Intl.DateTimeFormat("en-GB", {
+        timeZone,
+        hour: "2-digit",
+        minute: "2-digit",
+        hourCycle: "h23",
+    });
+
+    const parts = formatter.formatToParts(date);
+    const hour = Number(parts.find((part) => part.type === "hour")?.value || "0");
+    const minute = Number(parts.find((part) => part.type === "minute")?.value || "0");
+
+    return { hour, minute };
+}
+
+export function getReminderSendWindowStatus(date: Date = new Date()): ReminderSendWindowStatus {
+    const { hour, minute } = getReminderTimeParts(date, REMINDER_TIME_ZONE);
+    const currentMinutes = (hour * 60) + minute;
+
+    return {
+        allowed: currentMinutes >= REMINDER_START_MINUTES && currentMinutes <= REMINDER_END_MINUTES,
+        currentMinutes,
+        localTimeLabel: new Intl.DateTimeFormat("en-IN", {
+            timeZone: REMINDER_TIME_ZONE,
+            hour: "numeric",
+            minute: "2-digit",
+            hour12: true,
+        }).format(date),
+        timeZone: REMINDER_TIME_ZONE,
+        windowLabel: "6:00 AM to 7:00 PM IST",
+    };
+}
+
+export function isWithinReminderSendWindow(date: Date = new Date()): boolean {
+    return getReminderSendWindowStatus(date).allowed;
 }
 
 function getLogoUrl(): string {
@@ -34,7 +82,7 @@ function emailWrapper(subject: string, bodyContent: string, to: string): string 
       <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 20px 40px rgba(0,0,0,0.3);">
         <tr>
           <td style="background:#0a2e1f;padding:40px;text-align:center;border-bottom:4px solid #09B697;">
-            <img src="${logoUrl}" alt="EnergDive" width="180" style="display:block;margin:0 auto;max-width:200px;height:auto;" />
+            <img src="${logoUrl}" alt="ENERGDIVE" width="180" style="display:block;margin:0 auto;max-width:200px;height:auto;" />
           </td>
         </tr>
         <tr>
@@ -44,9 +92,9 @@ function emailWrapper(subject: string, bodyContent: string, to: string): string 
         </tr>
         <tr>
           <td style="background:#F9FAFB;padding:24px 40px;text-align:center;border-top:1px solid #F3F4F6;">
-            <p style="margin:0 0 8px;color:#111827;font-size:13px;font-weight:700;">EnergDive Intelligence</p>
+            <p style="margin:0 0 8px;color:#111827;font-size:13px;font-weight:700;">ENERGDIVE Intelligence</p>
             <p style="margin:0 0 8px;color:#9CA3AF;font-size:12px;">
-              <a href="https://energdive.com/unsubscribe?email=${encodeURIComponent(to)}" style="color:#9CA3AF;text-decoration:underline;">Unsubscribe</a>
+              <a href="https://www.energdive.com/unsubscribe?email=${encodeURIComponent(to)}" style="color:#9CA3AF;text-decoration:underline;">Unsubscribe</a>
             </p>
             <p style="margin:0;color:#9CA3AF;font-size:11px;">&copy; ${new Date().getFullYear()} ENERGDIVE. All rights reserved.</p>
           </td>
@@ -64,7 +112,7 @@ function ctaButton(text: string, link: string): string {
 
 function declineButton(link: string): string {
     return `<p style="margin:24px 0 0;text-align:center;">
-      <a href="${link}" style="color:#9CA3AF;font-size:12px;text-decoration:underline;">I do not want to proceed with free EnergClub membership</a>
+      <a href="${link}" style="color:#9CA3AF;font-size:12px;text-decoration:underline;">I do not want to proceed with free ENERGClub membership</a>
     </p>`;
 }
 
@@ -73,7 +121,7 @@ function reminder1(firstName: string, magicLink: string, declineLink: string): s
     return `
       <h2 style="margin:0 0 16px;color:#111827;font-size:24px;font-weight:800;">Hi ${firstName},</h2>
       <p style="margin:0 0 24px;color:#4B5563;font-size:16px;line-height:1.7;">
-        Your <strong>EnergClub portal</strong> is waiting for you! You're just one click away from accessing exclusive energy intelligence and insights.
+        Your <strong>ENERGClub portal</strong> is waiting for you! You're just one click away from accessing exclusive energy intelligence and insights.
       </p>
       <div style="background:#F9FAFB;border:1px solid #E5E7EB;border-radius:12px;padding:32px;text-align:center;margin-bottom:24px;">
         <p style="margin:0 0 16px;color:#6B7280;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:1px;">One-Click Access</p>
@@ -91,7 +139,7 @@ function reminder2(firstName: string, magicLink: string, declineLink: string): s
     return `
       <h2 style="margin:0 0 16px;color:#111827;font-size:24px;font-weight:800;">Just 30 seconds, ${firstName} ⏱️</h2>
       <p style="margin:0 0 24px;color:#4B5563;font-size:16px;line-height:1.7;">
-        Your EnergClub membership is ready — all you need to do is verify your account. It takes just <strong>30 seconds</strong>.
+        Your ENERGClub membership is ready — all you need to do is verify your account. It takes just <strong>30 seconds</strong>.
       </p>
       <div style="background:#0a2e1f;border-radius:16px;padding:36px;text-align:center;margin-bottom:24px;">
         <p style="margin:0 0 16px;color:#09B697;font-size:14px;font-weight:700;">YOUR PORTAL IS READY</p>
@@ -109,7 +157,7 @@ function reminder3(firstName: string, magicLink: string, declineLink: string): s
     return `
       <h2 style="margin:0 0 16px;color:#111827;font-size:24px;font-weight:800;">Here's what you're missing, ${firstName}</h2>
       <p style="margin:0 0 24px;color:#4B5563;font-size:16px;line-height:1.7;">
-        As an <strong>EnergClub member</strong>, you get access to benefits that help you stay ahead in the energy sector:
+        As an <strong>ENERGClub member</strong>, you get access to benefits that help you stay ahead in the energy sector:
       </p>
       <div style="background:#F0FDF9;border:1px solid #09B697;border-radius:12px;padding:24px;margin-bottom:24px;">
         <ul style="margin:0;padding-left:20px;color:#4B5563;font-size:14px;line-height:2.2;">
@@ -124,7 +172,7 @@ function reminder3(firstName: string, magicLink: string, declineLink: string): s
         ${ctaButton("Claim Your Benefits &rarr;", magicLink)}
       </div>
       <p style="margin:0;color:#9CA3AF;font-size:13px;text-align:center;">
-        All this is completely <strong>free</strong> for EnergClub members.
+        All this is completely <strong>free</strong> for ENERGClub members.
       </p>
       ${declineButton(declineLink)}`;
 }
@@ -134,7 +182,7 @@ function reminder4(firstName: string, magicLink: string, declineLink: string): s
     return `
       <h2 style="margin:0 0 16px;color:#111827;font-size:24px;font-weight:800;">Join 500+ energy professionals, ${firstName}</h2>
       <p style="margin:0 0 24px;color:#4B5563;font-size:16px;line-height:1.7;">
-        Hundreds of professionals across solar, wind, hydrogen, EV, and more have already joined EnergClub. You're one step away.
+        Hundreds of professionals across solar, wind, hydrogen, EV, and more have already joined ENERGClub. You're one step away.
       </p>
       <div style="background:#F9FAFB;border:1px solid #E5E7EB;border-radius:12px;padding:24px;margin-bottom:24px;">
         <div style="display:flex;justify-content:center;gap:32px;text-align:center;">
@@ -164,9 +212,9 @@ function reminder4(firstName: string, magicLink: string, declineLink: string): s
 // ── Public API ───────────────────────────────────────────────────────────────
 
 const SUBJECTS: Record<number, string> = {
-    1: "Your EnergClub portal is waiting 🔓",
+    1: "Your ENERGClub portal is waiting 🔓",
     2: "Just 30 seconds to activate your membership ⏱️",
-    3: "Here's what you're missing at EnergClub",
+    3: "Here's what you're missing at ENERGClub",
     4: "500+ energy professionals already joined — you?",
 };
 
@@ -177,13 +225,26 @@ const TEMPLATES: Record<number, (firstName: string, magicLink: string, declineLi
     4: reminder4,
 };
 
-export async function sendReminderEmail(params: ReminderEmailParams): Promise<void> {
+export async function sendReminderEmail(params: ReminderEmailParams): Promise<boolean> {
     if (!BREVO_API_KEY) {
         console.error("[REMINDER] BREVO_API_KEY not set — skipping");
-        return;
+        return false;
     }
 
-    const num = ((params.reminderNumber - 1) % 4) + 1; // cycle 1-4
+    if (params.reminderNumber < 1 || params.reminderNumber > 4) {
+        console.error(`[REMINDER] Invalid reminder number: ${params.reminderNumber}. Expected 1-4.`);
+        return false;
+    }
+
+    const sendWindow = getReminderSendWindowStatus();
+    if (!sendWindow.allowed) {
+        console.log(
+            `[REMINDER] Skipping ${params.to} outside send window. Current time: ${sendWindow.localTimeLabel} ${sendWindow.timeZone}. Allowed window: ${sendWindow.windowLabel}.`
+        );
+        return false;
+    }
+
+    const num = params.reminderNumber;
     const subject = SUBJECTS[num];
     const bodyContent = TEMPLATES[num](params.firstName, params.magicLink, params.declineLink);
     const htmlContent = emailWrapper(subject, bodyContent, params.to);
@@ -211,4 +272,5 @@ export async function sendReminderEmail(params: ReminderEmailParams): Promise<vo
     }
 
     console.log(`[REMINDER] Sent reminder #${num} to ${params.to}`);
+    return true;
 }

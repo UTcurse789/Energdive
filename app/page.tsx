@@ -16,6 +16,7 @@ import { getLatestIssue } from "@/lib/api/getLatestIssue";
 import { strapiImageUrl } from "@/lib/strapi-image";
 import { buildContentUrl } from "@/lib/content-routes";
 import { buildSectorArticlesUrl } from "@/lib/sector-content";
+import { getOpinionContentKind } from "@/lib/content-tags";
 
 const STRAPI_BASE = process.env.NEXT_PUBLIC_STRAPI_URL || "https://cms.energdive.com";
 
@@ -131,7 +132,7 @@ async function getFeaturedContents() {
   }
 }
 
-async function getOpinionsAndInterviews() {
+async function getOpinionBuckets() {
   try {
     const res = await fetch(
       `${STRAPI_BASE}/api/contents` +
@@ -151,17 +152,19 @@ async function getOpinionsAndInterviews() {
     const interviewItems: any[] = [];
 
     allItems.forEach((item: any) => {
-        const tag = item.content_tag?.title || item.content_tag?.data?.attributes?.title || "";
-        if (tag.toLowerCase() === "interview") {
+        const kind = getOpinionContentKind(item);
+        if (kind === "interview") {
             interviewItems.push(item);
-        } else {
+            return;
+        }
+        if (kind === "opinion") {
             opinionItems.push(item);
         }
     });
 
     return {
         opinions: mapOpinionItems(opinionItems.slice(0, 5)),
-        interviews: mapOpinionItems(interviewItems.slice(0, 5))
+        interviews: mapOpinionItems(interviewItems.slice(0, 5)),
     };
   } catch (err) {
     console.error("Opinion fetch error:", err);
@@ -174,7 +177,7 @@ export default async function Home() {
     getAllContents(),
     getFeaturedContents(),
     getLatestIssue(),
-    getOpinionsAndInterviews(),
+    getOpinionBuckets(),
   ]);
 
   // ── Bento: Featured articles fetched directly from Strapi ──
@@ -190,6 +193,7 @@ export default async function Home() {
         title: article.Title || "",
         category: article.sectors?.[0]?.name || "Energy",
         contentType: article.type_of_content?.name || "News",
+        contentTag: article.content_tag,
         image: extractImageUrl(article),
         slug: article.slug || "",
         excerpt: extractExcerpt(article),

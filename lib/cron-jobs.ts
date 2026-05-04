@@ -1,7 +1,7 @@
 import { query } from "@/lib/db";
 import { createMagicLink } from "@/lib/magic-link-db";
 import { sendDripEmail, calculateNextDripSend } from "@/lib/abandoned-cart-emails";
-import { sendReminderEmail } from "@/lib/reminder-emails";
+import { getReminderSendWindowStatus, sendReminderEmail } from "@/lib/reminder-emails";
 import { processPreferenceDigests } from "@/lib/preference-digests";
 import crypto from "crypto";
 
@@ -105,7 +105,7 @@ export async function processAbandonedCartDrip() {
 
 /**
  * Send reminder emails to users with verification_status = 'pending_verification'.
- * Maximum 4 emails per week per user. Resets weekly count every 7 days.
+ * Maximum 4 total emails per user. Once the cycle is complete, reminders stop.
  */
 export async function processWeeklyReminders() {
     const requestId = crypto.randomUUID().slice(0, 8);
@@ -117,15 +117,13 @@ export async function processWeeklyReminders() {
     try {
         log("Starting weekly reminder cron...");
 
-        await query(`
-            UPDATE users
-            SET reminder_email_count = 0,
-                reminder_week_start = NOW()
-            WHERE verification_status = 'pending_verification'
-              AND reminder_opted_out = false
-              AND reminder_week_start IS NOT NULL
-              AND reminder_week_start < NOW() - INTERVAL '7 days'
-        `);
+        const sendWindow = getReminderSendWindowStatus();
+        if (!sendWindow.allowed) {
+            log(
+                `Skipping cron outside reminder send window. Current time: ${sendWindow.localTimeLabel} ${sendWindow.timeZone}. Allowed window: ${sendWindow.windowLabel}.`
+            );
+            return { success: true, skipped: true, processed: 0, sent: 0, errors: 0 };
+        }
 
         const result = await query<{
             id: string;
@@ -170,13 +168,18 @@ export async function processWeeklyReminders() {
 
                 const reminderNumber = (user.reminder_email_count || 0) + 1;
 
-                await sendReminderEmail({
+                const sentReminder = await sendReminderEmail({
                     to: user.email,
                     firstName,
                     magicLink,
                     declineLink,
                     reminderNumber,
                 });
+
+                if (!sentReminder) {
+                    log(`Reminder #${reminderNumber} not sent to ${user.email}; skipping DB update.`);
+                    continue;
+                }
 
                 await query(`
                     UPDATE users
