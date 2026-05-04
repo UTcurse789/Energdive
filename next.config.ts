@@ -56,10 +56,10 @@ const nextConfig: NextConfig = {
         has: [
           {
             type: "host",
-            value: "www.energdive.com",
+            value: "energdive.com",
           },
         ],
-        destination: "https://energdive.com/:path*",
+        destination: "https://www.energdive.com/:path*",
         statusCode: 301,
       },
       {

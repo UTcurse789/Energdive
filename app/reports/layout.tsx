@@ -37,17 +37,17 @@ export const metadata: Metadata = {
     },
   },
   alternates: {
-    canonical: "https://energdive.com/reports",
+    canonical: "https://www.energdive.com/reports",
   },
   openGraph: {
     title: "Energy Reports & Market Intelligence India | ENERGDIVE",
     description: "Access in-depth energy reports covering policy insights, market intelligence, sector analysis, and industry trends shaping India’s energy transition.",
-    url: "https://energdive.com/reports",
+    url: "https://www.energdive.com/reports",
     type: "website",
     siteName: "ENERGDIVE",
     images: [
       {
-        url: "https://energdive.com/og-image.jpg",
+        url: "https://www.energdive.com/og-image.jpg",
         width: 1200,
         height: 630,
       },

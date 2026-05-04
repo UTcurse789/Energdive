@@ -30,17 +30,17 @@ export const metadata: Metadata = {
     },
   },
   alternates: {
-    canonical: "https://energdive.com/about",
+    canonical: "https://www.energdive.com/about",
   },
   openGraph: {
     title: "About ENERGDIVE | India’s Strategic Energy Intelligence Platform",
     description: "Discover ENERGDIVE — India’s strategic intelligence platform driving insights on energy transition, policy, innovation and sustainability.",
-    url: "https://energdive.com/about",
+    url: "https://www.energdive.com/about",
     type: "website",
     siteName: "ENERGDIVE",
     images: [
       {
-        url: "https://energdive.com/og-image.jpg",
+        url: "https://www.energdive.com/og-image.jpg",
         width: 1200,
         height: 630,
       },

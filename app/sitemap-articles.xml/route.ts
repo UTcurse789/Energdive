@@ -48,7 +48,7 @@ async function getAllContent(): Promise<
 }
 
 export async function GET() {
-  const baseUrl = 'https://energdive.com';
+  const baseUrl = 'https://www.energdive.com';
   const articles = await getAllContent();
 
   const urls = articles

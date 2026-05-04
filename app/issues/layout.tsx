@@ -35,17 +35,17 @@ export const metadata: Metadata = {
     },
   },
   alternates: {
-    canonical: "https://energdive.com/issues",
+    canonical: "https://www.energdive.com/issues",
   },
   openGraph: {
     title: "ENERGDIVE Magazine | India’s Energy Intelligence Publication",
     description: "Discover ENERGDIVE Magazine editions covering India’s energy transition, policy insights, industry trends, and leadership perspectives.",
-    url: "https://energdive.com/issues",
+    url: "https://www.energdive.com/issues",
     type: "website",
     siteName: "ENERGDIVE",
     images: [
       {
-        url: "https://energdive.com/og-image.jpg",
+        url: "https://www.energdive.com/og-image.jpg",
         width: 1200,
         height: 630,
       },

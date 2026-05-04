@@ -65,7 +65,7 @@ function escapeXml(str: string): string {
 }
 
 export async function GET() {
-  const baseUrl = 'https://energdive.com';
+  const baseUrl = 'https://www.energdive.com';
   const articles = await getRecentNews();
   const twoDaysAgo = new Date(Date.now() - 48 * 60 * 60 * 1000);
 
