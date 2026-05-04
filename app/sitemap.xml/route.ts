@@ -7,12 +7,13 @@ export async function GET() {
   <sitemap><loc>${baseUrl}/sitemap-static.xml</loc><lastmod>${now}</lastmod></sitemap>
   <sitemap><loc>${baseUrl}/sitemap-news.xml</loc><lastmod>${now}</lastmod></sitemap>
   <sitemap><loc>${baseUrl}/sitemap-articles.xml</loc><lastmod>${now}</lastmod></sitemap>
+  <sitemap><loc>${baseUrl}/content.xml</loc><lastmod>${now}</lastmod></sitemap>
 </sitemapindex>`;
 
   return new Response(xml, {
     headers: {
       'Content-Type': 'application/xml',
-      'Cache-Control': 'public, max-age=3600',
+      'Cache-Control': 'public, max-age=600, stale-while-revalidate=300',
     },
   });
 }
