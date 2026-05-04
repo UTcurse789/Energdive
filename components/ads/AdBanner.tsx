@@ -216,9 +216,6 @@ function BannerAd({ ad, className }: { ad: Ad; className: string }) {
                         className="object-contain transition-transform duration-500 group-hover:scale-[1.015]"
                     />
                 </div>
-                <span className="absolute top-2 right-2 text-[8px] font-bold uppercase tracking-[0.15em] text-white/80 bg-black/25 backdrop-blur-md px-2 py-0.5 rounded-full pointer-events-none">
-                    Sponsored
-                </span>
             </div>
         </div>
     );
@@ -248,9 +245,6 @@ function CardAd({ ad, className }: { ad: Ad; className: string }) {
                     className="object-cover transition-transform duration-500 group-hover:scale-[1.02]"
                 />
             </div>
-            <span className="absolute top-3 right-3 text-[9px] font-bold uppercase tracking-[0.15em] text-white/80 bg-black/25 backdrop-blur-md px-2.5 py-1 rounded-full pointer-events-none">
-                Sponsored
-            </span>
         </div>
     );
 
@@ -276,9 +270,6 @@ function HeroBannerAd({ ad, className }: { ad: Ad; className: string }) {
                     loading="lazy"
                     className="max-w-full h-auto object-contain transition-transform duration-500 group-hover:scale-[1.015]"
                 />
-                <span className="absolute top-3 right-3 text-[9px] font-bold uppercase tracking-[0.15em] text-white/80 bg-black/25 backdrop-blur-md px-2.5 py-1 rounded-full pointer-events-none">
-                    Sponsored
-                </span>
             </div>
         </div>
     );
@@ -323,9 +314,6 @@ function VerticalBannerAd({ ad, className }: { ad: Ad; className: string }) {
                     <p className="text-sm font-semibold text-white truncate">{ad.partner_name || ad.title}</p>
                 </div>
             </div>
-            <span className="absolute top-3 right-3 text-[9px] font-bold uppercase tracking-[0.15em] text-white/80 bg-black/25 backdrop-blur-md px-2.5 py-1 rounded-full pointer-events-none">
-                Sponsored
-            </span>
         </div>
     );
 
@@ -342,9 +330,6 @@ function NativeBannerAd({ ad, className }: { ad: Ad; className: string }) {
 
     const inner = (
         <div className={`relative border border-gray-100 bg-gradient-to-br from-gray-50 to-white p-6 sm:p-8 group hover:border-teal-200 hover:shadow-lg hover:shadow-teal-500/5 transition-all duration-500 ${className} rounded-none`}>
-            <span className="absolute top-3 right-3 text-[9px] font-bold uppercase tracking-[0.15em] text-gray-400 bg-gray-100 px-2.5 py-1 rounded-full">
-                Sponsored
-            </span>
             <div className="flex items-center gap-5">
                 {logoUrl ? (
                     <div className="relative w-14 h-14 sm:w-16 sm:h-16 shrink-0 rounded-xl overflow-hidden bg-white shadow-sm ring-1 ring-gray-100">
@@ -395,9 +380,6 @@ function MobileBannerAd({ ad, className }: { ad: Ad; className: string }) {
                         className="object-cover transition-transform duration-500 group-hover:scale-[1.015]"
                     />
                 </div>
-                <span className="absolute top-1.5 right-1.5 text-[7px] font-bold uppercase tracking-[0.15em] text-white/70 bg-black/25 backdrop-blur-md px-1.5 py-0.5 rounded-full pointer-events-none">
-                    Sponsored
-                </span>
             </div>
         </div>
     );
