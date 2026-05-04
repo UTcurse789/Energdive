@@ -183,11 +183,15 @@ export function AdBanner({
 }
 
 /** Wraps content in a clickable link if target_url is present */
-function wrapWithLink(targetUrl: string | null | undefined, content: React.ReactNode) {
+function wrapWithLink(
+    targetUrl: string | null | undefined,
+    content: React.ReactNode,
+    className = "block"
+) {
     const url = (targetUrl || "").trim();
     if (!url) return <>{content}</>;
     return (
-        <a href={url} target="_blank" rel="noopener noreferrer sponsored" className="block">
+        <a href={url} target="_blank" rel="noopener noreferrer sponsored" className={className}>
             {content}
         </a>
     );
@@ -203,24 +207,26 @@ function BannerAd({ ad, className }: { ad: Ad; className: string }) {
 
     if (!imageUrl) return null;
 
-    const content = (
-        <div className={`flex justify-center group ${className}`}>
-            <div className="relative overflow-hidden rounded-none bg-white" style={{ maxWidth: 728, width: "100%" }}>
-                <div className="relative w-full bg-white" style={{ aspectRatio: "728/90" }}>
-                    <Image
-                        src={imageUrl}
-                        alt={ad.title || "Advertisement"}
-                        fill
-                        loading="lazy"
-                        unoptimized
-                        className="object-contain transition-transform duration-500 group-hover:scale-[1.015]"
-                    />
-                </div>
+    const creativeContent = (
+        <div className="relative overflow-hidden rounded-none bg-white" style={{ maxWidth: 728, width: "100%" }}>
+            <div className="relative w-full bg-white" style={{ aspectRatio: "728/90" }}>
+                <Image
+                    src={imageUrl}
+                    alt={ad.title || "Advertisement"}
+                    fill
+                    loading="lazy"
+                    unoptimized
+                    className="object-contain transition-transform duration-500 group-hover:scale-[1.015]"
+                />
             </div>
         </div>
     );
 
-    return wrapWithLink(ad.target_url, content);
+    return (
+        <div className={`flex justify-center group ${className}`}>
+            {wrapWithLink(ad.target_url, creativeContent, "block w-full max-w-[728px]")}
+        </div>
+    );
 }
 
 /* ═══════════════════════════════════════════
@@ -261,20 +267,22 @@ function HeroBannerAd({ ad, className }: { ad: Ad; className: string }) {
 
     if (!imageUrl) return null;
 
-    const inner = (
-        <div className={`flex justify-center w-full group overflow-hidden ${className}`}>
-            <div className="relative inline-block rounded-none overflow-hidden">
-                <img
-                    src={imageUrl}
-                    alt={ad.title || "Advertisement"}
-                    loading="lazy"
-                    className="max-w-full h-auto object-contain transition-transform duration-500 group-hover:scale-[1.015]"
-                />
-            </div>
+    const creativeContent = (
+        <div className="relative inline-block rounded-none overflow-hidden">
+            <img
+                src={imageUrl}
+                alt={ad.title || "Advertisement"}
+                loading="lazy"
+                className="max-w-full h-auto object-contain transition-transform duration-500 group-hover:scale-[1.015]"
+            />
         </div>
     );
 
-    return wrapWithLink(ad.target_url, inner);
+    return (
+        <div className={`flex justify-center w-full group overflow-hidden ${className}`}>
+            {wrapWithLink(ad.target_url, creativeContent, "inline-block")}
+        </div>
+    );
 }
 
 /* ═══════════════════════════════════════════
@@ -367,22 +375,24 @@ function MobileBannerAd({ ad, className }: { ad: Ad; className: string }) {
 
     if (!imageUrl) return null;
 
-    const content = (
-        <div className={`flex justify-center group ${className}`}>
-            <div className="relative overflow-hidden rounded-none" style={{ maxWidth: 320, width: "100%" }}>
-                <div className="relative w-full" style={{ aspectRatio: "320/100" }}>
-                    <Image
-                        src={imageUrl}
-                        alt={ad.title || "Advertisement"}
-                        fill
-                        loading="lazy"
-                        unoptimized
-                        className="object-cover transition-transform duration-500 group-hover:scale-[1.015]"
-                    />
-                </div>
+    const creativeContent = (
+        <div className="relative overflow-hidden rounded-none" style={{ maxWidth: 320, width: "100%" }}>
+            <div className="relative w-full" style={{ aspectRatio: "320/100" }}>
+                <Image
+                    src={imageUrl}
+                    alt={ad.title || "Advertisement"}
+                    fill
+                    loading="lazy"
+                    unoptimized
+                    className="object-cover transition-transform duration-500 group-hover:scale-[1.015]"
+                />
             </div>
         </div>
     );
 
-    return wrapWithLink(ad.target_url, content);
+    return (
+        <div className={`flex justify-center group ${className}`}>
+            {wrapWithLink(ad.target_url, creativeContent, "block w-full max-w-[320px]")}
+        </div>
+    );
 }
