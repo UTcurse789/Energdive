@@ -2,10 +2,10 @@ import { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: {
-    default: "Energy Opinion & Expert Views India | Policy Leaders, Interviews & Insights - ENERGDIVE",
+    default: "Energy Opinion & Expert Views India | ENERGDIVE",
     template: "%s - ENERGDIVE",
   },
-  description: "Explore expert opinions, leadership perspectives, and exclusive interviews on India’s energy transition featuring policymakers, industry leaders, and visionaries shaping oil & gas, power, renewables, and sustainability.",
+  description: "Explore expert opinions, commentary, and informed perspectives on India’s energy transition covering policy, markets, oil & gas, power, renewables, and sustainability.",
   keywords: [
     "energy opinion india",
     "energdive",
@@ -15,7 +15,6 @@ export const metadata: Metadata = {
     "energydive magazine",
     "energ dive magazine",
     "energy expert insights india",
-    "energy leadership interviews india",
     "energy policy opinions india",
     "oil and gas expert views india",
     "power sector insights india",
@@ -25,7 +24,6 @@ export const metadata: Metadata = {
     "abhishek bhatnagar energy",
     "bhupinder singh bhalla renewables",
     "suman chandra energy",
-    "energy leaders india interviews",
     "energy industry opinions india"
   ],
   authors: [{ name: "ClariSector Technologies Pvt. Ltd." }],
@@ -43,8 +41,8 @@ export const metadata: Metadata = {
     canonical: "https://www.energdive.com/opinion",
   },
   openGraph: {
-    title: "Energy Opinion & Leadership Insights India | ENERGDIVE",
-    description: "Read expert opinions and exclusive interviews with policymakers and industry leaders shaping India’s energy transition and sustainability agenda.",
+    title: "Energy Opinion & Expert Views India | ENERGDIVE",
+    description: "Read expert opinions, commentary, and perspectives shaping India’s energy transition and sustainability agenda.",
     url: "https://www.energdive.com/opinion",
     type: "website",
     siteName: "ENERGDIVE",
@@ -59,12 +57,12 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Energy Opinion & Expert Views India | ENERGDIVE",
-    description: "Explore leadership insights, expert opinions, and interviews shaping India’s energy future.",
+    description: "Explore expert opinions and commentary shaping India’s energy future.",
     site: "@energdive",
   },
   other: {
     classification: "Energy Opinion Platform, Thought Leadership Portal, Expert Insights Platform",
-    topic: "Energy Opinions, Leadership Interviews, Policy Insights, Oil & Gas, Power, Renewables, Sustainability",
+    topic: "Energy Opinions, Policy Insights, Oil & Gas, Power, Renewables, Sustainability",
     audience: "Policymakers, industry leaders, energy professionals, corporates, investors, researchers",
     distribution: "global",
     language: "English",

@@ -91,9 +91,9 @@ function parseSlug(slug: string): { month: string; year: number } | null {
 }
 
 /** Map type_of_content name → URL prefix */
-function getContentRoute(typeOfContent: any): string {
+function getContentRoute(typeOfContent: any, contentTag?: any): string {
     const name = extractContentTypeName(typeOfContent);
-    return getRoutePrefix(name);
+    return getRoutePrefix(name, contentTag);
 }
 
 /** Extract content_tag title from various Strapi shapes */
@@ -229,7 +229,7 @@ function mapArticle(c: any) {
         : null;
 
     // Build correct route from type_of_content
-    const route = getContentRoute(c.type_of_content);
+    const route = getContentRoute(c.type_of_content, c.content_tag);
     const articleSlug = c.slug ?? c.documentId ?? String(c.id);
 
     // Extract sectors
