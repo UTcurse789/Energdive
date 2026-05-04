@@ -31,3 +31,4 @@ Sitemap: https://www.energdive.com/sitemap.xml
 Sitemap: https://www.energdive.com/sitemap-news.xml
 Sitemap: https://www.energdive.com/sitemap-articles.xml
 Sitemap: https://www.energdive.com/sitemap-static.xml
+Sitemap: https://www.energdive.com/content.xml
