@@ -2,6 +2,7 @@ import { query } from "@/lib/db";
 import { createMagicLink } from "@/lib/magic-link-db";
 import { sendDripEmail, calculateNextDripSend } from "@/lib/abandoned-cart-emails";
 import { getReminderSendWindowStatus, sendReminderEmail } from "@/lib/reminder-emails";
+import { processPreferenceDigests } from "@/lib/preference-digests";
 import crypto from "crypto";
 
 const CRON_SECRET = process.env.CRON_SECRET || "";
