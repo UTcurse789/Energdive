@@ -205,7 +205,7 @@ function BannerAd({ ad, className }: { ad: Ad; className: string }) {
 
     const content = (
         <div className={`flex justify-center group ${className}`}>
-            <div className="relative overflow-hidden rounded-lg bg-white" style={{ maxWidth: 728, width: "100%" }}>
+            <div className="relative overflow-hidden rounded-none bg-white" style={{ maxWidth: 728, width: "100%" }}>
                 <div className="relative w-full bg-white" style={{ aspectRatio: "728/90" }}>
                     <Image
                         src={imageUrl}
@@ -237,7 +237,7 @@ function CardAd({ ad, className }: { ad: Ad; className: string }) {
     if (!imageUrl) return null;
 
     const inner = (
-        <div className={`relative overflow-hidden rounded-2xl bg-white shadow-sm border border-gray-100/60 group h-fit ${className}`}>
+        <div className={`relative overflow-hidden bg-white shadow-sm border border-gray-100/60 group h-fit ${className} rounded-none`}>
             <div className="relative w-full" style={{ aspectRatio: "300/250" }}>
                 <Image
                     src={imageUrl}
@@ -269,7 +269,7 @@ function HeroBannerAd({ ad, className }: { ad: Ad; className: string }) {
 
     const inner = (
         <div className={`flex justify-center w-full group overflow-hidden ${className}`}>
-            <div className="relative inline-block rounded-2xl overflow-hidden">
+            <div className="relative inline-block rounded-none overflow-hidden">
                 <img
                     src={imageUrl}
                     alt={ad.title || "Advertisement"}
@@ -300,7 +300,7 @@ function VerticalBannerAd({ ad, className }: { ad: Ad; className: string }) {
 
     const inner = (
         <div
-            className={`relative overflow-hidden rounded-2xl border border-gray-100/60 bg-white shadow-sm hover:shadow-xl transition-all duration-500 group w-[300px] shrink-0 ${className}`}
+            className={`relative overflow-hidden border border-gray-100/60 bg-white shadow-sm hover:shadow-xl transition-all duration-500 group w-[300px] shrink-0 ${className} rounded-none`}
         >
             <div className="relative w-full" style={{ aspectRatio: "300/600" }}>
                 <Image
@@ -341,7 +341,7 @@ function NativeBannerAd({ ad, className }: { ad: Ad; className: string }) {
     const logoUrl = getImageUrl(logoMedia);
 
     const inner = (
-        <div className={`relative rounded-2xl border border-gray-100 bg-gradient-to-br from-gray-50 to-white p-6 sm:p-8 group hover:border-teal-200 hover:shadow-lg hover:shadow-teal-500/5 transition-all duration-500 ${className}`}>
+        <div className={`relative border border-gray-100 bg-gradient-to-br from-gray-50 to-white p-6 sm:p-8 group hover:border-teal-200 hover:shadow-lg hover:shadow-teal-500/5 transition-all duration-500 ${className} rounded-none`}>
             <span className="absolute top-3 right-3 text-[9px] font-bold uppercase tracking-[0.15em] text-gray-400 bg-gray-100 px-2.5 py-1 rounded-full">
                 Sponsored
             </span>
@@ -384,7 +384,7 @@ function MobileBannerAd({ ad, className }: { ad: Ad; className: string }) {
 
     const content = (
         <div className={`flex justify-center group ${className}`}>
-            <div className="relative overflow-hidden rounded-lg" style={{ maxWidth: 320, width: "100%" }}>
+            <div className="relative overflow-hidden rounded-none" style={{ maxWidth: 320, width: "100%" }}>
                 <div className="relative w-full" style={{ aspectRatio: "320/100" }}>
                     <Image
                         src={imageUrl}
