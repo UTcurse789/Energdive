@@ -4,9 +4,9 @@ export const revalidate = RSS_REVALIDATE;
 
 export async function GET() {
   return createRssResponse({
-    title: "ENERGDIVE",
-    description:
-      "Latest energy news, analysis, reports, interviews, and editorial content from ENERGDIVE.",
-    feedPath: "/rss.xml",
+    title: "ENERGDIVE Articles",
+    description: "Latest articles and feature coverage from ENERGDIVE.",
+    feedPath: "/rss/articles.xml",
+    contentType: "Articles",
   });
 }
