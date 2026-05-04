@@ -25,7 +25,7 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
 
             {/* Header Banner Ad — 728×90 desktop / 320×100 mobile */}
             {!isEnergClub && (
-                <div className="w-full flex justify-center py-3 bg-white">
+                <div className="w-full flex justify-center bg-white">
                     {/* Desktop: 728×90 Leaderboard */}
                     <div className="hidden md:block">
                         <AdBanner placement="header_banner" variant="banner" />
