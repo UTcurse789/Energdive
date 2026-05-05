@@ -15,6 +15,10 @@ import ArticleBody from "@/components/ArticleBody";
 import { fetchDataBlocks } from "@/lib/parse-content-blocks";
 import { ArticleJsonLd } from "@/components/seo/ArticleJsonLd";
 import { AdBanner } from "@/components/ads/AdBanner";
+import { ArticleReadTime } from "@/components/article/ArticleReadTime";
+import { AuthorBioBox } from "@/components/article/AuthorBioBox";
+import { ArticleNewsletterCTA } from "@/components/article/ArticleNewsletterCTA";
+import { ArticleStickyShare } from "@/components/article/ArticleStickyShare";
 
 const STRAPI = "https://cms.energdive.com";
 
@@ -223,30 +227,11 @@ export default async function ArticlePage(props: any) {
                     {/* ═══════════════ MAIN COLUMN ═══════════════ */}
                     <div className="lg:col-span-8">
 
-                        {/* Category + Date + Share */}
-                        <div className="flex items-center justify-between mb-5">
-                            <div className="flex items-center gap-3">
-                                <span className="inline-block bg-teal-50 text-teal-700 text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full">
-                                    {article.category}
-                                </span>
-                                <DateChip value={article.date} />
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <Link
-                                    href={`/print/${slug}`}
-                                    target="_blank"
-                                    className="flex items-center gap-1.5 text-gray-500 hover:text-red-600 font-medium text-sm border border-gray-200 px-3 py-1.5 rounded-full bg-white hover:bg-gray-50 shadow-sm transition-colors"
-                                    title="Print this article"
-                                >
-                                    <Printer className="h-3.5 w-3.5" />
-                                    Print
-                                </Link>
-                                <ShareButton
-                                    title={article.title}
-                                    text={article.excerpt}
-                                    className="text-gray-500 hover:text-teal-600 font-medium text-sm border border-gray-200 px-3 py-1.5 rounded-full bg-white hover:bg-gray-50 shadow-sm"
-                                />
-                            </div>
+                        {/* Category Label */}
+                        <div className="flex items-center mb-5">
+                            <span className="bg-[#00A651] text-white text-[11px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-sm shadow-sm">
+                                {article.category}
+                            </span>
                         </div>
 
                         {/* Title */}
@@ -261,27 +246,63 @@ export default async function ArticlePage(props: any) {
 
                         {/* Author row */}
                         {article.author && (
-                            <div className="flex items-center gap-4 mb-10 pb-8 border-b border-gray-100">
-                                {article.author.avatar ? (
-                                    <Image
-                                        src={article.author.avatar}
-                                        width={52}
-                                        height={52}
-                                        alt={article.author.name || ""}
-                                        className="rounded-full ring-2 ring-teal-100"
-                                    />
-                                ) : (
-                                    <div className="w-[52px] h-[52px] rounded-full bg-teal-100 flex items-center justify-center text-teal-700 font-bold text-lg">
-                                        {article.author.name?.charAt(0) || "A"}
-                                    </div>
-                                )}
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-10 pb-8 border-b border-gray-100">
                                 <div className="flex items-center gap-4">
+                                    {article.author.avatar ? (
+                                        <Image
+                                            src={article.author.avatar}
+                                            width={48}
+                                            height={48}
+                                            alt={article.author.name || ""}
+                                            className="rounded-full object-cover w-12 h-12"
+                                        />
+                                    ) : (
+                                        <div className="w-12 h-12 rounded-full bg-teal-100 flex items-center justify-center text-teal-700 font-bold text-lg shrink-0">
+                                            {article.author.name?.charAt(0) || "A"}
+                                        </div>
+                                    )}
+                                    <div className="flex flex-col">
+                                        <Link
+                                            href={`/author/${slugify(article.author.name)}`}
+                                            className="font-bold text-gray-900 text-xl hover:text-[#00A651] transition-colors leading-tight"
+                                        >
+                                            {article.author.name}
+                                        </Link>
+                                        <div className="flex items-center flex-wrap gap-2 text-gray-400 text-sm mt-0.5">
+                                            <div className="flex items-center gap-1.5">
+                                                <Calendar className="w-3.5 h-3.5" />
+                                                <span>
+                                                    {(() => {
+                                                        const d = new Date(rawDate);
+                                                        if (Number.isNaN(d.getTime())) return article.date;
+                                                        return new Intl.DateTimeFormat("en-GB", {
+                                                            day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "Asia/Kolkata"
+                                                        }).format(d).replace(",", "") + " IST";
+                                                    })()}
+                                                </span>
+                                            </div>
+                                            <span className="text-gray-300 hidden sm:inline">|</span>
+                                            <ArticleReadTime content={article.content} className="text-gray-400" />
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-3 self-start sm:self-auto ml-16 sm:ml-0">
                                     <Link
-                                        href={`/author/${slugify(article.author.name)}`}
-                                        className="font-bold text-gray-900 hover:text-teal-600 transition-colors"
+                                        href={`/print/${slug}`}
+                                        target="_blank"
+                                        className="flex items-center gap-1.5 text-gray-600 hover:text-gray-900 font-medium text-sm border border-gray-200 px-4 py-2 rounded-full bg-white hover:bg-gray-50 shadow-sm transition-colors"
+                                        title="Print this article"
                                     >
-                                        {article.author.name}
+                                        <Printer className="w-4 h-4" />
+                                        Print
                                     </Link>
+                                    <ShareButton
+                                        title={article.title}
+                                        text={article.excerpt}
+                                        url={`https://energdive.com/articles/${slug}`}
+                                        className="text-gray-600 hover:text-gray-900 font-medium text-sm border border-gray-200 px-4 py-2 rounded-full bg-white hover:bg-gray-50 shadow-sm"
+                                        iconClassName="w-4 h-4"
+                                    />
                                 </div>
                             </div>
                         )}
@@ -355,6 +376,14 @@ export default async function ArticlePage(props: any) {
                                     ))}
                                 </div>
                             </div>
+                        )}
+
+                        {/* Newsletter CTA */}
+                        <ArticleNewsletterCTA />
+
+                        {/* Author Bio Box */}
+                        {article.author && (
+                            <AuthorBioBox author={article.author} />
                         )}
 
                         <AdBanner

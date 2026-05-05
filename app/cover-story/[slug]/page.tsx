@@ -158,8 +158,8 @@ export default async function CoverStoryDetailPage({
 
     const dataBlocks = await fetchDataBlocks(article.content);
 
-    // Raw date for JSON-LD (needs ISO-8601, not formatted display string)
-    const rawDate = attrs.Date || attrs.publishedAt || attrs.createdAt || "";
+    // Raw date for JSON-LD and display (prioritizing publishedAt for accurate automatic time)
+    const rawDate = attrs.publishedAt || attrs.createdAt || attrs.Date || "";
     const modifiedDate = attrs.updatedAt || rawDate;
     const excerptText = Array.isArray(attrs.Excerpt)
         ? attrs.Excerpt[0]?.children?.[0]?.text || ""

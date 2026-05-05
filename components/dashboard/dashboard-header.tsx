@@ -7,7 +7,8 @@ import {
     Search, Bell, Home, LayoutGrid, BrainCircuit, Users,
     CreditCard, Calendar, Settings
 } from "lucide-react";
-import { UserButton, useUser } from "@clerk/nextjs";
+import { useUser } from "@clerk/nextjs";
+import { CustomUserMenu } from "@/components/layout/CustomUserMenu";
 import { useDashboard } from "./dashboard-shell";
 
 const NAV_ITEMS = [
@@ -79,14 +80,7 @@ export function DashboardHeader() {
                                 {role}
                             </p>
                         </div>
-                        <UserButton
-                            afterSignOutUrl="/"
-                            appearance={{
-                                elements: {
-                                    userPreviewSecondaryIdentifier: { display: "none" },
-                                },
-                            }}
-                        />
+                        <CustomUserMenu />
                     </div>
                 </div>
             </div>
