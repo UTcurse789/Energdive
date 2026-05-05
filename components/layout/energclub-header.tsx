@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { ArrowLeft, Lock } from "lucide-react";
 import Image from "next/image";
-import { SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
+import { SignedIn, SignedOut } from "@clerk/nextjs";
+import { CustomUserMenu } from "@/components/layout/CustomUserMenu";
 
 export function EnergClubHeader() {
     return (
@@ -41,14 +42,7 @@ export function EnergClubHeader() {
                     </Link>
 
                     <SignedIn>
-                        <UserButton
-                            afterSignOutUrl="/"
-                            appearance={{
-                                elements: {
-                                    userPreviewSecondaryIdentifier: { display: "none" },
-                                },
-                            }}
-                        />
+                        <CustomUserMenu />
                     </SignedIn>
 
                     <SignedOut>

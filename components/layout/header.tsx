@@ -9,9 +9,10 @@ import { formatContentDate } from "@/lib/date";
 import { Search, ChevronDown, Facebook, Linkedin, Megaphone, ChevronRight, Zap, Menu, X, MapPin, Mail, Phone, Play, ArrowRight, Youtube, Instagram } from "lucide-react";
 import { SECTORS } from "@/data/dummy";
 import { motion, AnimatePresence } from "framer-motion";
-import { SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
+import { SignedIn, SignedOut } from "@clerk/nextjs";
 import { GlobalSearch } from "@/components/global-search";
 import { strapiImageUrl } from "@/lib/strapi-image";
+import { CustomUserMenu } from "@/components/layout/CustomUserMenu";
 
 type MagazineIssue = {
     id: number | string;
@@ -406,19 +407,7 @@ export function Header() {
 
                             <div className="relative">
                                 <SignedIn>
-                                    <UserButton afterSignOutUrl="/">
-                                        <UserButton.MenuItems>
-                                            <UserButton.Link label="Dashboard" labelIcon={<Zap size={14} />} href="/dashboard" />
-                                        </UserButton.MenuItems>
-                                    </UserButton>
-                                    {/* <UserButton
-                                    afterSignOutUrl="/"
-                                    appearance={{
-                                        elements: {
-                                            userPreviewSecondaryIdentifier: { display: "none" },
-                                        },
-                                    }}
-                                /> */}
+                                    <CustomUserMenu />
                                 </SignedIn>
                                 <SignedOut>
                                     <motion.div className="relative" onMouseEnter={() => setIsLoginHovered(true)} onMouseLeave={() => setIsLoginHovered(false)}>
