@@ -1,3 +1,4 @@
+import { AdBanner } from "@/components/ads/AdBanner";
 import { ArticleReadTime } from "@/components/article/ArticleReadTime";
 import { AuthorBioBox } from "@/components/article/AuthorBioBox";
 import { ArticleNewsletterCTA } from "@/components/article/ArticleNewsletterCTA";
@@ -17,7 +18,7 @@ import { ScrollProgress } from "@/components/ui/scroll-progress";
 import { DateChip } from "@/components/ui/date-chip";
 import { ShareButton } from "@/components/ui/share-button";
 import { getLatestIssue } from "@/lib/api/getLatestIssue";
-import { ArrowRight, Calendar, ChevronRight } from "lucide-react";
+import { ArrowRight, Calendar, ChevronRight, Printer } from "lucide-react";
 import { formatContentDate } from "@/lib/date";
 import { ArticleJsonLd } from "@/components/seo/ArticleJsonLd";
 
