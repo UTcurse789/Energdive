@@ -57,23 +57,23 @@ export function ArticleNewsletterCTA() {
             </div>
 
             {/* Main content */}
-            <div className="relative z-10 p-8 sm:p-10 pb-8 flex flex-col items-center text-center">
+            <div className="relative z-10 p-6 sm:p-10 pb-6 sm:pb-8 flex flex-col items-center text-center">
 
                 {/* Daily Briefing Pill */}
-                <div className="inline-flex items-center gap-2 mb-5">
+                <div className="inline-flex items-center gap-2 mb-4 sm:mb-5">
                     <span className="border border-[#00C49A]/40 text-[#00C49A] text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-full flex items-center gap-2 bg-[#00C49A]/10">
                         <Mail className="w-3 h-3" />
                         Daily Briefing
                     </span>
                 </div>
 
-                <h4 className="font-serif text-[32px] sm:text-[40px] font-bold text-white mb-6 leading-[1.1] tracking-tight">
-                    Expert Energy News, <span className="text-[#00C49A]">Delivered.</span>
+                <h4 className="font-serif text-[28px] sm:text-[32px] md:text-[40px] font-bold text-white mb-6 leading-[1.15] tracking-tight">
+                    Expert Energy News, <br className="sm:hidden" /><span className="text-[#00C49A]">Delivered.</span>
                 </h4>
 
                 {/* Form */}
                 <div className="w-full max-w-lg mb-6">
-                    <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row items-center gap-2 bg-[#0B151C] border border-white/10 rounded-xl p-1.5 focus-within:border-[#00C49A]/50 transition-colors shadow-inner">
+                    <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-2 bg-transparent sm:bg-[#0B151C] border-0 sm:border border-white/10 rounded-xl p-0 sm:p-1.5 focus-within:border-[#00C49A]/50 transition-colors sm:shadow-inner">
                         <div className="w-9 h-9 rounded-full bg-[#15232D] hidden sm:flex items-center justify-center shrink-0 ml-1.5">
                             <Mail className="w-4 h-4 text-gray-400" />
                         </div>
@@ -83,12 +83,12 @@ export function ArticleNewsletterCTA() {
                             required
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
-                            className="flex-1 w-full bg-transparent text-white placeholder-gray-500 py-2.5 px-4 sm:px-2 focus:outline-none text-[15px] text-center sm:text-left"
+                            className="flex-1 w-full bg-[#0B151C] sm:bg-transparent text-white placeholder-gray-500 py-3.5 sm:py-2.5 px-4 sm:px-2 rounded-xl sm:rounded-none border border-white/10 sm:border-0 focus:outline-none focus:border-[#00C49A]/50 sm:focus:border-transparent text-[15px] text-center sm:text-left transition-colors"
                         />
                         <button
                             type="submit"
                             disabled={status === "loading"}
-                            className="w-full sm:w-auto bg-[#00C49A] hover:bg-[#00B08A] text-white font-bold px-6 py-2.5 rounded-[10px] transition-colors flex items-center justify-center gap-2 whitespace-nowrap shrink-0"
+                            className="w-full sm:w-auto bg-[#00C49A] hover:bg-[#00B08A] text-white font-bold px-6 py-3.5 sm:py-2.5 rounded-xl sm:rounded-[10px] transition-colors flex items-center justify-center gap-2 whitespace-nowrap shrink-0"
                         >
                             {status === "loading" ? (
                                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -112,8 +112,8 @@ export function ArticleNewsletterCTA() {
                 <div className="w-16 h-[2px] bg-[#00C49A]/50 mb-6 rounded-full" />
 
                 <p className="text-gray-300 text-[15px] leading-relaxed max-w-[500px]">
-                    Join <span className="text-[#00C49A] font-semibold">50,000+</span> industry professionals
-                    who rely on our daily insights. Free forever.
+                    Join <span className="text-[#00C49A] font-semibold">5,000+</span> industry professionals
+                    who rely on our daily insights for Free
                 </p>
             </div>
 
