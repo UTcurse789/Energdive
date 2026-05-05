@@ -250,7 +250,7 @@ export async function generateMetadata({
 
 async function getRecommended(currentSlug: string) {
   const res = await fetch(
-    `${STRAPI}/api/contents?filters[type_of_content][name][$eq]=Opinion&populate[author][populate]=avatar&populate=FeaturedImage&populate[content_tag]=true&pagination[limit]=12&sort=Date:desc`,
+    `${STRAPI}/api/contents?filters[type_of_content][name][$eq]=Opinion&populate[author][populate]=avatar&populate=FeaturedImage&populate[content_tag]=true&pagination[limit]=24&sort=Date:desc`,
     { next: { revalidate: 3600 } }
   );
   const json = await res.json();
@@ -259,7 +259,7 @@ async function getRecommended(currentSlug: string) {
   return items
     .filter((item: StrapiContentItem) => item.slug !== currentSlug)
     .filter((item: StrapiContentItem) => getOpinionContentKind(item) === "interview")
-    .slice(0, 3);
+    .slice(0, 4);
 }
 
 export default async function OpinionDetailPage({ params }: { params: Promise<{ slug: string }> }) {

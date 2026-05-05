@@ -129,7 +129,7 @@ export default function OpinionContent({ opinion, recommended }: any) {
                 {/* Content Area */}
                 <div className="relative">
                     <div className="relative max-w-[720px] mx-auto w-full">
-                        <div className="hidden min-[1440px]:block absolute top-0 right-[calc(100%+2rem)] w-[300px]">
+                        <div className="hidden min-[1440px]:block absolute top-0 bottom-0 right-[calc(100%+2rem)] w-[300px]">
                             <div className="sticky top-24 w-[300px]">
                                 <AdBanner
                                     placement={leftAdPlacement}
@@ -141,7 +141,7 @@ export default function OpinionContent({ opinion, recommended }: any) {
                             </div>
                         </div>
 
-                        <div className="hidden min-[1440px]:block absolute top-0 left-[calc(100%+2rem)] w-[300px]">
+                        <div className="hidden min-[1440px]:block absolute top-0 bottom-0 left-[calc(100%+2rem)] w-[300px]">
                             <div className="sticky top-24 w-[300px]">
                                 <AdBanner
                                     placement={rightAdPlacement}
@@ -267,17 +267,17 @@ export default function OpinionContent({ opinion, recommended }: any) {
                             {footerLinkLabel} <ArrowRight size={14} />
                         </Link>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
-                        {recommended?.map((item: any) => (
-                            <Link key={item.id} href={`${sectionPath}/${item.slug}`} className="group space-y-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
+                        {recommended?.slice(0, 4).map((item: any) => (
+                            <Link key={item.id} href={`${sectionPath}/${item.slug}`} className="group space-y-4">
                                 <div className="relative aspect-3/4 overflow-hidden rounded-xl grayscale group-hover:grayscale-0 transition-all duration-700">
                                     {item.featuredImage && (
                                         <Image src={item.featuredImage} alt={item.title} fill className="object-cover group-hover:scale-105 transition-transform duration-700" />
                                     )}
                                 </div>
-                                <div className="space-y-3">
+                                <div className="space-y-2">
                                     <span className="text-[9px] font-black uppercase tracking-[0.3em] text-[#00A651]">{item.category}</span>
-                                    <h5 className="text-2xl font-bold font-serif leading-tight group-hover:text-[#00A651] transition-colors line-clamp-2">{item.title}</h5>
+                                    <h5 className="text-lg md:text-xl font-bold font-serif leading-tight group-hover:text-[#00A651] transition-colors line-clamp-3">{item.title}</h5>
                                     <p className="text-zinc-400 text-[10px] font-black uppercase tracking-widest">{item.author?.name}</p>
                                 </div>
                             </Link>
