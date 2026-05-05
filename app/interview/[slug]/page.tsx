@@ -1,3 +1,8 @@
+import { SaveArticleButton } from "@/components/article/SaveArticleButton";
+import { ArticleStickyShare } from "@/components/article/ArticleStickyShare";
+import { ArticleNewsletterCTA } from "@/components/article/ArticleNewsletterCTA";
+import { AuthorBioBox } from "@/components/article/AuthorBioBox";
+import { ArticleReadTime } from "@/components/article/ArticleReadTime";
 import Link from "next/link";
 import Image from "next/image";
 import { Header } from "@/components/layout/header";
@@ -11,7 +16,7 @@ import { ScrollProgress } from "@/components/ui/scroll-progress";
 import { DateChip } from "@/components/ui/date-chip";
 import { ShareButton } from "@/components/ui/share-button";
 import { getLatestIssue } from "@/lib/api/getLatestIssue";
-import { ArrowRight, Calendar, ChevronRight } from "lucide-react";
+import { ArrowRight, Calendar, ChevronRight, Printer } from "lucide-react";
 import { formatContentDate } from "@/lib/date";
 import { ArticleJsonLd } from "@/components/seo/ArticleJsonLd";
 import { AdBanner } from "@/components/ads/AdBanner";
@@ -162,6 +167,8 @@ export default async function InterviewDetailPage({ params }: { params: Promise<
     const excerptText = Array.isArray(attrs.Excerpt)
         ? attrs.Excerpt[0]?.children?.[0]?.text || ""
         : "";
+
+    const canonicalUrl = getCanonicalUrl(`/interviews/${slug}`);
 
     return (
         <div className="min-h-screen bg-white">
