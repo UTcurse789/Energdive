@@ -72,6 +72,11 @@ export async function generateMetadata({
     }
 
     const attrs = articleData.attributes || articleData;
+    // Extract sector slug for targeted ad
+    const sectorData = attrs.sectors || attrs.sector?.data?.attributes || null;
+    const sectorSlug: string | undefined = Array.isArray(sectorData)
+        ? sectorData[0]?.slug || undefined
+        : sectorData?.slug || undefined;
     const baseTitle = attrs.Title || "Analysis";
     const cleanBaseTitle = String(baseTitle).replace(/^['"“”‘’]+|['"“”‘’]+$/g, "").trim();
     const shareTitle = `${cleanBaseTitle} - ENERGDIVE`;
@@ -118,6 +123,13 @@ export default async function AnalysisDetailPage({ params }: { params: Promise<{
     if (!articleData) notFound();
 
     const attrs = articleData.attributes || articleData;
+
+    // Extract sector slug for targeted ad
+    const sectorData = attrs.sectors || attrs.sector?.data?.attributes || null;
+    const sectorSlug: string | undefined = Array.isArray(sectorData)
+        ? sectorData[0]?.slug || undefined
+        : sectorData?.slug || undefined;
+
     const tagsData = attrs.tags?.data || attrs.tags || [];
     const normalizedTags = Array.isArray(tagsData) ? tagsData.map((t: any) => normalizeTag(t)).filter(Boolean) : [];
     const relatedArticles = await getRelated(slug);
