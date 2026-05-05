@@ -231,9 +231,9 @@ export default function OpinionContent({ opinion, recommended }: any) {
                             <div className="mt-12 pt-6 border-t border-zinc-100">
                                 <h4 className="text-xs uppercase tracking-widest text-zinc-400 mb-4 font-bold">Tags</h4>
                                 <div className="flex flex-wrap gap-2">
-                                    {opinion.tags.map((tag: any) => (
+                                    {opinion.tags.map((tag: any, i: number) => (
                                         <TagBadge
-                                            key={tag.slug}
+                                            key={`${tag.slug}-${i}`}
                                             name={tag.name}
                                             slug={tag.slug}
                                             className="bg-zinc-50 text-zinc-700 px-3 py-1.5 text-xs font-medium uppercase tracking-wider rounded-full border border-zinc-200 hover:bg-[#00A651] hover:text-white hover:border-[#00A651] transition-all"
@@ -259,7 +259,7 @@ export default function OpinionContent({ opinion, recommended }: any) {
             </article>
 
             {/* Footer Recommended */}
-            <footer className="mt-40 bg-zinc-50 py-24 border-t border-zinc-100">
+            <footer className="mt-16 bg-zinc-50 py-16 border-t border-zinc-100">
                 <div className="container mx-auto px-4 max-w-7xl">
                     <div className="flex justify-between items-end mb-16">
                         <h4 className="text-5xl font-black uppercase italic tracking-tighter">{footerTitle}</h4>
