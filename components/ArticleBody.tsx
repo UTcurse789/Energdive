@@ -1,6 +1,7 @@
 "use client";
 
 import { Fragment } from "react";
+import Image from "next/image";
 import { BlocksRenderer } from "@strapi/blocks-react-renderer";
 import { ShareButton } from "./ui/share-button";
 import dynamic from "next/dynamic";
@@ -328,10 +329,13 @@ export default function ArticleBody({
                                     const caption = image?.caption || "";
                                     return (
                                         <figure style={{ margin: "2rem 0" }}>
-                                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                                            <img
+                                            {/* Article inline image — uses Next.js Image for WebP optimization */}
+                                            <Image
                                                 src={src}
                                                 alt={alt}
+                                                width={0}
+                                                height={0}
+                                                sizes="(max-width: 768px) 100vw, 720px"
                                                 style={{
                                                     width: "100%",
                                                     height: "auto",
