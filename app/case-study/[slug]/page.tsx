@@ -20,6 +20,7 @@ import { ShareButton } from "@/components/ui/share-button";
 import { getLatestIssue } from "@/lib/api/getLatestIssue";
 import { ArrowRight, Calendar, ChevronRight, Printer } from "lucide-react";
 import { formatContentDate } from "@/lib/date";
+import { ArticleJsonLd } from "@/components/seo/ArticleJsonLd";
 
 const STRAPI_BASE_URL = process.env.NEXT_PUBLIC_STRAPI_URL || "https://cms.energdive.com";
 
@@ -71,8 +72,13 @@ export async function generateMetadata({
     }
 
     const attrs = articleData.attributes || articleData;
+    // Extract sector slug for targeted ad
+    const sectorData = attrs.sectors || attrs.sector?.data?.attributes || null;
+    const sectorSlug: string | undefined = Array.isArray(sectorData)
+        ? sectorData[0]?.slug || undefined
+        : sectorData?.slug || undefined;
     const baseTitle = attrs.Title || "Case Study";
-    const cleanBaseTitle = String(baseTitle).replace(/^['"“”‘’]+|['"“”‘’]+$/g, "").trim();
+    const cleanBaseTitle = String(baseTitle).replace(/^['"“” sworn]+|['"“” sworn]+$/g, "").trim();
     const shareTitle = `${cleanBaseTitle} - ENERGDIVE`;
     const excerptBlock = attrs.Excerpt;
     const description =
@@ -117,6 +123,12 @@ export default async function CaseStudyDetailPage({ params }: { params: Promise<
     if (!articleData) notFound();
 
     const attrs = articleData.attributes || articleData;
+    // Extract sector slug for targeted ad
+    const sectorData = attrs.sectors || attrs.sector?.data?.attributes || null;
+    const sectorSlug: string | undefined = Array.isArray(sectorData)
+        ? sectorData[0]?.slug || undefined
+        : sectorData?.slug || undefined;
+
     const tagsData = attrs.tags?.data || attrs.tags || [];
     const normalizedTags = Array.isArray(tagsData) ? tagsData.map((t: any) => normalizeTag(t)).filter(Boolean) : [];
     const relatedArticles = await getRelated(slug);
@@ -154,8 +166,25 @@ export default async function CaseStudyDetailPage({ params }: { params: Promise<
 
     const canonicalUrl = getCanonicalUrl(`/case-study/${slug}`);
 
+    // Raw date for JSON-LD and display (prioritizing publishedAt for accurate automatic time)
+    const rawDate = attrs.publishedAt || attrs.createdAt || attrs.Date || "";
+    const modifiedDate = attrs.updatedAt || rawDate;
+    const excerptText = Array.isArray(attrs.Excerpt)
+        ? attrs.Excerpt[0]?.children?.[0]?.text || ""
+        : "";
+
     return (
         <div className="min-h-screen bg-white">
+            <ArticleJsonLd
+                title={article.title}
+                datePublished={rawDate}
+                dateModified={modifiedDate}
+                authorName={article.author?.name}
+                slug={slug}
+                imageUrl={article.image}
+                section="case-study"
+                description={excerptText}
+            />
             <ScrollProgress /><Header />
             <main className="pt-20 pb-24">
                 <ArticleStickyShare title={article.title} url={canonicalUrl} />

@@ -6,6 +6,8 @@ import {
   SITEMAP_CACHE_CONTROL,
   toIsoDate,
 } from "@/lib/sitemap-content";
+import { fetchStrapi, StrapiCollection } from "@/lib/strapi";
+
 
 // ---------------------------------------------------------------------------
 // Types
@@ -116,9 +118,6 @@ function buildUrlEntry(baseUrl: string, article: NewsArticle): string {
     <lastmod>${isoDate}</lastmod>
     <priority>0.90</priority>
     <news:news>
-      <news:publication><news:name>EnergDive</news:name><news:language>en</news:language></news:publication>
-      <news:publication_date>${toIsoDate(a.publishedAt)}</news:publication_date>
-      <news:title>${escapeXmlValue(a.title)}</news:title>
       <news:publication>
         <news:name>EnergDive</news:name>
         <news:language>en</news:language>
