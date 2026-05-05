@@ -190,15 +190,7 @@ export function OpinionSection({
                                         </p>
                                     </div>
 
-                                    <div className="flex items-center justify-between w-full">
-                                        <Link href={`/author/${slugify(currentInterview.authorName)}`} className="flex flex-col hover:opacity-80 transition-opacity">
-                                            <span className="font-black text-base sm:text-lg uppercase tracking-wider sm:tracking-widest text-zinc-900 overflow-wrap-break-word">
-                                                {currentInterview.authorName}
-                                            </span>
-                                            <span className="text-[10px] font-bold text-[#00A651] uppercase tracking-[3px] mt-1">
-                                                {currentInterview.authorRole}
-                                            </span>
-                                        </Link>
+                                    <div className="flex items-center justify-end w-full">
 
                                         {/* Navigation */}
                                         {interviews.length > 1 && (
