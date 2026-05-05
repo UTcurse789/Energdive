@@ -17,7 +17,6 @@ const nextConfig: NextConfig = {
 
   // Tree-shake heavy client-side libraries
   experimental: {
-    optimizeCss: true,
     optimizePackageImports: [
       "lucide-react",
       "framer-motion",
