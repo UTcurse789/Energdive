@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useUser, useClerk } from "@clerk/nextjs";
 import Link from "next/link";
-import { Settings, LayoutDashboard, LogOut } from "lucide-react";
+import { Settings, LayoutDashboard, LogOut, Bookmark } from "lucide-react";
 
 export function CustomUserMenu() {
     const { user } = useUser();
@@ -94,6 +94,15 @@ export function CustomUserMenu() {
                         >
                             <LayoutDashboard className="w-4 h-4 text-gray-400" />
                             <span className="font-medium">Dashboard</span>
+                        </Link>
+
+                        <Link
+                            href="/dashboard/saved"
+                            onClick={() => setOpen(false)}
+                            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#00A651] transition-colors"
+                        >
+                            <Bookmark className="w-4 h-4 text-gray-400" />
+                            <span className="font-medium">Saved</span>
                         </Link>
 
                         <div className="border-t border-gray-100 my-1" />

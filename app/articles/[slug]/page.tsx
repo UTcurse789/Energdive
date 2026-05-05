@@ -19,6 +19,7 @@ import { ArticleReadTime } from "@/components/article/ArticleReadTime";
 import { AuthorBioBox } from "@/components/article/AuthorBioBox";
 import { ArticleNewsletterCTA } from "@/components/article/ArticleNewsletterCTA";
 import { ArticleStickyShare } from "@/components/article/ArticleStickyShare";
+import { SaveArticleButton } from "@/components/article/SaveArticleButton";
 
 const STRAPI = "https://cms.energdive.com";
 
@@ -214,13 +215,15 @@ export default async function ArticlePage(props: any) {
 
             <main className="pt-20 pb-24">
                 {/* ─── Breadcrumb ─── */}
-                <div className="container mx-auto max-w-7xl px-4 sm:px-6 mb-6 sm:mb-8">
+                <div className="container mx-auto max-w-7xl px-4 sm:px-6">
                     <nav className="flex items-center gap-1.5 text-xs text-gray-400 font-sans">
                         <Link href="/" className="hover:text-teal-600 transition-colors">Home</Link>
                         <ChevronRight className="h-3 w-3" />
                         <span className="text-gray-600 font-medium truncate max-w-[200px]">{article.category}</span>
                     </nav>
                 </div>
+
+                <div className="h-8 sm:h-10" />
 
                 <div className="container mx-auto px-4 sm:px-6 grid grid-cols-1 lg:grid-cols-12 gap-8 sm:gap-12 max-w-7xl">
 
@@ -235,7 +238,7 @@ export default async function ArticlePage(props: any) {
                         </div>
 
                         {/* Title */}
-                        <h1 className="text-2xl  sm:text-4xl md:text-5xl lg:text-6xl font-serif font-bold leading-[1.08] tracking-tight text-gray-900 mb-4 sm:mb-6">
+                        <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-serif font-bold leading-[1.08] tracking-tight text-gray-900 mb-4 sm:mb-6">
                             {article.title}
                         </h1>
 
@@ -246,29 +249,32 @@ export default async function ArticlePage(props: any) {
 
                         {/* Author row */}
                         {article.author && (
-                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-10 pb-8 border-b border-gray-100">
-                                <div className="flex items-center gap-4">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-10 pb-6 border-b border-gray-100">
+                                <div className="flex items-center gap-3">
                                     {article.author.avatar ? (
                                         <Image
                                             src={article.author.avatar}
-                                            width={48}
-                                            height={48}
+                                            width={36}
+                                            height={36}
                                             alt={article.author.name || ""}
-                                            className="rounded-full object-cover w-12 h-12"
+                                            className="rounded-full object-cover w-9 h-9 shrink-0"
                                         />
                                     ) : (
-                                        <div className="w-12 h-12 rounded-full bg-teal-100 flex items-center justify-center text-teal-700 font-bold text-lg shrink-0">
+                                        <div className="w-9 h-9 rounded-full bg-teal-100 flex items-center justify-center text-teal-700 font-bold text-sm shrink-0">
                                             {article.author.name?.charAt(0) || "A"}
                                         </div>
                                     )}
                                     <div className="flex flex-col">
-                                        <Link
-                                            href={`/author/${slugify(article.author.name)}`}
-                                            className="font-bold text-gray-900 text-xl hover:text-[#00A651] transition-colors leading-tight"
-                                        >
-                                            {article.author.name}
-                                        </Link>
-                                        <div className="flex items-center flex-wrap gap-2 text-gray-400 text-sm mt-0.5">
+                                        <div className="text-gray-600 text-[14px]">
+                                            By{" "}
+                                            <Link
+                                                href={`/author/${slugify(article.author.name)}`}
+                                                className="font-bold text-gray-900 hover:text-[#00A651] transition-colors"
+                                            >
+                                                {article.author.name}
+                                            </Link>
+                                        </div>
+                                        <div className="flex items-center flex-wrap gap-2 text-gray-400 text-[13px] mt-0.5">
                                             <div className="flex items-center gap-1.5">
                                                 <Calendar className="w-3.5 h-3.5" />
                                                 <span>
@@ -286,7 +292,7 @@ export default async function ArticlePage(props: any) {
                                         </div>
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-3 self-start sm:self-auto ml-16 sm:ml-0">
+                                <div className="flex items-center gap-3 self-start sm:self-auto">
                                     <Link
                                         href={`/print/${slug}`}
                                         target="_blank"
@@ -303,6 +309,7 @@ export default async function ArticlePage(props: any) {
                                         className="text-gray-600 hover:text-gray-900 font-medium text-sm border border-gray-200 px-4 py-2 rounded-full bg-white hover:bg-gray-50 shadow-sm"
                                         iconClassName="w-4 h-4"
                                     />
+                                    <SaveArticleButton title={article.title} url={`https://energdive.com/articles/${slug}`} />
                                 </div>
                             </div>
                         )}
@@ -336,7 +343,7 @@ export default async function ArticlePage(props: any) {
         prose-img:rounded-lg prose-img:shadow-md prose-img:my-16
         prose-figcaption:text-center prose-figcaption:text-[14px] prose-figcaption:text-gray-500 prose-figcaption:mt-3 prose-figcaption:italic prose-figcaption:font-sans
         prose-li:marker:text-teal-500
-        first:prose-p:first-letter:text-6xl first:prose-p:first-letter:font-serif first:prose-p:first-letter:font-bold first:prose-p:first-letter:float-left first:prose-p:first-letter:mr-3 first:prose-p:first-letter:mt-1 first:prose-p:first-letter:text-teal-700"
+        first:prose-p:first-letter:text-6xl first:prose-p:first-letter:font-serif first:prose-p:first-letter:font-bold first:prose-p:first-letter:float-left first:prose-p:first-letter:mr-3 first:prose-p:first-letter:mt-1 first:prose-p:first-letter:text-teal-700 last:prose-p:mb-0"
                             >
                                 <ArticleBody
                                     content={article.content}
@@ -361,14 +368,14 @@ export default async function ArticlePage(props: any) {
 
                         {/* Tags */}
                         {tags.length > 0 && (
-                            <div className="mt-12 pt-6 border-t border-gray-100">
+                            <div className="mt-2 pt-5 border-t border-gray-100">
                                 <h4 className="text-xs uppercase tracking-widest text-gray-400 mb-4 font-bold">
                                     Tags
                                 </h4>
                                 <div className="flex flex-wrap gap-2">
-                                    {tags.map((tag: any) => (
+                                    {tags.map((tag: any, i: number) => (
                                         <TagBadge
-                                            key={tag.slug}
+                                            key={`${tag.slug}-${i}`}
                                             name={tag.name}
                                             slug={tag.slug}
                                             className="bg-teal-50 text-teal-700 px-3 py-1.5 text-xs font-medium uppercase tracking-wider rounded-full border border-teal-100 hover:bg-teal-600 hover:text-white hover:border-teal-600"

@@ -79,7 +79,7 @@ export default function AuthPromptModal() {
                         {/* Image Section (Left on Desktop, Top on Mobile) */}
                         <div className="relative w-full h-48 md:h-auto md:w-5/12 shrink-0 bg-zinc-900">
                             <Image
-                                src="/popup-bg.png"
+                                src="/image.png"
                                 alt="Energy Insights"
                                 fill
                                 style={{ objectFit: "cover" }}
