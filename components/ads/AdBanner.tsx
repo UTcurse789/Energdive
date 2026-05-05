@@ -269,11 +269,15 @@ function HeroBannerAd({ ad, className }: { ad: Ad; className: string }) {
 
     const creativeContent = (
         <div className="relative inline-block rounded-none overflow-hidden">
-            <img
+            <Image
                 src={imageUrl}
                 alt={ad.title || "Advertisement"}
+                width={0}
+                height={0}
+                sizes="100vw"
                 loading="lazy"
-                className="max-w-full h-auto object-contain transition-transform duration-500 group-hover:scale-[1.015]"
+                unoptimized
+                className="max-w-full h-auto w-auto object-contain transition-transform duration-500 group-hover:scale-[1.015]"
             />
         </div>
     );

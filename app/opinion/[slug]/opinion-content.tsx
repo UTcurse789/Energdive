@@ -198,11 +198,12 @@ export default function OpinionContent({ opinion, recommended }: any) {
                                             <figure key={i} className="my-16 not-prose">
                                                 <div className="relative aspect-video rounded-3xl overflow-hidden bg-zinc-100">
                                                     {imgUrl && (
-                                                        // eslint-disable-next-line @next/next/no-img-element
-                                                        <img
+                                                        <Image
                                                             src={imgUrl}
                                                             alt={block.image?.alternativeText || ""}
-                                                            style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                                                            fill
+                                                            sizes="(max-width: 768px) 100vw, 720px"
+                                                            className="object-cover"
                                                         />
                                                     )}
                                                 </div>

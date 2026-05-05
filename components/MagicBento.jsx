@@ -1,5 +1,6 @@
 import { useRef, useEffect, useCallback, useState } from 'react';
 import { gsap } from 'gsap';
+import Image from 'next/image';
 import './MagicBento.css';
 
 const DEFAULT_PARTICLE_COUNT = 12;
@@ -532,9 +533,11 @@ const MagicBento = ({
               >
                 <div className="magic-bento-card__bg-overlay"></div>
                 {card.image && (
-                  <img
+                  <Image
                     src={card.image}
                     alt={card.title}
+                    fill
+                    sizes="(max-width: 768px) 100vw, 33vw"
                     className="magic-bento-card__image"
                   />
                 )}
@@ -668,9 +671,11 @@ const MagicBento = ({
             >
               <div className="magic-bento-card__bg-overlay"></div>
               {card.image && (
-                <img
+                <Image
                   src={card.image}
                   alt={card.title}
+                  fill
+                  sizes="(max-width: 768px) 100vw, 33vw"
                   className="magic-bento-card__image"
                 />
               )}

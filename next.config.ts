@@ -17,6 +17,7 @@ const nextConfig: NextConfig = {
 
   // Tree-shake heavy client-side libraries
   experimental: {
+    optimizeCss: true,
     optimizePackageImports: [
       "lucide-react",
       "framer-motion",
@@ -38,11 +39,11 @@ const nextConfig: NextConfig = {
         ],
       },
       {
-        source: "/:path*(jpg|jpeg|png|gif|svg|webp|ico|woff|woff2|ttf)",
+        source: "/:path*(jpg|jpeg|png|gif|svg|webp|ico|woff|woff2|ttf|otf|eot)",
         headers: [
           {
             key: "Cache-Control",
-            value: "public, max-age=86400, stale-while-revalidate=43200",
+            value: "public, max-age=31536000, immutable",
           },
         ],
       },
