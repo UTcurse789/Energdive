@@ -18,8 +18,8 @@ import { ShareButton } from "@/components/ui/share-button";
 import { slugify } from "@/lib/utils";
 import { TagBadge } from "@/components/ui/tag-badge";
 import { AdBanner } from "@/components/ads/AdBanner";
-
-
+import { SaveArticleButton } from "@/components/article/SaveArticleButton";
+import { ArticleStickyShare } from "@/components/article/ArticleStickyShare";
 
 /* ---------- Strapi Rich Text Renderer ---------- */
 function renderInlineChildren(children: any[]) {
@@ -46,6 +46,7 @@ export default function OpinionContent({ opinion, recommended }: any) {
 
     return (
         <div className="bg-[#FDFDFD] min-h-screen selection:bg-[#00A651]/10 antialiased">
+            <ArticleStickyShare title={opinion.title} url={`https://www.energdive.com${sectionPath}/${opinion.slug}`} />
             <ScrollProgress />
 
             <article className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl pt-12">
@@ -68,7 +69,7 @@ export default function OpinionContent({ opinion, recommended }: any) {
                             <Printer className="w-3.5 h-3.5" />
                             Print
                         </Link>
-                        <Button variant="ghost" size="sm" className="rounded-full"><Bookmark className="w-4 h-4" /></Button>
+                        <SaveArticleButton title={opinion.title} url={`https://www.energdive.com${sectionPath}/${opinion.slug}`} />
                         <ShareButton
                             title={opinion.title}
                             text={opinion.excerpt}
@@ -154,7 +155,7 @@ export default function OpinionContent({ opinion, recommended }: any) {
                         </div>
 
                         {/* Main Article Column: STRICT 720px */}
-                        <div className="prose prose-zinc max-w-none">
+                        <div className="prose prose-zinc max-w-none last:prose-p:mb-0">
                             {opinion.content?.map((block: any, i: number) => {
                                 const text = block.children?.map((c: any) => c.text).join("") || "";
                                 if (!text.trim()) return null;

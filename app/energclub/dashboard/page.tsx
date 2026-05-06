@@ -1,4 +1,3 @@
-import { UserButton } from "@clerk/nextjs";
 import { currentUser } from "@clerk/nextjs/server";
 import { Zap, AlertTriangle, Download } from "lucide-react";
 
@@ -27,12 +26,11 @@ export default async function EnergClubDashboard() {
                     {/* Profile Widget */}
                     <div className="mt-8 md:mt-0 bg-[#111] border border-white/10 p-6 rounded-2xl flex items-center gap-4">
                         <div className="bg-white/10 p-1 rounded-full">
-                            <UserButton appearance={{
-                                elements: {
-                                    userButtonAvatarBox: "w-12 h-12",
-                                    userPreviewSecondaryIdentifier: { display: "none" },
-                                }
-                            }} />
+                            <img
+                                src={user?.imageUrl || ""}
+                                alt={user?.fullName || "User"}
+                                className="w-12 h-12 rounded-full object-cover"
+                            />
                         </div>
                         <div>
                             <p className="text-sm font-bold text-white">{user?.fullName}</p>

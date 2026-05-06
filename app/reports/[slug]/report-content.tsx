@@ -16,6 +16,9 @@ import {
     Quote
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ShareButton } from "@/components/ui/share-button";
+import { SaveArticleButton } from "@/components/article/SaveArticleButton";
+import { ArticleStickyShare } from "@/components/article/ArticleStickyShare";
 
 /* =========================
    TYPES & UTILS
@@ -149,6 +152,7 @@ export default async function ArticlePage(props: PageProps) {
 
     return (
         <div className="min-h-screen bg-[#FDFDFD] font-sans text-zinc-900">
+            <ArticleStickyShare title={title} url={`https://www.energdive.com/reports/${article.slug}`} />
             <Header />
 
             <main className="pt-[80px] pb-32">
@@ -165,12 +169,8 @@ export default async function ArticlePage(props: PageProps) {
                         </Link>
 
                         <div className="flex gap-4">
-                            <button className="p-2 rounded-full border hover:bg-zinc-50 transition-colors">
-                                <BookmarkPlus className="w-4 h-4 text-zinc-500" />
-                            </button>
-                            <button className="p-2 rounded-full border hover:bg-zinc-50 transition-colors">
-                                <Share2 className="w-4 h-4 text-zinc-500" />
-                            </button>
+                            <SaveArticleButton title={title} url={`https://www.energdive.com/reports/${article.slug}`} />
+                            <ShareButton title={title} text={excerpt} className="bg-transparent text-zinc-500 hover:bg-zinc-50 p-2 rounded-full border" />
                         </div>
                     </div>
 
@@ -281,7 +281,7 @@ export default async function ArticlePage(props: PageProps) {
                                 )}
 
                                 {/* DYNAMIC BLOCKS */}
-                                <div className="prose prose-xl prose-zinc max-w-none prose-p:font-serif prose-headings:font-black">
+                                <div className="prose prose-xl prose-zinc max-w-none prose-p:font-serif prose-headings:font-black last:prose-p:mb-0">
                                     <RenderBlocks blocks={contentBlocks} />
                                 </div>
                             </div>
