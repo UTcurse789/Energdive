@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Share2, BookmarkPlus, MessageSquare, CheckCircle2 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { BookmarkPlus, MessageSquare, CheckCircle2 } from "lucide-react";
 import { ShareButton } from "../ui/share-button";
-import { useAuth } from "@clerk/nextjs";
-import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
+import { SaveLoginPrompt } from "@/components/onboarding/save-login-prompt";
+import { useArticleSave } from "@/hooks/use-article-save";
 
 interface ArticleStickyShareProps {
     title: string;
@@ -14,22 +14,18 @@ interface ArticleStickyShareProps {
 
 export function ArticleStickyShare({ title, url }: ArticleStickyShareProps) {
     const [isVisible, setIsVisible] = useState(false);
-    const [isSaved, setIsSaved] = useState(false);
-    const [showToast, setShowToast] = useState(false);
-    const { isSignedIn, isLoaded } = useAuth();
-    const router = useRouter();
+    const saveButtonRef = useRef<HTMLButtonElement | null>(null);
+    const {
+        handleSave,
+        isGuest,
+        isSaved,
+        loginHref,
+        showLoginPrompt,
+        showToast,
+        setShowLoginPrompt,
+    } = useArticleSave({ title, url });
 
     useEffect(() => {
-        // Check if saved
-        try {
-            const savedArticles = JSON.parse(localStorage.getItem('saved_articles') || '[]');
-            if (savedArticles.some((a: any) => a.url === url)) {
-                setIsSaved(true);
-            }
-        } catch (e) {
-            console.error("Error reading saved articles", e);
-        }
-
         const toggleVisibility = () => {
             // Show the floating bar only after scrolling down a bit
             if (window.scrollY > 400) {
@@ -41,33 +37,7 @@ export function ArticleStickyShare({ title, url }: ArticleStickyShareProps) {
 
         window.addEventListener("scroll", toggleVisibility);
         return () => window.removeEventListener("scroll", toggleVisibility);
-    }, [url]);
-
-    const handleSave = () => {
-        if (isLoaded && !isSignedIn) {
-            router.push("/auth?redirect_url=" + encodeURIComponent(window.location.href));
-            return;
-        }
-
-        try {
-            const savedArticles = JSON.parse(localStorage.getItem('saved_articles') || '[]');
-            if (isSaved) {
-                const updated = savedArticles.filter((a: any) => a.url !== url);
-                localStorage.setItem('saved_articles', JSON.stringify(updated));
-                setIsSaved(false);
-            } else {
-                savedArticles.push({ title, url, savedAt: new Date().toISOString() });
-                localStorage.setItem('saved_articles', JSON.stringify(savedArticles));
-                setIsSaved(true);
-                setShowToast(true);
-                setTimeout(() => setShowToast(false), 3000);
-                // Dispatch event so other components can know
-                window.dispatchEvent(new Event('saved_articles_updated'));
-            }
-        } catch (e) {
-            console.error("Error saving article", e);
-        }
-    };
+    }, []);
 
     return (
         <>
@@ -84,11 +54,15 @@ export function ArticleStickyShare({ title, url }: ArticleStickyShareProps) {
                 />
                 
                 <button 
+                    ref={saveButtonRef}
                     onClick={handleSave}
-                    className={`flex flex-col items-center gap-1 transition-colors ${isSaved ? 'text-teal-600' : 'text-gray-500 hover:text-teal-600'}`} 
+                    className={`relative flex flex-col items-center gap-1 transition-colors ${isSaved ? 'text-teal-600' : 'text-gray-500 hover:text-teal-600'}`} 
                     title={isSaved ? "Saved" : "Save for later"}
                 >
-                    {isSaved ? <BookmarkPlus className="w-5 h-5 fill-current" /> : <BookmarkPlus className="w-5 h-5" />}
+                    {!isSaved && isGuest && (
+                        <span className="absolute top-0 h-7 w-7 rounded-full bg-emerald-500/15 animate-pulse" />
+                    )}
+                    {isSaved ? <BookmarkPlus className="relative z-10 w-5 h-5 fill-current" /> : <BookmarkPlus className="relative z-10 w-5 h-5" />}
                     <span className="text-[10px] font-medium">{isSaved ? 'Saved' : 'Save'}</span>
                 </button>
                 
@@ -111,6 +85,13 @@ export function ArticleStickyShare({ title, url }: ArticleStickyShareProps) {
                     </motion.div>
                 )}
             </AnimatePresence>
+
+            <SaveLoginPrompt
+                anchorRef={saveButtonRef}
+                loginHref={loginHref}
+                open={showLoginPrompt}
+                onClose={() => setShowLoginPrompt(false)}
+            />
         </>
     );
 }

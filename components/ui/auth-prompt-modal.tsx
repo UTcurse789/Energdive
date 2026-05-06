@@ -10,7 +10,7 @@ import { X } from "lucide-react";
 import { usePathname } from "next/navigation";
 
 const DISMISSAL_COOLDOWN_MS = 60 * 60 * 1000; // 1 hour
-const POPUP_DELAY_MS = 7 * 1000; // 7 seconds
+const POPUP_DELAY_MS = 5 * 1000; // 5 seconds
 
 export default function AuthPromptModal() {
     const { isLoaded, isSignedIn } = useAuth();
