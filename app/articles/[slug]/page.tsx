@@ -20,6 +20,7 @@ import { AuthorBioBox } from "@/components/article/AuthorBioBox";
 import { ArticleNewsletterCTA } from "@/components/article/ArticleNewsletterCTA";
 import { ArticleStickyShare } from "@/components/article/ArticleStickyShare";
 import { SaveArticleButton } from "@/components/article/SaveArticleButton";
+import { ArticlePremiumSpotlight } from "@/components/onboarding/article-premium-spotlight";
 
 const STRAPI = "https://cms.energdive.com";
 
@@ -197,6 +198,7 @@ export default async function ArticlePage(props: any) {
     // Raw date for JSON-LD (needs ISO-8601, not formatted display string)
     const rawDate = articleData.Date || articleData.publishedAt || articleData.createdAt || "";
     const modifiedDate = articleData.updatedAt || rawDate;
+    const canonicalUrl = getCanonicalUrl(`/articles/${slug}`);
 
     return (
         <div className="min-h-screen bg-white">
@@ -214,6 +216,10 @@ export default async function ArticlePage(props: any) {
             <Header />
 
             <main className="pt-20 pb-24">
+                <ArticleStickyShare title={article.title} url={canonicalUrl} />
+                <ArticlePremiumSpotlight
+                    loginHref={`/auth?redirect_url=${encodeURIComponent(canonicalUrl)}`}
+                />
                 {/* ─── Breadcrumb ─── */}
                 <div className="container mx-auto max-w-7xl px-4 sm:px-6">
                     <nav className="flex items-center gap-1.5 text-xs text-gray-400 font-sans">
@@ -305,11 +311,11 @@ export default async function ArticlePage(props: any) {
                                     <ShareButton
                                         title={article.title}
                                         text={article.excerpt}
-                                        url={`https://energdive.com/articles/${slug}`}
+                                        url={canonicalUrl}
                                         className="text-gray-600 hover:text-gray-900 font-medium text-sm border border-gray-200 px-4 py-2 rounded-full bg-white hover:bg-gray-50 shadow-sm"
                                         iconClassName="w-4 h-4"
                                     />
-                                    <SaveArticleButton title={article.title} url={`https://energdive.com/articles/${slug}`} />
+                                    <SaveArticleButton title={article.title} url={canonicalUrl} />
                                 </div>
                             </div>
                         )}

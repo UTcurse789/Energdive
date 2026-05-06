@@ -54,6 +54,7 @@ import { UtmTracker } from "@/components/UtmTracker";
 import { Suspense } from "react";
 import ConsentAwareGTM from "@/components/ConsentAwareGTM";
 import CookieConsent from "@/components/CookieConsent";
+import { PlatformOnboarding } from "@/components/onboarding/platform-onboarding";
 import AuthPromptModal from "@/components/ui/auth-prompt-modal";
 
 const sans = Inter({
@@ -167,6 +168,7 @@ export default function RootLayout({
           <Suspense fallback={null}>
             <UtmTracker />
           </Suspense>
+          <PlatformOnboarding />
           <AuthPromptModal />
           <SiteLayout>
             {children}
