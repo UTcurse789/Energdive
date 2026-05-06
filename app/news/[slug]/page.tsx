@@ -457,50 +457,52 @@ first:prose-p:first-letter:text-6xl first:prose-p:first-letter:font-serif first:
 
                             {/* ── Related Stories ── */}
                             {relatedArticles.length > 0 && (
-                                <div className="mx-auto w-full max-w-[300px]">
-                                    <h3 className="mb-5 flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">
-                                        <span className="h-px flex-1 bg-gray-200" />
-                                        Related Stories
-                                        <span className="h-px flex-1 bg-gray-200" />
-                                    </h3>
+                                <SidebarDiscoverySpotlight>
+                                    <div className="mx-auto w-full max-w-[300px]">
+                                        <h3 className="mb-5 flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">
+                                            <span className="h-px flex-1 bg-gray-200" />
+                                            Related Stories
+                                            <span className="h-px flex-1 bg-gray-200" />
+                                        </h3>
 
-                                    <div className="space-y-5">
-                                        {relatedArticles.map((item: any) => {
-                                            const r = item.attributes || item;
-                                            const imgUrl = r.FeaturedImage?.url
-                                                ? strapiImageUrl(r.FeaturedImage.url)
-                                                : "/magazine-default.jpg";
+                                        <div className="space-y-5">
+                                            {relatedArticles.map((item: any) => {
+                                                const r = item.attributes || item;
+                                                const imgUrl = r.FeaturedImage?.url
+                                                    ? strapiImageUrl(r.FeaturedImage.url)
+                                                    : "/magazine-default.jpg";
 
-                                            const itemDate = formatContentDate(r.Date || r.publishedAt || item.publishedAt);
+                                                const itemDate = formatContentDate(r.Date || r.publishedAt || item.publishedAt);
 
-                                            return (
-                                                <Link
-                                                    key={item.id}
-                                                    href={`/news/${r.slug}`}
-                                                    className="group flex gap-4 rounded-lg p-2 -mx-2 transition-colors hover:bg-gray-50"
-                                                >
-                                                    {/* Thumbnail */}
-                                                    <div className="relative w-24 h-20 shrink-0 overflow-hidden rounded-lg bg-gray-100">
-                                                        <Image
-                                                            src={imgUrl}
-                                                            alt=""
-                                                            fill
-                                                            className="object-contain bg-white p-0.5 transition-transform duration-500 group-hover:scale-[1.02]"
-                                                        />
-                                                    </div>
+                                                return (
+                                                    <Link
+                                                        key={item.id}
+                                                        href={`/news/${r.slug}`}
+                                                        className="group flex gap-4 rounded-lg p-2 -mx-2 transition-colors hover:bg-gray-50"
+                                                    >
+                                                        {/* Thumbnail */}
+                                                        <div className="relative w-24 h-20 shrink-0 overflow-hidden rounded-lg bg-gray-100">
+                                                            <Image
+                                                                src={imgUrl}
+                                                                alt=""
+                                                                fill
+                                                                className="object-contain bg-white p-0.5 transition-transform duration-500 group-hover:scale-[1.02]"
+                                                            />
+                                                        </div>
 
-                                                    {/* Text */}
-                                                    <div className="flex-1 min-w-0">
-                                                        <h4 className="font-serif font-bold text-sm leading-snug text-gray-900 group-hover:text-teal-600 transition-colors line-clamp-2 mb-1">
-                                                            {r.Title}
-                                                        </h4>
-                                                        {itemDate && (
-                                                            <DateChip value={itemDate} className="text-[10px]" />
-                                                        )}
-                                                    </div>
-                                                </Link>
-                                            );
-                                        })}
+                                                        {/* Text */}
+                                                        <div className="flex-1 min-w-0">
+                                                            <h4 className="font-serif font-bold text-sm leading-snug text-gray-900 group-hover:text-teal-600 transition-colors line-clamp-2 mb-1">
+                                                                {r.Title}
+                                                            </h4>
+                                                            {itemDate && (
+                                                                <DateChip value={itemDate} className="text-[10px]" />
+                                                            )}
+                                                        </div>
+                                                    </Link>
+                                                );
+                                            })}
+                                        </div>
                                     </div>
                                 </SidebarDiscoverySpotlight>
                             )}
