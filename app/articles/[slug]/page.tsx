@@ -210,7 +210,7 @@ export default async function ArticlePage(props: any) {
 
             <main className="pt-20 pb-24">
                 {/* ─── Breadcrumb ─── */}
-                <div className="container mx-auto max-w-7xl px-4 sm:px-6 mb-6 sm:mb-8">
+                <div className="mx-auto w-full max-w-[1300px] px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12 mb-6 sm:mb-8">
                     <nav className="flex items-center gap-1.5 text-xs text-gray-400 font-sans">
                         <Link href="/" className="hover:text-teal-600 transition-colors">Home</Link>
                         <ChevronRight className="h-3 w-3" />
@@ -218,10 +218,10 @@ export default async function ArticlePage(props: any) {
                     </nav>
                 </div>
 
-                <div className="container mx-auto px-4 sm:px-6 grid grid-cols-1 lg:grid-cols-12 gap-8 sm:gap-12 max-w-7xl">
+                <div className="mx-auto w-full max-w-[1300px] px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12 grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_300px] gap-8 sm:gap-12 lg:gap-x-10 xl:gap-x-12 items-start">
 
                     {/* ═══════════════ MAIN COLUMN ═══════════════ */}
-                    <div className="lg:col-span-8">
+                    <div className="min-w-0">
 
                         {/* Category + Date + Share */}
                         <div className="flex items-center justify-between mb-5">
@@ -365,21 +365,24 @@ export default async function ArticlePage(props: any) {
                     </div>
 
                     {/* ═══════════════ SIDEBAR ═══════════════ */}
-                    <aside className="lg:col-span-4">
+                    <aside>
                         <div className="sticky top-24 space-y-8">
 
                             {/* ── Subscribe CTA ── */}
-                            <SidebarSubscribe />
+                            <div className="mx-auto w-full max-w-[300px]">
+                                <SidebarSubscribe />
+                            </div>
 
                             <AdBanner
                                 placement="article_sidebar"
                                 sectorSlug={sectorSlug}
                                 variant="card"
+                                maxItems={2}
                             />
 
                             {/* ── Latest Issue ── */}
                             {latestIssue && (
-                                <div className="rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
+                                <div className="mx-auto w-full max-w-[300px] rounded-xl border border-gray-100 bg-white p-2 shadow-sm">
                                     <h3 className="mb-4 flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">
                                         <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-widest text-[#00A651] bg-white/90 backdrop-blur-md px-4 py-2 rounded-full w-fit shadow-lg bg-gradient-to-b from-white to-zinc-50 border border-white/20">
                                             <Calendar className="h-3.5 w-3.5 text-teal-500" />
@@ -387,7 +390,7 @@ export default async function ArticlePage(props: any) {
                                         </div>
                                     </h3>
 
-                                    <Link href={`/issues/${latestIssue.slug}`} className="group block">
+                                    <Link href={`/issues/${latestIssue.slug}`} className="group block mt-3">
                                         <div className="relative aspect-[3/4] w-full overflow-hidden rounded-lg border border-gray-100 shadow-md mb-4 transition-all duration-500 group-hover:shadow-xl group-hover:-translate-y-0.5">
                                             <Image
                                                 src={latestIssue.coverImage}
@@ -412,7 +415,7 @@ export default async function ArticlePage(props: any) {
 
                             {/* ── Related Stories ── */}
                             {related.length > 0 && (
-                                <div>
+                                <div className="mx-auto w-full max-w-[300px]">
                                     <h3 className="mb-5 flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">
                                         <span className="h-px flex-1 bg-gray-200" />
                                         Related Stories
