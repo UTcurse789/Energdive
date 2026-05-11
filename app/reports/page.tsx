@@ -70,7 +70,7 @@ export default function ReportsPage() {
         id: item.id,
         title: item.Title,
         slug: item.slug,
-        date: item.publishedAt || item.Date,
+        date: item.publishedAt || item.Date || "",
         category: "Reports",
         excerpt: item?.Excerpt?.[0]?.children?.[0]?.text || "",
         image: item?.FeaturedImage?.url ? strapiImageUrl(item.FeaturedImage.url) : null,
