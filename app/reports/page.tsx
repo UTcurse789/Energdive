@@ -11,7 +11,33 @@ import { AdBanner } from "@/components/ads/AdBanner";
 import { strapiImageUrl } from "@/lib/strapi-image";
 const STRAPI = process.env.NEXT_PUBLIC_STRAPI_URL;
 
-async function fetchReports() {
+type StrapiReportItem = {
+  id: number;
+  Title: string;
+  slug: string;
+  publishedAt?: string;
+  Date?: string;
+  Excerpt?: Array<{
+    children?: Array<{
+      text?: string;
+    }>;
+  }>;
+  FeaturedImage?: {
+    url?: string | null;
+  } | null;
+};
+
+type ReportSummary = {
+  id: number;
+  title: string;
+  slug: string;
+  date: string;
+  category: string;
+  excerpt: string;
+  image: string | null;
+};
+
+async function fetchReports(): Promise<StrapiReportItem[]> {
   const res = await fetch(
     `${STRAPI}/api/contents?filters[type_of_content][name][$eq]=Reports&populate=*&sort=Date:desc`,
     { next: { revalidate: 3600 } }
@@ -30,7 +56,7 @@ function formatDate(dateStr: string) {
 }
 
 export default function ReportsPage() {
-  const [reports, setReports] = useState<any[]>([]);
+  const [reports, setReports] = useState<ReportSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
@@ -40,7 +66,7 @@ export default function ReportsPage() {
 
   useEffect(() => {
     fetchReports().then((data) => {
-      const formatted = data.map((item: any) => ({
+      const formatted = data.map((item) => ({
         id: item.id,
         title: item.Title,
         slug: item.slug,
@@ -146,17 +172,17 @@ export default function ReportsPage() {
               </button>
             </div>
 
-            <div className="flex gap-8 items-center text-[10px] font-bold uppercase tracking-widest text-zinc-400">
-
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 w-4 h-4" />
-              <input
-                type="text"
-                placeholder="Search resources..."
-                className="w-full pl-12 pr-4 py-3 bg-zinc-100 rounded-full text-sm focus:outline-none focus:ring-1 focus:ring-[#00A651] transition-all"
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-
-
+            <div className="w-full md:w-80 lg:w-96">
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 w-4 h-4" />
+                <input
+                  type="text"
+                  placeholder="Search resources..."
+                  value={searchQuery}
+                  className="w-full pl-12 pr-4 py-3 bg-zinc-100 rounded-full text-sm focus:outline-none focus:ring-1 focus:ring-[#00A651] transition-all"
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
             </div>
           </div>
         </div>
