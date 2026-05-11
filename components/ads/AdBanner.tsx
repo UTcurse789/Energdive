@@ -39,6 +39,8 @@ interface AdBannerProps {
     className?: string;
     showSkeleton?: boolean;
     maxItems?: number;
+    width?: number;
+    height?: number;
 }
 
 function adHasRenderableMedia(ad: Ad, variant: NonNullable<AdBannerProps["variant"]>): boolean {
@@ -134,6 +136,8 @@ export function AdBanner({
     variant = "banner",
     className = "",
     maxItems,
+    width,
+    height,
 }: AdBannerProps) {
     const [selectedAds, setSelectedAds] = useState<Ad[]>([]);
 
@@ -243,7 +247,14 @@ export function AdBanner({
         case "hero":
             return renderSelectedAds((ad) => <HeroBannerAd ad={ad} className={className} />);
         case "vertical":
-            return renderSelectedAds((ad) => <VerticalBannerAd ad={ad} className={className} />);
+            return renderSelectedAds((ad) => (
+                <VerticalBannerAd
+                    ad={ad}
+                    className={className}
+                    width={width}
+                    height={height}
+                />
+            ));
         case "native":
             return renderSelectedAds((ad) => <NativeBannerAd ad={ad} className={className} />);
         case "mobile_banner":
@@ -419,7 +430,17 @@ function HeroBannerAd({ ad, className }: { ad: Ad; className: string }) {
    VERTICAL — 300×600 vertical card
    ═══════════════════════════════════════════ */
 
-function VerticalBannerAd({ ad, className }: { ad: Ad; className: string }) {
+function VerticalBannerAd({
+    ad,
+    className,
+    width = EXACT_VERTICAL_SIZE.width,
+    height = EXACT_VERTICAL_SIZE.height,
+}: {
+    ad: Ad;
+    className: string;
+    width?: number;
+    height?: number;
+}) {
     const creative = ad.creative?.[0];
     const imageUrl = getImageUrl(creative);
     const logoMedia = ad.logo?.[0];
@@ -430,13 +451,14 @@ function VerticalBannerAd({ ad, className }: { ad: Ad; className: string }) {
     const inner = (
         <div
             className={`relative overflow-hidden border border-gray-100/60 bg-white shadow-sm hover:shadow-xl transition-all duration-500 group shrink-0 ${className} rounded-none`}
-            style={{ width: EXACT_VERTICAL_SIZE.width, height: EXACT_VERTICAL_SIZE.height }}
+            style={{ width, height }}
         >
             <div className="relative h-full w-full">
                 <Image
                     src={imageUrl}
                     alt={ad.title || "Advertisement"}
                     fill
+                    sizes={`${width}px`}
                     loading="lazy"
                     unoptimized
                     className="object-cover transition-transform duration-700 group-hover:scale-[1.02]"
