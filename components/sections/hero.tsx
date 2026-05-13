@@ -9,11 +9,6 @@ import { ChevronLeft, ChevronRight, ArrowRight } from "lucide-react";
 import { DateChip } from "@/components/ui/date-chip";
 import { buildContentUrl } from "@/lib/content-routes";
 import { formatContentDate } from "@/lib/date";
-import { AnimatePresence, motion } from "framer-motion";
-import { useAuth } from "@clerk/nextjs";
-import { OnboardingProgress } from "@/components/onboarding/onboarding-progress";
-import { ONBOARDING_KEYS, hasLocalFlag, setLocalFlag } from "@/lib/onboarding-storage";
-import { useOnboardingStep } from "@/hooks/use-onboarding-step";
 
 const STRAPI_BASE = "https://cms.energdive.com";
 
@@ -82,7 +77,6 @@ export function Hero({ topStories: propTopStories }: HeroProps) {
     const [currentSlide, setCurrentSlide] = useState(0);
     const [isTransitioning, setIsTransitioning] = useState(false);
     const autoPlayRef = useRef<NodeJS.Timeout | null>(null);
-    const { isLoaded, isSignedIn } = useAuth();
 
     useEffect(() => {
         // Hero banner content for carousel
@@ -129,16 +123,6 @@ export function Hero({ topStories: propTopStories }: HeroProps) {
             if (autoPlayRef.current) clearInterval(autoPlayRef.current);
         };
     }, [nextSlide, carouselArticles.length]);
-
-    const { isOpen: showNewsHint, close: dismissNewsHint } = useOnboardingStep({
-        id: "home-news-hint",
-        enabled: isLoaded && !isSignedIn && !hasLocalFlag(ONBOARDING_KEYS.homeHintSeen),
-        delayMs: 1000,
-        autoHideMs: 4200,
-        onClose: () => {
-            setLocalFlag(ONBOARDING_KEYS.homeHintSeen);
-        },
-    });
 
     if (loading) return <HeroSkeleton />;
     if (carouselArticles.length === 0) return null;
@@ -256,60 +240,6 @@ export function Hero({ topStories: propTopStories }: HeroProps) {
                             <Link href="/news" className="text-[10px] font-black text-[#1a4731] flex items-center gap-1 hover:text-[#09B697] transition-colors">
                                 EXPLORE <ArrowRight size={12} />
                             </Link>
-
-                            <AnimatePresence>
-                                {showNewsHint && (
-                                    <motion.div
-                                        initial={{ opacity: 0, y: 10, scale: 0.98 }}
-                                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                                        exit={{ opacity: 0, y: 8, scale: 0.98 }}
-                                        transition={{ duration: 0.2, ease: "easeOut" }}
-                                        className="absolute left-0 right-0 top-full z-20 mt-3 sm:left-auto sm:w-[330px]"
-                                    >
-                                        <div className="relative overflow-hidden rounded-[24px] border border-white/70 bg-white/80 shadow-[0_28px_80px_rgba(15,23,42,0.14)] backdrop-blur-2xl">
-                                            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(16,185,129,0.14),transparent_40%),linear-gradient(180deg,rgba(255,255,255,0.78),rgba(248,250,252,0.96))]" />
-                                            <div className="absolute left-8 top-0 h-3 w-3 -translate-y-1/2 rotate-45 border-l border-t border-white/70 bg-white/85" />
-
-                                            <motion.div
-                                                className="absolute inset-x-0 top-0 h-1 bg-emerald-500/70 origin-left"
-                                                initial={{ scaleX: 1 }}
-                                                animate={{ scaleX: 0 }}
-                                                transition={{ duration: 4, ease: "linear" }}
-                                            />
-
-                                            <div className="relative p-4 sm:p-5">
-                                                <div className="mb-3 flex items-center justify-between gap-3">
-                                                    <span className="inline-flex items-center rounded-full border border-emerald-200/70 bg-white/85 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-emerald-700">
-                                                        News Discovery
-                                                    </span>
-                                                    <OnboardingProgress step={1} />
-                                                </div>
-
-                                                <p className="font-serif text-lg font-bold leading-tight text-slate-950">
-                                                    Explore real-time energy intelligence, market reports & exclusive insights.
-                                                </p>
-
-                                                <div className="mt-4 flex items-center gap-2">
-                                                    <Link
-                                                        href="/news"
-                                                        onClick={dismissNewsHint}
-                                                        className="inline-flex items-center justify-center rounded-full bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white transition-all duration-200 hover:shadow-[0_16px_40px_rgba(15,23,42,0.22)]"
-                                                    >
-                                                        Explore News
-                                                    </Link>
-                                                    <button
-                                                        type="button"
-                                                        onClick={dismissNewsHint}
-                                                        className="rounded-full border border-slate-200 bg-white/85 px-4 py-2.5 text-sm font-semibold text-slate-600 transition-colors hover:text-slate-950"
-                                                    >
-                                                        Dismiss
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </motion.div>
-                                )}
-                            </AnimatePresence>
                         </div>
 
                         <div className="space-y-6">
