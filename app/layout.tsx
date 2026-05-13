@@ -23,7 +23,7 @@
 //     default: "Energdive | Premium Energy & Business News",
 //   },
 //   description: "Analysis, news, and insights on Energy, Power, Oil & Gas, and Renewables.",
-//   metadataBase: new URL("https://energdive.com"),
+//   metadataBase: new URL("https://www.energdive.com"),
 // };
 
 // export default function RootLayout({
@@ -54,6 +54,7 @@ import { UtmTracker } from "@/components/UtmTracker";
 import { Suspense } from "react";
 import ConsentAwareGTM from "@/components/ConsentAwareGTM";
 import CookieConsent from "@/components/CookieConsent";
+import { PlatformOnboarding } from "@/components/onboarding/platform-onboarding";
 import AuthPromptModal from "@/components/ui/auth-prompt-modal";
 
 const sans = Inter({
@@ -75,7 +76,7 @@ const serif = Merriweather({
 //     default: "Energdive | Insights and Market Intelligence",
 //   },
 //   description: "Analysis, news, and insights on Energy, Power, Oil & Gas, and Renewables.",
-//   metadataBase: new URL("https://energdive.com"),
+//   metadataBase: new URL("https://www.energdive.com"),
 //   // Explicitly defining icons
 //   icons: {
 //     icon: [
@@ -156,12 +157,18 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html lang="en" className={`${sans.variable} ${serif.variable}`}>
+        <head>
+          <link rel="preconnect" href="https://cms.energdive.com" />
+          <link rel="preconnect" href="https://cdn.energdive.com" />
+          <link rel="preconnect" href="https://clerk.energdive.com" />
+        </head>
         <body className="antialiased font-sans" suppressHydrationWarning>
           {/* GTM — only loads after cookie consent is accepted */}
           <ConsentAwareGTM gtmId="GTM-5P4C363M" />
           <Suspense fallback={null}>
             <UtmTracker />
           </Suspense>
+          <PlatformOnboarding />
           <AuthPromptModal />
           <SiteLayout>
             {children}

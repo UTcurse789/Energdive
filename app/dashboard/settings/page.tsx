@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useUser } from "@clerk/nextjs";
 import { useDashboard } from "@/components/dashboard/dashboard-shell";
+import { DIGEST_FREQUENCY_OPTIONS, DIGEST_FORMAT_OPTIONS } from "@/lib/digest-preferences";
 import {
     Loader2, Check, AlertCircle, Shield, Briefcase, Globe,
-    Pencil, X, ChevronDown, Users, Layers,
+    Pencil, ChevronDown, Users, Layers,
 } from "lucide-react";
 
 /* ── Types ──────────────────────────────────────────────────────── */
@@ -31,6 +32,9 @@ export default function SettingsPage() {
     const [organization, setOrganization] = useState("");
     const [isSaving, setIsSaving] = useState(false);
     const [msg, setMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
+    const [preferredFrequency, setPreferredFrequency] = useState("daily");
+    const [preferredFormats, setPreferredFormats] = useState<string[]>([]);
+    const [digestEnabled, setDigestEnabled] = useState(true);
 
     /* Industry state */
     const [industries, setIndustries] = useState<Industry[]>([]);
@@ -54,6 +58,9 @@ export default function SettingsPage() {
             setOrganization(profile.organization || "");
             setSelectedIndustryId(profile.industry_id || 0);
             setSelectedSubIndustryId(profile.sub_industry_id || 0);
+            setPreferredFrequency(profile.preferred_frequency || "daily");
+            setPreferredFormats(profile.preferred_formats || []);
+            setDigestEnabled(!profile.content_digest_opted_out);
         }
     }, [profile]);
 
@@ -129,7 +136,7 @@ export default function SettingsPage() {
     /* Open community editor */
     const startEditCommunities = () => {
         setPendingCommunities(
-            (profile.communities || []).map((c: any) => ({
+            (profile.communities || []).map((c: UserCommunity) => ({
                 community_id: c.community_id,
                 community_name: c.community_name,
                 sub_community_id: c.sub_community_id,
@@ -165,6 +172,38 @@ export default function SettingsPage() {
                 },
             ];
         });
+    };
+
+    const togglePreferredFormat = (format: string) => {
+        setPreferredFormats((prev) =>
+            prev.includes(format)
+                ? prev.filter((item) => item !== format)
+                : [...prev, format]
+        );
+    };
+
+    const handleSavePreferences = async () => {
+        setIsSaving(true);
+        setMsg(null);
+        try {
+            const res = await fetch("/api/user/update-profile", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    preferredFrequency,
+                    preferredFormats,
+                    contentDigestOptedOut: !digestEnabled,
+                }),
+            });
+            if (!res.ok) throw new Error();
+            await refreshProfile();
+            setMsg({ type: "success", text: "Email briefing preferences updated." });
+            setTimeout(() => setMsg(null), 3000);
+        } catch {
+            setMsg({ type: "error", text: "Failed to save email briefing preferences." });
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     const cardStyle = { background: "var(--dash-card)", border: "1px solid var(--dash-border)" };
@@ -567,6 +606,105 @@ export default function SettingsPage() {
                 </section>
 
                 {/* ───────── 5. Security ────────────────────────────── */}
+
+                <section className="rounded-xl overflow-hidden" style={cardStyle}>
+                    <div className="p-6">
+                        <div className="flex items-center gap-3 mb-6">
+                            <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: "rgba(10,185,150,0.15)" }}>
+                                <Globe size={18} style={{ color: "#0AB996" }} />
+                            </div>
+                            <div>
+                                <h2 className="text-lg font-bold" style={{ color: "var(--dash-text)" }}>Email Briefings</h2>
+                                <p className="text-xs" style={{ color: "var(--dash-text-dim)" }}>Control the backend digests generated from your onboarding choices</p>
+                            </div>
+                        </div>
+
+                        <div className="space-y-6">
+                            <div
+                                className="flex items-center justify-between gap-4 rounded-xl p-4"
+                                style={{ background: "var(--dash-surface-2)", border: "1px solid var(--dash-border-subtle)" }}
+                            >
+                                <div>
+                                    <p className="text-sm font-bold" style={{ color: "var(--dash-text)" }}>
+                                        Personalized briefings
+                                    </p>
+                                    <p className="text-xs mt-1" style={{ color: "var(--dash-text-dim)" }}>
+                                        When enabled, ENERGDIVE sends new matching News Briefing, Opinion, Insights, Events, and Case Study updates to your inbox.
+                                    </p>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => setDigestEnabled((prev) => !prev)}
+                                    className="px-4 py-2 rounded-full text-xs font-bold transition-all"
+                                    style={digestEnabled
+                                        ? { background: "rgba(10,185,150,0.16)", color: "#0AB996", border: "1px solid rgba(10,185,150,0.35)" }
+                                        : { background: "var(--dash-surface)", color: "var(--dash-text-dim)", border: "1px solid var(--dash-border)" }}
+                                >
+                                    {digestEnabled ? "Enabled" : "Paused"}
+                                </button>
+                            </div>
+
+                            <div>
+                                <p className="text-[10px] font-bold uppercase tracking-wider mb-3" style={{ color: "var(--dash-text-dim)" }}>
+                                    Frequency
+                                </p>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                                    {DIGEST_FREQUENCY_OPTIONS.map((option) => (
+                                        <button
+                                            key={option.value}
+                                            type="button"
+                                            onClick={() => setPreferredFrequency(option.value)}
+                                            className="px-4 py-3 rounded-xl text-sm font-semibold border transition-all"
+                                            style={preferredFrequency === option.value
+                                                ? { background: "rgba(10,185,150,0.12)", border: "1px solid #0AB996", color: "#0AB996" }
+                                                : { background: "var(--dash-surface-2)", border: "1px solid var(--dash-border-subtle)", color: "var(--dash-text-muted)" }}
+                                        >
+                                            {option.label}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div>
+                                <p className="text-[10px] font-bold uppercase tracking-wider mb-3" style={{ color: "var(--dash-text-dim)" }}>
+                                    Content Types
+                                </p>
+                                <div className="flex flex-wrap gap-2">
+                                    {DIGEST_FORMAT_OPTIONS.map((format) => {
+                                        const active = preferredFormats.includes(format);
+                                        return (
+                                            <button
+                                                key={format}
+                                                type="button"
+                                                onClick={() => togglePreferredFormat(format)}
+                                                className="px-4 py-2 rounded-full text-xs font-bold transition-all"
+                                                style={active
+                                                    ? { background: "rgba(10,185,150,0.14)", color: "#0AB996", border: "1px solid rgba(10,185,150,0.3)" }
+                                                    : { background: "var(--dash-surface-2)", color: "var(--dash-text-muted)", border: "1px solid var(--dash-border)" }}
+                                            >
+                                                {active ? "✓ " : ""}{format}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                                <p className="text-xs mt-3" style={{ color: "var(--dash-text-dim)" }}>
+                                    Digest mails only go out when fresh matching content is available for the formats you keep selected.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="px-6 py-4 flex items-center justify-end" style={{ borderTop: "1px solid var(--dash-border)" }}>
+                        <button
+                            onClick={handleSavePreferences}
+                            disabled={isSaving || (digestEnabled && preferredFormats.length === 0)}
+                            className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-bold transition-all disabled:opacity-50"
+                            style={{ background: "var(--dash-accent)", color: "#0A0A0B" }}
+                        >
+                            {isSaving ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
+                            Save Briefings
+                        </button>
+                    </div>
+                </section>
 
                 <section className="rounded-xl overflow-hidden" style={cardStyle}>
                     <div className="p-6">

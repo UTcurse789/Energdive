@@ -9,34 +9,80 @@ import { ChevronLeft, ChevronRight, ArrowRight } from "lucide-react";
 import { DateChip } from "@/components/ui/date-chip";
 import { buildContentUrl } from "@/lib/content-routes";
 import { formatContentDate } from "@/lib/date";
+import { AnimatePresence, motion } from "framer-motion";
+import { useAuth } from "@clerk/nextjs";
+import { OnboardingProgress } from "@/components/onboarding/onboarding-progress";
+import { ONBOARDING_KEYS, hasLocalFlag, setLocalFlag } from "@/lib/onboarding-storage";
+import { useOnboardingStep } from "@/hooks/use-onboarding-step";
 
 const STRAPI_BASE = "https://cms.energdive.com";
 
-function getImageUrl(article: any): string {
+type HeroTextNode = {
+    text?: string | null;
+};
+
+type HeroExcerptBlock = {
+    children?: HeroTextNode[] | null;
+};
+
+type HeroImage = {
+    url?: string | null;
+};
+
+type HeroSector = {
+    name?: string | null;
+};
+
+type HeroContentType = {
+    name?: string | null;
+};
+
+type HeroItem = {
+    id: number | string;
+    Title?: string | null;
+    slug?: string | null;
+    FeaturedImage?: HeroImage | null;
+    Excerpt?: HeroExcerptBlock[] | null;
+    sectors?: HeroSector[] | null;
+    type_of_content?: HeroContentType | null;
+    content_tag?: unknown;
+    Date?: string | null;
+    createdAt?: string | null;
+};
+
+function getImageUrl(article: HeroItem): string {
     const img = article.FeaturedImage;
     if (!img) return "/placeholder.jpg";
     // const url = img.formats?.large?.url || img.formats?.medium?.url || img.url;
-    const url = img.url
+    const url = img.url;
+    if (!url) return "/placeholder.jpg";
     return strapiImageUrl(url);
 }
 
-function getExcerpt(excerpt: any[]): string {
-    return excerpt?.map((p) => p.children.map((c: any) => c.text).join("")).join(" ") || "";
+function getExcerpt(excerpt?: HeroExcerptBlock[] | null): string {
+    return (
+        excerpt?.map((paragraph) =>
+            (paragraph.children || [])
+                .map((child) => child.text || "")
+                .join("")
+        ).join(" ") || ""
+    );
 }
 
 
 
 interface HeroProps {
-    topStories?: any[];
+    topStories?: HeroItem[];
 }
 
 export function Hero({ topStories: propTopStories }: HeroProps) {
-    const [coverStories, setCoverStories] = useState<any[]>([]);
-    const [articles, setArticles] = useState<any[]>([]);
+    const [coverStories, setCoverStories] = useState<HeroItem[]>([]);
+    const [articles, setArticles] = useState<HeroItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [currentSlide, setCurrentSlide] = useState(0);
     const [isTransitioning, setIsTransitioning] = useState(false);
     const autoPlayRef = useRef<NodeJS.Timeout | null>(null);
+    const { isLoaded, isSignedIn } = useAuth();
 
     useEffect(() => {
         // Hero banner content for carousel
@@ -84,6 +130,16 @@ export function Hero({ topStories: propTopStories }: HeroProps) {
         };
     }, [nextSlide, carouselArticles.length]);
 
+    const { isOpen: showNewsHint, close: dismissNewsHint } = useOnboardingStep({
+        id: "home-news-hint",
+        enabled: isLoaded && !isSignedIn && !hasLocalFlag(ONBOARDING_KEYS.homeHintSeen),
+        delayMs: 1000,
+        autoHideMs: 4200,
+        onClose: () => {
+            setLocalFlag(ONBOARDING_KEYS.homeHintSeen);
+        },
+    });
+
     if (loading) return <HeroSkeleton />;
     if (carouselArticles.length === 0) return null;
 
@@ -101,7 +157,7 @@ export function Hero({ topStories: propTopStories }: HeroProps) {
                         <div className="relative aspect-[16/8.5] w-full overflow-hidden rounded-3xl bg-black group/img shadow-md">
                             <Image
                                 src={getImageUrl(featured)}
-                                alt={featured.Title}
+                                alt={featured.Title || "Feature story"}
                                 fill
                                 priority
                                 quality={100}
@@ -158,7 +214,7 @@ export function Hero({ topStories: propTopStories }: HeroProps) {
                                     )}
                                 </div>
 
-                                <Link href={buildContentUrl({ slug: featured.slug, type_of_content: featured.type_of_content })} className="block group/title">
+                                <Link href={buildContentUrl({ slug: featured.slug || "", type_of_content: featured.type_of_content, content_tag: featured.content_tag })} className="block group/title">
                                     <h1 className="text-2xl sm:text-3xl md:text-5xl font-serif font-bold leading-[1.15] text-[#1a1a1a] transition-colors duration-300 group-hover/title:text-[#09B697]">
                                         {featured.Title}
                                     </h1>
@@ -184,7 +240,7 @@ export function Hero({ topStories: propTopStories }: HeroProps) {
                                 </div> */}
                                 <div className="space-y-3">
                                     <p className="text-[10px] font-black uppercase tracking-tighter text-slate-400">Published on</p>
-                                    <DateChip value={formatContentDate(featured.Date || featured.createdAt)} />
+                                    <DateChip value={formatContentDate(featured.Date || featured.createdAt || "")} />
                                 </div>
                             </div>
                         </div>
@@ -192,7 +248,7 @@ export function Hero({ topStories: propTopStories }: HeroProps) {
 
                     {/* === RIGHT SIDEBAR (4 Cols) === */}
                     <div className="lg:col-span-4 lg:pl-10">
-                        <div className="flex items-center justify-between mb-8 pb-4 border-b border-slate-100">
+                        <div className="relative flex items-center justify-between mb-8 pb-4 border-b border-slate-100">
                             <h3 className="text-sm font-black uppercase tracking-[0.2em] text-[#1a1a1a] flex items-center gap-2">
                                 <span className="w-2 h-2 rounded-full bg-red-600 animate-pulse" />
                                 Latest News
@@ -200,19 +256,73 @@ export function Hero({ topStories: propTopStories }: HeroProps) {
                             <Link href="/news" className="text-[10px] font-black text-[#1a4731] flex items-center gap-1 hover:text-[#09B697] transition-colors">
                                 EXPLORE <ArrowRight size={12} />
                             </Link>
+
+                            <AnimatePresence>
+                                {showNewsHint && (
+                                    <motion.div
+                                        initial={{ opacity: 0, y: 10, scale: 0.98 }}
+                                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                                        exit={{ opacity: 0, y: 8, scale: 0.98 }}
+                                        transition={{ duration: 0.2, ease: "easeOut" }}
+                                        className="absolute left-0 right-0 top-full z-20 mt-3 sm:left-auto sm:w-[330px]"
+                                    >
+                                        <div className="relative overflow-hidden rounded-[24px] border border-white/70 bg-white/80 shadow-[0_28px_80px_rgba(15,23,42,0.14)] backdrop-blur-2xl">
+                                            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(16,185,129,0.14),transparent_40%),linear-gradient(180deg,rgba(255,255,255,0.78),rgba(248,250,252,0.96))]" />
+                                            <div className="absolute left-8 top-0 h-3 w-3 -translate-y-1/2 rotate-45 border-l border-t border-white/70 bg-white/85" />
+
+                                            <motion.div
+                                                className="absolute inset-x-0 top-0 h-1 bg-emerald-500/70 origin-left"
+                                                initial={{ scaleX: 1 }}
+                                                animate={{ scaleX: 0 }}
+                                                transition={{ duration: 4, ease: "linear" }}
+                                            />
+
+                                            <div className="relative p-4 sm:p-5">
+                                                <div className="mb-3 flex items-center justify-between gap-3">
+                                                    <span className="inline-flex items-center rounded-full border border-emerald-200/70 bg-white/85 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-emerald-700">
+                                                        News Discovery
+                                                    </span>
+                                                    <OnboardingProgress step={1} />
+                                                </div>
+
+                                                <p className="font-serif text-lg font-bold leading-tight text-slate-950">
+                                                    Explore real-time energy intelligence, market reports & exclusive insights.
+                                                </p>
+
+                                                <div className="mt-4 flex items-center gap-2">
+                                                    <Link
+                                                        href="/news"
+                                                        onClick={dismissNewsHint}
+                                                        className="inline-flex items-center justify-center rounded-full bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white transition-all duration-200 hover:shadow-[0_16px_40px_rgba(15,23,42,0.22)]"
+                                                    >
+                                                        Explore News
+                                                    </Link>
+                                                    <button
+                                                        type="button"
+                                                        onClick={dismissNewsHint}
+                                                        className="rounded-full border border-slate-200 bg-white/85 px-4 py-2.5 text-sm font-semibold text-slate-600 transition-colors hover:text-slate-950"
+                                                    >
+                                                        Dismiss
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
                         </div>
 
                         <div className="space-y-6">
                             {topStories.map((story) => (
-                                <Link
-                                    key={story.id}
-                                    href={buildContentUrl({ slug: story.slug, type_of_content: story.type_of_content })}
-                                    className="group flex gap-5 items-start border-b border-slate-50 pb-5 last:border-0"
-                                >
+                                    <Link
+                                        key={story.id}
+                                        href={buildContentUrl({ slug: story.slug || "", type_of_content: story.type_of_content, content_tag: story.content_tag })}
+                                        className="group flex gap-5 items-start border-b border-slate-50 pb-5 last:border-0"
+                                    >
                                     <div className="relative h-20 w-28 shrink-0 overflow-hidden rounded-2xl bg-slate-100">
-                                        <Image
-                                            src={getImageUrl(story)}
-                                            alt={story.Title || "Latest news image"}
+                                            <Image
+                                                src={getImageUrl(story)}
+                                                alt={story.Title || "Latest news image"}
                                             fill
                                             sizes="112px"
                                             className="object-cover transition-transform duration-500 group-hover:scale-105"
@@ -225,7 +335,7 @@ export function Hero({ topStories: propTopStories }: HeroProps) {
                                         <h4 className="font-serif text-[15.5px] font-bold leading-snug text-[#1a1a1a] group-hover:text-[#09B697] transition-colors line-clamp-2">
                                             {story.Title}
                                         </h4>
-                                        <DateChip value={formatContentDate(story.Date || story.createdAt)} className="text-[10px]" />
+                                        <DateChip value={formatContentDate(story.Date || story.createdAt || "")} className="text-[10px]" />
                                     </div>
                                 </Link>
                             ))}

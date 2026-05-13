@@ -52,7 +52,7 @@ function HeroAd({ ad }: { ad: Advertisement }) {
     return (
         <Wrapper
             {...wrapperProps}
-            className="block relative w-full overflow-hidden rounded-2xl group"
+            className="block relative w-full overflow-hidden group rounded-none"
             style={{ minHeight: 200 }}
         >
             <div className="relative w-full aspect-[21/6]">
@@ -65,10 +65,6 @@ function HeroAd({ ad }: { ad: Advertisement }) {
                     className="object-cover transition-transform duration-500 group-hover:scale-[1.015]"
                 />
             </div>
-            {/* Subtle "Partner" label */}
-            <span className="absolute top-3 right-3 text-[9px] font-bold uppercase tracking-[0.15em] text-white/70 bg-black/30 backdrop-blur-md px-2.5 py-1 rounded-full">
-                Partner
-            </span>
         </Wrapper>
     );
 }
@@ -93,7 +89,7 @@ function VerticalAd({ ad }: { ad: Advertisement }) {
     return (
         <Wrapper
             {...wrapperProps}
-            className="block relative overflow-hidden rounded-2xl border border-gray-100/60 bg-white shadow-sm hover:shadow-xl transition-all duration-500 group"
+            className="block relative overflow-hidden border border-gray-100/60 bg-white shadow-sm hover:shadow-xl transition-all duration-500 group rounded-none"
             style={{ width: "100%", maxWidth: 320 }}
         >
             {/* Creative image */}
@@ -132,11 +128,6 @@ function VerticalAd({ ad }: { ad: Advertisement }) {
                     </p>
                 </div>
             </div>
-
-            {/* Top "Partner" badge */}
-            <span className="absolute top-3 left-3 text-[9px] font-bold uppercase tracking-[0.15em] text-white/80 bg-black/25 backdrop-blur-md px-2.5 py-1 rounded-full">
-                Partner
-            </span>
         </Wrapper>
     );
 }
@@ -157,7 +148,7 @@ function NativeAd({ ad }: { ad: Advertisement }) {
     return (
         <Wrapper
             {...wrapperProps}
-            className="block mt-12 rounded-2xl border border-gray-100 bg-gradient-to-br from-gray-50 to-white p-6 sm:p-8 group hover:border-teal-200 hover:shadow-lg hover:shadow-teal-500/5 transition-all duration-500"
+            className="block mt-12 border border-gray-100 bg-gradient-to-br from-gray-50 to-white p-6 sm:p-8 group hover:border-teal-200 hover:shadow-lg hover:shadow-teal-500/5 transition-all duration-500 rounded-none"
         >
             <div className="flex items-center gap-5">
                 {/* Logo */}

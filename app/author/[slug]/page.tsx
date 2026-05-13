@@ -6,6 +6,8 @@ import { DateChip } from "@/components/ui/date-chip";
 import { formatContentDate } from "@/lib/date";
 import { buildContentUrl } from "@/lib/content-routes";
 import { strapiImageUrl } from "@/lib/strapi-image";
+import { getCanonicalUrl } from "@/lib/seo";
+import { getOpinionContentKind } from "@/lib/content-tags";
 
 const STRAPI_BASE = process.env.NEXT_PUBLIC_STRAPI_URL || "https://cms.energdive.com";
 
@@ -84,7 +86,7 @@ async function getAuthorBySlug(slug: string) {
 async function getContentByAuthor(authorName: string) {
     const encodedName = encodeURIComponent(authorName);
     const res = await fetch(
-        `${STRAPI_BASE}/api/contents?filters[author][name][$eq]=${encodedName}&populate[0]=FeaturedImage&populate[1]=author.avatar&populate[2]=sectors&populate[3]=type_of_content&pagination[pageSize]=50&sort=createdAt:desc`,
+        `${STRAPI_BASE}/api/contents?filters[author][name][$eq]=${encodedName}&populate[0]=FeaturedImage&populate[1]=author.avatar&populate[2]=sectors&populate[3]=type_of_content&populate[4]=content_tag&pagination[pageSize]=50&sort=createdAt:desc`,
         { next: { revalidate: 3600 } }
     );
     if (!res.ok) return [];
@@ -137,14 +139,18 @@ export async function generateMetadata({
     const baseTitle = `${authorName}${authorDesignation ? ` - ${authorDesignation}` : ""}`;
     const cleanBaseTitle = String(baseTitle).replace(/^['"“”‘’]+|['"“”‘’]+$/g, "").trim();
     const shareTitle = `${cleanBaseTitle} - ENERGDIVE`;
+    const canonicalUrl = getCanonicalUrl(`/author/${slug}`);
 
     return {
         title: { absolute: shareTitle },
         description,
+        alternates: {
+            canonical: canonicalUrl,
+        },
         openGraph: {
             title: shareTitle,
             description,
-            url: `https://www.energdive.com/author/${slug}`,
+            url: canonicalUrl,
             siteName: "ENERGDIVE",
             images: [
                 {
@@ -201,7 +207,15 @@ export default async function AuthorPage({
             excerpt: getExcerpt(a.Excerpt) || "",
             image: getImageUrl(a.FeaturedImage),
             date: formatContentDate(a.Date || a.publishedAt || a.createdAt),
-            category: a.type_of_content?.name || a.type_of_content?.data?.attributes?.name || "Article",
+            category: (() => {
+                const baseType = a.type_of_content?.name || a.type_of_content?.data?.attributes?.name || "Article";
+                if (String(baseType).toLowerCase() !== "opinion") return baseType;
+
+                const kind = getOpinionContentKind(a);
+                if (kind === "interview") return "Interview";
+                if (kind === "editorial") return "Editorial";
+                return "Opinion";
+            })(),
             sector: sectorAttrs?.name || "",
         };
     }).filter((item: any) => item.slug);

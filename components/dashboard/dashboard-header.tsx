@@ -5,9 +5,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
     Search, Bell, Home, LayoutGrid, BrainCircuit, Users,
-    CreditCard, Calendar, Settings
+    CreditCard, Calendar, Settings, Bookmark
 } from "lucide-react";
-import { UserButton, useUser } from "@clerk/nextjs";
+import { useUser } from "@clerk/nextjs";
+import { CustomUserMenu } from "@/components/layout/CustomUserMenu";
 import { useDashboard } from "./dashboard-shell";
 
 const NAV_ITEMS = [
@@ -15,6 +16,7 @@ const NAV_ITEMS = [
     { label: "My Feed", href: "/dashboard", icon: LayoutGrid },
     // { label: "Intelligence", href: "/dashboard/feed", icon: BrainCircuit },
     // { label: "Community", href: "/dashboard/community", icon: Users },
+    { label: "Saved", href: "/dashboard/saved", icon: Bookmark },
     { label: "Subscriptions", href: "/dashboard/subscriptions", icon: CreditCard },
     { label: "Events", href: "/dashboard/events", icon: Calendar },
     { label: "Account Settings", href: "/dashboard/settings", icon: Settings },
@@ -79,14 +81,7 @@ export function DashboardHeader() {
                                 {role}
                             </p>
                         </div>
-                        <UserButton
-                            afterSignOutUrl="/"
-                            appearance={{
-                                elements: {
-                                    userPreviewSecondaryIdentifier: { display: "none" },
-                                },
-                            }}
-                        />
+                        <CustomUserMenu />
                     </div>
                 </div>
             </div>

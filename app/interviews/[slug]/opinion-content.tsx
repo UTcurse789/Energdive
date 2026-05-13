@@ -21,8 +21,8 @@ import { ShareButton } from "@/components/ui/share-button";
 import { slugify } from "@/lib/utils";
 import { TagBadge } from "@/components/ui/tag-badge";
 import { AdBanner } from "@/components/ads/AdBanner";
-
-
+import { SaveArticleButton } from "@/components/article/SaveArticleButton";
+import { ArticleStickyShare } from "@/components/article/ArticleStickyShare";
 
 /* ---------- Strapi Rich Text Renderer ---------- */
 function renderInlineChildren(children: any[]) {
@@ -38,6 +38,7 @@ function renderInlineChildren(children: any[]) {
 export default function OpinionContent({ opinion, recommended }: any) {
     return (
         <div className="bg-[#FDFDFD] min-h-screen selection:bg-[#00A651]/10 antialiased">
+            <ArticleStickyShare title={opinion.title} url={`https://www.energdive.com/interviews/${opinion.slug}`} />
             <ScrollProgress />
 
             <article className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl pt-12">
@@ -60,7 +61,7 @@ export default function OpinionContent({ opinion, recommended }: any) {
                             <Printer className="w-3.5 h-3.5" />
                             Print
                         </Link>
-                        <Button variant="ghost" size="sm" className="rounded-full"><Bookmark className="w-4 h-4" /></Button>
+                        <SaveArticleButton title={opinion.title} url={`https://www.energdive.com/interviews/${opinion.slug}`} />
                         <ShareButton
                             title={opinion.title}
                             text={opinion.excerpt}
@@ -121,7 +122,7 @@ export default function OpinionContent({ opinion, recommended }: any) {
                 {/* Content Area */}
                 <div className="relative">
                     <div className="relative max-w-[720px] mx-auto w-full">
-                        <div className="hidden min-[1440px]:block absolute top-0 right-[calc(100%+2rem)] w-[300px]">
+                        <div className="hidden min-[1440px]:block absolute top-0 bottom-0 right-[calc(100%+2rem)] w-[300px]">
                             <div className="sticky top-24 w-[300px]">
                                 <AdBanner
                                     placement="interview_left"
@@ -133,7 +134,7 @@ export default function OpinionContent({ opinion, recommended }: any) {
                             </div>
                         </div>
 
-                        <div className="hidden min-[1440px]:block absolute top-0 left-[calc(100%+2rem)] w-[300px]">
+                        <div className="hidden min-[1440px]:block absolute top-0 bottom-0 left-[calc(100%+2rem)] w-[300px]">
                             <div className="sticky top-24 w-[300px]">
                                 <AdBanner
                                     placement="interview_right"
@@ -146,7 +147,7 @@ export default function OpinionContent({ opinion, recommended }: any) {
                         </div>
 
                         {/* Main Article Column: STRICT 720px */}
-                        <div className="prose prose-zinc max-w-none">
+                        <div className="prose prose-zinc max-w-none last:prose-p:mb-0">
                             {opinion.content?.map((block: any, i: number) => {
                                 const text = block.children?.map((c: any) => c.text).join("") || "";
                                 if (!text.trim()) return null;
@@ -190,11 +191,12 @@ export default function OpinionContent({ opinion, recommended }: any) {
                                             <figure key={i} className="my-16 not-prose">
                                                 <div className="relative aspect-video rounded-3xl overflow-hidden bg-zinc-100">
                                                     {imgUrl && (
-                                                        // eslint-disable-next-line @next/next/no-img-element
-                                                        <img
+                                                        <Image
                                                             src={imgUrl}
                                                             alt={block.image?.alternativeText || ""}
-                                                            style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                                                            fill
+                                                            sizes="(max-width: 768px) 100vw, 720px"
+                                                            className="object-cover"
                                                         />
                                                     )}
                                                 </div>
@@ -222,9 +224,9 @@ export default function OpinionContent({ opinion, recommended }: any) {
                             <div className="mt-12 pt-6 border-t border-zinc-100">
                                 <h4 className="text-xs uppercase tracking-widest text-zinc-400 mb-4 font-bold">Tags</h4>
                                 <div className="flex flex-wrap gap-2">
-                                    {opinion.tags.map((tag: any) => (
+                                    {opinion.tags.map((tag: any, i: number) => (
                                         <TagBadge
-                                            key={tag.slug}
+                                            key={`${tag.slug}-${i}`}
                                             name={tag.name}
                                             slug={tag.slug}
                                             className="bg-zinc-50 text-zinc-700 px-3 py-1.5 text-xs font-medium uppercase tracking-wider rounded-full border border-zinc-200 hover:bg-[#00A651] hover:text-white hover:border-[#00A651] transition-all"
@@ -250,7 +252,7 @@ export default function OpinionContent({ opinion, recommended }: any) {
             </article>
 
             {/* Footer Recommended */}
-            <footer className="mt-40 bg-zinc-50 py-24 border-t border-zinc-100">
+            <footer className="mt-16 bg-zinc-50 py-16 border-t border-zinc-100">
                 <div className="container mx-auto px-4 max-w-7xl">
                     <div className="flex justify-between items-end mb-16">
                         <h4 className="text-5xl font-black uppercase italic tracking-tighter">More Interviews.</h4>
@@ -258,17 +260,17 @@ export default function OpinionContent({ opinion, recommended }: any) {
                             Explore All <ArrowRight size={14} />
                         </Link>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
-                        {recommended?.map((item: any) => (
-                            <Link key={item.id} href={`/interviews/${item.slug}`} className="group space-y-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
+                        {recommended?.slice(0, 4).map((item: any) => (
+                            <Link key={item.id} href={`/interviews/${item.slug}`} className="group space-y-4">
                                 <div className="relative aspect-3/4 overflow-hidden rounded-xl grayscale group-hover:grayscale-0 transition-all duration-700">
                                     {item.featuredImage && (
                                         <Image src={item.featuredImage} alt={item.title} fill className="object-cover group-hover:scale-105 transition-transform duration-700" />
                                     )}
                                 </div>
-                                <div className="space-y-3">
+                                <div className="space-y-2">
                                     <span className="text-[9px] font-black uppercase tracking-[0.3em] text-[#00A651]">{item.category}</span>
-                                    <h5 className="text-2xl font-bold font-serif leading-tight group-hover:text-[#00A651] transition-colors line-clamp-2">{item.title}</h5>
+                                    <h5 className="text-lg md:text-xl font-bold font-serif leading-tight group-hover:text-[#00A651] transition-colors line-clamp-3">{item.title}</h5>
                                     <p className="text-zinc-400 text-[10px] font-black uppercase tracking-widest">{item.author?.name}</p>
                                 </div>
                             </Link>

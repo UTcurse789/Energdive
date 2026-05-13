@@ -2,6 +2,7 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
+import Image from "next/image";
 
 function DeclineContent() {
     const searchParams = useSearchParams();
@@ -55,9 +56,11 @@ function DeclineContent() {
             <div style={styles.card}>
                 {/* Logo */}
                 <div style={styles.logoContainer}>
-                    <img
+                    <Image
                         src="/logo2-removebg-preview.png"
                         alt="EnergDive"
+                        width={160}
+                        height={50}
                         style={styles.logo}
                     />
                 </div>

@@ -6,12 +6,16 @@ import Link from "next/link";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { formatContentDate } from "@/lib/date";
-import { Search, ChevronDown, Facebook, Twitter, Linkedin, Megaphone, ChevronRight, Zap, Menu, X, MapPin, Mail, Phone, Play, Calendar, Globe, ArrowRight, Youtube, Instagram } from "lucide-react";
+import { Search, ChevronDown, Facebook, Linkedin, Megaphone, ChevronRight, Zap, Menu, X, MapPin, Mail, Phone, Play, ArrowRight, Youtube, Instagram } from "lucide-react";
 import { SECTORS } from "@/data/dummy";
 import { motion, AnimatePresence } from "framer-motion";
-import { SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
+import { SignedIn, SignedOut, useAuth } from "@clerk/nextjs";
 import { GlobalSearch } from "@/components/global-search";
 import { strapiImageUrl } from "@/lib/strapi-image";
+import { CustomUserMenu } from "@/components/layout/CustomUserMenu";
+import { OnboardingProgress } from "@/components/onboarding/onboarding-progress";
+import { ONBOARDING_KEYS, hasLocalFlag, setLocalFlag } from "@/lib/onboarding-storage";
+import { useOnboardingStep } from "@/hooks/use-onboarding-step";
 
 type MagazineIssue = {
     id: number | string;
@@ -80,8 +84,6 @@ const MONTH_TO_INDEX: Record<string, number> = {
     dec: 11,
 };
 
-const DEFAULT_STRAPI_BASE_URL = process.env.NEXT_PUBLIC_STRAPI_URL || "https://cms.energdive.com";
-
 function getMonthIndex(month: unknown): number {
     if (typeof month !== "string") return -1;
     const normalized = month.trim().toLowerCase();
@@ -114,7 +116,7 @@ function toIssueSlug(month: string, year: string, fallbackId: unknown): string {
     return `${monthPart}-${year}`;
 }
 
-function normalizeIssue(item: StrapiIssueResponseItem, baseUrl: string): MagazineIssue | null {
+function normalizeIssue(item: StrapiIssueResponseItem): MagazineIssue | null {
     const month = String(item?.Month ?? "").trim();
     const year = String(item?.Year ?? "").trim();
 
@@ -181,12 +183,11 @@ export function Header() {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [mobileExpanded, setMobileExpanded] = useState<string | null>(null); // 'sectors' | 'magazine' | 'more' | 'opinion'
     const [isSearchOpen, setIsSearchOpen] = useState(false);
-    const [strapiBaseUrl, setStrapiBaseUrl] = useState(DEFAULT_STRAPI_BASE_URL);
     const [tagCounts, setTagCounts] = useState<Record<string, number>>({});
+    const [isDesktopViewport, setIsDesktopViewport] = useState(false);
+    const { isLoaded, isSignedIn } = useAuth();
 
     const brandGreen = "#00A651";
-    const baseUrl = strapiBaseUrl;
-
     useEffect(() => {
         const handleScroll = () => setIsScrolled(window.scrollY > 10);
         window.addEventListener("scroll", handleScroll);
@@ -203,7 +204,6 @@ export function Header() {
                 if (!res.ok) return;
 
                 const menuData = await res.json() as {
-                    baseUrl?: string;
                     videos?: any[];
                     events?: any[];
                     issues?: StrapiIssueResponseItem[];
@@ -215,11 +215,6 @@ export function Header() {
 
                 if (cancelled) return;
 
-                const resolvedBaseUrl = typeof menuData.baseUrl === "string" && menuData.baseUrl.trim()
-                    ? menuData.baseUrl
-                    : DEFAULT_STRAPI_BASE_URL;
-
-                setStrapiBaseUrl(resolvedBaseUrl);
                 setTagCounts(menuData.tagCounts || {});
                 setRealVideos(Array.isArray(menuData.videos) ? menuData.videos : []);
                 setRealEvents(Array.isArray(menuData.events) ? menuData.events : []);
@@ -228,7 +223,7 @@ export function Header() {
 
                 const normalizedIssues: MagazineIssue[] = Array.isArray(menuData?.issues)
                     ? menuData.issues
-                        .map((item) => normalizeIssue(item, resolvedBaseUrl))
+                        .map((item) => normalizeIssue(item))
                         .filter((issue: MagazineIssue | null): issue is MagazineIssue => issue !== null)
                     : [];
 
@@ -303,6 +298,27 @@ export function Header() {
         window.addEventListener("keydown", handleKeyDown);
         return () => window.removeEventListener("keydown", handleKeyDown);
     }, []);
+
+    useEffect(() => {
+        const updateViewport = () => {
+            setIsDesktopViewport(window.innerWidth >= 640);
+        };
+
+        updateViewport();
+        window.addEventListener("resize", updateViewport);
+
+        return () => window.removeEventListener("resize", updateViewport);
+    }, []);
+
+    const { isOpen: showHeaderOnboarding, close: dismissHeaderOnboarding } = useOnboardingStep({
+        id: "header-login-hint",
+        enabled: isLoaded && !isSignedIn && pathname === "/" && !hasLocalFlag(ONBOARDING_KEYS.headerCtaHintSeen),
+        delayMs: 1400,
+        autoHideMs: 5200,
+        onClose: () => {
+            setLocalFlag(ONBOARDING_KEYS.headerCtaHintSeen);
+        },
+    });
 
     // Use real (Strapi) sectors if available, else fallback to dummy
     const displaySectors = realSectors || SECTORS;
@@ -409,31 +425,19 @@ export function Header() {
                         </div>
 
                         {/* RIGHT NAV */}
-                        <div className="flex items-center gap-x-3 md:gap-x-5 xl:gap-x-7 flex-1 justify-end">
+                        <div className="relative flex items-center gap-x-3 md:gap-x-5 xl:gap-x-7 flex-1 justify-end">
                             <nav className="hidden sm:flex items-center gap-x-3 md:gap-x-5 xl:gap-x-7">
-                                <Link href="/energclub" target="_blank" className="text-[12px] xl:text-[13px] font-bold uppercase tracking-[1px] hover:opacity-70 whitespace-nowrap" onClick={closeMenus}>ENERGCLUB</Link>
+                                <Link href="/energclub" target="_blank" className="text-[12px] xl:text-[13px] font-bold uppercase tracking-[1px] hover:opacity-70 whitespace-nowrap" onClick={() => { dismissHeaderOnboarding(); closeMenus(); }}>ENERGCLUB</Link>
                                 <Link href="/subscribe" style={{ color: brandGreen }} className="text-[12px] xl:text-[13px] font-bold uppercase tracking-[1px] hover:opacity-70 whitespace-nowrap" onClick={closeMenus}>SUBSCRIBE</Link>
                             </nav>
 
                             <div className="relative">
                                 <SignedIn>
-                                    <UserButton afterSignOutUrl="/">
-                                        <UserButton.MenuItems>
-                                            <UserButton.Link label="Dashboard" labelIcon={<Zap size={14} />} href="/dashboard" />
-                                        </UserButton.MenuItems>
-                                    </UserButton>
-                                    {/* <UserButton
-                                    afterSignOutUrl="/"
-                                    appearance={{
-                                        elements: {
-                                            userPreviewSecondaryIdentifier: { display: "none" },
-                                        },
-                                    }}
-                                /> */}
+                                    <CustomUserMenu />
                                 </SignedIn>
                                 <SignedOut>
                                     <motion.div className="relative" onMouseEnter={() => setIsLoginHovered(true)} onMouseLeave={() => setIsLoginHovered(false)}>
-                                        <Link href="/auth" className="block border-[1.5px] border-black px-3 py-1 md:px-6 md:py-2 text-[10px] md:text-[12px] font-bold uppercase tracking-wider hover:bg-black hover:text-white transition-all overflow-hidden whitespace-nowrap" onClick={closeAll}>
+                                        <Link href="/auth" className="block border-[1.5px] border-black px-3 py-1 md:px-6 md:py-2 text-[10px] md:text-[12px] font-bold uppercase tracking-wider hover:bg-black hover:text-white transition-all overflow-hidden whitespace-nowrap" onClick={() => { dismissHeaderOnboarding(); closeAll(); }}>
                                             LOGIN
                                             <AnimatePresence>
                                                 {isLoginHovered && (
@@ -453,6 +457,77 @@ export function Header() {
                             >
                                 <Search className="w-4 h-4 md:w-5 md:h-5 hover:text-[#00A651]" />
                             </button>
+
+                            <AnimatePresence>
+                                {showHeaderOnboarding && (
+                                    <motion.div
+                                        initial={{ opacity: 0, y: 10, scale: 0.98 }}
+                                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                                        exit={{ opacity: 0, y: 8, scale: 0.98 }}
+                                        transition={{ duration: 0.2, ease: "easeOut" }}
+                                        className="absolute right-2 sm:right-10 top-full z-[72] mt-4 w-[calc(100vw-1rem)] sm:w-[360px] max-w-[360px]"
+                                    >
+                                        <div className="relative overflow-hidden rounded-[24px] border border-white/70 bg-white/80 shadow-[0_28px_80px_rgba(15,23,42,0.14)] backdrop-blur-2xl">
+                                            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(16,185,129,0.14),transparent_42%),linear-gradient(180deg,rgba(255,255,255,0.8),rgba(248,250,252,0.96))]" />
+                                            <div className="absolute right-12 top-0 h-3 w-3 -translate-y-1/2 rotate-45 border-l border-t border-white/70 bg-white/85" />
+
+                                            <motion.div
+                                                className="absolute inset-x-0 top-0 h-1 bg-emerald-500/70 origin-left"
+                                                initial={{ scaleX: 1 }}
+                                                animate={{ scaleX: 0 }}
+                                                transition={{ duration: 5, ease: "linear" }}
+                                            />
+
+                                            <div className="relative p-5">
+                                                <div className="mb-3 flex items-center justify-between gap-3">
+                                                    <span className="inline-flex items-center rounded-full border border-emerald-200/70 bg-white/85 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-emerald-700">
+                                                        Login for Briefings
+                                                    </span>
+                                                    <div className="flex items-center gap-2">
+                                                        <OnboardingProgress step={1} total={4} />
+                                                        <button
+                                                            type="button"
+                                                            onClick={dismissHeaderOnboarding}
+                                                            className="rounded-full border border-slate-200/80 bg-white/85 p-1.5 text-slate-500 transition-colors hover:text-slate-900"
+                                                            aria-label="Dismiss login hint"
+                                                        >
+                                                            <X className="h-3.5 w-3.5" />
+                                                        </button>
+                                                    </div>
+                                                </div>
+
+                                                <p className="font-serif text-lg font-bold leading-tight text-slate-950">
+                                                    Want daily and weekly energy reports, curated market briefings, and saved-story sync? Login to unlock the full experience.
+                                                </p>
+
+                                                <p className="mt-2 text-sm leading-relaxed text-slate-600">
+                                                    ENERGCLUB members and signed-in readers get a more useful, more personalized news workflow.
+                                                </p>
+
+                                                <div className="mt-5 grid grid-cols-2 gap-2.5">
+                                                    <Link
+                                                        href="/auth"
+                                                        onClick={dismissHeaderOnboarding}
+                                                        className="flex flex-col items-center justify-center rounded-xl bg-gradient-to-r from-[#0AB996] to-[#00A651] p-2.5 text-center text-[13px] sm:text-sm font-bold text-white shadow-md shadow-[#00A651]/20 transition-all hover:from-[#099c82] hover:to-[#008c44] hover:shadow-lg hover:-translate-y-0.5"
+                                                    >
+                                                        <span>Login for</span>
+                                                        <span>Reports</span>
+                                                    </Link>
+                                                    <Link
+                                                        href="/energclub"
+                                                        target="_blank"
+                                                        onClick={dismissHeaderOnboarding}
+                                                        className="flex flex-col items-center justify-center rounded-xl border-2 border-slate-200 bg-white p-2.5 text-center text-[13px] sm:text-sm font-bold text-slate-700 transition-colors hover:border-slate-300 hover:text-slate-950"
+                                                    >
+                                                        <span>Explore</span>
+                                                        <span>ENERGCLUB</span>
+                                                    </Link>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
                         </div>
                     </div>
                 </div>

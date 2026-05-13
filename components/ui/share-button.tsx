@@ -11,9 +11,10 @@ interface ShareButtonProps {
     iconClassName?: string;
     textClassName?: string;
     hideTextIcon?: boolean;
+    dropUp?: boolean;
 }
 
-export function ShareButton({ title, text, url, className = "", iconClassName = "w-4 h-4", textClassName = "", hideTextIcon = false }: ShareButtonProps) {
+export function ShareButton({ title, text, url, className = "", iconClassName = "w-4 h-4", textClassName = "", hideTextIcon = false, dropUp = false }: ShareButtonProps) {
     const [isOpen, setIsOpen] = useState(false);
     const [copied, setCopied] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
@@ -113,7 +114,7 @@ export function ShareButton({ title, text, url, className = "", iconClassName = 
             </button>
 
             {isOpen && (
-                <div className="absolute top-full mt-2 w-48 rounded-md shadow-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 z-50 overflow-hidden flex flex-col p-1 gap-1 -translate-x-1/2 left-1/2 md:translate-x-0 md:left-auto md:right-0">
+                <div className={`absolute ${dropUp ? 'bottom-full mb-2' : 'top-full mt-2'} w-48 rounded-md shadow-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 z-50 overflow-hidden flex flex-col p-1 gap-1 -translate-x-1/2 left-1/2 md:translate-x-0 md:left-auto md:right-0`}>
                     <button
                         onClick={(e) => handleSocialShare(e, 'facebook')}
                         className="flex items-center gap-3 px-3 py-2 text-sm text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-colors w-full text-left"

@@ -22,6 +22,7 @@ export interface BentoItem {
     title: string;
     category: string;
     contentType?: string;
+    contentTag?: any;
     image: string;
     slug: string;
     excerpt: string;
@@ -66,7 +67,7 @@ export function BentoGrid({ items: propItems, className }: BentoGridProps) {
         label: item.category || item.label || "Energy",
         image: item.image,
         slug: item.slug,
-        href: buildContentUrl({ slug: item.slug, contentType: item.contentType }),
+        href: buildContentUrl({ slug: item.slug, contentType: item.contentType, content_tag: item.contentTag }),
         color: item.color || "#060010",
     });
 

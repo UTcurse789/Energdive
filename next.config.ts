@@ -38,11 +38,11 @@ const nextConfig: NextConfig = {
         ],
       },
       {
-        source: "/:path*(jpg|jpeg|png|gif|svg|webp|ico|woff|woff2|ttf)",
+        source: "/:path*(jpg|jpeg|png|gif|svg|webp|ico|woff|woff2|ttf|otf|eot)",
         headers: [
           {
             key: "Cache-Control",
-            value: "public, max-age=86400, stale-while-revalidate=43200",
+            value: "public, max-age=31536000, immutable",
           },
         ],
       },
@@ -51,6 +51,22 @@ const nextConfig: NextConfig = {
 
   async redirects() {
     return [
+      {
+        source: "/:path*",
+        has: [
+          {
+            type: "host",
+            value: "energdive.com",
+          },
+        ],
+        destination: "https://www.energdive.com/:path*",
+        statusCode: 301,
+      },
+      {
+        source: '/login',
+        destination: '/auth',
+        permanent: true,
+      },
       {
         source: '/author',
         destination: '/authors',

@@ -135,6 +135,8 @@ import OpinionContent from "./opinion-content";
 import { strapiImageUrl } from "@/lib/strapi-image";
 import { ArticleJsonLd } from "@/components/seo/ArticleJsonLd";
 import type { Metadata } from "next";
+import { getCanonicalUrl } from "@/lib/seo";
+import { getOpinionContentKind } from "@/lib/content-tags";
 
 type StrapiTag = {
   name?: string;
@@ -145,13 +147,7 @@ type StrapiTag = {
   attributes?: StrapiTag;
 };
 
-type StrapiContentItem = {
-  slug?: string;
-  content_tag?: StrapiTag | StrapiTag[];
-  attributes?: {
-    content_tag?: StrapiTag | StrapiTag[];
-  };
-};
+type StrapiContentItem = Record<string, any>;
 
 function slugifyTag(text: string): string {
     return text.toLowerCase().trim().replace(/[^\w\s-]/g, "").replace(/[\s_]+/g, "-").replace(/-+/g, "-").replace(/^-+|-+$/g, "");
@@ -163,31 +159,6 @@ function normalizeTag(tag: StrapiTag | null | undefined) {
     const slug = source?.slug || (name ? slugifyTag(name) : "");
     if (!name) return null;
     return { name, slug };
-}
-
-function extractContentTagTitle(contentTag: StrapiTag | StrapiTag[] | null | undefined): string | null {
-  if (!contentTag) return null;
-
-  if (Array.isArray(contentTag)) {
-    const first = contentTag[0]?.attributes || contentTag[0];
-    return first?.title || first?.Title || null;
-  }
-
-  const source = contentTag.data || contentTag.attributes || contentTag;
-
-  if (Array.isArray(source)) {
-    const first = source[0]?.attributes || source[0];
-    return first?.title || first?.Title || null;
-  }
-
-  const normalizedSource = source.attributes || source;
-  return normalizedSource.title || normalizedSource.Title || null;
-}
-
-function isInterviewContent(item: StrapiContentItem | null | undefined): boolean {
-  const attrs = item?.attributes || item;
-  const contentTag = extractContentTagTitle(attrs?.content_tag);
-  return contentTag?.toLowerCase() === "interview";
 }
 
 const STRAPI = process.env.NEXT_PUBLIC_STRAPI_URL;
@@ -213,29 +184,50 @@ export async function generateMetadata({
     return { title: { absolute: "Opinion - ENERGDIVE" } };
   }
 
+  const opinionKind = getOpinionContentKind(articleData);
+  const interviewContent = opinionKind === "interview";
+  const editorialContent = opinionKind === "editorial";
   const attrs = articleData.attributes || articleData;
-  const baseTitle = attrs.Title || "Opinion";
+  const baseTitle =
+    attrs.Title ||
+    (interviewContent ? "Interview" : editorialContent ? "Editorial" : "Opinion");
   const cleanBaseTitle = String(baseTitle).replace(/^['"“”‘’]+|['"“”‘’]+$/g, "").trim();
   const shareTitle = `${cleanBaseTitle} - ENERGDIVE`;
+  const canonicalUrl = getCanonicalUrl(
+    interviewContent
+      ? `/interviews/${slug}`
+      : editorialContent
+        ? `/editorial/${slug}`
+        : `/opinion/${slug}`
+  );
   const excerptBlock = attrs.Excerpt;
   const description =
     (Array.isArray(excerptBlock)
       ? excerptBlock[0]?.children?.[0]?.text
-      : null) || "Read expert opinions on energy policy and markets at Energdive.";
+      : null) || (
+        interviewContent
+          ? "Read exclusive interviews with energy leaders at Energdive."
+          : editorialContent
+            ? "Read ENERGDIVE editorials on energy policy, markets, and leadership."
+            : "Read expert opinions on energy policy and markets at Energdive."
+      );
 
   const imageUrl = attrs.FeaturedImage?.url
     ? strapiImageUrl(attrs.FeaturedImage.url)
     : attrs.FeaturedImage?.data?.attributes?.url
       ? strapiImageUrl(attrs.FeaturedImage.data.attributes.url)
-      : "https://energdive.com/fav.jpg";
+      : getCanonicalUrl("/fav.jpg");
 
   return {
     title: { absolute: shareTitle },
     description,
+    alternates: {
+      canonical: canonicalUrl,
+    },
     openGraph: {
       title: shareTitle,
       description,
-      url: `https://energdive.com/opinion/${slug}`,
+      url: canonicalUrl,
       siteName: "Energdive",
       images: [
         {
@@ -258,7 +250,7 @@ export async function generateMetadata({
 
 async function getRecommended(currentSlug: string) {
   const res = await fetch(
-    `${STRAPI}/api/contents?filters[type_of_content][name][$eq]=Opinion&populate[author][populate]=avatar&populate=FeaturedImage&populate[content_tag]=true&pagination[limit]=12&sort=Date:desc`,
+    `${STRAPI}/api/contents?filters[type_of_content][name][$eq]=Opinion&populate[author][populate]=avatar&populate=FeaturedImage&populate[content_tag]=true&pagination[limit]=24&sort=Date:desc`,
     { next: { revalidate: 3600 } }
   );
   const json = await res.json();
@@ -266,8 +258,8 @@ async function getRecommended(currentSlug: string) {
 
   return items
     .filter((item: StrapiContentItem) => item.slug !== currentSlug)
-    .filter((item: StrapiContentItem) => !isInterviewContent(item))
-    .slice(0, 3);
+    .filter((item: StrapiContentItem) => getOpinionContentKind(item) === "opinion")
+    .slice(0, 4);
 }
 
 export default async function OpinionDetailPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -275,10 +267,12 @@ export default async function OpinionDetailPage({ params }: { params: Promise<{ 
   const article = await getOpinion(slug);
   if (!article) notFound();
 
-  // If this article is an Interview, redirect to the interviews route
-  const contentTag = extractContentTagTitle((article.attributes || article)?.content_tag);
-  if (contentTag && contentTag.toLowerCase() === "interview") {
+  const opinionKind = getOpinionContentKind(article);
+  if (opinionKind === "interview") {
     redirect(`/interviews/${slug}`);
+  }
+  if (opinionKind === "editorial") {
+    redirect(`/editorial/${slug}`);
   }
 
   const recommendedRaw = await getRecommended(slug);
@@ -325,12 +319,14 @@ export default async function OpinionDetailPage({ params }: { params: Promise<{ 
 
   // Raw date for JSON-LD (needs ISO-8601, not formatted display string)
   const rawDate = article.Date || article.attributes?.Date || article.publishedAt || article.createdAt || "";
+  const modifiedDate = article.updatedAt || article.attributes?.updatedAt || rawDate;
 
   return (
     <>
       <ArticleJsonLd
         title={opinion.title}
         datePublished={rawDate}
+        dateModified={modifiedDate}
         authorName={opinion.author?.name}
         slug={slug}
         imageUrl={opinion.featuredImage}

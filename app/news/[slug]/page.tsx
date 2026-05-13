@@ -15,6 +15,13 @@ import { formatContentDate } from "@/lib/date";
 import ArticleBody from "@/components/ArticleBody";
 import { fetchDataBlocks } from "@/lib/parse-content-blocks";
 import { ArticleJsonLd } from "@/components/seo/ArticleJsonLd";
+import { ArticleReadTime } from "@/components/article/ArticleReadTime";
+import { AuthorBioBox } from "@/components/article/AuthorBioBox";
+import { ArticleNewsletterCTA } from "@/components/article/ArticleNewsletterCTA";
+import { ArticleStickyShare } from "@/components/article/ArticleStickyShare";
+import { SaveArticleButton } from "@/components/article/SaveArticleButton";
+import { ArticlePremiumSpotlight } from "@/components/onboarding/article-premium-spotlight";
+import { SidebarDiscoverySpotlight } from "@/components/onboarding/sidebar-discovery-spotlight";
 
 const STRAPI_BASE_URL = "https://cms.energdive.com";
 
@@ -70,6 +77,7 @@ async function getRelated(tags: string[], currentSlug: string) {
 }
 import type { Metadata } from "next";
 import { strapiImageUrl } from "@/lib/strapi-image";
+import { getCanonicalUrl } from "@/lib/seo";
 
 /* ================= METADATA (OG tags for WhatsApp / social) ================= */
 
@@ -89,6 +97,7 @@ export async function generateMetadata({
     const baseTitle = attrs.Title || "News";
     const cleanBaseTitle = String(baseTitle).replace(/^['"“”‘’]+|['"“”‘’]+$/g, "").trim();
     const shareTitle = `${cleanBaseTitle} - ENERGDIVE`;
+    const canonicalUrl = getCanonicalUrl(`/news/${slug}`);
     const excerptBlock = attrs.Excerpt;
     const description =
         (Array.isArray(excerptBlock)
@@ -97,15 +106,18 @@ export async function generateMetadata({
 
     const imageUrl = attrs.FeaturedImage?.url
         ? strapiImageUrl(attrs.FeaturedImage.url)
-        : "https://energdive.com/fav.jpg";
+        : getCanonicalUrl("/fav.jpg");
 
     return {
         title: { absolute: shareTitle },
         description,
+        alternates: {
+            canonical: canonicalUrl,
+        },
         openGraph: {
             title: shareTitle,
             description,
-            url: `https://energdive.com/news/${slug}`,
+            url: canonicalUrl,
             siteName: "Energdive",
             images: [
                 {
@@ -198,17 +210,20 @@ export default async function NewsDetailPage({
             "News",
     };
 
-    // Raw date for JSON-LD (needs ISO-8601, not formatted display string)
-    const rawDate = attrs.Date || attrs.publishedAt || attrs.createdAt || "";
+    // Raw date for JSON-LD and display (prioritizing publishedAt for accurate automatic time)
+    const rawDate = attrs.publishedAt || attrs.createdAt || attrs.Date || "";
+    const modifiedDate = attrs.updatedAt || rawDate;
     const excerptText = Array.isArray(attrs.Excerpt)
         ? attrs.Excerpt[0]?.children?.[0]?.text || ""
         : "";
+    const canonicalUrl = getCanonicalUrl(`/news/${slug}`);
 
     return (
         <div className="min-h-screen bg-white">
             <ArticleJsonLd
                 title={article.title}
                 datePublished={rawDate}
+                dateModified={modifiedDate}
                 authorName={article.author?.name}
                 slug={slug}
                 imageUrl={article.image}
@@ -219,8 +234,13 @@ export default async function NewsDetailPage({
             <Header />
 
             <main className="pt-20 pb-24">
+                <ArticleStickyShare title={article.title} url={canonicalUrl} />
+                <ArticlePremiumSpotlight
+                    loginHref={`/auth?redirect_url=${encodeURIComponent(canonicalUrl)}`}
+                />
+
                 {/* ─── Breadcrumb ─── */}
-                <div className="container mx-auto max-w-7xl px-4 sm:px-6 mb-6 sm:mb-8">
+                <div className="mx-auto w-full max-w-[1300px] px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12 mb-6 sm:mb-8">
                     <nav className="flex items-center gap-1.5 text-xs text-gray-400 font-sans">
                         <Link href="/" className="hover:text-teal-600 transition-colors">Home</Link>
                         <ChevronRight className="h-3 w-3" />
@@ -228,35 +248,16 @@ export default async function NewsDetailPage({
                     </nav>
                 </div>
 
-                <div className="container mx-auto px-4 sm:px-6 grid grid-cols-1 lg:grid-cols-12 gap-8 sm:gap-12 max-w-7xl">
+                <div className="mx-auto w-full max-w-[1300px] px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12 grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_300px] gap-8 sm:gap-12 lg:gap-x-10 xl:gap-x-12 items-start">
 
                     {/* ═══════════════ MAIN COLUMN ═══════════════ */}
-                    <div className="lg:col-span-8">
+                    <div className="min-w-0">
 
-                        {/* Category + Date + Share */}
-                        <div className="flex items-center justify-between mb-5">
-                            <div className="flex items-center gap-3">
-                                <span className="inline-block bg-teal-50 text-teal-700 text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full">
-                                    {article.category}
-                                </span>
-                                <DateChip value={article.date} />
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <Link
-                                    href={`/print/${slug}`}
-                                    target="_blank"
-                                    className="flex items-center gap-1.5 text-gray-500 hover:text-red-600 font-medium text-sm border border-gray-200 px-3 py-1.5 rounded-full bg-white hover:bg-gray-50 shadow-sm transition-colors"
-                                    title="Print this article"
-                                >
-                                    <Printer className="h-3.5 w-3.5" />
-                                    Print
-                                </Link>
-                                <ShareButton
-                                    title={article.title}
-                                    text={article.excerpt.length ? article.excerpt[0]?.children?.[0]?.text : "Check out this news"}
-                                    className="text-gray-500 hover:text-teal-600 font-medium text-sm border border-gray-200 px-3 py-1.5 rounded-full bg-white hover:bg-gray-50 shadow-sm"
-                                />
-                            </div>
+                        {/* Category Label */}
+                        <div className="flex items-center mb-5">
+                            <span className="bg-[#00A651] text-white px-3 py-1 rounded-sm text-[11px] font-bold uppercase tracking-wider shadow-sm">
+                                {article.category}
+                            </span>
                         </div>
 
                         {/* Title */}
@@ -271,27 +272,67 @@ export default async function NewsDetailPage({
 
                         {/* Author row */}
                         {article.author && (
-                            <div className="flex items-center gap-4 mb-10 pb-8 border-b border-gray-100">
-                                {article.author.avatar ? (
-                                    <Image
-                                        src={article.author.avatar}
-                                        width={52}
-                                        height={52}
-                                        alt={article.author.name || ""}
-                                        className="rounded-full ring-2 ring-teal-100"
-                                    />
-                                ) : (
-                                    <div className="w-[52px] h-[52px] rounded-full bg-teal-100 flex items-center justify-center text-teal-700 font-bold text-lg">
-                                        {article.author.name?.charAt(0) || "A"}
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-10 pb-6 border-b border-gray-100">
+                                <div className="flex items-center gap-3">
+                                    {article.author.avatar ? (
+                                        <Image
+                                            src={article.author.avatar}
+                                            width={36}
+                                            height={36}
+                                            alt={article.author.name || ""}
+                                            className="rounded-full object-cover w-9 h-9 shrink-0"
+                                        />
+                                    ) : (
+                                        <div className="w-9 h-9 rounded-full bg-teal-100 flex items-center justify-center text-teal-700 font-bold text-sm shrink-0">
+                                            {article.author.name?.charAt(0) || "A"}
+                                        </div>
+                                    )}
+                                    <div className="flex flex-col">
+                                        <div className="text-gray-600 text-[14px]">
+                                            By{" "}
+                                            <Link
+                                                href={`/author/${slugify(article.author.name)}`}
+                                                className="font-bold text-gray-900 hover:text-[#00A651] transition-colors"
+                                            >
+                                                {article.author.name}
+                                            </Link>
+                                        </div>
+                                        <div className="flex items-center flex-wrap gap-2 text-gray-400 text-[13px] mt-0.5">
+                                            <div className="flex items-center gap-1.5">
+                                                <Calendar className="w-3.5 h-3.5" />
+                                                <span>
+                                                    {(() => {
+                                                        const d = new Date(rawDate);
+                                                        if (Number.isNaN(d.getTime())) return article.date;
+                                                        return new Intl.DateTimeFormat("en-GB", {
+                                                            day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "Asia/Kolkata"
+                                                        }).format(d).replace(",", "") + " IST";
+                                                    })()}
+                                                </span>
+                                            </div>
+                                            <span className="text-gray-300 hidden sm:inline">|</span>
+                                            <ArticleReadTime content={articleContent} className="text-gray-400" />
+                                        </div>
                                     </div>
-                                )}
-                                <div>
+                                </div>
+                                <div className="flex items-center gap-3 self-start sm:self-auto">
                                     <Link
-                                        href={`/author/${slugify(article.author.name)}`}
-                                        className="font-bold text-gray-900 hover:text-teal-600 transition-colors"
+                                        href={`/print/${slug}`}
+                                        target="_blank"
+                                        className="flex items-center gap-1.5 text-gray-600 hover:text-gray-900 font-medium text-sm border border-gray-200 px-4 py-2 rounded-full bg-white hover:bg-gray-50 shadow-sm transition-colors"
+                                        title="Print this article"
                                     >
-                                        {article.author.name}
+                                        <Printer className="w-4 h-4" />
+                                        Print
                                     </Link>
+                                    <ShareButton
+                                        title={article.title}
+                                        text={excerptText}
+                                        url={canonicalUrl}
+                                        className="text-gray-600 hover:text-gray-900 font-medium text-sm border border-gray-200 px-4 py-2 rounded-full bg-white hover:bg-gray-50 shadow-sm"
+                                        iconClassName="w-4 h-4"
+                                    />
+                                    <SaveArticleButton title={article.title} url={canonicalUrl} />
                                 </div>
                             </div>
                         )}
@@ -325,7 +366,7 @@ prose-blockquote:border-l-teal-500 prose-blockquote:bg-teal-50/30 prose-blockquo
 prose-img:rounded-lg prose-img:shadow-md
 prose-li:marker:text-teal-500
 
-first:prose-p:first-letter:text-6xl first:prose-p:first-letter:font-serif first:prose-p:first-letter:font-bold first:prose-p:first-letter:float-left first:prose-p:first-letter:mr-3 first:prose-p:first-letter:mt-1 first:prose-p:first-letter:text-teal-700"
+first:prose-p:first-letter:text-6xl first:prose-p:first-letter:font-serif first:prose-p:first-letter:font-bold first:prose-p:first-letter:float-left first:prose-p:first-letter:mr-3 first:prose-p:first-letter:mt-1 first:prose-p:first-letter:text-teal-700 last:prose-p:mb-0"
                             >
                                 <ArticleBody content={article.content} enableSectionSharing={true} dataBlocks={dataBlocks} />
                             </div>
@@ -333,14 +374,14 @@ first:prose-p:first-letter:text-6xl first:prose-p:first-letter:font-serif first:
 
                         {/* Tags */}
                         {article.tags.length > 0 && (
-                            <div className="mt-12 pt-6 border-t border-gray-100">
+                            <div className="mt-2 pt-5 border-t border-gray-100">
                                 <h4 className="text-xs uppercase tracking-widest text-gray-400 mb-4 font-bold">
                                     Tags
                                 </h4>
                                 <div className="flex flex-wrap gap-2">
-                                    {article.tags.map((tag: any) => (
+                                    {article.tags.map((tag: any, i: number) => (
                                         <TagBadge
-                                            key={tag.slug}
+                                            key={`${tag.slug}-${i}`}
                                             name={tag.name}
                                             slug={tag.slug}
                                             className="bg-teal-50 text-teal-700 px-3 py-1.5 text-xs font-medium uppercase tracking-wider rounded-full border border-teal-100 hover:bg-teal-600 hover:text-white hover:border-teal-600"
@@ -348,6 +389,14 @@ first:prose-p:first-letter:text-6xl first:prose-p:first-letter:font-serif first:
                                     ))}
                                 </div>
                             </div>
+                        )}
+
+                        {/* Newsletter CTA */}
+                        <ArticleNewsletterCTA />
+
+                        {/* Author Bio Box */}
+                        {article.author && (
+                            <AuthorBioBox author={article.author} />
                         )}
 
                         {/* Industry Partner Ad */}
@@ -359,28 +408,31 @@ first:prose-p:first-letter:text-6xl first:prose-p:first-letter:font-serif first:
                     </div>
 
                     {/* ═══════════════ SIDEBAR ═══════════════ */}
-                    <aside className="lg:col-span-4">
+                    <aside>
                         <div className="sticky top-24 space-y-8">
 
                             {/* ── Subscribe CTA ── */}
-                            <SidebarSubscribe />
+                            <div className="mx-auto w-full max-w-[300px]">
+                                <SidebarSubscribe />
+                            </div>
 
                             {/* ── Sidebar Ad — 300×250 ── */}
                             <AdBanner
                                 placement="new_sidebar"
                                 sectorSlug={sectorSlug}
                                 variant="card"
+                                maxItems={2}
                             />
 
                             {/* ── Latest Issue ── */}
                             {latestIssue && (
-                                <div className="rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
+                                <div className="mx-auto w-full max-w-[300px] rounded-xl border border-gray-100 bg-white p-2 shadow-sm">
                                     <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-widest text-[#00A651] bg-white/90 backdrop-blur-md px-4 py-2 rounded-full w-fit shadow-lg bg-linear-to-b from-white to-zinc-50 border border-white/20">
                                         <Calendar className="h-3.5 w-3.5 text-teal-500" />
                                         Latest Issue
                                     </div>
 
-                                    <Link href={`/issues/${latestIssue.slug}`} className="group block">
+                                    <Link href={`/issues/${latestIssue.slug}`} className="group block mt-3">
                                         <div className="relative aspect-3/4 w-full overflow-hidden rounded-lg border border-gray-100 shadow-md mb-4 transition-all duration-500 group-hover:shadow-xl group-hover:-translate-y-0.5">
                                             <Image
                                                 src={latestIssue.coverImage}
@@ -405,52 +457,54 @@ first:prose-p:first-letter:text-6xl first:prose-p:first-letter:font-serif first:
 
                             {/* ── Related Stories ── */}
                             {relatedArticles.length > 0 && (
-                                <div>
-                                    <h3 className="mb-5 flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">
-                                        <span className="h-px flex-1 bg-gray-200" />
-                                        Related Stories
-                                        <span className="h-px flex-1 bg-gray-200" />
-                                    </h3>
+                                <SidebarDiscoverySpotlight>
+                                    <div className="mx-auto w-full max-w-[300px]">
+                                        <h3 className="mb-5 flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">
+                                            <span className="h-px flex-1 bg-gray-200" />
+                                            Related Stories
+                                            <span className="h-px flex-1 bg-gray-200" />
+                                        </h3>
 
-                                    <div className="space-y-5">
-                                        {relatedArticles.map((item: any) => {
-                                            const r = item.attributes || item;
-                                            const imgUrl = r.FeaturedImage?.url
-                                                ? strapiImageUrl(r.FeaturedImage.url)
-                                                : "/magazine-default.jpg";
+                                        <div className="space-y-5">
+                                            {relatedArticles.map((item: any) => {
+                                                const r = item.attributes || item;
+                                                const imgUrl = r.FeaturedImage?.url
+                                                    ? strapiImageUrl(r.FeaturedImage.url)
+                                                    : "/magazine-default.jpg";
 
-                                            const itemDate = formatContentDate(r.Date || r.publishedAt || item.publishedAt);
+                                                const itemDate = formatContentDate(r.Date || r.publishedAt || item.publishedAt);
 
-                                            return (
-                                                <Link
-                                                    key={item.id}
-                                                    href={`/news/${r.slug}`}
-                                                    className="group flex gap-4 rounded-lg p-2 -mx-2 transition-colors hover:bg-gray-50"
-                                                >
-                                                    {/* Thumbnail */}
-                                                    <div className="relative w-24 h-20 shrink-0 overflow-hidden rounded-lg bg-gray-100">
-                                                        <Image
-                                                            src={imgUrl}
-                                                            alt=""
-                                                            fill
-                                                            className="object-contain bg-white p-0.5 transition-transform duration-500 group-hover:scale-[1.02]"
-                                                        />
-                                                    </div>
+                                                return (
+                                                    <Link
+                                                        key={item.id}
+                                                        href={`/news/${r.slug}`}
+                                                        className="group flex gap-4 rounded-lg p-2 -mx-2 transition-colors hover:bg-gray-50"
+                                                    >
+                                                        {/* Thumbnail */}
+                                                        <div className="relative w-24 h-20 shrink-0 overflow-hidden rounded-lg bg-gray-100">
+                                                            <Image
+                                                                src={imgUrl}
+                                                                alt=""
+                                                                fill
+                                                                className="object-contain bg-white p-0.5 transition-transform duration-500 group-hover:scale-[1.02]"
+                                                            />
+                                                        </div>
 
-                                                    {/* Text */}
-                                                    <div className="flex-1 min-w-0">
-                                                        <h4 className="font-serif font-bold text-sm leading-snug text-gray-900 group-hover:text-teal-600 transition-colors line-clamp-2 mb-1">
-                                                            {r.Title}
-                                                        </h4>
-                                                        {itemDate && (
-                                                            <DateChip value={itemDate} className="text-[10px]" />
-                                                        )}
-                                                    </div>
-                                                </Link>
-                                            );
-                                        })}
+                                                        {/* Text */}
+                                                        <div className="flex-1 min-w-0">
+                                                            <h4 className="font-serif font-bold text-sm leading-snug text-gray-900 group-hover:text-teal-600 transition-colors line-clamp-2 mb-1">
+                                                                {r.Title}
+                                                            </h4>
+                                                            {itemDate && (
+                                                                <DateChip value={itemDate} className="text-[10px]" />
+                                                            )}
+                                                        </div>
+                                                    </Link>
+                                                );
+                                            })}
+                                        </div>
                                     </div>
-                                </div>
+                                </SidebarDiscoverySpotlight>
                             )}
 
                         </div>

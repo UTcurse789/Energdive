@@ -265,17 +265,12 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { Header } from "@/components/layout/header";
-import { Footer } from "@/components/layout/footer";
 import { ScrollProgress } from "@/components/ui/scroll-progress";
 import { DateChip } from "@/components/ui/date-chip";
 import { SubscribeFreeButton } from "@/components/subscribe-free-button";
 import {
     Download,
     ChevronLeft,
-    Calendar,
-    ShieldCheck,
-    BookmarkPlus,
-    Share2,
     ArrowUpRight,
     FileText,
     TrendingUp,
@@ -286,8 +281,97 @@ import {
 import { formatContentDate } from "@/lib/date";
 import { ShareButton } from "@/components/ui/share-button";
 import { strapiImageUrl } from "@/lib/strapi-image";
+import { getCanonicalUrl } from "@/lib/seo";
 
-const STRAPI = process.env.NEXT_PUBLIC_STRAPI_URL;
+const STRAPI = process.env.NEXT_PUBLIC_STRAPI_URL || "https://cms.energdive.com";
+
+function slugify(text: string): string {
+    return text
+        .toLowerCase()
+        .trim()
+        .replace(/[^\w\s-]/g, "")
+        .replace(/[\s_]+/g, "-")
+        .replace(/-+/g, "-")
+        .replace(/^-+|-+$/g, "");
+}
+
+function readAttrs(item: any) {
+    return item?.attributes || item || {};
+}
+
+function getRelationList(raw: any) {
+    const list = Array.isArray(raw?.data)
+        ? raw.data
+        : Array.isArray(raw)
+            ? raw
+            : raw?.data
+                ? [raw.data]
+                : raw
+                    ? [raw]
+                    : [];
+
+    return list.map((entry: any) => readAttrs(entry));
+}
+
+function normalizeTag(tag: any) {
+    const source = readAttrs(tag);
+    const name = source?.name || source?.Name || "";
+    const tagSlug = source?.slug || (name ? slugify(name) : "");
+
+    if (!name) return null;
+
+    return { name, slug: tagSlug };
+}
+
+function extractText(blocks: any): string {
+    if (typeof blocks === "string") return blocks.trim();
+    if (!Array.isArray(blocks)) return "";
+
+    return blocks
+        .map((block: any) =>
+            Array.isArray(block?.children)
+                ? block.children.map((child: any) => child?.text || "").join("")
+                : ""
+        )
+        .join(" ")
+        .replace(/\s+/g, " ")
+        .trim();
+}
+
+function getMediaUrl(media: any): string | null {
+    if (!media) return null;
+
+    const source = Array.isArray(media) ? media[0] : media;
+    const attrs = readAttrs(source?.data || source);
+    const path =
+        attrs?.formats?.large?.url ||
+        attrs?.formats?.medium?.url ||
+        attrs?.formats?.small?.url ||
+        attrs?.formats?.thumbnail?.url ||
+        attrs?.url ||
+        null;
+
+    return path ? strapiImageUrl(path) : null;
+}
+
+function normalizeExternalUrl(value: unknown): string | null {
+    const raw = typeof value === "string" ? value.trim() : "";
+    if (!raw) return null;
+
+    if (/^https?:\/\//i.test(raw) || raw.startsWith("//")) {
+        return raw;
+    }
+
+    if (raw.startsWith("/")) {
+        return `${STRAPI.replace(/\/$/, "")}${raw}`;
+    }
+
+    if (/^[\w.-]+\.[a-z]{2,}(?:\/.*)?$/i.test(raw)) {
+        return `https://${raw}`;
+    }
+
+    return raw;
+}
 
 /* ==========================================================
    DATA FETCHING
@@ -307,17 +391,58 @@ async function getReport(slug: string) {
     }
 }
 
-async function getTrending() {
+async function fetchReportCollection(query: string) {
     try {
-        const res = await fetch(
-            `${STRAPI}/api/contents?filters[type_of_content][name][$eq]=Reports&pagination[limit]=3&populate=*`,
-            { next: { revalidate: 3600 } }
-        );
+        const res = await fetch(`${STRAPI}/api/contents?${query}`, { next: { revalidate: 3600 } });
+        if (!res.ok) return [];
+
         const json = await res.json();
         return json?.data ?? [];
-    } catch (e) {
+    } catch {
         return [];
     }
+}
+
+async function getRelatedReports(currentSlug: string, sectorSlugs: string[], tagSlugs: string[]) {
+    const baseQuery = [
+        "filters[type_of_content][name][$eq]=Reports",
+        `filters[slug][$ne]=${encodeURIComponent(currentSlug)}`,
+        "populate[FeaturedImage]=true",
+        "populate[sectors]=true",
+        "populate[tags]=true",
+        "sort[0]=Date:desc",
+        "sort[1]=publishedAt:desc",
+        "pagination[limit]=4",
+    ].join("&");
+
+    if (sectorSlugs.length > 0) {
+        const sectorFilters = sectorSlugs
+            .map((sectorSlug, index) => `filters[sectors][slug][$in][${index}]=${encodeURIComponent(sectorSlug)}`)
+            .join("&");
+        const sectorMatches = await fetchReportCollection(`${baseQuery}&${sectorFilters}`);
+        if (sectorMatches.length > 0) return sectorMatches;
+    }
+
+    if (tagSlugs.length > 0) {
+        const tagFilters = tagSlugs
+            .map((tagSlug, index) => `filters[tags][slug][$in][${index}]=${encodeURIComponent(tagSlug)}`)
+            .join("&");
+        const tagMatches = await fetchReportCollection(`${baseQuery}&${tagFilters}`);
+        if (tagMatches.length > 0) return tagMatches;
+    }
+
+    return fetchReportCollection(baseQuery);
+}
+
+function mapSidebarReport(item: any) {
+    const report = readAttrs(item);
+
+    return {
+        id: item?.id ?? report?.id ?? report?.documentId ?? report?.slug,
+        slug: report?.slug || "",
+        title: report?.Title || report?.title || "Untitled Report",
+        imageUrl: getMediaUrl(report?.FeaturedImage || report?.featuredImage),
+    };
 }
 
 export async function generateMetadata({
@@ -335,21 +460,24 @@ export async function generateMetadata({
         };
     }
 
-    const baseTitle = article.Title || "Report";
+    const report = readAttrs(article);
+    const baseTitle = report.Title || report.title || "Report";
     const cleanBaseTitle = String(baseTitle).replace(/^['"“”‘’]+|['"“”‘’]+$/g, "").trim();
     const shareTitle = `${cleanBaseTitle} - ENERGDIVE`;
-    const excerpt = article.Excerpt?.[0]?.children?.[0]?.text || "Read in-depth energy reports on ENERGDIVE.";
-    const imageUrl = article.FeaturedImage?.url
-        ? strapiImageUrl(article.FeaturedImage.url)
-        : "https://energdive.com/fav.jpg";
+    const canonicalUrl = getCanonicalUrl(`/reports/${slug}`);
+    const excerpt = extractText(report.Excerpt || report.excerpt) || "Read in-depth energy reports on ENERGDIVE.";
+    const imageUrl = getMediaUrl(report.FeaturedImage || report.featuredImage) || getCanonicalUrl("/fav.jpg");
 
     return {
         title: { absolute: shareTitle },
         description: excerpt,
+        alternates: {
+            canonical: canonicalUrl,
+        },
         openGraph: {
             title: shareTitle,
             description: excerpt,
-            url: `https://www.energdive.com/reports/${slug}`,
+            url: canonicalUrl,
             siteName: "ENERGDIVE",
             images: [
                 {
@@ -423,13 +551,29 @@ function RenderBlocks({ blocks }: { blocks: any[] }) {
 export default async function IntelligenceReportPage({ params }: { params: Promise<{ slug: string }> }) {
     const { slug } = await params;
     const article = await getReport(slug);
-    const trending = await getTrending();
 
     if (!article) notFound();
 
-    const imageUrl = article.FeaturedImage?.url ? strapiImageUrl(article.FeaturedImage.url) : null;
-    const downloadUrl = article.source || "#";
-    const excerpt = article.Excerpt?.[0]?.children?.[0]?.text || "";
+    const report = readAttrs(article);
+    const sectorSlugs = getRelationList(report.sectors)
+        .map((sector: any) => sector?.slug)
+        .filter(Boolean);
+    const tagSlugs = getRelationList(report.tags)
+        .map((tag: any) => normalizeTag(tag))
+        .filter(Boolean)
+        .map((tag: any) => tag.slug)
+        .filter(Boolean);
+    const relatedReports = (await getRelatedReports(slug, sectorSlugs, tagSlugs))
+        .map((item: any) => mapSidebarReport(item))
+        .filter((item: any) => item.slug);
+
+    const title = report.Title || report.title || "Untitled Report";
+    const imageUrl = getMediaUrl(report.FeaturedImage || report.featuredImage);
+    const downloadUrl = normalizeExternalUrl(
+        report.source || report.Source || report.downloadUrl || report.DownloadUrl
+    );
+    const excerpt = extractText(report.Excerpt || report.excerpt);
+    const canonicalUrl = getCanonicalUrl(`/reports/${slug}`);
 
     return (
         <div className="min-h-screen  font-sans text-zinc-900">
@@ -488,14 +632,21 @@ export default async function IntelligenceReportPage({ params }: { params: Promi
                                     </p>
 
                                     {/* Download button */}
-                                    <a href={downloadUrl} target="_blank" rel="noreferrer" className="block mb-3">
-                                        <button className="w-full group bg-[#00A651] hover:bg-white rounded-2xl py-4 transition-all duration-300">
-                                            <span className="flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest text-white group-hover:text-zinc-900 transition-colors duration-300">
-                                                <Download className="w-3.5 h-3.5" />
-                                                Download Report
-                                            </span>
-                                        </button>
-                                    </a>
+                                    {downloadUrl ? (
+                                        <a
+                                            href={downloadUrl}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="group mb-3 flex w-full items-center justify-center gap-2 rounded-2xl bg-[#00A651] py-4 text-[10px] font-black uppercase tracking-widest text-white transition-all duration-300 hover:bg-white hover:text-zinc-900"
+                                        >
+                                            <Download className="h-3.5 w-3.5" />
+                                            Download Report
+                                        </a>
+                                    ) : (
+                                        <div className="mb-3 flex w-full items-center justify-center rounded-2xl border border-zinc-800 bg-zinc-900/60 py-4 text-[10px] font-black uppercase tracking-widest text-zinc-500">
+                                            Download Unavailable
+                                        </div>
+                                    )}
 
                                 </div>
                             </div>
@@ -513,8 +664,9 @@ export default async function IntelligenceReportPage({ params }: { params: Promi
                                 </Link>
                                 <div className="bg-white rounded-full border border-zinc-200 shadow-sm hover:border-zinc-300 hover:bg-zinc-50 transition-colors w-fit mx-auto relative z-20">
                                     <ShareButton
-                                        title={article.Title}
+                                        title={title}
                                         text={excerpt || "Check out this report"}
+                                        url={canonicalUrl}
                                         className="flex items-center justify-center gap-2 px-6 py-2 text-sm font-medium text-[#445b7e] hover:text-[#2c3e50] transition-all duration-200"
                                         iconClassName="w-4 h-4"
                                     />
@@ -542,12 +694,12 @@ export default async function IntelligenceReportPage({ params }: { params: Promi
                             {/* Title block */}
                             <header className="mb-14">
                                 <h1 className="text-3xl md:text-5xl font-black uppercase tracking-tighter leading-[0.9] mb-10 text-zinc-900">
-                                    {article.Title}
+                                    {title}
                                 </h1>
 
                                 {/* Mobile meta */}
                                 <div className="flex flex-wrap gap-5 text-[10px] font-black uppercase tracking-[0.18em] text-zinc-400 border-t border-zinc-200 pt-7 lg:hidden">
-                                    <DateChip value={formatContentDate(article.Date || article.publishedAt || article.createdAt)} className="text-[10px]" />
+                                    <DateChip value={formatContentDate(report.Date || report.publishedAt || report.createdAt)} className="text-[10px]" />
                                     <span className="flex items-center gap-2">
                                         <Clock size={11} className="text-[#00A651]" />
                                         12 min read
@@ -726,7 +878,7 @@ export default async function IntelligenceReportPage({ params }: { params: Promi
                                                 prose-hr:border-gray-300
                                                 "
                                 >
-                                    <RenderBlocks blocks={article.Content} />
+                                    <RenderBlocks blocks={report.Content || report.content || []} />
                                 </div>
                             </div>
 
@@ -752,15 +904,15 @@ export default async function IntelligenceReportPage({ params }: { params: Promi
                         <aside className="lg:col-span-3 flex flex-col gap-5 lg:sticky lg:top-28">
 
                             {/* Top Priority card */}
-                            {trending[0] && (
+                            {relatedReports[0] && (
                                 <div className="rounded-3xl overflow-hidden border border-zinc-100 bg-white shadow-sm group">
                                     {/* Image */}
                                     <div className="relative aspect-16/10 w-full bg-zinc-100 overflow-hidden">
-                                        {trending[0].FeaturedImage?.url && (
+                                        {relatedReports[0].imageUrl && (
                                             <Image
-                                                src={strapiImageUrl(trending[0].FeaturedImage.url)}
+                                                src={relatedReports[0].imageUrl}
                                                 fill
-                                                alt={trending[0].Title}
+                                                alt={relatedReports[0].title}
                                                 className="object-cover grayscale group-hover:grayscale-0 group-hover:scale-105 transition-all duration-700"
                                             />
                                         )}
@@ -774,10 +926,10 @@ export default async function IntelligenceReportPage({ params }: { params: Promi
                                     <div className="p-5">
                                         <p className="text-[9px] font-black uppercase tracking-widest text-[#00A651] mb-2">Report</p>
                                         <h5 className="font-black text-sm leading-snug text-zinc-900 mb-5 group-hover:text-[#00A651] transition-colors duration-200 line-clamp-3">
-                                            {trending[0].Title}
+                                            {relatedReports[0].title}
                                         </h5>
                                         <Link
-                                            href={`/reports/${trending[0].slug}`}
+                                            href={`/reports/${relatedReports[0].slug}`}
                                             className="inline-flex items-center gap-2 bg-zinc-950 hover:bg-[#00A651] text-white rounded-xl px-4 py-2.5 text-[10px] font-black uppercase tracking-widest transition-all duration-300"
                                         >
                                             Open Report <ArrowUpRight size={11} />
@@ -787,7 +939,7 @@ export default async function IntelligenceReportPage({ params }: { params: Promi
                             )}
 
                             {/* Related Briefings */}
-                            {trending.slice(1).length > 0 && (
+                            {relatedReports.slice(1).length > 0 && (
                                 <div className="bg-white rounded-3xl border border-zinc-100 shadow-sm overflow-hidden">
                                     <div className="px-5 py-4 border-b border-zinc-100">
                                         <p className="text-[9px] font-black uppercase tracking-[0.22em] text-zinc-400 flex items-center gap-2">
@@ -796,19 +948,19 @@ export default async function IntelligenceReportPage({ params }: { params: Promi
                                         </p>
                                     </div>
 
-                                    {trending.slice(1).map((item: any, idx: number) => (
+                                    {relatedReports.slice(1).map((item: any, idx: number) => (
                                         <Link
                                             key={item.id}
                                             href={`/reports/${item.slug}`}
-                                            className={`group flex items-start gap-4 p-5 hover:bg-zinc-50 transition-all duration-200 ${idx < trending.slice(1).length - 1 ? "border-b border-zinc-100" : ""}`}
+                                            className={`group flex items-start gap-4 p-5 hover:bg-zinc-50 transition-all duration-200 ${idx < relatedReports.slice(1).length - 1 ? "border-b border-zinc-100" : ""}`}
                                         >
                                             {/* Thumbnail */}
                                             <div className="relative w-14 h-14 rounded-xl overflow-hidden bg-zinc-100 flex-shrink-0">
-                                                {item.FeaturedImage?.url && (
+                                                {item.imageUrl && (
                                                     <Image
-                                                        src={strapiImageUrl(item.FeaturedImage.url)}
+                                                        src={item.imageUrl}
                                                         fill
-                                                        alt={item.Title}
+                                                        alt={item.title}
                                                         className="object-cover grayscale group-hover:grayscale-0 transition-all duration-500"
                                                     />
                                                 )}
@@ -820,7 +972,7 @@ export default async function IntelligenceReportPage({ params }: { params: Promi
                                                     Report {idx + 2}
                                                 </p>
                                                 <p className="text-xs font-bold text-zinc-800 leading-snug group-hover:text-[#00A651] transition-colors duration-200 line-clamp-2">
-                                                    {item.Title}
+                                                    {item.title}
                                                 </p>
                                             </div>
 
@@ -843,9 +995,9 @@ export default async function IntelligenceReportPage({ params }: { params: Promi
                                 <p className="text-white font-black text-sm leading-snug mb-5 relative z-10">
                                     Get exclusive energy insights, market analysis, and expert commentary delivered to your inbox.
                                 </p>
-                                <button className="relative z-10 w-full bg-[#00A651] hover:bg-white rounded-xl py-3 text-[10px] font-black uppercase tracking-widest text-white hover:text-zinc-900 transition-all duration-300">
+                                <SubscribeFreeButton className="relative z-10 w-full rounded-xl bg-[#00A651] py-3 text-[10px] font-black uppercase tracking-widest text-white transition-all duration-300 hover:bg-white hover:text-zinc-900">
                                     Subscribe Now
-                                </button>
+                                </SubscribeFreeButton>
                             </div>
 
                         </aside>

@@ -154,7 +154,7 @@ function RegisterContent() {
                     )}
 
                     <Link
-                        href="/login"
+                        href="/auth"
                         className="inline-block w-full bg-[#0AB996] text-white px-6 py-3 rounded-lg text-sm font-semibold hover:bg-[#099e82] transition-colors shadow-lg shadow-[#0AB996]/20 text-center"
                     >
                         Sign In to Dashboard →
@@ -345,7 +345,7 @@ function RegisterContent() {
                 <div className="mt-6 pt-4 border-t border-zinc-100 text-center">
                     <p className="text-sm text-zinc-400">
                         Already have an account?{" "}
-                        <Link href="/login" className="text-[#0AB996] font-semibold hover:underline">
+                        <Link href="/auth" className="text-[#0AB996] font-semibold hover:underline">
                             Sign in
                         </Link>
                     </p>

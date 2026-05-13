@@ -38,6 +38,9 @@ interface AdBannerProps {
     variant?: "banner" | "card" | "hero" | "vertical" | "native" | "mobile_banner";
     className?: string;
     showSkeleton?: boolean;
+    maxItems?: number;
+    width?: number;
+    height?: number;
 }
 
 function adHasRenderableMedia(ad: Ad, variant: NonNullable<AdBannerProps["variant"]>): boolean {
@@ -49,9 +52,16 @@ function getRotationStorageKey(placement: string, sectorSlug?: string): string {
     return `ad-rotation:${placement}:${sectorSlug || "global"}`;
 }
 
-function pickRotatingAd(ads: Ad[], placement: string, sectorSlug?: string): Ad | null {
-    if (ads.length === 0) return null;
-    if (ads.length === 1) return ads[0];
+function pickRotatingAds(
+    ads: Ad[],
+    placement: string,
+    sectorSlug?: string,
+    maxItems = 1
+): Ad[] {
+    if (ads.length === 0) return [];
+
+    const itemCount = Math.max(1, Math.min(maxItems, ads.length));
+    if (ads.length === 1) return ads.slice(0, itemCount);
 
     try {
         const storageKey = getRotationStorageKey(placement, sectorSlug);
@@ -59,15 +69,61 @@ function pickRotatingAd(ads: Ad[], placement: string, sectorSlug?: string): Ad |
         const lastIndex = lastAdId
             ? ads.findIndex((ad) => String(ad.id) === lastAdId)
             : -1;
-        const nextIndex = (lastIndex + 1 + ads.length) % ads.length;
-        const nextAd = ads[nextIndex];
+        const startIndex = (lastIndex + 1 + ads.length) % ads.length;
+        const nextAds = Array.from({ length: itemCount }, (_, offset) => {
+            const index = (startIndex + offset) % ads.length;
+            return ads[index];
+        });
 
-        window.sessionStorage.setItem(storageKey, String(nextAd.id));
-        return nextAd;
+        window.sessionStorage.setItem(storageKey, String(nextAds[nextAds.length - 1].id));
+        return nextAds;
     } catch {
-        return ads[0];
+        return ads.slice(0, itemCount);
     }
 }
+
+function pickAdsToDisplay(
+    ads: Ad[],
+    placement: string,
+    sectorSlug?: string,
+    maxItems?: number
+): Ad[] {
+    if (ads.length === 0) return [];
+
+    if (EXACT_LEADERBOARD_PLACEMENTS.has(placement)) {
+        return pickRotatingAds(ads, placement, sectorSlug, maxItems ?? 1);
+    }
+
+    if (typeof maxItems !== "number" || maxItems < 1) {
+        return ads;
+    }
+
+    return ads.slice(0, Math.min(maxItems, ads.length));
+}
+
+const EXACT_LEADERBOARD_PLACEMENTS = new Set([
+    "sector_banner",
+    "home_platform_hero",
+    "new_top",
+    "sector_hero",
+]);
+
+const EXACT_LEADERBOARD_SIZE = {
+    width: 728,
+    height: 90,
+} as const;
+
+const EXACT_VERTICAL_CARD_PLACEMENTS = new Set([
+    "opinion_left",
+    "opinion_right",
+    "interview_left",
+    "interview_right",
+]);
+
+const EXACT_VERTICAL_SIZE = {
+    width: 300,
+    height: 600,
+} as const;
 
 /**
  * Client-side ad banner component.
@@ -79,8 +135,11 @@ export function AdBanner({
     sectorSlug,
     variant = "banner",
     className = "",
+    maxItems,
+    width,
+    height,
 }: AdBannerProps) {
-    const [ad, setAd] = useState<Ad | null>(null);
+    const [selectedAds, setSelectedAds] = useState<Ad[]>([]);
 
     useEffect(() => {
         async function fetchAd() {
@@ -147,47 +206,74 @@ export function AdBanner({
                 if (ads.length > 0) {
                     // Sort by priority DESC
                     ads.sort((a, b) => (b.priority ?? -1) - (a.priority ?? -1));
-                    setAd(pickRotatingAd(ads, placement, sectorSlug));
+                    setSelectedAds(pickAdsToDisplay(ads, placement, sectorSlug, maxItems));
                 } else {
-                    setAd(null);
+                    setSelectedAds([]);
                 }
             } catch (err) {
                 console.error("[AdBanner] Failed to fetch ad:", err);
-                setAd(null);
+                setSelectedAds([]);
             }
         }
 
         fetchAd();
-    }, [placement, sectorSlug, variant]);
+    }, [placement, sectorSlug, variant, maxItems]);
 
-    if (!ad) {
+    if (selectedAds.length === 0) {
         return null;
+    }
+
+    function renderSelectedAds(renderAd: (ad: Ad, index: number) => React.ReactNode) {
+        if (selectedAds.length === 1) {
+            return renderAd(selectedAds[0], 0);
+        }
+
+        return (
+            <div className="space-y-6">
+                {selectedAds.map((ad, index) => (
+                    <div key={`${ad.id}-${index}`}>
+                        {renderAd(ad, index)}
+                    </div>
+                ))}
+            </div>
+        );
     }
 
     switch (variant) {
         case "banner":
-            return <BannerAd ad={ad} className={className} />;
+            return renderSelectedAds((ad) => <BannerAd ad={ad} placement={placement} className={className} />);
         case "card":
-            return <CardAd ad={ad} className={className} />;
+            return renderSelectedAds((ad) => <CardAd ad={ad} placement={placement} className={className} />);
         case "hero":
-            return <HeroBannerAd ad={ad} className={className} />;
+            return renderSelectedAds((ad) => <HeroBannerAd ad={ad} className={className} />);
         case "vertical":
-            return <VerticalBannerAd ad={ad} className={className} />;
+            return renderSelectedAds((ad) => (
+                <VerticalBannerAd
+                    ad={ad}
+                    className={className}
+                    width={width}
+                    height={height}
+                />
+            ));
         case "native":
-            return <NativeBannerAd ad={ad} className={className} />;
+            return renderSelectedAds((ad) => <NativeBannerAd ad={ad} className={className} />);
         case "mobile_banner":
-            return <MobileBannerAd ad={ad} className={className} />;
+            return renderSelectedAds((ad) => <MobileBannerAd ad={ad} className={className} />);
         default:
-            return <BannerAd ad={ad} className={className} />;
+            return renderSelectedAds((ad) => <BannerAd ad={ad} placement={placement} className={className} />);
     }
 }
 
 /** Wraps content in a clickable link if target_url is present */
-function wrapWithLink(targetUrl: string | null | undefined, content: React.ReactNode) {
+function wrapWithLink(
+    targetUrl: string | null | undefined,
+    content: React.ReactNode,
+    className = "block"
+) {
     const url = (targetUrl || "").trim();
     if (!url) return <>{content}</>;
     return (
-        <a href={url} target="_blank" rel="noopener noreferrer sponsored" className="block">
+        <a href={url} target="_blank" rel="noopener noreferrer sponsored" className={className}>
             {content}
         </a>
     );
@@ -197,60 +283,111 @@ function wrapWithLink(targetUrl: string | null | undefined, content: React.React
    BANNER — 728×90 / 900×90 header-style
    ═══════════════════════════════════════════ */
 
-function BannerAd({ ad, className }: { ad: Ad; className: string }) {
+function BannerAd({
+    ad,
+    placement,
+    className,
+}: {
+    ad: Ad;
+    placement: string;
+    className: string;
+}) {
     const creative = ad.creative?.[0];
     const imageUrl = getImageUrl(creative);
+    const isExactSizedPlacement = EXACT_LEADERBOARD_PLACEMENTS.has(placement);
 
     if (!imageUrl) return null;
 
-    const content = (
-        <div className={`flex justify-center group ${className}`}>
-            <div className="relative overflow-hidden rounded-lg bg-white" style={{ maxWidth: 728, width: "100%" }}>
-                <div className="relative w-full bg-white" style={{ aspectRatio: "728/90" }}>
-                    <Image
-                        src={imageUrl}
-                        alt={ad.title || "Advertisement"}
-                        fill
-                        loading="lazy"
-                        unoptimized
-                        className="object-contain transition-transform duration-500 group-hover:scale-[1.015]"
-                    />
+    if (isExactSizedPlacement) {
+        const creativeContent = (
+            <div
+                className="relative shrink-0 overflow-hidden rounded-none bg-white"
+                style={{ width: EXACT_LEADERBOARD_SIZE.width, height: EXACT_LEADERBOARD_SIZE.height }}
+            >
+                <Image
+                    src={imageUrl}
+                    alt={ad.title || "Advertisement"}
+                    fill
+                    sizes={`${EXACT_LEADERBOARD_SIZE.width}px`}
+                    loading="lazy"
+                    unoptimized
+                    className="object-contain transition-transform duration-500 group-hover:scale-[1.015]"
+                />
+            </div>
+        );
+
+        return (
+            <div className={`group ${className}`}>
+                <div className="flex justify-start overflow-x-auto md:justify-center">
+                    {wrapWithLink(ad.target_url, creativeContent, "block shrink-0")}
                 </div>
-                <span className="absolute top-2 right-2 text-[8px] font-bold uppercase tracking-[0.15em] text-white/80 bg-black/25 backdrop-blur-md px-2 py-0.5 rounded-full pointer-events-none">
-                    Sponsored
-                </span>
+            </div>
+        );
+    }
+
+    const creativeContent = (
+        <div className="relative overflow-hidden rounded-none bg-white" style={{ maxWidth: 728, width: "100%" }}>
+            <div className="relative w-full bg-white" style={{ aspectRatio: "728/90" }}>
+                <Image
+                    src={imageUrl}
+                    alt={ad.title || "Advertisement"}
+                    fill
+                    loading="lazy"
+                    unoptimized
+                    className="object-contain transition-transform duration-500 group-hover:scale-[1.015]"
+                />
             </div>
         </div>
     );
 
-    return wrapWithLink(ad.target_url, content);
+    return (
+        <div className={`flex justify-center group ${className}`}>
+            {wrapWithLink(ad.target_url, creativeContent, "block w-full max-w-[728px]")}
+        </div>
+    );
 }
 
 /* ═══════════════════════════════════════════
    CARD — 300×250 in-grid ad
    ═══════════════════════════════════════════ */
 
-function CardAd({ ad, className }: { ad: Ad; className: string }) {
+function CardAd({
+    ad,
+    placement,
+    className,
+}: {
+    ad: Ad;
+    placement: string;
+    className: string;
+}) {
     const creative = ad.creative?.[0];
     const imageUrl = getImageUrl(creative);
+    const isExactVerticalCardPlacement = EXACT_VERTICAL_CARD_PLACEMENTS.has(placement);
 
     if (!imageUrl) return null;
 
     const inner = (
-        <div className={`relative overflow-hidden rounded-2xl bg-white shadow-sm border border-gray-100/60 group h-fit ${className}`}>
-            <div className="relative w-full" style={{ aspectRatio: "300/250" }}>
+        <div
+            className={`relative mx-auto overflow-hidden bg-white shadow-sm border border-gray-100/60 group ${className} rounded-none`}
+            style={
+                isExactVerticalCardPlacement
+                    ? { width: EXACT_VERTICAL_SIZE.width, height: EXACT_VERTICAL_SIZE.height }
+                    : { width: "100%", maxWidth: 300 }
+            }
+        >
+            <div
+                className={`relative w-full ${isExactVerticalCardPlacement ? "h-full" : ""}`}
+                style={isExactVerticalCardPlacement ? undefined : { aspectRatio: "300/250" }}
+            >
                 <Image
                     src={imageUrl}
                     alt={ad.title || "Industry Partner"}
                     fill
                     loading="lazy"
                     unoptimized
-                    className="object-cover transition-transform duration-500 group-hover:scale-[1.02]"
+                    className={`${isExactVerticalCardPlacement ? "object-contain" : "object-cover"} transition-transform duration-500 group-hover:scale-[1.02]`}
                 />
             </div>
-            <span className="absolute top-3 right-3 text-[9px] font-bold uppercase tracking-[0.15em] text-white/80 bg-black/25 backdrop-blur-md px-2.5 py-1 rounded-full pointer-events-none">
-                Sponsored
-            </span>
         </div>
     );
 
@@ -267,30 +404,43 @@ function HeroBannerAd({ ad, className }: { ad: Ad; className: string }) {
 
     if (!imageUrl) return null;
 
-    const inner = (
-        <div className={`flex justify-center w-full group overflow-hidden ${className}`}>
-            <div className="relative inline-block rounded-2xl overflow-hidden">
-                <img
-                    src={imageUrl}
-                    alt={ad.title || "Advertisement"}
-                    loading="lazy"
-                    className="max-w-full h-auto object-contain transition-transform duration-500 group-hover:scale-[1.015]"
-                />
-                <span className="absolute top-3 right-3 text-[9px] font-bold uppercase tracking-[0.15em] text-white/80 bg-black/25 backdrop-blur-md px-2.5 py-1 rounded-full pointer-events-none">
-                    Sponsored
-                </span>
-            </div>
+    const creativeContent = (
+        <div className="relative inline-block rounded-none overflow-hidden">
+            <Image
+                src={imageUrl}
+                alt={ad.title || "Advertisement"}
+                width={0}
+                height={0}
+                sizes="100vw"
+                loading="lazy"
+                unoptimized
+                className="max-w-full h-auto w-auto object-contain transition-transform duration-500 group-hover:scale-[1.015]"
+            />
         </div>
     );
 
-    return wrapWithLink(ad.target_url, inner);
+    return (
+        <div className={`flex justify-center w-full group overflow-hidden ${className}`}>
+            {wrapWithLink(ad.target_url, creativeContent, "inline-block")}
+        </div>
+    );
 }
 
 /* ═══════════════════════════════════════════
    VERTICAL — 300×600 vertical card
    ═══════════════════════════════════════════ */
 
-function VerticalBannerAd({ ad, className }: { ad: Ad; className: string }) {
+function VerticalBannerAd({
+    ad,
+    className,
+    width = EXACT_VERTICAL_SIZE.width,
+    height = EXACT_VERTICAL_SIZE.height,
+}: {
+    ad: Ad;
+    className: string;
+    width?: number;
+    height?: number;
+}) {
     const creative = ad.creative?.[0];
     const imageUrl = getImageUrl(creative);
     const logoMedia = ad.logo?.[0];
@@ -300,13 +450,15 @@ function VerticalBannerAd({ ad, className }: { ad: Ad; className: string }) {
 
     const inner = (
         <div
-            className={`relative overflow-hidden rounded-2xl border border-gray-100/60 bg-white shadow-sm hover:shadow-xl transition-all duration-500 group w-[300px] shrink-0 ${className}`}
+            className={`relative overflow-hidden border border-gray-100/60 bg-white shadow-sm hover:shadow-xl transition-all duration-500 group shrink-0 ${className} rounded-none`}
+            style={{ width, height }}
         >
-            <div className="relative w-full" style={{ aspectRatio: "300/600" }}>
+            <div className="relative h-full w-full">
                 <Image
                     src={imageUrl}
                     alt={ad.title || "Advertisement"}
                     fill
+                    sizes={`${width}px`}
                     loading="lazy"
                     unoptimized
                     className="object-cover transition-transform duration-700 group-hover:scale-[1.02]"
@@ -323,9 +475,6 @@ function VerticalBannerAd({ ad, className }: { ad: Ad; className: string }) {
                     <p className="text-sm font-semibold text-white truncate">{ad.partner_name || ad.title}</p>
                 </div>
             </div>
-            <span className="absolute top-3 right-3 text-[9px] font-bold uppercase tracking-[0.15em] text-white/80 bg-black/25 backdrop-blur-md px-2.5 py-1 rounded-full pointer-events-none">
-                Sponsored
-            </span>
         </div>
     );
 
@@ -341,10 +490,7 @@ function NativeBannerAd({ ad, className }: { ad: Ad; className: string }) {
     const logoUrl = getImageUrl(logoMedia);
 
     const inner = (
-        <div className={`relative rounded-2xl border border-gray-100 bg-gradient-to-br from-gray-50 to-white p-6 sm:p-8 group hover:border-teal-200 hover:shadow-lg hover:shadow-teal-500/5 transition-all duration-500 ${className}`}>
-            <span className="absolute top-3 right-3 text-[9px] font-bold uppercase tracking-[0.15em] text-gray-400 bg-gray-100 px-2.5 py-1 rounded-full">
-                Sponsored
-            </span>
+        <div className={`relative border border-gray-100 bg-gradient-to-br from-gray-50 to-white p-6 sm:p-8 group hover:border-teal-200 hover:shadow-lg hover:shadow-teal-500/5 transition-all duration-500 ${className} rounded-none`}>
             <div className="flex items-center gap-5">
                 {logoUrl ? (
                     <div className="relative w-14 h-14 sm:w-16 sm:h-16 shrink-0 rounded-xl overflow-hidden bg-white shadow-sm ring-1 ring-gray-100">
@@ -382,25 +528,24 @@ function MobileBannerAd({ ad, className }: { ad: Ad; className: string }) {
 
     if (!imageUrl) return null;
 
-    const content = (
-        <div className={`flex justify-center group ${className}`}>
-            <div className="relative overflow-hidden rounded-lg" style={{ maxWidth: 320, width: "100%" }}>
-                <div className="relative w-full" style={{ aspectRatio: "320/100" }}>
-                    <Image
-                        src={imageUrl}
-                        alt={ad.title || "Advertisement"}
-                        fill
-                        loading="lazy"
-                        unoptimized
-                        className="object-cover transition-transform duration-500 group-hover:scale-[1.015]"
-                    />
-                </div>
-                <span className="absolute top-1.5 right-1.5 text-[7px] font-bold uppercase tracking-[0.15em] text-white/70 bg-black/25 backdrop-blur-md px-1.5 py-0.5 rounded-full pointer-events-none">
-                    Sponsored
-                </span>
+    const creativeContent = (
+        <div className="relative overflow-hidden rounded-none" style={{ maxWidth: 320, width: "100%" }}>
+            <div className="relative w-full" style={{ aspectRatio: "320/100" }}>
+                <Image
+                    src={imageUrl}
+                    alt={ad.title || "Advertisement"}
+                    fill
+                    loading="lazy"
+                    unoptimized
+                    className="object-cover transition-transform duration-500 group-hover:scale-[1.015]"
+                />
             </div>
         </div>
     );
 
-    return wrapWithLink(ad.target_url, content);
+    return (
+        <div className={`flex justify-center group ${className}`}>
+            {wrapWithLink(ad.target_url, creativeContent, "block w-full max-w-[320px]")}
+        </div>
+    );
 }

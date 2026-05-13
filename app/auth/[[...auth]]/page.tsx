@@ -421,9 +421,6 @@ export default function UnifiedAuthPage() {
                 className="relative z-10 w-full max-w-[420px] mx-4"
             >
                 <div className="bg-white/95 backdrop-blur-xl rounded-2xl shadow-xl shadow-black/6 border border-zinc-200/60 p-8">
-                    {/* Clerk CAPTCHA container */}
-                    <div id="clerk-captcha" className="mb-2" />
-
                     {/* Header */}
                     <div className="text-center mb-6">
                         <div className="flex justify-center mb-4">

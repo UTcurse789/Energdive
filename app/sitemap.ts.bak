@@ -2,7 +2,7 @@ import { MetadataRoute } from "next";
 import { ARTICLES, SECTORS } from "@/data/dummy";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-    const baseUrl = "https://energdive.com";
+    const baseUrl = "https://www.energdive.com";
 
     const staticRoutes = [
         "",
@@ -14,7 +14,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
         "/data",
         "/search",
         "/subscribe",
-        "/login",
         "/register",
     ].map((route) => ({
         url: `${baseUrl}${route}`,

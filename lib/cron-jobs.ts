@@ -1,7 +1,8 @@
 import { query } from "@/lib/db";
 import { createMagicLink } from "@/lib/magic-link-db";
 import { sendDripEmail, calculateNextDripSend } from "@/lib/abandoned-cart-emails";
-import { sendReminderEmail } from "@/lib/reminder-emails";
+import { getReminderSendWindowStatus, sendReminderEmail } from "@/lib/reminder-emails";
+import { processPreferenceDigests } from "@/lib/preference-digests";
 import crypto from "crypto";
 
 const CRON_SECRET = process.env.CRON_SECRET || "";
@@ -87,15 +88,16 @@ export async function processAbandonedCartDrip() {
 
                 sent++;
                 log(`Sent drip step ${nextStep} to ${lead.email}`);
-            } catch (err: any) {
+            } catch (err: unknown) {
+                const message = err instanceof Error ? err.message : String(err);
                 errors++;
-                console.error(`[ABANDONED-CART:${requestId}] Failed for ${lead.email}:`, err.message);
+                console.error(`[ABANDONED-CART:${requestId}] Failed for ${lead.email}:`, message);
             }
         }
 
         log(`Done. Sent: ${sent}, Errors: ${errors}`);
         return { success: true, processed, sent, errors };
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error(`[ABANDONED-CART:${requestId}] Fatal error:`, error);
         throw error;
     }
@@ -103,7 +105,7 @@ export async function processAbandonedCartDrip() {
 
 /**
  * Send reminder emails to users with verification_status = 'pending_verification'.
- * Maximum 4 emails per week per user. Resets weekly count every 7 days.
+ * Maximum 4 total emails per user. Once the cycle is complete, reminders stop.
  */
 export async function processWeeklyReminders() {
     const requestId = crypto.randomUUID().slice(0, 8);
@@ -115,15 +117,13 @@ export async function processWeeklyReminders() {
     try {
         log("Starting weekly reminder cron...");
 
-        await query(`
-            UPDATE users
-            SET reminder_email_count = 0,
-                reminder_week_start = NOW()
-            WHERE verification_status = 'pending_verification'
-              AND reminder_opted_out = false
-              AND reminder_week_start IS NOT NULL
-              AND reminder_week_start < NOW() - INTERVAL '7 days'
-        `);
+        const sendWindow = getReminderSendWindowStatus();
+        if (!sendWindow.allowed) {
+            log(
+                `Skipping cron outside reminder send window. Current time: ${sendWindow.localTimeLabel} ${sendWindow.timeZone}. Allowed window: ${sendWindow.windowLabel}.`
+            );
+            return { success: true, skipped: true, processed: 0, sent: 0, errors: 0 };
+        }
 
         const result = await query<{
             id: string;
@@ -168,13 +168,18 @@ export async function processWeeklyReminders() {
 
                 const reminderNumber = (user.reminder_email_count || 0) + 1;
 
-                await sendReminderEmail({
+                const sentReminder = await sendReminderEmail({
                     to: user.email,
                     firstName,
                     magicLink,
                     declineLink,
                     reminderNumber,
                 });
+
+                if (!sentReminder) {
+                    log(`Reminder #${reminderNumber} not sent to ${user.email}; skipping DB update.`);
+                    continue;
+                }
 
                 await query(`
                     UPDATE users
@@ -187,16 +192,37 @@ export async function processWeeklyReminders() {
 
                 sent++;
                 log(`Sent reminder #${reminderNumber} to ${user.email}`);
-            } catch (err: any) {
+            } catch (err: unknown) {
+                const message = err instanceof Error ? err.message : String(err);
                 errors++;
-                console.error(`[WEEKLY-REMINDER:${requestId}] Failed for ${user.email}:`, err.message);
+                console.error(`[WEEKLY-REMINDER:${requestId}] Failed for ${user.email}:`, message);
             }
         }
 
         log(`Done. Sent: ${sent}, Errors: ${errors}`);
         return { success: true, processed, sent, errors };
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error(`[WEEKLY-REMINDER:${requestId}] Fatal error:`, error);
+        throw error;
+    }
+}
+
+/**
+ * Send personalized content digests based on onboarding subscription preferences.
+ * Users receive at most one digest per daily/weekly/monthly period, and only
+ * when new matching content exists since their previous digest.
+ */
+export async function processContentPreferenceDigests(limit = 100) {
+    const requestId = crypto.randomUUID().slice(0, 8);
+    const log = (msg: string) => console.log(`[CONTENT-DIGEST:${requestId}] ${msg}`);
+
+    try {
+        log(`Starting content digest cron with limit ${limit}...`);
+        const result = await processPreferenceDigests({ limit });
+        log(`Done. Due: ${result.due}, Sent: ${result.sent}, Skipped: ${result.skipped}, Errors: ${result.errors}`);
+        return result;
+    } catch (error: unknown) {
+        console.error(`[CONTENT-DIGEST:${requestId}] Fatal error:`, error);
         throw error;
     }
 }

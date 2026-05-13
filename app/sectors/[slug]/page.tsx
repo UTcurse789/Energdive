@@ -4,14 +4,13 @@ import React, { useState, useMemo, useEffect } from "react";
 import { buildContentUrl } from "@/lib/content-routes";
 import { useParams, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, ChevronRight, ArrowUpRight, Play, Printer } from "lucide-react";
+import { Search, ChevronRight, ArrowUpRight, Play } from "lucide-react";
 import { Header } from "@/components/layout/header";
 import { AdBanner } from "@/components/ads/AdBanner";
 import Image from "next/image";
 import Link from "next/link";
 import { TagBadge } from "@/components/ui/tag-badge";
 import { DateChip } from "@/components/ui/date-chip";
-import { ShareButton } from "@/components/ui/share-button";
 import { strapiImageUrl } from "@/lib/strapi-image";
 import { buildSectorArticlesUrl, getSectorNames } from "@/lib/sector-content";
 
@@ -30,7 +29,7 @@ async function fetchSectorWithChildren(slug: string) {
         const url = `${STRAPI}/api/sectors?${filterStr}&populate=*`;
         const res = await fetch(url, { cache: "no-store" });
         const json = await res.json();
-        
+
         let bestMatch = null;
         if (json?.data?.length) {
             bestMatch = json.data.find((s: any) => {
@@ -187,7 +186,7 @@ const SECTOR_HERO_MAP: Record<
         breadcrumbLabel: "Renewable Energy",
         description: "Capture deployment velocity across solar, wind, and emerging renewable infrastructure.",
         quickSignals: ["Solar Buildout", "Wind Pipeline", "Storage Pairing"],
-        heroImage: "https://images.unsplash.com/photo-1509391366360-2e959784a276?auto=format&fit=crop&q=80&w=2200",
+        heroImage: "",
     },
     transmission: {
         breadcrumbLabel: "Transmission",
@@ -445,7 +444,7 @@ export default function SectorIntelligencePage() {
                 />
 
                 <div className="container mx-auto px-6 lg:px-16 max-w-[1400px] relative z-10">
-                    <div className="flex justify-between items-center w-full gap-2 my-6 sm:my-10">
+                    <div className="my-6 sm:my-10">
                         <motion.nav
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
@@ -457,28 +456,6 @@ export default function SectorIntelligencePage() {
                             <ChevronRight size={10} className="text-white/40 hidden sm:inline shrink-0" />
                             <span className="text-white truncate">{sectorMeta.breadcrumbLabel}</span>
                         </motion.nav>
-
-                        <motion.div
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className="flex items-center gap-2 shrink-0"
-                        >
-                            <button
-                                onClick={() => window.print()}
-                                className="inline-flex items-center justify-center gap-1.5 sm:gap-2 rounded-full border border-white/20 bg-white/5 w-8 h-8 sm:w-auto sm:h-auto sm:px-4 sm:py-2 text-[10px] font-black text-white hover:bg-white/10 uppercase tracking-[0.2em] backdrop-blur-sm transition-colors"
-                                title="Print this page"
-                            >
-                                <Printer size={13} className="shrink-0" />
-                                <span className="hidden sm:inline">Print</span>
-                            </button>
-                            <ShareButton
-                                title={sectorMeta.title}
-                                text={sectorMeta.description}
-                                className="inline-flex items-center justify-center gap-1.5 sm:gap-2 rounded-full border border-white/20 bg-white/5 w-8 h-8 sm:w-auto sm:h-auto sm:px-4 sm:py-2 text-[10px] font-black text-white hover:bg-white/10 uppercase tracking-[0.2em] backdrop-blur-sm transition-colors"
-                                iconClassName="w-[13px] h-[13px] text-white shrink-0"
-                                textClassName="hidden sm:inline"
-                            />
-                        </motion.div>
                     </div>
 
                     <motion.h1
@@ -533,7 +510,7 @@ export default function SectorIntelligencePage() {
             </section>
 
             {/* Sector Hero Ad Banner — no wrapper, so no empty space when ad is absent */}
-            <AdBanner placement="sector_banner" sectorSlug={slug} variant="banner" className="flex justify-center bg-[#fafafa] py-4 container mx-auto px-6 lg:px-16 max-w-[1400px]" />
+            <AdBanner placement="sector_banner" sectorSlug={slug} variant="banner" className="container mx-auto mt-6 mb-8 flex justify-center bg-[#fafafa] px-6 py-4 md:mt-8 md:mb-10 lg:px-16 max-w-[1400px]" />
 
             {/* STICKY NAVIGATION & FILTER */}
             <section className="sticky top-[74px] z-10 bg-white/95 backdrop-blur-xl border-y border-gray-100 py-5 shadow-[0_6px_20px_rgba(15,23,42,0.06)]">
@@ -576,81 +553,11 @@ export default function SectorIntelligencePage() {
             </section>
 
             {/* ARTICLES GRID */}
-            <section className="container mx-auto px-6 lg:px-16 max-w-[1400px] py-24 min-h-[40vh] mb-10">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-10 gap-y-16 mt-15 mb-15">
-                    <AnimatePresence mode="popLayout">
-                        {/* In-grid Ad Card — no wrapper so no empty space when ad is absent */}
-                        <AdBanner placement="sector_card" sectorSlug={slug} variant="card" />
-
-                        {filteredReports.map((report, idx) => (
-                            <motion.div
-                                key={report.id}
-                                layout
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, scale: 0.95 }}
-                                transition={{ delay: idx * 0.05 }}
-                            >
-                                <article className="group relative">
-                                    <Link
-                                        href={buildContentUrl({ slug: report.slug, type_of_content: report.type_of_content })}
-                                        className="block"
-                                    >
-                                        {/* Card Image */}
-                                        <div className="relative aspect-16/10 rounded-2xl overflow-hidden mb-6 bg-gray-200 shadow-sm transition-shadow duration-300 group-hover:shadow-lg">
-                                            <Image
-                                                src={report.image}
-                                                alt={report.title}
-                                                fill
-                                                className="object-cover"
-                                            />
-                                            <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-md p-2 rounded-full opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300">
-                                                <ArrowUpRight size={18} className="text-black" />
-                                            </div>
-                                        </div>
-
-                                        {/* Card Meta */}
-                                        <div className="space-y-3 px-1">
-                                            <DateChip value={report.date} className="text-[10px]" />
-
-                                            <h3 className="text-2xl font-bold leading-tight tracking-tight text-[#1a1a1a] group-hover:text-[#00C6A7] transition-colors duration-300">
-                                                {report.title}
-                                            </h3>
-
-                                            <p className="text-sm text-gray-500 line-clamp-2 font-light leading-relaxed">
-                                                {report.excerpt}
-                                            </p>
-                                        </div>
-                                    </Link>
-
-                                    {report.tags?.length > 0 && (
-                                        <div className="flex flex-wrap gap-1.5 mt-3 px-1">
-                                            {report.tags.slice(0, 3).map((tag: any) => (
-                                                <TagBadge key={tag.slug} name={tag.name} slug={tag.slug} />
-                                            ))}
-                                        </div>
-                                    )}
-                                </article>
-                            </motion.div>
-                        ))}
-                    </AnimatePresence>
-                </div>
-
-                {/* Empty State */}
-                {filteredReports.length === 0 && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        className="py-40 text-center flex flex-col items-center justify-center"
-                    >
-                        <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-6">
-                            <Search size={32} className="text-gray-300" />
-                        </div>
-                        <h2 className="text-2xl font-bold text-gray-300">No Articles Found</h2>
-                        <p className="text-gray-400 mt-2">Adjust your filters or try a different search term.</p>
-                    </motion.div>
-                )}
-            </section>
+            <SectorArticlesSection
+                slug={slug}
+                filteredReports={filteredReports}
+                buildContentUrl={buildContentUrl}
+            />
 
             {/* VIDEOS SECTION */}
             {filteredVideos.length > 0 && (
@@ -705,4 +612,145 @@ export default function SectorIntelligencePage() {
     );
 
     return content;
+}
+
+/* ================================
+   SECTOR ARTICLES SECTION
+   Right sidebar only appears when ad is loaded
+================================ */
+function SectorArticlesSection({
+    slug,
+    filteredReports,
+    buildContentUrl,
+}: {
+    slug: string;
+    filteredReports: any[];
+    buildContentUrl: (item: any) => string;
+}) {
+    const [hasRightAd, setHasRightAd] = useState(false);
+    const sidebarRef = React.useRef<HTMLDivElement>(null);
+
+    // Check if AdBanner rendered content inside the sidebar
+    useEffect(() => {
+        if (!sidebarRef.current) return;
+
+        const checkContent = () => {
+            const hasContent = sidebarRef.current
+                ? sidebarRef.current.querySelector("img, a, div > *") !== null
+                : false;
+            setHasRightAd(hasContent);
+        };
+
+        const observer = new MutationObserver(checkContent);
+        observer.observe(sidebarRef.current, {
+            childList: true,
+            subtree: true,
+        });
+
+        // Initial check after a short delay for async ad loading
+        const timer = setTimeout(checkContent, 1500);
+
+        return () => {
+            observer.disconnect();
+            clearTimeout(timer);
+        };
+    }, []);
+
+    return (
+        <section className="container mx-auto px-6 lg:px-16 max-w-[1400px] py-24 min-h-[40vh] mb-10">
+            <div
+                className={`grid grid-cols-1 gap-12 items-start ${hasRightAd ? "xl:grid-cols-[minmax(0,1fr)_160px]" : ""
+                    }`}
+            >
+                <div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-x-10 gap-y-16 mt-15 mb-15">
+                        <AnimatePresence mode="popLayout">
+                            {/* In-grid Ad Card — no wrapper so no empty space when ad is absent */}
+                            <AdBanner placement="sector_card" sectorSlug={slug} variant="card" />
+
+                            {filteredReports.map((report, idx) => (
+                                <motion.div
+                                    key={report.id}
+                                    layout
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, scale: 0.95 }}
+                                    transition={{ delay: idx * 0.05 }}
+                                >
+                                    <article className="group relative">
+                                        <Link
+                                            href={buildContentUrl({ slug: report.slug, type_of_content: report.type_of_content })}
+                                            className="block"
+                                        >
+                                            {/* Card Image */}
+                                            <div className="relative aspect-16/10 rounded-2xl overflow-hidden mb-6 bg-gray-200 shadow-sm transition-shadow duration-300 group-hover:shadow-lg">
+                                                <Image
+                                                    src={report.image}
+                                                    alt={report.title}
+                                                    fill
+                                                    className="object-cover"
+                                                />
+                                                <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-md p-2 rounded-full opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300">
+                                                    <ArrowUpRight size={18} className="text-black" />
+                                                </div>
+                                            </div>
+
+                                            {/* Card Meta */}
+                                            <div className="space-y-3 px-1">
+                                                <DateChip value={report.date} className="text-[10px]" />
+
+                                                <h3 className="text-2xl font-bold leading-tight tracking-tight text-[#1a1a1a] group-hover:text-[#00C6A7] transition-colors duration-300">
+                                                    {report.title}
+                                                </h3>
+
+                                                <p className="text-sm text-gray-500 line-clamp-2 font-light leading-relaxed">
+                                                    {report.excerpt}
+                                                </p>
+                                            </div>
+                                        </Link>
+
+                                        {report.tags?.length > 0 && (
+                                            <div className="flex flex-wrap gap-1.5 mt-3 px-1">
+                                                {report.tags.slice(0, 3).map((tag: any) => (
+                                                    <TagBadge key={tag.slug} name={tag.name} slug={tag.slug} />
+                                                ))}
+                                            </div>
+                                        )}
+                                    </article>
+                                </motion.div>
+                            ))}
+                        </AnimatePresence>
+                    </div>
+
+                    {/* Empty State */}
+                    {filteredReports.length === 0 && (
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            className="py-40 text-center flex flex-col items-center justify-center"
+                        >
+                            <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-6">
+                                <Search size={32} className="text-gray-300" />
+                            </div>
+                            <h2 className="text-2xl font-bold text-gray-300">No Articles Found</h2>
+                            <p className="text-gray-400 mt-2">Adjust your filters or try a different search term.</p>
+                        </motion.div>
+                    )}
+                </div>
+
+                {/* Right sidebar — only visible when ad content exists */}
+                <aside className={`hidden ${hasRightAd ? "xl:block" : ""}`}>
+                    <div className="sticky top-[148px] flex justify-end" ref={sidebarRef}>
+                        <AdBanner
+                            placement="header_banner_mobile"
+                            variant="vertical"
+                            width={160}
+                            height={600}
+                            className="mx-auto"
+                        />
+                    </div>
+                </aside>
+            </div>
+        </section>
+    );
 }
