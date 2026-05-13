@@ -135,7 +135,7 @@ export function SaveLoginPrompt({
                     <Lock className="h-3.5 w-3.5" />
                     Save & Sync
                   </div>
-                  <OnboardingProgress step={3} />
+                  <OnboardingProgress step={1} total={2} />
                 </div>
                 <button
                   type="button"
