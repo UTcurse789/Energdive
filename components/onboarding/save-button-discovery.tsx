@@ -129,7 +129,7 @@ export function SaveButtonDiscovery({
                   Save Stories
                 </div>
                 <div className="flex items-center gap-2">
-                  <OnboardingProgress step={3} />
+                  <OnboardingProgress step={1} total={2} />
                   <button
                     type="button"
                     onClick={onClose}
