@@ -186,7 +186,7 @@ const SECTOR_HERO_MAP: Record<
         breadcrumbLabel: "Renewable Energy",
         description: "Capture deployment velocity across solar, wind, and emerging renewable infrastructure.",
         quickSignals: ["Solar Buildout", "Wind Pipeline", "Storage Pairing"],
-        heroImage: "",
+        heroImage: "https://images.unsplash.com/photo-1509391366360-2e959784a276?auto=format&fit=crop&q=80&w=2200",
     },
     transmission: {
         breadcrumbLabel: "Transmission",
