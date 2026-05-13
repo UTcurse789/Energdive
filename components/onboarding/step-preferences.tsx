@@ -13,8 +13,15 @@ import { Checkbox } from "@/components/ui/checkbox";
 const FREQUENCIES = [
     { value: "daily", label: "Daily" },
     { value: "weekly", label: "Weekly" },
-    { value: "monthly", label: "Monthly" },
 ] as const;
+
+const DEFAULT_FREQUENCY = "daily";
+
+function normalizeFrequency(value?: string): string {
+    return FREQUENCIES.some((freq) => freq.value === value)
+        ? value!
+        : DEFAULT_FREQUENCY;
+}
 
 const FORMATS = [
     "Insights",
@@ -60,12 +67,12 @@ export default function StepPreferences({
     } = useForm<PreferencesData>({
         resolver: zodResolver(preferencesSchema),
         defaultValues: {
-            preferredFrequency: defaultValues.preferredFrequency || "daily",
+            preferredFrequency: normalizeFrequency(defaultValues.preferredFrequency),
             preferredFormats: defaultValues.preferredFormats || [],
         },
     });
 
-    const currentFrequency = watch("preferredFrequency");
+    const currentFrequency = normalizeFrequency(watch("preferredFrequency"));
 
     const toggleFormat = (format: string) => {
         setSelectedFormats((prev) => {
@@ -81,6 +88,9 @@ export default function StepPreferences({
     };
 
     const selectFrequency = (value: string) => {
+        if (!FREQUENCIES.some((freq) => freq.value === value)) {
+            return;
+        }
         setValue("preferredFrequency", value);
     };
 
@@ -107,7 +117,7 @@ export default function StepPreferences({
                     <label className="block text-sm font-medium text-zinc-700 uppercase tracking-wider">
                         Frequency
                     </label>
-                    <div className="grid grid-cols-3 gap-3">
+                    <div className="grid grid-cols-2 gap-3">
                         {FREQUENCIES.map((freq) => {
                             const isActive = currentFrequency === freq.value;
                             return (

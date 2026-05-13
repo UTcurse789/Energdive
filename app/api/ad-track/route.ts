@@ -26,9 +26,10 @@ function classifyDevice(ua: string): "Mobile" | "Tablet" | "Desktop" {
 // ── Extract client IP ────────────────────────────────────────────────
 function getClientIp(req: NextRequest): string {
   return (
+    req.headers.get("x-client-ip")?.trim() ||
     req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-    req.headers.get("x-real-ip") ||
-    req.ip ||
+    req.headers.get("x-real-ip")?.trim() ||
+    req.headers.get("cf-connecting-ip")?.trim() ||
     "unknown"
   );
 }

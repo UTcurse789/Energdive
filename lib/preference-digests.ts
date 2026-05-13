@@ -51,6 +51,7 @@ export interface DigestItem {
     crispLine: string;
     imageUrl: string | null;
     publishedAt: Date;
+    sortAt: Date;
     badge: string;
     formats: DigestFormat[];
 }
@@ -141,6 +142,16 @@ interface StrapiDigestEvent {
     publishedAt?: string;
     createdAt?: string;
     updatedAt?: string;
+}
+
+interface DigestEmailCandidate {
+    id: number;
+    userIds: number[];
+    email: string;
+    first_name: string | null;
+    preferred_frequency: string | null;
+    preferred_formats: string[] | null;
+    last_content_digest_sent_at: string | null;
 }
 
 function getStrapiHeaders(): HeadersInit {
@@ -287,6 +298,42 @@ function getContentTagTitle(contentTag: unknown): string {
     return tag?.title || tag?.Title || tag?.data?.attributes?.title || "";
 }
 
+function parseEventSortDate(value: string | null | undefined): Date | null {
+    if (!value) {
+        return null;
+    }
+
+    const normalized = value
+        .trim()
+        .replace(/(\d{1,2})(st|nd|rd|th)/gi, "$1")
+        .replace(/\s+/g, " ");
+
+    if (!normalized) {
+        return null;
+    }
+
+    const nativeDate = new Date(normalized);
+    if (!Number.isNaN(nativeDate.getTime())) {
+        return nativeDate;
+    }
+
+    const lowered = normalized.toLowerCase();
+    const months = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
+    const monthIndex = months.findIndex((month) => lowered.includes(month));
+    if (monthIndex === -1) {
+        return null;
+    }
+
+    const reference = shiftToIst(new Date());
+    const yearMatch = lowered.match(/\b(20\d{2})\b/);
+    const dayMatch = lowered.match(/\b(\d{1,2})\b/);
+    const year = yearMatch ? Number(yearMatch[1]) : reference.getUTCFullYear();
+    const day = dayMatch ? Number(dayMatch[1]) : 1;
+    const candidate = new Date(Date.UTC(year, monthIndex, day, 0, 0, 0, 0));
+
+    return Number.isNaN(candidate.getTime()) ? null : candidate;
+}
+
 function mapFormatsForContent(item: StrapiDigestContent): DigestFormat[] {
     const typeName = extractContentTypeName(item.type_of_content).toLowerCase();
     const tagTitle = getContentTagTitle(item.content_tag).toLowerCase();
@@ -340,6 +387,7 @@ function normalizeContentItem(item: StrapiDigestContent): DigestItem | null {
         ),
         imageUrl: strapiMediaUrl(item.FeaturedImage, toAbsoluteUrl("/magazine-default.jpg")),
         publishedAt,
+        sortAt: publishedAt,
         badge: typeName,
         formats,
     };
@@ -356,6 +404,12 @@ function normalizeEventItem(item: StrapiDigestEvent): DigestItem | null {
         return null;
     }
 
+    const eventDate = parseEventSortDate(item.date);
+    const todayStart = getStartOfIstDay(new Date());
+    if (eventDate && eventDate < todayStart) {
+        return null;
+    }
+
     const image = Array.isArray(item.image) ? item.image[0] : item.image;
     const detail = [item.date, item.location || item.venue].filter(Boolean).join(" • ");
 
@@ -364,11 +418,13 @@ function normalizeEventItem(item: StrapiDigestEvent): DigestItem | null {
         title: item.title || "Upcoming Event",
         href: item.url || toAbsoluteUrl(`/events/${item.slug || item.id}`),
         crispLine: truncate(
+            detail ||
             extractPlainText(item.description) ||
-            (detail ? `Upcoming event: ${detail}.` : "Fresh event update from ENERGDIVE.")
+            "Upcoming event from ENERGDIVE."
         ),
         imageUrl: image ? strapiMediaUrl(image, toAbsoluteUrl("/magazine-default.jpg")) : null,
         publishedAt,
+        sortAt: eventDate || publishedAt,
         badge: "Upcoming Event",
         formats: ["Upcoming Events"],
     };
@@ -400,7 +456,7 @@ async function fetchRecentContents(earliestPublishedAt?: Date): Promise<DigestIt
     return (json?.data || [])
         .map(normalizeContentItem)
         .filter((item: DigestItem | null): item is DigestItem => Boolean(item))
-        .sort((a: DigestItem, b: DigestItem) => b.publishedAt.getTime() - a.publishedAt.getTime());
+        .sort((a: DigestItem, b: DigestItem) => b.sortAt.getTime() - a.sortAt.getTime());
 }
 
 async function fetchUpcomingEvents(earliestPublishedAt?: Date): Promise<DigestItem[]> {
@@ -427,7 +483,7 @@ async function fetchUpcomingEvents(earliestPublishedAt?: Date): Promise<DigestIt
     return (json?.data || [])
         .map(normalizeEventItem)
         .filter((item: DigestItem | null): item is DigestItem => Boolean(item))
-        .sort((a: DigestItem, b: DigestItem) => b.publishedAt.getTime() - a.publishedAt.getTime());
+        .sort((a: DigestItem, b: DigestItem) => a.sortAt.getTime() - b.sortAt.getTime());
 }
 
 async function loadDigestCatalog(earliestPublishedAt?: Date): Promise<DigestItem[]> {
@@ -437,7 +493,7 @@ async function loadDigestCatalog(earliestPublishedAt?: Date): Promise<DigestItem
     ]);
 
     return [...contents, ...events].sort(
-        (a: DigestItem, b: DigestItem) => b.publishedAt.getTime() - a.publishedAt.getTime()
+        (a: DigestItem, b: DigestItem) => b.sortAt.getTime() - a.sortAt.getTime()
     );
 }
 
@@ -470,6 +526,11 @@ function buildSections(
             .filter((item) => item.formats.includes(format))
             .filter((item) => isEvent || !since || item.publishedAt >= since)
             .filter((item) => !usedKeys.has(item.key))
+            .sort((a, b) =>
+                isEvent
+                    ? a.sortAt.getTime() - b.sortAt.getTime()
+                    : b.sortAt.getTime() - a.sortAt.getTime()
+            )
             .slice(0, limit);
 
         if (items.length === 0) {
@@ -483,7 +544,16 @@ function buildSections(
     return sections;
 }
 
-function getDueWindowStart(row: DigestCandidateRow, now: Date): Date {
+function hasFreshNewsSection(sections: DigestSection[]): boolean {
+    return sections.some((section) =>
+        section.format === "News Briefing" && section.items.length > 0
+    );
+}
+
+function getDueWindowStart(
+    row: Pick<DigestCandidateRow, "preferred_frequency">,
+    now: Date
+): Date {
     const frequency = normalizeFrequency(row.preferred_frequency);
     if (frequency === "daily") {
         return getStartOfIstDay(now);
@@ -532,17 +602,73 @@ async function logDigestSend(payload: {
     );
 }
 
-async function markDigestSent(userId: number) {
+async function markDigestSent(userIds: number[]) {
+    if (userIds.length === 0) {
+        return;
+    }
+
     await query(
         `UPDATE users
          SET last_content_digest_sent_at = NOW(),
              updated_at = NOW()
-         WHERE id = $1`,
-        [userId]
+         WHERE id = ANY($1::int[])`,
+        [userIds]
     );
 }
 
-async function getDigestCandidates(options: ProcessDigestsOptions): Promise<DigestCandidateRow[]> {
+function dedupeCandidatesByEmail(rows: DigestCandidateRow[]): DigestEmailCandidate[] {
+    const grouped = new Map<string, DigestEmailCandidate>();
+
+    for (const row of rows) {
+        const email = row.email.trim().toLowerCase();
+        const existing = grouped.get(email);
+
+        if (!existing) {
+            grouped.set(email, {
+                id: row.id,
+                userIds: [row.id],
+                email,
+                first_name: row.first_name,
+                preferred_frequency: row.preferred_frequency,
+                preferred_formats: row.preferred_formats,
+                last_content_digest_sent_at: row.last_content_digest_sent_at,
+            });
+            continue;
+        }
+
+        existing.userIds.push(row.id);
+
+        const existingLast = existing.last_content_digest_sent_at
+            ? new Date(existing.last_content_digest_sent_at).getTime()
+            : Number.NEGATIVE_INFINITY;
+        const incomingLast = row.last_content_digest_sent_at
+            ? new Date(row.last_content_digest_sent_at).getTime()
+            : Number.NEGATIVE_INFINITY;
+
+        if (incomingLast > existingLast) {
+            existing.last_content_digest_sent_at = row.last_content_digest_sent_at;
+        }
+
+        if (row.id > existing.id || (!existing.first_name && row.first_name)) {
+            existing.id = row.id;
+            existing.first_name = row.first_name;
+            existing.preferred_frequency = row.preferred_frequency;
+            existing.preferred_formats = row.preferred_formats;
+        }
+    }
+
+    return Array.from(grouped.values()).sort((a, b) => {
+        const aTime = a.last_content_digest_sent_at
+            ? new Date(a.last_content_digest_sent_at).getTime()
+            : Number.NEGATIVE_INFINITY;
+        const bTime = b.last_content_digest_sent_at
+            ? new Date(b.last_content_digest_sent_at).getTime()
+            : Number.NEGATIVE_INFINITY;
+        return aTime - bTime;
+    });
+}
+
+async function getDigestCandidates(options: ProcessDigestsOptions): Promise<DigestEmailCandidate[]> {
     const params: unknown[] = [];
     const clauses = [
         `onboarding_completed = true`,
@@ -577,7 +703,7 @@ async function getDigestCandidates(options: ProcessDigestsOptions): Promise<Dige
         params
     );
 
-    return result.rows;
+    return dedupeCandidatesByEmail(result.rows);
 }
 
 export async function processPreferenceDigests(
@@ -664,6 +790,16 @@ export async function processPreferenceDigests(
         const sections = buildSections(formats, since, catalog, frequency);
         const itemKeys = sections.flatMap((section) => section.items.map((item) => item.key));
 
+        if (!hasFreshNewsSection(sections)) {
+            skipped++;
+            results.push({
+                email: row.email,
+                status: "skipped",
+                reason: "no_fresh_news_briefing",
+            });
+            continue;
+        }
+
         if (sections.length === 0 || itemKeys.length === 0) {
             skipped++;
             results.push({
@@ -683,7 +819,7 @@ export async function processPreferenceDigests(
                 sponsor
             );
 
-            await markDigestSent(row.id);
+            await markDigestSent(row.userIds);
             await logDigestSend({
                 userId: row.id,
                 email: row.email,
@@ -752,6 +888,10 @@ export async function sendPreferenceDigestPreview(
     const catalog = await loadDigestCatalog(since);
     const sections = buildSections(formats, since, catalog, frequency);
     const itemKeys = sections.flatMap((section) => section.items.map((item) => item.key));
+
+    if (!hasFreshNewsSection(sections)) {
+        throw new Error("No fresh news briefing items are available for the requested preview.");
+    }
 
     let sponsor: { imageUrl: string; targetUrl: string } | null = null;
     try {
