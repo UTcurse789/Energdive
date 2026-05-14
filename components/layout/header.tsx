@@ -9,7 +9,7 @@ import { formatContentDate } from "@/lib/date";
 import { Search, ChevronDown, Facebook, Linkedin, Megaphone, ChevronRight, Zap, Menu, X, MapPin, Mail, Phone, Play, ArrowRight, Youtube, Instagram } from "lucide-react";
 import { SECTORS } from "@/data/dummy";
 import { motion, AnimatePresence } from "framer-motion";
-import { SignedIn, SignedOut, useAuth } from "@clerk/nextjs";
+import { SignedIn, SignedOut } from "@clerk/nextjs";
 import { GlobalSearch } from "@/components/global-search";
 import { strapiImageUrl } from "@/lib/strapi-image";
 import { CustomUserMenu } from "@/components/layout/CustomUserMenu";
@@ -301,27 +301,6 @@ export function Header() {
         return () => window.removeEventListener("keydown", handleKeyDown);
     }, []);
 
-    useEffect(() => {
-        const updateViewport = () => {
-            setIsDesktopViewport(window.innerWidth >= 640);
-        };
-
-        updateViewport();
-        window.addEventListener("resize", updateViewport);
-
-        return () => window.removeEventListener("resize", updateViewport);
-    }, []);
-
-    const { isOpen: showHeaderOnboarding, close: dismissHeaderOnboarding } = useOnboardingStep({
-        id: "header-login-hint",
-        enabled: isLoaded && !isSignedIn && pathname === "/" && !hasLocalFlag(ONBOARDING_KEYS.headerCtaHintSeen),
-        delayMs: 1400,
-        autoHideMs: 5200,
-        onClose: () => {
-            setLocalFlag(ONBOARDING_KEYS.headerCtaHintSeen);
-        },
-    });
-
     // Use real (Strapi) sectors if available, else fallback to dummy
     const displaySectors = realSectors || SECTORS;
     // Get the currently hovered sector data
@@ -429,7 +408,7 @@ export function Header() {
                         {/* RIGHT NAV */}
                         <div className="relative flex items-center gap-x-3 md:gap-x-5 xl:gap-x-7 flex-1 justify-end">
                             <nav className="hidden sm:flex items-center gap-x-3 md:gap-x-5 xl:gap-x-7">
-                                <Link href="/energclub" target="_blank" className="text-[12px] xl:text-[13px] font-bold uppercase tracking-[1px] hover:opacity-70 whitespace-nowrap" onClick={() => { dismissHeaderOnboarding(); closeMenus(); }}>ENERGCLUB</Link>
+                                <Link href="/energclub" target="_blank" className="text-[12px] xl:text-[13px] font-bold uppercase tracking-[1px] hover:opacity-70 whitespace-nowrap" onClick={closeMenus}>ENERGCLUB</Link>
                                 <Link href="/subscribe" style={{ color: brandGreen }} className="text-[12px] xl:text-[13px] font-bold uppercase tracking-[1px] hover:opacity-70 whitespace-nowrap" onClick={closeMenus}>SUBSCRIBE</Link>
                             </nav>
 
@@ -444,6 +423,7 @@ export function Header() {
                                             closeAll(); 
                                             if (posthog) posthog.capture('login_clicked', { timestamp: new Date().toISOString(), path: window.location.pathname });
                                         }}>
+                                        <Link href="/auth" className="block border-[1.5px] border-black px-3 py-1 md:px-6 md:py-2 text-[10px] md:text-[12px] font-bold uppercase tracking-wider hover:bg-black hover:text-white transition-all overflow-hidden whitespace-nowrap" onClick={closeAll}>
                                             LOGIN
                                             <AnimatePresence>
                                                 {isLoginHovered && (
