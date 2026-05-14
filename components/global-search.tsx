@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Search, X, FileText, FileSignature, Newspaper, Terminal, Play, Calendar, BookOpen, Mic, Pen, BarChart3, Star } from "lucide-react";
 import { useSearch, SearchResult } from "@/hooks/use-search";
 import { buildContentUrl } from "@/lib/content-routes";
+import posthog from "posthog-js";
 
 interface GlobalSearchProps {
     isOpen: boolean;
@@ -107,6 +108,14 @@ export function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
             default:
                 finalPath = buildContentUrl({ slug: result.slug, type_of_content: { name: result.type } });
         }
+
+        posthog.capture("search_result_clicked", {
+            result_title: result.title,
+            result_type: result.type,
+            result_slug: result.slug,
+            search_query: query,
+            destination_path: finalPath,
+        });
 
         onClose();
         setTimeout(() => setQuery(""), 200);

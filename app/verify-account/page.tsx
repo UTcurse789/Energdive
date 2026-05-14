@@ -2,8 +2,10 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useEffect, Suspense } from "react";
+import { usePostHog } from "posthog-js/react";
 
 function VerifyAccountContent() {
+    const posthog = usePostHog();
     const router = useRouter();
     const searchParams = useSearchParams();
     const token = searchParams.get("token");
@@ -137,7 +139,9 @@ function VerifyAccountContent() {
                     </div>
                     <h1 className="text-xl font-bold text-gray-900 mb-2">Verification Failed</h1>
                     <p className="text-zinc-500 text-sm mb-6">{error}</p>
-                    <a href="/register" className="inline-block bg-[#0AB996] text-white px-6 py-2.5 rounded-lg text-sm font-semibold hover:bg-[#099e82] transition-colors">
+                    <a href="/register" onClick={() => {
+                        if (posthog) posthog.capture('signup_button_clicked', { timestamp: new Date().toISOString(), path: window.location.pathname });
+                    }} className="inline-block bg-[#0AB996] text-white px-6 py-2.5 rounded-lg text-sm font-semibold hover:bg-[#099e82] transition-colors">
                         Register Instead
                     </a>
                 </div>
@@ -174,7 +178,9 @@ function VerifyAccountContent() {
                         </div>
                     )}
 
-                    <a href="/auth" className="inline-block w-full bg-[#0AB996] text-white px-6 py-3 rounded-lg text-sm font-semibold hover:bg-[#099e82] transition-colors shadow-lg shadow-[#0AB996]/20">
+                    <a href="/auth" onClick={() => {
+                        if (posthog) posthog.capture('login_clicked', { timestamp: new Date().toISOString(), path: window.location.pathname });
+                    }} className="inline-block w-full bg-[#0AB996] text-white px-6 py-3 rounded-lg text-sm font-semibold hover:bg-[#099e82] transition-colors shadow-lg shadow-[#0AB996]/20">
                         Go to Dashboard →
                     </a>
                 </div>
@@ -265,7 +271,9 @@ function VerifyAccountContent() {
                 <div className="mt-8 pt-4 border-t border-zinc-100 text-center">
                     <p className="text-xs text-zinc-400">
                         Having trouble?{" "}
-                        <a href="/register" className="text-[#0AB996] hover:underline">
+                        <a href="/register" onClick={() => {
+                            if (posthog) posthog.capture('signup_button_clicked', { timestamp: new Date().toISOString(), path: window.location.pathname });
+                        }} className="text-[#0AB996] hover:underline">
                             Register manually
                         </a>
                     </p>
