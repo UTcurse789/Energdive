@@ -303,8 +303,10 @@ function parseEventSortDate(value: string | null | undefined): Date | null {
         return null;
     }
 
+    // Replace various dashes with standard hyphen
     const normalized = value
         .trim()
+        .replace(/[\u2013\u2014\u2015]/g, "-")
         .replace(/(\d{1,2})(st|nd|rd|th)/gi, "$1")
         .replace(/\s+/g, " ");
 
@@ -324,12 +326,14 @@ function parseEventSortDate(value: string | null | undefined): Date | null {
         return null;
     }
 
-    const reference = shiftToIst(new Date());
+    const reference = new Date(); // Use local year as fallback
     const yearMatch = lowered.match(/\b(20\d{2})\b/);
     const dayMatch = lowered.match(/\b(\d{1,2})\b/);
-    const year = yearMatch ? Number(yearMatch[1]) : reference.getUTCFullYear();
+    const year = yearMatch ? Number(yearMatch[1]) : reference.getFullYear();
     const day = dayMatch ? Number(dayMatch[1]) : 1;
-    const candidate = new Date(Date.UTC(year, monthIndex, day, 0, 0, 0, 0));
+    
+    // Create date in local time for parsing, then convert to start of day
+    const candidate = new Date(year, monthIndex, day, 0, 0, 0, 0);
 
     return Number.isNaN(candidate.getTime()) ? null : candidate;
 }
@@ -406,6 +410,8 @@ function normalizeEventItem(item: StrapiDigestEvent): DigestItem | null {
 
     const eventDate = parseEventSortDate(item.date);
     const todayStart = getStartOfIstDay(new Date());
+
+    // If we have a valid event date, and it's in the past, skip it
     if (eventDate && eventDate < todayStart) {
         return null;
     }
@@ -516,21 +522,27 @@ function buildSections(
             continue; // Disable monthly processing
         }
 
+        const isEvent = format === "Upcoming Events";
         let limit = perFormatLimit;
-        if (frequency === "weekly" && format === "News Briefing") {
+        
+        if (isEvent) {
+            limit = 3; // Strictly top 3 events
+        } else if (frequency === "weekly" && format === "News Briefing") {
             limit = 9;
         }
 
-        const isEvent = format === "Upcoming Events";
         const items = catalog
             .filter((item) => item.formats.includes(format))
             .filter((item) => isEvent || !since || item.publishedAt >= since)
             .filter((item) => !usedKeys.has(item.key))
-            .sort((a, b) =>
-                isEvent
-                    ? a.sortAt.getTime() - b.sortAt.getTime()
-                    : b.sortAt.getTime() - a.sortAt.getTime()
-            )
+            .sort((a, b) => {
+                if (isEvent) {
+                    // Ascending order for upcoming events (soonest first)
+                    return a.sortAt.getTime() - b.sortAt.getTime();
+                }
+                // Descending order for news (latest first)
+                return b.sortAt.getTime() - a.sortAt.getTime();
+            })
             .slice(0, limit);
 
         if (items.length === 0) {
@@ -544,7 +556,8 @@ function buildSections(
     return sections;
 }
 
-function hasFreshNewsSection(sections: DigestSection[]): boolean {
+function hasFreshContentSection(sections: DigestSection[]): boolean {
+    // Only News Briefing is considered "fresh content" for the daily/weekly trigger
     return sections.some((section) =>
         section.format === "News Briefing" && section.items.length > 0
     );
@@ -790,12 +803,12 @@ export async function processPreferenceDigests(
         const sections = buildSections(formats, since, catalog, frequency);
         const itemKeys = sections.flatMap((section) => section.items.map((item) => item.key));
 
-        if (!hasFreshNewsSection(sections)) {
+        if (!hasFreshContentSection(sections)) {
             skipped++;
             results.push({
                 email: row.email,
                 status: "skipped",
-                reason: "no_fresh_news_briefing",
+                reason: "no_fresh_news_published_today",
             });
             continue;
         }
@@ -889,10 +902,6 @@ export async function sendPreferenceDigestPreview(
     const sections = buildSections(formats, since, catalog, frequency);
     const itemKeys = sections.flatMap((section) => section.items.map((item) => item.key));
 
-    if (!hasFreshNewsSection(sections)) {
-        throw new Error("No fresh news briefing items are available for the requested preview.");
-    }
-
     let sponsor: { imageUrl: string; targetUrl: string } | null = null;
     try {
         const ads = await getAdvertisements({ placement: "home_platform_hero" });
@@ -911,7 +920,7 @@ export async function sendPreferenceDigestPreview(
     }
 
     if (sections.length === 0 || itemKeys.length === 0) {
-        throw new Error("No matching content is available for the requested preview.");
+        throw new Error("No matching content or events are available for the requested preview.");
     }
 
     await sendPreferenceDigestEmail(
