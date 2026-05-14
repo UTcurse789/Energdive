@@ -189,6 +189,14 @@ export function Header() {
     const { isLoaded, isSignedIn } = useAuth();
     const posthog = usePostHog();
 
+    const handleLoginClick = () => {
+        dismissHeaderOnboarding();
+        closeAll();
+        if (posthog) {
+            posthog.capture('login_clicked', { timestamp: new Date().toISOString(), path: window.location.pathname });
+        }
+    };
+
     const brandGreen = "#00A651";
     useEffect(() => {
         const handleScroll = () => setIsScrolled(window.scrollY > 10);
@@ -439,11 +447,7 @@ export function Header() {
                                 </SignedIn>
                                 <SignedOut>
                                     <motion.div className="relative" onMouseEnter={() => setIsLoginHovered(true)} onMouseLeave={() => setIsLoginHovered(false)}>
-                                        <Link href="/auth" className="block border-[1.5px] border-black px-3 py-1 md:px-6 md:py-2 text-[10px] md:text-[12px] font-bold uppercase tracking-wider hover:bg-black hover:text-white transition-all overflow-hidden whitespace-nowrap" onClick={() => { 
-                                            dismissHeaderOnboarding(); 
-                                            closeAll(); 
-                                            if (posthog) posthog.capture('login_clicked', { timestamp: new Date().toISOString(), path: window.location.pathname });
-                                        }}>
+                                        <Link href="/auth" className="block border-[1.5px] border-black px-3 py-1 md:px-6 md:py-2 text-[10px] md:text-[12px] font-bold uppercase tracking-wider hover:bg-black hover:text-white transition-all overflow-hidden whitespace-nowrap" onClick={handleLoginClick}>
                                             LOGIN
                                             <AnimatePresence>
                                                 {isLoginHovered && (
@@ -513,10 +517,7 @@ export function Header() {
                                                 <div className="mt-5 grid grid-cols-2 gap-2.5">
                                                     <Link
                                                         href="/auth"
-                                                        onClick={() => {
-                                                            dismissHeaderOnboarding();
-                                                            if (posthog) posthog.capture('login_clicked', { timestamp: new Date().toISOString(), path: window.location.pathname });
-                                                        }}
+                                                        onClick={handleLoginClick}
                                                         className="flex flex-col items-center justify-center rounded-xl bg-gradient-to-r from-[#0AB996] to-[#00A651] p-2.5 text-center text-[13px] sm:text-sm font-bold text-white shadow-md shadow-[#00A651]/20 transition-all hover:from-[#099c82] hover:to-[#008c44] hover:shadow-lg hover:-translate-y-0.5"
                                                     >
                                                         <span>Login for</span>
@@ -1338,10 +1339,7 @@ export function Header() {
                                     <SignedOut>
                                         <Link
                                             href="/auth"
-                                            onClick={() => {
-                                                closeAll();
-                                                if (posthog) posthog.capture('login_clicked', { timestamp: new Date().toISOString(), path: window.location.pathname });
-                                            }}
+                                            onClick={handleLoginClick}
                                             className="block w-full text-center border-[1.5px] border-black px-6 py-3 text-[12px] font-bold uppercase tracking-wider hover:bg-black hover:text-white transition-all"
                                         >
                                             LOGIN
