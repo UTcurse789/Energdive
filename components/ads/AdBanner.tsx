@@ -3,11 +3,13 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { strapiImageUrl } from "@/lib/strapi-image";
+import { useAdTracking } from "./useAdTracking";
 
 const STRAPI_BASE = process.env.NEXT_PUBLIC_STRAPI_URL || "https://cms.energdive.com";
 
 interface Ad {
     id: number;
+    documentId: string;
     title: string;
     placement: string;
     partner_name: string | null;
@@ -225,15 +227,19 @@ export function AdBanner({
 
     function renderSelectedAds(renderAd: (ad: Ad, index: number) => React.ReactNode) {
         if (selectedAds.length === 1) {
-            return renderAd(selectedAds[0], 0);
+            return (
+                <TrackedAdWrapper ad={selectedAds[0]}>
+                    {renderAd(selectedAds[0], 0)}
+                </TrackedAdWrapper>
+            );
         }
 
         return (
             <div className="space-y-6">
                 {selectedAds.map((ad, index) => (
-                    <div key={`${ad.id}-${index}`}>
+                    <TrackedAdWrapper key={`${ad.id}-${index}`} ad={ad}>
                         {renderAd(ad, index)}
-                    </div>
+                    </TrackedAdWrapper>
                 ))}
             </div>
         );
@@ -262,6 +268,16 @@ export function AdBanner({
         default:
             return renderSelectedAds((ad) => <BannerAd ad={ad} placement={placement} className={className} />);
     }
+}
+
+/** Tracked wrapper — fires impression on mount, captures clicks via event bubbling */
+function TrackedAdWrapper({ ad, children }: { ad: Ad; children: React.ReactNode }) {
+    const { trackClick } = useAdTracking(ad.documentId);
+    return (
+        <div onClickCapture={trackClick}>
+            {children}
+        </div>
+    );
 }
 
 /** Wraps content in a clickable link if target_url is present */

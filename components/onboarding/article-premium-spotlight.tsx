@@ -77,7 +77,7 @@ export function ArticlePremiumSpotlight({
                     <Sparkles className="h-3.5 w-3.5" />
                     ENERGCLUB Access
                   </div>
-                  <OnboardingProgress step={4} />
+                  <OnboardingProgress step={2} total={2} />
                 </div>
 
                 <button
