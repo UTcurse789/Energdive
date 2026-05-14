@@ -4,10 +4,12 @@ import { Suspense, useEffect, useRef, useState } from "react";
 import { useAuth, useSignIn } from "@clerk/nextjs";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { usePostHog } from "posthog-js/react";
 
 type Status = "loading" | "verifying" | "signing-in" | "redirecting" | "error";
 
 function MembershipAccessContent() {
+    const posthog = usePostHog();
     const router = useRouter();
     const searchParams = useSearchParams();
     const { signIn, setActive } = useSignIn();
@@ -107,6 +109,9 @@ function MembershipAccessContent() {
                     </p>
                     <Link
                         href="/auth"
+                        onClick={() => {
+                            if (posthog) posthog.capture('login_clicked', { timestamp: new Date().toISOString(), path: window.location.pathname });
+                        }}
                         className="inline-flex rounded-full bg-[#111111] px-6 py-3 text-sm font-semibold text-[#f1c46f] transition-colors hover:bg-[#1d1d1d]"
                     >
                         Go to Sign In

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@clerk/nextjs";
+import posthog from "posthog-js";
 
 interface UseArticleSaveOptions {
   title: string;
@@ -73,6 +74,7 @@ export function useArticleSave({ title, url }: UseArticleSaveOptions) {
         setIsSaved(true);
         setShowToast(true);
         window.setTimeout(() => setShowToast(false), 3000);
+        posthog.capture("article_saved", { article_title: title, article_url: url });
       }
 
       window.dispatchEvent(new Event("saved_articles_updated"));

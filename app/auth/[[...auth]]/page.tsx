@@ -6,6 +6,7 @@ import { useState, useCallback, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import DotGrid from "@/components/DotGrid";
+import { usePostHog } from "posthog-js/react";
 
 type AuthStep = "identifier" | "otp-signin" | "otp-signup" | "otp-phone" | "complete";
 type InputMode = "email" | "phone";
@@ -39,6 +40,15 @@ export default function UnifiedAuthPage() {
     const [error, setError] = useState("");
     const [info, setInfo] = useState("");
 
+    const posthog = usePostHog();
+
+    // Track registration started when the auth page mounts
+    useEffect(() => {
+        if (posthog) {
+            posthog.capture('registration_started', { timestamp: new Date().toISOString() });
+        }
+    }, [posthog]);
+
     // Auto-detect input type
     const inputMode: InputMode = useMemo(() => {
         const trimmed = identifier.trim();
@@ -61,6 +71,10 @@ export default function UnifiedAuthPage() {
         setLoading(true);
         setError("");
         setInfo("");
+
+        if (posthog) {
+            posthog.capture('registration_step1_completed', { timestamp: new Date().toISOString() });
+        }
 
         const isPhone = isPhoneInput(identifier.trim());
 
@@ -108,6 +122,7 @@ export default function UnifiedAuthPage() {
                 } else if (result.status === "complete") {
                     if (result.createdSessionId) {
                         await setActive!({ session: result.createdSessionId });
+                        if (posthog) posthog.capture('login_completed', { timestamp: new Date().toISOString() });
                     }
                     setStep("complete");
                     window.location.href = "/dashboard";
@@ -168,6 +183,7 @@ export default function UnifiedAuthPage() {
                     const sessionId = result.createdSessionId || signUp!.createdSessionId;
                     if (sessionId) {
                         await setActive!({ session: sessionId });
+                        if (posthog) posthog.capture('registration_completed', { timestamp: new Date().toISOString() });
                     }
                     setStep("complete");
                     setTimeout(() => window.location.replace("/dashboard"), 300);
@@ -190,6 +206,7 @@ export default function UnifiedAuthPage() {
                         });
                         if (ticketResult.createdSessionId) {
                             await setActive!({ session: ticketResult.createdSessionId });
+                            if (posthog) posthog.capture('registration_completed', { timestamp: new Date().toISOString() });
                         }
                         setStep("complete");
                         setTimeout(() => window.location.replace("/dashboard"), 300);
@@ -210,6 +227,7 @@ export default function UnifiedAuthPage() {
                     const sessionId = result.createdSessionId || signIn!.createdSessionId;
                     if (sessionId) {
                         await setActive!({ session: sessionId });
+                        if (posthog) posthog.capture('login_completed', { timestamp: new Date().toISOString() });
                     }
                     setStep("complete");
                     setTimeout(() => window.location.replace("/dashboard"), 300);
@@ -240,6 +258,7 @@ export default function UnifiedAuthPage() {
                         });
                         if (ticketResult.createdSessionId) {
                             await setActive!({ session: ticketResult.createdSessionId });
+                            if (posthog) posthog.capture('registration_completed', { timestamp: new Date().toISOString() });
                         }
                         setStep("complete");
                         setTimeout(() => window.location.replace("/dashboard"), 300);
@@ -283,6 +302,13 @@ export default function UnifiedAuthPage() {
                 if (result.status === "complete") {
                     if (result.createdSessionId) {
                         await setActive!({ session: result.createdSessionId });
+                        if (posthog) {
+                            if (data.isNewUser) {
+                                posthog.capture('registration_completed', { timestamp: new Date().toISOString() });
+                            } else {
+                                posthog.capture('login_completed', { timestamp: new Date().toISOString() });
+                            }
+                        }
                     }
                     setIsNewUser(data.isNewUser);
                     setStep("complete");
@@ -301,6 +327,7 @@ export default function UnifiedAuthPage() {
     // ── Google OAuth ──
     const handleGoogleAuth = useCallback(async () => {
         if (!signInLoaded) return;
+        if (posthog) posthog.capture('login_clicked', { timestamp: new Date().toISOString(), path: window.location.pathname });
         try {
             await signIn!.authenticateWithRedirect({
                 strategy: "oauth_google",
@@ -310,11 +337,12 @@ export default function UnifiedAuthPage() {
         } catch {
             setError("Google sign-in failed. Please try again.");
         }
-    }, [signIn, signInLoaded]);
+    }, [signIn, signInLoaded, posthog]);
 
     // ── LinkedIn OAuth ──
     const handleLinkedInAuth = useCallback(async () => {
         if (!signInLoaded) return;
+        if (posthog) posthog.capture('login_clicked', { timestamp: new Date().toISOString(), path: window.location.pathname });
         try {
             await signIn!.authenticateWithRedirect({
                 strategy: "oauth_linkedin_oidc",
@@ -324,7 +352,7 @@ export default function UnifiedAuthPage() {
         } catch {
             setError("LinkedIn sign-in failed. Please try again.");
         }
-    }, [signIn, signInLoaded]);
+    }, [signIn, signInLoaded, posthog]);
 
     // ── Resend OTP ──
     const handleResend = useCallback(async () => {

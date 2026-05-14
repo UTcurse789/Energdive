@@ -4,8 +4,10 @@ import { useSignIn, useAuth } from "@clerk/nextjs";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Suspense } from "react";
+import { usePostHog } from "posthog-js/react";
 
 function AcceptInviteContent() {
+    const posthog = usePostHog();
     const { signIn, setActive } = useSignIn();
     const { isLoaded, isSignedIn } = useAuth();
     const router = useRouter();
@@ -71,6 +73,9 @@ function AcceptInviteContent() {
                     <p className="text-gray-500 text-sm mb-6">{error}</p>
                     <a
                         href="/auth"
+                        onClick={() => {
+                            if (posthog) posthog.capture('login_clicked', { timestamp: new Date().toISOString(), path: window.location.pathname });
+                        }}
                         className="inline-block bg-[#0AB996] text-white px-6 py-2.5 rounded-lg text-sm font-semibold hover:bg-[#099e82] transition-colors"
                     >
                         Go to Sign In

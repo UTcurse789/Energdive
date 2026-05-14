@@ -54,6 +54,10 @@ import { UtmTracker } from "@/components/UtmTracker";
 import { Suspense } from "react";
 import ConsentAwareGTM from "@/components/ConsentAwareGTM";
 import CookieConsent from "@/components/CookieConsent";
+import { PlatformOnboarding } from "@/components/onboarding/platform-onboarding";
+import AuthPromptModal from "@/components/ui/auth-prompt-modal";
+import { PostHogProvider } from "./providers";
+import { PostHogIdentify } from "@/components/PostHogIdentify";
 
 const sans = Inter({
   subsets: ["latin"],
@@ -154,6 +158,29 @@ export default function RootLayout({
 }) {
   return (
     <ClerkProvider>
+      <PostHogProvider>
+        <html lang="en" className={`${sans.variable} ${serif.variable}`}>
+          <head>
+            <link rel="preconnect" href="https://cms.energdive.com" />
+            <link rel="preconnect" href="https://cdn.energdive.com" />
+            <link rel="preconnect" href="https://clerk.energdive.com" />
+          </head>
+          <body className="antialiased font-sans" suppressHydrationWarning>
+            {/* GTM — only loads after cookie consent is accepted */}
+            <ConsentAwareGTM gtmId="GTM-5P4C363M" />
+            <Suspense fallback={null}>
+              <UtmTracker />
+            </Suspense>
+            <PostHogIdentify />
+            <PlatformOnboarding />
+            <AuthPromptModal />
+            <SiteLayout>
+              {children}
+            </SiteLayout>
+            <CookieConsent />
+          </body>
+        </html>
+      </PostHogProvider>
       <html lang="en" className={`${sans.variable} ${serif.variable}`}>
         <head>
           <link rel="preconnect" href="https://cms.energdive.com" />

@@ -19,6 +19,7 @@ import { cn } from "@/lib/utils";
 import { ShareButton } from "@/components/ui/share-button";
 import { SaveArticleButton } from "@/components/article/SaveArticleButton";
 import { ArticleStickyShare } from "@/components/article/ArticleStickyShare";
+import { ReportDownloadButton } from "@/components/report/ReportDownloadButton";
 
 /* =========================
    TYPES & UTILS
@@ -254,12 +255,11 @@ export default async function ArticlePage(props: PageProps) {
                                 <p className="text-xs text-zinc-400 mb-8 leading-relaxed">
                                     Strategic insights and industry-leading recommendations for professionals.
                                 </p>
-                                <a href={downloadUrl} target="_blank" rel="noopener noreferrer" className="block">
-                                    <Button className="w-full bg-[#00A651] hover:bg-[#008c44] text-white text-[10px] font-black uppercase py-7 rounded-2xl transition-all">
-                                        Download PDF
-                                        <Download className="w-4 h-4 ml-2" />
-                                    </Button>
-                                </a>
+                                <ReportDownloadButton
+                                    downloadUrl={downloadUrl}
+                                    reportTitle={title}
+                                    reportSlug={article.slug}
+                                />
                             </div>
                         </aside>
 

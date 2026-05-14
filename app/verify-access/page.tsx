@@ -3,8 +3,10 @@
 import { useSignIn, useAuth } from "@clerk/nextjs";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, Suspense } from "react";
+import { usePostHog } from "posthog-js/react";
 
 function VerifyAccessContent() {
+    const posthog = usePostHog();
     const { signIn, setActive } = useSignIn();
     const { isLoaded, isSignedIn } = useAuth();
     const router = useRouter();
@@ -36,6 +38,9 @@ function VerifyAccessContent() {
                     </p>
                     <a
                         href="/auth"
+                        onClick={() => {
+                            if (posthog) posthog.capture('login_clicked', { timestamp: new Date().toISOString(), path: window.location.pathname });
+                        }}
                         className="inline-block bg-[#0AB996] text-white px-6 py-2.5 rounded-lg text-sm font-semibold hover:bg-[#099e82] transition-colors"
                     >
                         Go to Sign In
@@ -283,7 +288,9 @@ function VerifyAccessContent() {
                 <div className="mt-8 pt-4 border-t border-zinc-100 text-center">
                     <p className="text-xs text-zinc-400">
                         Having trouble?{" "}
-                        <a href="/auth" className="text-[#0AB996] hover:underline">
+                        <a href="/auth" onClick={() => {
+                            if (posthog) posthog.capture('login_clicked', { timestamp: new Date().toISOString(), path: window.location.pathname });
+                        }} className="text-[#0AB996] hover:underline">
                             Try signing in instead
                         </a>
                     </p>
