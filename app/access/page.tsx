@@ -1,9 +1,9 @@
 "use client";
 
-import { useSignIn, useAuth } from "@clerk/nextjs";
+import { useAuth } from "@clerk/nextjs";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, useRef, Suspense } from "react";
-import { usePostHog } from "posthog-js/react";
+import { usePostHog } from "@posthog/react";
 
 type Status = "loading" | "verifying" | "redirecting" | "error";
 

@@ -4,7 +4,7 @@ import { Suspense, useEffect, useRef, useState } from "react";
 import { useAuth, useSignIn } from "@clerk/nextjs";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { usePostHog } from "posthog-js/react";
+import { usePostHog } from "@posthog/react";
 
 type Status = "loading" | "verifying" | "signing-in" | "redirecting" | "error";
 
@@ -68,6 +68,12 @@ function MembershipAccessContent() {
                 }
 
                 await setActive({ session: result.createdSessionId });
+                if (posthog) {
+                    posthog.capture("login_completed", {
+                        timestamp: new Date().toISOString(),
+                        path: window.location.pathname,
+                    });
+                }
                 setStatus("redirecting");
 
                 setTimeout(() => {
@@ -91,7 +97,7 @@ function MembershipAccessContent() {
         };
 
         authenticate();
-    }, [isLoaded, isSignedIn, router, searchParams, setActive, signIn]);
+    }, [isLoaded, isSignedIn, posthog, router, searchParams, setActive, signIn]);
 
     if (status === "error") {
         return (

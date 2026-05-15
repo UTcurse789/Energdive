@@ -158,14 +158,14 @@ export default function RootLayout({
 }) {
   return (
     <ClerkProvider>
-      <PostHogProvider>
-        <html lang="en" className={`${sans.variable} ${serif.variable}`}>
-          <head>
-            <link rel="preconnect" href="https://cms.energdive.com" />
-            <link rel="preconnect" href="https://cdn.energdive.com" />
-            <link rel="preconnect" href="https://clerk.energdive.com" />
-          </head>
-          <body className="antialiased font-sans" suppressHydrationWarning>
+      <html lang="en" className={`${sans.variable} ${serif.variable}`}>
+        <head>
+          <link rel="preconnect" href="https://cms.energdive.com" />
+          <link rel="preconnect" href="https://cdn.energdive.com" />
+          <link rel="preconnect" href="https://clerk.energdive.com" />
+        </head>
+        <body className="antialiased font-sans" suppressHydrationWarning>
+          <PostHogProvider>
             {/* GTM — only loads after cookie consent is accepted */}
             <ConsentAwareGTM gtmId="GTM-5P4C363M" />
             <Suspense fallback={null}>
@@ -178,9 +178,9 @@ export default function RootLayout({
               {children}
             </SiteLayout>
             <CookieConsent />
-          </body>
-        </html>
-      </PostHogProvider>
+          </PostHogProvider>
+        </body>
+      </html>
     </ClerkProvider>
   );
 }

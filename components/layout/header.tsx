@@ -14,7 +14,7 @@ import { GlobalSearch } from "@/components/global-search";
 import { strapiImageUrl } from "@/lib/strapi-image";
 import { CustomUserMenu } from "@/components/layout/CustomUserMenu";
 
-import { usePostHog } from "posthog-js/react";
+import { usePostHog } from "@posthog/react";
 
 type MagazineIssue = {
     id: number | string;
@@ -191,6 +191,16 @@ export function Header() {
         closeAll();
         if (posthog) {
             posthog.capture('login_clicked', { timestamp: new Date().toISOString(), path: window.location.pathname });
+        }
+    };
+
+    const handleSignupClick = () => {
+        closeAll();
+        if (posthog) {
+            posthog.capture("signup_button_clicked", {
+                timestamp: new Date().toISOString(),
+                path: window.location.pathname,
+            });
         }
     };
 
@@ -937,7 +947,7 @@ export function Header() {
                                                 </div>
                                                 <h4 className="text-xl font-bold text-zinc-900 mb-2">Explore ENERGDIVE</h4>
                                                 <p className="text-gray-500 text-[14px] leading-relaxed mb-6">Hover over any item to preview. Discover videos, events, learn about us, or get in touch.</p>
-                                                <Link href="/energclub" onClick={closeMenus} className="inline-flex items-center gap-2 px-6 py-3 bg-zinc-900 text-white text-[11px] font-bold uppercase tracking-wider rounded-lg hover:bg-zinc-800 transition-colors">
+                                                <Link href="/energclub" onClick={handleSignupClick} className="inline-flex items-center gap-2 px-6 py-3 bg-zinc-900 text-white text-[11px] font-bold uppercase tracking-wider rounded-lg hover:bg-zinc-800 transition-colors">
                                                     <Zap size={14} style={{ color: '#00A651' }} /> Join EnergClub
                                                 </Link>
                                             </div>

@@ -1,12 +1,11 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useState, useEffect, Suspense } from "react";
-import { usePostHog } from "posthog-js/react";
+import { usePostHog } from "@posthog/react";
 
 function VerifyAccountContent() {
     const posthog = usePostHog();
-    const router = useRouter();
     const searchParams = useSearchParams();
     const token = searchParams.get("token");
 

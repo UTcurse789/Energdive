@@ -3,7 +3,7 @@
 import { useSignIn, useAuth } from "@clerk/nextjs";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, Suspense } from "react";
-import { usePostHog } from "posthog-js/react";
+import { usePostHog } from "@posthog/react";
 
 function VerifyAccessContent() {
     const posthog = usePostHog();
@@ -124,6 +124,12 @@ function VerifyAccessContent() {
 
             if (result.status === "complete" && result.createdSessionId) {
                 await setActive({ session: result.createdSessionId });
+                if (posthog) {
+                    posthog.capture("login_completed", {
+                        timestamp: new Date().toISOString(),
+                        path: window.location.pathname,
+                    });
+                }
 
                 // Force a full navigation to get fresh server state
                 setTimeout(() => {
@@ -316,4 +322,3 @@ export default function VerifyAccessPage() {
         </Suspense>
     );
 }
-
