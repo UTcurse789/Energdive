@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useAuth } from "@clerk/nextjs";
 import { AnimatePresence, motion } from "framer-motion";
 import { Check, Sparkles, X } from "lucide-react";
+import { usePostHog } from "@posthog/react";
 import { OnboardingProgress } from "@/components/onboarding/onboarding-progress";
 import {
   ONBOARDING_KEYS,
@@ -22,6 +23,7 @@ export function ArticlePremiumSpotlight({
 }: ArticlePremiumSpotlightProps) {
   const [isEligible, setIsEligible] = useState(false);
   const { isLoaded, isSignedIn } = useAuth();
+  const posthog = usePostHog();
 
   useEffect(() => {
     if (!isLoaded || isSignedIn) return;
@@ -112,6 +114,14 @@ export function ArticlePremiumSpotlight({
 
               <Link
                 href={loginHref}
+                onClick={() => {
+                  if (posthog) {
+                    posthog.capture("signup_button_clicked", {
+                      timestamp: new Date().toISOString(),
+                      path: window.location.pathname,
+                    });
+                  }
+                }}
                 className="mt-5 inline-flex w-full items-center justify-center rounded-full bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition-all duration-200 hover:shadow-[0_0_0_1px_rgba(255,255,255,0.12),0_16px_40px_rgba(15,23,42,0.22)]"
               >
                 Login / Join ENERGCLUB

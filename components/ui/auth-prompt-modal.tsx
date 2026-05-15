@@ -7,7 +7,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { X } from "lucide-react";
 import { usePathname } from "next/navigation";
-import { usePostHog } from "posthog-js/react";
+import { usePostHog } from "@posthog/react";
 
 const DISMISSAL_COOLDOWN_MS = 60 * 60 * 1000; // 1 hour
 const POPUP_DELAY_MS = 5 * 1000; // 5 seconds
@@ -106,7 +106,12 @@ export default function AuthPromptModal() {
                                     href="/auth"
                                     onClick={() => {
                                         handleDismiss();
-                                        if (posthog) posthog.capture('login_clicked', { timestamp: new Date().toISOString(), path: window.location.pathname });
+                                        if (posthog) {
+                                            posthog.capture("signup_button_clicked", {
+                                                timestamp: new Date().toISOString(),
+                                                path: window.location.pathname,
+                                            });
+                                        }
                                     }}
                                     className="w-full h-12 rounded-xl bg-[#0AB996] hover:bg-[#099c82] text-white font-semibold flex items-center justify-center gap-2 transition-all shadow-lg shadow-[#0AB996]/20 active:scale-[0.98]"
                                 >

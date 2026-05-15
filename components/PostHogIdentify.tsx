@@ -1,7 +1,7 @@
 "use client";
 
 import { useUser } from "@clerk/nextjs";
-import { usePostHog } from "posthog-js/react";
+import { usePostHog } from "@posthog/react";
 import { useEffect } from "react";
 
 export function PostHogIdentify() {

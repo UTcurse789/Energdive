@@ -4,7 +4,7 @@ import { useSignIn, useAuth } from "@clerk/nextjs";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Suspense } from "react";
-import { usePostHog } from "posthog-js/react";
+import { usePostHog } from "@posthog/react";
 
 function AcceptInviteContent() {
     const posthog = usePostHog();
@@ -42,6 +42,12 @@ function AcceptInviteContent() {
 
                 if (result.status === "complete" && result.createdSessionId) {
                     await setActive({ session: result.createdSessionId });
+                    if (posthog) {
+                        posthog.capture("login_completed", {
+                            timestamp: new Date().toISOString(),
+                            path: window.location.pathname,
+                        });
+                    }
                     router.push("/dashboard");
                 } else {
                     setError("Sign-in could not be completed.");
@@ -58,7 +64,7 @@ function AcceptInviteContent() {
         };
 
         consumeTicket();
-    }, [isLoaded, isSignedIn, signIn, setActive, router, searchParams]);
+    }, [isLoaded, isSignedIn, posthog, signIn, setActive, router, searchParams]);
 
     if (error) {
         return (

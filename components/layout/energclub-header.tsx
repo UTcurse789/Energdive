@@ -5,7 +5,7 @@ import { ArrowLeft, Lock } from "lucide-react";
 import Image from "next/image";
 import { SignedIn, SignedOut } from "@clerk/nextjs";
 import { CustomUserMenu } from "@/components/layout/CustomUserMenu";
-import { usePostHog } from "posthog-js/react";
+import { usePostHog } from "@posthog/react";
 
 export function EnergClubHeader() {
     const posthog = usePostHog();

@@ -2,7 +2,7 @@
 
 import { useState, Suspense } from "react";
 import Link from "next/link";
-import { usePostHog } from "posthog-js/react";
+import { usePostHog } from "@posthog/react";
 
 function RegisterContent() {
     const posthog = usePostHog();

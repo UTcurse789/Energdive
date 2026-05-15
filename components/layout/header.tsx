@@ -9,14 +9,12 @@ import { formatContentDate } from "@/lib/date";
 import { Search, ChevronDown, Facebook, Linkedin, Megaphone, ChevronRight, Zap, Menu, X, MapPin, Mail, Phone, Play, ArrowRight, Youtube, Instagram } from "lucide-react";
 import { SECTORS } from "@/data/dummy";
 import { motion, AnimatePresence } from "framer-motion";
-import { SignedIn, SignedOut } from "@clerk/nextjs";
+import { SignedIn, SignedOut, useAuth } from "@clerk/nextjs";
 import { GlobalSearch } from "@/components/global-search";
 import { strapiImageUrl } from "@/lib/strapi-image";
 import { CustomUserMenu } from "@/components/layout/CustomUserMenu";
-import { OnboardingProgress } from "@/components/onboarding/onboarding-progress";
-import { ONBOARDING_KEYS, hasLocalFlag, setLocalFlag } from "@/lib/onboarding-storage";
-import { useOnboardingStep } from "@/hooks/use-onboarding-step";
-import { usePostHog } from "posthog-js/react";
+
+import { usePostHog } from "@posthog/react";
 
 type MagazineIssue = {
     id: number | string;
@@ -188,6 +186,23 @@ export function Header() {
     const [isDesktopViewport, setIsDesktopViewport] = useState(false);
     const { isLoaded, isSignedIn } = useAuth();
     const posthog = usePostHog();
+
+    const handleLoginClick = () => {
+        closeAll();
+        if (posthog) {
+            posthog.capture('login_clicked', { timestamp: new Date().toISOString(), path: window.location.pathname });
+        }
+    };
+
+    const handleSignupClick = () => {
+        closeAll();
+        if (posthog) {
+            posthog.capture("signup_button_clicked", {
+                timestamp: new Date().toISOString(),
+                path: window.location.pathname,
+            });
+        }
+    };
 
     const brandGreen = "#00A651";
     useEffect(() => {
@@ -418,12 +433,7 @@ export function Header() {
                                 </SignedIn>
                                 <SignedOut>
                                     <motion.div className="relative" onMouseEnter={() => setIsLoginHovered(true)} onMouseLeave={() => setIsLoginHovered(false)}>
-                                        <Link href="/auth" className="block border-[1.5px] border-black px-3 py-1 md:px-6 md:py-2 text-[10px] md:text-[12px] font-bold uppercase tracking-wider hover:bg-black hover:text-white transition-all overflow-hidden whitespace-nowrap" onClick={() => { 
-                                            dismissHeaderOnboarding(); 
-                                            closeAll(); 
-                                            if (posthog) posthog.capture('login_clicked', { timestamp: new Date().toISOString(), path: window.location.pathname });
-                                        }}>
-                                        <Link href="/auth" className="block border-[1.5px] border-black px-3 py-1 md:px-6 md:py-2 text-[10px] md:text-[12px] font-bold uppercase tracking-wider hover:bg-black hover:text-white transition-all overflow-hidden whitespace-nowrap" onClick={closeAll}>
+                                        <Link href="/auth" className="block border-[1.5px] border-black px-3 py-1 md:px-6 md:py-2 text-[10px] md:text-[12px] font-bold uppercase tracking-wider hover:bg-black hover:text-white transition-all overflow-hidden whitespace-nowrap" onClick={handleLoginClick}>
                                             LOGIN
                                             <AnimatePresence>
                                                 {isLoginHovered && (
@@ -443,80 +453,6 @@ export function Header() {
                             >
                                 <Search className="w-4 h-4 md:w-5 md:h-5 hover:text-[#00A651]" />
                             </button>
-
-                            <AnimatePresence>
-                                {showHeaderOnboarding && (
-                                    <motion.div
-                                        initial={{ opacity: 0, y: 10, scale: 0.98 }}
-                                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                                        exit={{ opacity: 0, y: 8, scale: 0.98 }}
-                                        transition={{ duration: 0.2, ease: "easeOut" }}
-                                        className="absolute right-2 sm:right-10 top-full z-[72] mt-4 w-[calc(100vw-1rem)] sm:w-[360px] max-w-[360px]"
-                                    >
-                                        <div className="relative overflow-hidden rounded-[24px] border border-white/70 bg-white/80 shadow-[0_28px_80px_rgba(15,23,42,0.14)] backdrop-blur-2xl">
-                                            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(16,185,129,0.14),transparent_42%),linear-gradient(180deg,rgba(255,255,255,0.8),rgba(248,250,252,0.96))]" />
-                                            <div className="absolute right-12 top-0 h-3 w-3 -translate-y-1/2 rotate-45 border-l border-t border-white/70 bg-white/85" />
-
-                                            <motion.div
-                                                className="absolute inset-x-0 top-0 h-1 bg-emerald-500/70 origin-left"
-                                                initial={{ scaleX: 1 }}
-                                                animate={{ scaleX: 0 }}
-                                                transition={{ duration: 5, ease: "linear" }}
-                                            />
-
-                                            <div className="relative p-5">
-                                                <div className="mb-3 flex items-center justify-between gap-3">
-                                                    <span className="inline-flex items-center rounded-full border border-emerald-200/70 bg-white/85 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-emerald-700">
-                                                        Login for Briefings
-                                                    </span>
-                                                    <div className="flex items-center gap-2">
-                                                        <OnboardingProgress step={1} total={4} />
-                                                        <button
-                                                            type="button"
-                                                            onClick={dismissHeaderOnboarding}
-                                                            className="rounded-full border border-slate-200/80 bg-white/85 p-1.5 text-slate-500 transition-colors hover:text-slate-900"
-                                                            aria-label="Dismiss login hint"
-                                                        >
-                                                            <X className="h-3.5 w-3.5" />
-                                                        </button>
-                                                    </div>
-                                                </div>
-
-                                                <p className="font-serif text-lg font-bold leading-tight text-slate-950">
-                                                    Want daily and weekly energy reports, curated market briefings, and saved-story sync? Login to unlock the full experience.
-                                                </p>
-
-                                                <p className="mt-2 text-sm leading-relaxed text-slate-600">
-                                                    ENERGCLUB members and signed-in readers get a more useful, more personalized news workflow.
-                                                </p>
-
-                                                <div className="mt-5 grid grid-cols-2 gap-2.5">
-                                                    <Link
-                                                        href="/auth"
-                                                        onClick={() => {
-                                                            dismissHeaderOnboarding();
-                                                            if (posthog) posthog.capture('login_clicked', { timestamp: new Date().toISOString(), path: window.location.pathname });
-                                                        }}
-                                                        className="flex flex-col items-center justify-center rounded-xl bg-gradient-to-r from-[#0AB996] to-[#00A651] p-2.5 text-center text-[13px] sm:text-sm font-bold text-white shadow-md shadow-[#00A651]/20 transition-all hover:from-[#099c82] hover:to-[#008c44] hover:shadow-lg hover:-translate-y-0.5"
-                                                    >
-                                                        <span>Login for</span>
-                                                        <span>Reports</span>
-                                                    </Link>
-                                                    <Link
-                                                        href="/energclub"
-                                                        target="_blank"
-                                                        onClick={dismissHeaderOnboarding}
-                                                        className="flex flex-col items-center justify-center rounded-xl border-2 border-slate-200 bg-white p-2.5 text-center text-[13px] sm:text-sm font-bold text-slate-700 transition-colors hover:border-slate-300 hover:text-slate-950"
-                                                    >
-                                                        <span>Explore</span>
-                                                        <span>ENERGCLUB</span>
-                                                    </Link>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </motion.div>
-                                )}
-                            </AnimatePresence>
                         </div>
                     </div>
                 </div>
@@ -1011,7 +947,7 @@ export function Header() {
                                                 </div>
                                                 <h4 className="text-xl font-bold text-zinc-900 mb-2">Explore ENERGDIVE</h4>
                                                 <p className="text-gray-500 text-[14px] leading-relaxed mb-6">Hover over any item to preview. Discover videos, events, learn about us, or get in touch.</p>
-                                                <Link href="/energclub" onClick={closeMenus} className="inline-flex items-center gap-2 px-6 py-3 bg-zinc-900 text-white text-[11px] font-bold uppercase tracking-wider rounded-lg hover:bg-zinc-800 transition-colors">
+                                                <Link href="/energclub" onClick={handleSignupClick} className="inline-flex items-center gap-2 px-6 py-3 bg-zinc-900 text-white text-[11px] font-bold uppercase tracking-wider rounded-lg hover:bg-zinc-800 transition-colors">
                                                     <Zap size={14} style={{ color: '#00A651' }} /> Join EnergClub
                                                 </Link>
                                             </div>
@@ -1318,10 +1254,7 @@ export function Header() {
                                     <SignedOut>
                                         <Link
                                             href="/auth"
-                                            onClick={() => {
-                                                closeAll();
-                                                if (posthog) posthog.capture('login_clicked', { timestamp: new Date().toISOString(), path: window.location.pathname });
-                                            }}
+                                            onClick={handleLoginClick}
                                             className="block w-full text-center border-[1.5px] border-black px-6 py-3 text-[12px] font-bold uppercase tracking-wider hover:bg-black hover:text-white transition-all"
                                         >
                                             LOGIN
