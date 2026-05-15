@@ -9,10 +9,12 @@ import { formatContentDate } from "@/lib/date";
 import { Search, ChevronDown, Facebook, Linkedin, Megaphone, ChevronRight, Zap, Menu, X, MapPin, Mail, Phone, Play, ArrowRight, Youtube, Instagram } from "lucide-react";
 import { SECTORS } from "@/data/dummy";
 import { motion, AnimatePresence } from "framer-motion";
-import { SignedIn, SignedOut } from "@clerk/nextjs";
+import { SignedIn, SignedOut, useAuth } from "@clerk/nextjs";
 import { GlobalSearch } from "@/components/global-search";
 import { strapiImageUrl } from "@/lib/strapi-image";
 import { CustomUserMenu } from "@/components/layout/CustomUserMenu";
+
+import { usePostHog } from "@posthog/react";
 
 type MagazineIssue = {
     id: number | string;
@@ -181,6 +183,27 @@ export function Header() {
     const [mobileExpanded, setMobileExpanded] = useState<string | null>(null); // 'sectors' | 'magazine' | 'more' | 'opinion'
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const [tagCounts, setTagCounts] = useState<Record<string, number>>({});
+    const [isDesktopViewport, setIsDesktopViewport] = useState(false);
+    const { isLoaded, isSignedIn } = useAuth();
+    const posthog = usePostHog();
+
+    const handleLoginClick = () => {
+        closeAll();
+        if (posthog) {
+            posthog.capture('login_clicked', { timestamp: new Date().toISOString(), path: window.location.pathname });
+        }
+    };
+
+    const handleSignupClick = () => {
+        closeAll();
+        if (posthog) {
+            posthog.capture("signup_button_clicked", {
+                timestamp: new Date().toISOString(),
+                path: window.location.pathname,
+            });
+        }
+    };
+
     const brandGreen = "#00A651";
     useEffect(() => {
         const handleScroll = () => setIsScrolled(window.scrollY > 10);
@@ -410,7 +433,7 @@ export function Header() {
                                 </SignedIn>
                                 <SignedOut>
                                     <motion.div className="relative" onMouseEnter={() => setIsLoginHovered(true)} onMouseLeave={() => setIsLoginHovered(false)}>
-                                        <Link href="/auth" className="block border-[1.5px] border-black px-3 py-1 md:px-6 md:py-2 text-[10px] md:text-[12px] font-bold uppercase tracking-wider hover:bg-black hover:text-white transition-all overflow-hidden whitespace-nowrap" onClick={closeAll}>
+                                        <Link href="/auth" className="block border-[1.5px] border-black px-3 py-1 md:px-6 md:py-2 text-[10px] md:text-[12px] font-bold uppercase tracking-wider hover:bg-black hover:text-white transition-all overflow-hidden whitespace-nowrap" onClick={handleLoginClick}>
                                             LOGIN
                                             <AnimatePresence>
                                                 {isLoginHovered && (
@@ -924,7 +947,7 @@ export function Header() {
                                                 </div>
                                                 <h4 className="text-xl font-bold text-zinc-900 mb-2">Explore ENERGDIVE</h4>
                                                 <p className="text-gray-500 text-[14px] leading-relaxed mb-6">Hover over any item to preview. Discover videos, events, learn about us, or get in touch.</p>
-                                                <Link href="/energclub" onClick={closeMenus} className="inline-flex items-center gap-2 px-6 py-3 bg-zinc-900 text-white text-[11px] font-bold uppercase tracking-wider rounded-lg hover:bg-zinc-800 transition-colors">
+                                                <Link href="/energclub" onClick={handleSignupClick} className="inline-flex items-center gap-2 px-6 py-3 bg-zinc-900 text-white text-[11px] font-bold uppercase tracking-wider rounded-lg hover:bg-zinc-800 transition-colors">
                                                     <Zap size={14} style={{ color: '#00A651' }} /> Join EnergClub
                                                 </Link>
                                             </div>
@@ -1231,7 +1254,7 @@ export function Header() {
                                     <SignedOut>
                                         <Link
                                             href="/auth"
-                                            onClick={closeAll}
+                                            onClick={handleLoginClick}
                                             className="block w-full text-center border-[1.5px] border-black px-6 py-3 text-[12px] font-bold uppercase tracking-wider hover:bg-black hover:text-white transition-all"
                                         >
                                             LOGIN

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import axios from "axios";
+import { getPostHogClient } from "@/lib/posthog-server";
 
 /* ─── Constants ──────────────────────────────────────── */
 const BREVO_LIST_ID = 7;
@@ -132,6 +133,19 @@ export async function POST(req: Request) {
         );
 
         console.log("✅ Subscriber added to Brevo:", email);
+
+        getPostHogClient().capture({
+            distinctId: email,
+            event: "newsletter_subscribed",
+            properties: {
+                email,
+                frequency,
+                preferences,
+                community_count: communities.length,
+                sub_community_count: subCommunities.length,
+                communities,
+            },
+        });
 
         return NextResponse.json({
             success: true,

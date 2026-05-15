@@ -4,6 +4,7 @@ import { type RefObject, useEffect, useState } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import { Lock, Sparkles, X } from "lucide-react";
+import { usePostHog } from "@posthog/react";
 import { OnboardingProgress } from "@/components/onboarding/onboarding-progress";
 
 interface SaveLoginPromptProps {
@@ -32,6 +33,7 @@ export function SaveLoginPrompt({
   onClose,
 }: SaveLoginPromptProps) {
   const [position, setPosition] = useState<PromptPosition | null>(null);
+  const posthog = usePostHog();
 
   useEffect(() => {
     if (!open || !anchorRef.current) return;
@@ -164,6 +166,14 @@ export function SaveLoginPrompt({
               <div className="flex flex-col gap-2 sm:flex-row">
                 <Link
                   href={loginHref}
+                  onClick={() => {
+                    if (posthog) {
+                      posthog.capture("login_clicked", {
+                        timestamp: new Date().toISOString(),
+                        path: window.location.pathname,
+                      });
+                    }
+                  }}
                   className="inline-flex flex-1 items-center justify-center rounded-full bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition-all duration-200 hover:shadow-[0_0_0_1px_rgba(255,255,255,0.12),0_16px_40px_rgba(15,23,42,0.22)]"
                 >
                   Login to Save

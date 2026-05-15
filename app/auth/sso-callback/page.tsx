@@ -1,8 +1,26 @@
 "use client";
 
-import { AuthenticateWithRedirectCallback } from "@clerk/nextjs";
+import { AuthenticateWithRedirectCallback, useAuth } from "@clerk/nextjs";
+import { usePostHog } from "@posthog/react";
+import { useEffect, useRef } from "react";
 
 export default function SSOCallbackPage() {
+    const { isLoaded, isSignedIn } = useAuth();
+    const posthog = usePostHog();
+    const hasCapturedLogin = useRef(false);
+
+    useEffect(() => {
+        if (!isLoaded || !isSignedIn || !posthog || hasCapturedLogin.current) {
+            return;
+        }
+
+        hasCapturedLogin.current = true;
+        posthog.capture("login_completed", {
+            timestamp: new Date().toISOString(),
+            path: window.location.pathname,
+        });
+    }, [isLoaded, isSignedIn, posthog]);
+
     return (
         <div className="min-h-screen flex flex-col items-center justify-center bg-white relative overflow-hidden">
             {/* Subtle radial gradient backdrop */}

@@ -4,8 +4,10 @@ import { useSignIn, useAuth } from "@clerk/nextjs";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Suspense } from "react";
+import { usePostHog } from "@posthog/react";
 
 function AcceptInviteContent() {
+    const posthog = usePostHog();
     const { signIn, setActive } = useSignIn();
     const { isLoaded, isSignedIn } = useAuth();
     const router = useRouter();
@@ -40,6 +42,12 @@ function AcceptInviteContent() {
 
                 if (result.status === "complete" && result.createdSessionId) {
                     await setActive({ session: result.createdSessionId });
+                    if (posthog) {
+                        posthog.capture("login_completed", {
+                            timestamp: new Date().toISOString(),
+                            path: window.location.pathname,
+                        });
+                    }
                     router.push("/dashboard");
                 } else {
                     setError("Sign-in could not be completed.");
@@ -56,7 +64,7 @@ function AcceptInviteContent() {
         };
 
         consumeTicket();
-    }, [isLoaded, isSignedIn, signIn, setActive, router, searchParams]);
+    }, [isLoaded, isSignedIn, posthog, signIn, setActive, router, searchParams]);
 
     if (error) {
         return (
@@ -71,6 +79,9 @@ function AcceptInviteContent() {
                     <p className="text-gray-500 text-sm mb-6">{error}</p>
                     <a
                         href="/auth"
+                        onClick={() => {
+                            if (posthog) posthog.capture('login_clicked', { timestamp: new Date().toISOString(), path: window.location.pathname });
+                        }}
                         className="inline-block bg-[#0AB996] text-white px-6 py-2.5 rounded-lg text-sm font-semibold hover:bg-[#099e82] transition-colors"
                     >
                         Go to Sign In

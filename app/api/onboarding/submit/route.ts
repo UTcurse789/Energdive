@@ -7,6 +7,7 @@ import { sendMembershipWelcomeCardEmail, sendWelcomeEmail } from "@/lib/email";
 import { syncEnrichedLead } from "@/lib/lead-sync-orchestrator";
 import { logConsent, extractIpAddress, updateUserConsentFields } from "@/lib/consent-logger";
 import { resolveDataSource } from "@/lib/data-provenance";
+import { getPostHogClient } from "@/lib/posthog-server";
 
 /**
  * POST /api/onboarding/submit
@@ -263,6 +264,35 @@ export async function POST(req: Request) {
                 console.error("⚠️ Sync orchestrator failed:", syncErr.message);
             }
         }
+
+        const distinctId = syncEmail || body.email;
+        getPostHogClient().capture({
+            distinctId,
+            event: "onboarding_completed",
+            properties: {
+                email: distinctId,
+                job_title: body.jobTitle || null,
+                organization: body.organization || null,
+                country: body.country || null,
+                community_count: body.communitySelections?.length || 0,
+                preferred_frequency: body.preferredFrequency || null,
+                utm_source: utmSource,
+                utm_medium: utmMedium,
+                utm_campaign: utmCampaign,
+            },
+        });
+
+        getPostHogClient().identify({
+            distinctId,
+            properties: {
+                email: distinctId,
+                first_name: body.firstName,
+                last_name: body.lastName,
+                job_title: body.jobTitle || null,
+                organization: body.organization || null,
+                country: body.country || null,
+            },
+        });
 
         return NextResponse.json({ success: true, userId: dbUserId });
     } catch (error) {

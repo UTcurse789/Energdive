@@ -431,6 +431,7 @@ export async function sendPreferenceDigestEmail(
                             ${item.imageUrl ? `<td class="other-img" width="140" style="padding:0;"><img src="${item.imageUrl}" alt="${escapeHtml(item.title)}" width="140" style="display:block;width:140px;height:auto;object-fit:contain;" /></td>` : ""}
                             <td class="other-text" style="padding:16px 20px;" valign="middle">
                                 <p style="margin:0 0 10px;color:#111827;font-size:14px;font-weight:700;line-height:1.4;"><a href="${item.href}" style="color:#111827;text-decoration:none;">${escapeHtml(item.title)}</a></p>
+                                <p style="margin:0 0 12px;color:#6b7280;font-size:12px;line-height:1.5;">${escapeHtml(item.crispLine)}</p>
                                 <a href="${item.href}" style="display:inline-block;padding:6px 12px;background-color:#0a6c4c;color:#ffffff;font-size:12px;font-weight:700;text-decoration:none;border-radius:4px;">Read more &rarr;</a>
                             </td>
                         </tr>

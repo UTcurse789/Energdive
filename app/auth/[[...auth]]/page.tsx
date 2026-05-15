@@ -1,11 +1,12 @@
 "use client";
 
-import { useSignIn, useSignUp, useAuth, useClerk } from "@clerk/nextjs";
+import { useSignIn, useSignUp, useAuth } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { useState, useCallback, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import DotGrid from "@/components/DotGrid";
+import { usePostHog } from "@posthog/react";
 
 type AuthStep = "identifier" | "otp-signin" | "otp-signup" | "otp-phone" | "complete";
 type InputMode = "email" | "phone";
@@ -28,7 +29,6 @@ export default function UnifiedAuthPage() {
     const { signIn, isLoaded: signInLoaded, setActive } = useSignIn();
     const { signUp, isLoaded: signUpLoaded } = useSignUp();
     const { isSignedIn } = useAuth();
-    const clerk = useClerk();
     const router = useRouter();
 
     const [identifier, setIdentifier] = useState("");
@@ -38,6 +38,18 @@ export default function UnifiedAuthPage() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     const [info, setInfo] = useState("");
+
+    const posthog = usePostHog();
+
+    // Track registration started when the auth page mounts
+    useEffect(() => {
+        if (posthog) {
+            posthog.capture("registration_started", {
+                timestamp: new Date().toISOString(),
+                path: window.location.pathname,
+            });
+        }
+    }, [posthog]);
 
     // Auto-detect input type
     const inputMode: InputMode = useMemo(() => {
@@ -61,6 +73,13 @@ export default function UnifiedAuthPage() {
         setLoading(true);
         setError("");
         setInfo("");
+
+        if (posthog) {
+            posthog.capture("registration_step1_completed", {
+                timestamp: new Date().toISOString(),
+                path: window.location.pathname,
+            });
+        }
 
         const isPhone = isPhoneInput(identifier.trim());
 
@@ -108,6 +127,12 @@ export default function UnifiedAuthPage() {
                 } else if (result.status === "complete") {
                     if (result.createdSessionId) {
                         await setActive!({ session: result.createdSessionId });
+                        if (posthog) {
+                            posthog.capture("login_completed", {
+                                timestamp: new Date().toISOString(),
+                                path: window.location.pathname,
+                            });
+                        }
                     }
                     setStep("complete");
                     window.location.href = "/dashboard";
@@ -147,7 +172,7 @@ export default function UnifiedAuthPage() {
         }
 
         setLoading(false);
-    }, [identifier, signIn, signUp, signInLoaded, signUpLoaded, setActive, router]);
+    }, [identifier, posthog, signIn, signUp, signInLoaded, signUpLoaded, setActive]);
 
     // ── Step 2a: Verify OTP (Email - Clerk) ──
     const handleEmailOTPSubmit = useCallback(async () => {
@@ -168,6 +193,12 @@ export default function UnifiedAuthPage() {
                     const sessionId = result.createdSessionId || signUp!.createdSessionId;
                     if (sessionId) {
                         await setActive!({ session: sessionId });
+                        if (posthog) {
+                            posthog.capture("registration_completed", {
+                                timestamp: new Date().toISOString(),
+                                path: window.location.pathname,
+                            });
+                        }
                     }
                     setStep("complete");
                     setTimeout(() => window.location.replace("/dashboard"), 300);
@@ -190,6 +221,12 @@ export default function UnifiedAuthPage() {
                         });
                         if (ticketResult.createdSessionId) {
                             await setActive!({ session: ticketResult.createdSessionId });
+                            if (posthog) {
+                                posthog.capture("registration_completed", {
+                                    timestamp: new Date().toISOString(),
+                                    path: window.location.pathname,
+                                });
+                            }
                         }
                         setStep("complete");
                         setTimeout(() => window.location.replace("/dashboard"), 300);
@@ -210,6 +247,12 @@ export default function UnifiedAuthPage() {
                     const sessionId = result.createdSessionId || signIn!.createdSessionId;
                     if (sessionId) {
                         await setActive!({ session: sessionId });
+                        if (posthog) {
+                            posthog.capture("login_completed", {
+                                timestamp: new Date().toISOString(),
+                                path: window.location.pathname,
+                            });
+                        }
                     }
                     setStep("complete");
                     setTimeout(() => window.location.replace("/dashboard"), 300);
@@ -240,6 +283,12 @@ export default function UnifiedAuthPage() {
                         });
                         if (ticketResult.createdSessionId) {
                             await setActive!({ session: ticketResult.createdSessionId });
+                            if (posthog) {
+                                posthog.capture("registration_completed", {
+                                    timestamp: new Date().toISOString(),
+                                    path: window.location.pathname,
+                                });
+                            }
                         }
                         setStep("complete");
                         setTimeout(() => window.location.replace("/dashboard"), 300);
@@ -254,7 +303,7 @@ export default function UnifiedAuthPage() {
         } finally {
             setLoading(false);
         }
-    }, [code, identifier, isNewUser, signIn, signUp, signInLoaded, signUpLoaded, setActive, router]);
+    }, [code, identifier, isNewUser, posthog, signIn, signUp, signInLoaded, signUpLoaded, setActive]);
 
     // ── Step 2b: Verify OTP (Phone - MSG91 → Clerk sign-in token) ──
     const handlePhoneOTPSubmit = useCallback(async () => {
@@ -283,6 +332,19 @@ export default function UnifiedAuthPage() {
                 if (result.status === "complete") {
                     if (result.createdSessionId) {
                         await setActive!({ session: result.createdSessionId });
+                        if (posthog) {
+                            if (data.isNewUser) {
+                                posthog.capture("registration_completed", {
+                                    timestamp: new Date().toISOString(),
+                                    path: window.location.pathname,
+                                });
+                            } else {
+                                posthog.capture("login_completed", {
+                                    timestamp: new Date().toISOString(),
+                                    path: window.location.pathname,
+                                });
+                            }
+                        }
                     }
                     setIsNewUser(data.isNewUser);
                     setStep("complete");
@@ -296,11 +358,12 @@ export default function UnifiedAuthPage() {
         } finally {
             setLoading(false);
         }
-    }, [code, identifier, signIn, setActive, router]);
+    }, [code, identifier, posthog, signIn, setActive]);
 
     // ── Google OAuth ──
     const handleGoogleAuth = useCallback(async () => {
         if (!signInLoaded) return;
+        if (posthog) posthog.capture('login_clicked', { timestamp: new Date().toISOString(), path: window.location.pathname });
         try {
             await signIn!.authenticateWithRedirect({
                 strategy: "oauth_google",
@@ -310,11 +373,12 @@ export default function UnifiedAuthPage() {
         } catch {
             setError("Google sign-in failed. Please try again.");
         }
-    }, [signIn, signInLoaded]);
+    }, [signIn, signInLoaded, posthog]);
 
     // ── LinkedIn OAuth ──
     const handleLinkedInAuth = useCallback(async () => {
         if (!signInLoaded) return;
+        if (posthog) posthog.capture('login_clicked', { timestamp: new Date().toISOString(), path: window.location.pathname });
         try {
             await signIn!.authenticateWithRedirect({
                 strategy: "oauth_linkedin_oidc",
@@ -324,7 +388,7 @@ export default function UnifiedAuthPage() {
         } catch {
             setError("LinkedIn sign-in failed. Please try again.");
         }
-    }, [signIn, signInLoaded]);
+    }, [signIn, signInLoaded, posthog]);
 
     // ── Resend OTP ──
     const handleResend = useCallback(async () => {
