@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-    Home, LayoutGrid, CreditCard, Calendar, Settings, Bookmark
+    Home, LayoutGrid, CreditCard, Calendar, Settings, Bookmark, FileText
 } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
 import { CustomUserMenu } from "@/components/layout/CustomUserMenu";
@@ -13,6 +13,7 @@ import { useDashboard } from "./dashboard-shell";
 const NAV_ITEMS = [
     { label: "ENERGDIVE", href: "/", icon: Home },
     { label: "My Feed", href: "/dashboard", icon: LayoutGrid },
+    { label: "Submit Paper", href: "/dashboard/submit-paper", icon: FileText },
     { label: "Saved", href: "/dashboard/saved", icon: Bookmark },
     { label: "Subscriptions", href: "/dashboard/subscriptions", icon: CreditCard },
     { label: "Events", href: "/dashboard/events", icon: Calendar },
