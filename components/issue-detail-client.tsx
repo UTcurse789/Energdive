@@ -194,7 +194,7 @@ export function IssueDetailClient({ issue }: IssueDetailClientProps) {
                                 <a
                                     href="https://www.energdive.com/advertise-with-us"
                                     target="_blank"
-                                    rel="noopener noreferrer"
+                                    rel="noopener"
                                     className="block w-full text-center py-3 px-6 border-2 border-[#00A651] text-[#00A651] font-sans font-semibold text-[15px] rounded-lg hover:bg-[#00A651] hover:text-white transition-colors duration-200 tracking-wide"
                                 >
                                     Advertisement Enquiry

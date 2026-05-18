@@ -20,7 +20,7 @@ export function ReportDownloadButton({ downloadUrl, reportTitle, reportSlug }: R
     };
 
     return (
-        <a href={downloadUrl} target="_blank" rel="noopener noreferrer" className="block" onClick={handleClick}>
+        <a href={downloadUrl} target="_blank" rel="noopener" className="block" onClick={handleClick}>
             <Button className="w-full bg-[#00A651] hover:bg-[#008c44] text-white text-[10px] font-black uppercase py-7 rounded-2xl transition-all">
                 Download PDF
                 <Download className="w-4 h-4 ml-2" />

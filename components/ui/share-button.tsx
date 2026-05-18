@@ -108,7 +108,7 @@ export function ShareButton({ title, text, url, className = "", iconClassName = 
                 url: currentUrl,
                 title: currentTitle,
             });
-            window.open(shareLink, '_blank', 'noopener,noreferrer');
+            window.open(shareLink, '_blank', 'noopener');
         }
         setIsOpen(false);
     };
