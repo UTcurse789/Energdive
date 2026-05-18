@@ -1,13 +1,48 @@
 import { NextResponse } from "next/server";
 import { getOpinionContentKind } from "@/lib/content-tags";
+import { filterAndSortEventsByOccurrence, getEventStartTimestamp } from "@/lib/event-dates";
 
 const STRAPI_BASE = process.env.NEXT_PUBLIC_STRAPI_URL || "https://cms.energdive.com";
+
+type LooseRecord = Record<string, unknown>;
+
+type ApiCollectionResponse<T = LooseRecord> = {
+    data?: T[];
+};
+
+type TaxonomyItem = {
+    name?: string;
+    slug?: string;
+    attributes?: {
+        name?: string;
+        slug?: string;
+    };
+};
+
+type ContentItem = {
+    attributes?: {
+        sectors?: {
+            data?: TaxonomyItem[];
+        };
+        tags?: {
+            data?: TaxonomyItem[];
+        };
+    };
+    sectors?: TaxonomyItem[];
+    tags?: TaxonomyItem[];
+};
+
+type MenuEvent = LooseRecord & {
+    occurrence?: string;
+    date?: string | null;
+    parsedDate?: number;
+};
 
 export async function GET() {
     try {
         const [videosRes, eventsRes, issuesRes, sectorsRes, articlesRes, allVideosRes, opinionMenuRes] = await Promise.all([
             fetch(`${STRAPI_BASE}/api/videos?populate[0]=thumbnail&populate[1]=author.avatar&pagination[limit]=3&sort=createdAt:desc`, { next: { revalidate: 600 } }).catch(() => null),
-            fetch(`${STRAPI_BASE}/api/events?populate=*&pagination[pageSize]=100`, { next: { revalidate: 600 } }).catch(() => null),
+            fetch(`${STRAPI_BASE}/api/events?populate=image`, { cache: "no-store" }).catch(() => null),
             fetch(`${STRAPI_BASE}/api/issues?populate=CoverImage&pagination[limit]=12`, { next: { revalidate: 600 } }).catch(() => null),
             fetch(`${STRAPI_BASE}/api/sectors?populate=children&pagination[pageSize]=100`, { next: { revalidate: 600 } }).catch(() => null),
             fetch(`${STRAPI_BASE}/api/contents?fields[0]=id&populate[sectors][fields][0]=name&populate[sectors][fields][1]=slug&populate[tags][fields][0]=name&pagination[pageSize]=500`, { next: { revalidate: 600 } }).catch(() => null),
@@ -27,22 +62,31 @@ export async function GET() {
         ]);
 
         // Separate opinion articles vs interviews using content_tag
-        const allOpinionItems = opinionMenuObj?.data || [];
-        const opinionArticles: any[] = [];
-        const interviewArticles: any[] = [];
-        allOpinionItems.forEach((item: any) => {
+        const allOpinionItems = Array.isArray((opinionMenuObj as ApiCollectionResponse)?.data)
+            ? ((opinionMenuObj as ApiCollectionResponse).data ?? [])
+            : [];
+        const opinionArticles: LooseRecord[] = [];
+        const interviewArticles: LooseRecord[] = [];
+        allOpinionItems.forEach((item) => {
+            const article = (item && typeof item === "object") ? (item as LooseRecord) : {};
             const kind = getOpinionContentKind(item);
             if (kind === "interview") {
-                interviewArticles.push(item);
+                interviewArticles.push(article);
                 return;
             }
             if (kind !== "editorial") {
-                opinionArticles.push(item);
+                opinionArticles.push(article);
             }
         });
 
         const tagCounts: Record<string, number> = {};
-        const allItems = [...(articlesObj?.data || []), ...(allVideosObj?.data || [])];
+        const articleItems = Array.isArray((articlesObj as ApiCollectionResponse<ContentItem>)?.data)
+            ? (((articlesObj as ApiCollectionResponse<ContentItem>).data) ?? [])
+            : [];
+        const videoItems = Array.isArray((allVideosObj as ApiCollectionResponse<ContentItem>)?.data)
+            ? (((allVideosObj as ApiCollectionResponse<ContentItem>).data) ?? [])
+            : [];
+        const allItems: ContentItem[] = [...articleItems, ...videoItems];
         
         const nameToSlug: Record<string, string> = {
             "Oil & Gas": "oil-gas",
@@ -63,16 +107,16 @@ export async function GET() {
             return nameToSlug[name] || name.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-");
         };
         
-        allItems.forEach((item: any) => {
+        allItems.forEach((item) => {
             const sectors = item?.attributes?.sectors?.data || item?.sectors || [];
             const tags = item?.attributes?.tags?.data || item?.tags || [];
             
             const sectorNames = (Array.isArray(sectors) ? sectors : [])
-                .map((s: any) => s?.attributes?.name || s?.name);
+                .map((sector) => sector?.attributes?.name || sector?.name);
             const tagNames = (Array.isArray(tags) ? tags : [])
-                .map((t: any) => t?.attributes?.name || t?.name);
+                .map((tag) => tag?.attributes?.name || tag?.name);
             const sectorSlugs = (Array.isArray(sectors) ? sectors : [])
-                .map((s: any) => s?.attributes?.slug || s?.slug || normalizeSectorSlug(s?.attributes?.name || s?.name));
+                .map((sector) => sector?.attributes?.slug || sector?.slug || normalizeSectorSlug(sector?.attributes?.name || sector?.name));
             
             sectorSlugs.forEach(slug => {
                 if (!slug) return;
@@ -94,34 +138,15 @@ export async function GET() {
             });
         });
 
-        const eventsList = events?.data || [];
-        const upcomingEvents = eventsList.filter((e: any) => e?.occurrence?.toLowerCase() === 'upcoming');
-        
-        const parseEventDate = (dateString?: string) => {
-            if (!dateString) return 0;
-            const str = String(dateString).toLowerCase();
-            const months = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
-            let monthIndex = 0;
-            for (let i = 0; i < months.length; i++) {
-                if (str.includes(months[i])) { monthIndex = i; break; }
-            }
-            let year = new Date().getFullYear();
-            const yearMatch = str.match(/\b(20\d\d)\b/);
-            if (yearMatch) { year = parseInt(yearMatch[1], 10); }
-            let day = 1;
-            const dayMatch = str.match(/(\d{1,2})/);
-            if (dayMatch) { day = parseInt(dayMatch[1], 10); }
-            return new Date(year, monthIndex, day).getTime();
-        };
-
-        const eventsWithParsedDate = upcomingEvents.map((e: any) => ({
-            ...e,
-            parsedDate: parseEventDate(e.date)
+        const eventsList = Array.isArray((events as ApiCollectionResponse<MenuEvent>)?.data)
+            ? (((events as ApiCollectionResponse<MenuEvent>).data) ?? [])
+            : [];
+        const eventsWithParsedDate = filterAndSortEventsByOccurrence(eventsList, "upcoming")
+            .map((event) => ({
+            ...event,
+            parsedDate: getEventStartTimestamp(event?.date),
         }));
-
-        const sortedUpcomingEvents = eventsWithParsedDate.sort((a: any, b: any) => {
-            return a.parsedDate - b.parsedDate;
-        }).slice(0, 3);
+        const sortedUpcomingEvents = eventsWithParsedDate.slice(0, 3);
 
         return NextResponse.json({
             baseUrl: STRAPI_BASE,
