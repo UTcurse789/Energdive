@@ -217,7 +217,7 @@
 //                                     Recommendations and strategic insights from industry leaders.
 //                                 </p>
 
-//                                 <a href={downloadUrl} target="_blank" rel="noopener noreferrer">
+//                                 <a href={downloadUrl} target="_blank" rel="noopener">
 //                                     <Button className="w-full bg-[#00A651] text-xs font-black uppercase py-6">
 //                                         Download Report
 //                                         <Download className="w-4 h-4 ml-2" />
@@ -636,7 +636,7 @@ export default async function IntelligenceReportPage({ params }: { params: Promi
                                         <a
                                             href={downloadUrl}
                                             target="_blank"
-                                            rel="noopener noreferrer"
+                                            rel="noopener"
                                             className="group mb-3 flex w-full items-center justify-center gap-2 rounded-2xl bg-[#00A651] py-4 text-[10px] font-black uppercase tracking-widest text-white transition-all duration-300 hover:bg-white hover:text-zinc-900"
                                         >
                                             <Download className="h-3.5 w-3.5" />
@@ -888,7 +888,7 @@ export default async function IntelligenceReportPage({ params }: { params: Promi
                                     <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-1">Full Document</p>
                                     <p className="text-sm font-bold text-zinc-700">Download the complete whitepaper</p>
                                 </div>
-                                <a href={downloadUrl} target="_blank" rel="noreferrer">
+                                <a href={downloadUrl} target="_blank" rel="noopener">
                                     <button className="group inline-flex items-center gap-2 bg-zinc-950 hover:bg-[#00A651] text-white rounded-2xl px-6 py-4 text-[10px] font-black uppercase tracking-widest transition-all duration-300">
                                         <Download className="w-3.5 h-3.5" />
                                         Download PDF

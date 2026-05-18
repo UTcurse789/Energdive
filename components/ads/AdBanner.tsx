@@ -289,7 +289,7 @@ function wrapWithLink(
     const url = (targetUrl || "").trim();
     if (!url) return <>{content}</>;
     return (
-        <a href={url} target="_blank" rel="noopener noreferrer sponsored" className={className}>
+        <a href={url} target="_blank" rel="noopener sponsored" className={className}>
             {content}
         </a>
     );

@@ -229,7 +229,7 @@ export default function EventsPage() {
                                                 <a
                                                     href={event.mapUrl}
                                                     target="_blank"
-                                                    rel="noopener noreferrer"
+                                                    rel="noopener"
                                                     className="flex items-start gap-3 group/map p-3 -mx-3 rounded-xl hover:bg-zinc-50 transition-colors"
                                                 >
                                                     <div className="mt-0.5 p-1.5 bg-[#00A651]/10 rounded-full text-[#00A651]">
@@ -252,7 +252,7 @@ export default function EventsPage() {
                                             <a
                                                 href={event.url}
                                                 target="_blank"
-                                                rel="noopener noreferrer"
+                                                rel="noopener"
                                                 className="w-full py-4 rounded-xl border border-zinc-200 flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] hover:bg-black hover:text-white hover:border-black transition-all"
                                             >
                                                 View Website <ArrowUpRight size={14} />

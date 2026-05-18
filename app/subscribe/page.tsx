@@ -120,7 +120,7 @@ export default function SubscribePage() {
                             <a
                                 href="https://forms.zohopublic.in/itenmedia1/form/ENERGDIVEEnquiriesForm/formperma/vGdZ0noLDdoGdPS8QIhuH69flKMawpU27Ws-TttbC1A"
                                 target="_blank"
-                                rel="noopener noreferrer"
+                                rel="noopener"
                                 className="inline-flex items-center gap-2 text-[#00D9B1] text-xs font-black uppercase tracking-widest group-hover:gap-4 transition-all"
                             >
                                 Corporate Enquiry <ArrowUpRight size={16} />

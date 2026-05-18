@@ -62,12 +62,12 @@ export function AuthorBioBox({ author }: AuthorBioBoxProps) {
                     {/* Social Links */}
                     <div className="flex items-center gap-2">
                         {author.linkedinUrl && (
-                            <a href={author.linkedinUrl} target="_blank" rel="noopener noreferrer" className="p-2 text-gray-400 hover:text-[#0A66C2] hover:bg-blue-50 rounded-full transition-colors" title="LinkedIn">
+                            <a href={author.linkedinUrl} target="_blank" rel="noopener" className="p-2 text-gray-400 hover:text-[#0A66C2] hover:bg-blue-50 rounded-full transition-colors" title="LinkedIn">
                                 <Linkedin className="w-4 h-4" />
                             </a>
                         )}
                         {author.twitterUrl && (
-                            <a href={author.twitterUrl} target="_blank" rel="noopener noreferrer" className="p-2 text-gray-400 hover:text-[#1DA1F2] hover:bg-blue-50 rounded-full transition-colors" title="Twitter">
+                            <a href={author.twitterUrl} target="_blank" rel="noopener" className="p-2 text-gray-400 hover:text-[#1DA1F2] hover:bg-blue-50 rounded-full transition-colors" title="Twitter">
                                 <Twitter className="w-4 h-4" />
                             </a>
                         )}

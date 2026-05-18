@@ -249,7 +249,7 @@ export default async function EventDetailPage({
                                 <Link
                                     href={registrationUrl}
                                     target="_blank"
-                                    rel="noopener noreferrer"
+                                    rel="noopener"
                                     className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-zinc-950 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#00A651]"
                                 >
                                     Visit event site
@@ -260,7 +260,7 @@ export default async function EventDetailPage({
                                 <Link
                                     href={mapUrl}
                                     target="_blank"
-                                    rel="noopener noreferrer"
+                                    rel="noopener"
                                     className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-zinc-200 bg-white px-5 py-3 text-sm font-semibold text-zinc-700 transition-colors hover:border-[#00A651] hover:text-[#00A651]"
                                 >
                                     Open map

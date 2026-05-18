@@ -46,7 +46,7 @@ function HeroAd({ ad }: { ad: Advertisement }) {
 
     const Wrapper = ad.target_url ? "a" : "div";
     const wrapperProps = ad.target_url
-        ? { href: ad.target_url, target: "_blank" as const, rel: "noopener noreferrer sponsored" }
+        ? { href: ad.target_url, target: "_blank" as const, rel: "noopener sponsored" }
         : {};
 
     return (
@@ -83,7 +83,7 @@ function VerticalAd({ ad }: { ad: Advertisement }) {
 
     const Wrapper = ad.target_url ? "a" : "div";
     const wrapperProps = ad.target_url
-        ? { href: ad.target_url, target: "_blank" as const, rel: "noopener noreferrer sponsored" }
+        ? { href: ad.target_url, target: "_blank" as const, rel: "noopener sponsored" }
         : {};
 
     return (
@@ -142,7 +142,7 @@ function NativeAd({ ad }: { ad: Advertisement }) {
 
     const Wrapper = ad.target_url ? "a" : "div";
     const wrapperProps = ad.target_url
-        ? { href: ad.target_url, target: "_blank" as const, rel: "noopener noreferrer sponsored" }
+        ? { href: ad.target_url, target: "_blank" as const, rel: "noopener sponsored" }
         : {};
 
     return (
