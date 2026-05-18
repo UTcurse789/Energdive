@@ -265,7 +265,7 @@ export default function SubscriptionsPage() {
                     <a
                         href="https://forms.zohopublic.in/itenmedia1/form/ENERGDIVEMagazineSubscriptionForm/formperma/CX7ORe1WkKQKOFusFv-6rEvYHtqmvqW9P4pP5XHOIGo"
                         target="_blank"
-                        rel="noopener noreferrer"
+                        rel="noopener"
                         className="flex items-center gap-2 px-6 py-3 rounded-lg text-sm font-bold transition-all whitespace-nowrap flex-shrink-0"
                         style={{ background: "var(--dash-accent)", color: "#0A0A0B" }}
                     >

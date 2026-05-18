@@ -237,7 +237,7 @@ export default function EventsPage() {
                                             <a
                                                 href={event.url}
                                                 target="_blank"
-                                                rel="noopener noreferrer"
+                                                rel="noopener"
                                                 className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-bold transition-all"
                                                 style={{ background: "var(--dash-accent)", color: "#0A0A0B" }}
                                             >
@@ -249,7 +249,7 @@ export default function EventsPage() {
                                             <a
                                                 href={event.mapUrl}
                                                 target="_blank"
-                                                rel="noopener noreferrer"
+                                                rel="noopener"
                                                 className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition-all"
                                                 style={{ background: "var(--dash-surface-2)", color: "var(--dash-text)", border: "1px solid var(--dash-border)" }}
                                             >

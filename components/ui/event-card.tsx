@@ -17,7 +17,7 @@ export function EventCard({ event }: EventCardProps) {
         <Link
             href={href}
             target={isExternal ? "_blank" : "_self"}
-            rel={isExternal ? "noopener noreferrer" : undefined}
+            rel={isExternal ? "noopener" : undefined}
             className="w-[320px] shrink-0 snap-start group block"
         >
             <div className="bg-white border border-slate-100 overflow-hidden hover:border-[#09B697] hover:shadow-lg hover:shadow-[rgba(9,182,151,0.08)] transition-all duration-300 relative">
