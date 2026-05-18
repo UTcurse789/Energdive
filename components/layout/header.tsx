@@ -217,7 +217,7 @@ export function Header() {
 
         async function fetchMenuData() {
             try {
-                const res = await fetch("/api/menu");
+                const res = await fetch("/api/menu", { cache: "no-store" });
                 if (!res.ok) return;
 
                 const menuData = await res.json() as {
