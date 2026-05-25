@@ -48,7 +48,23 @@ import { redirect } from "next/navigation";
 import { getUserProfile } from "@/lib/queries";
 import OnboardingBackground from "@/components/onboarding/onboarding-bg";
 
-export default async function OnboardingPage() {
+function getSafeReturnTo(value: string | string[] | undefined) {
+    if (typeof value !== "string" || !value.startsWith("/") || value.startsWith("//")) {
+        return "/dashboard";
+    }
+
+    if (value === "/auth" || value.startsWith("/auth/")) {
+        return "/dashboard";
+    }
+
+    return value;
+}
+
+export default async function OnboardingPage({
+    searchParams,
+}: {
+    searchParams?: Promise<{ return_to?: string | string[] }>;
+}) {
     // auth() reads from the middleware-verified session (no API call).
     // Middleware already protects /onboarding — userId is guaranteed here.
     const { userId } = await auth();
@@ -60,8 +76,10 @@ export default async function OnboardingPage() {
     // DB check — the authoritative source of truth for onboarding completion.
     // This avoids a redirect loop when Clerk metadata is ahead of the DB row.
     const profile = await getUserProfile(userId);
+    const resolvedSearchParams = searchParams ? await searchParams : undefined;
+    const returnTo = getSafeReturnTo(resolvedSearchParams?.return_to);
     if (profile?.onboarding_completed) {
-        redirect("/dashboard");
+        redirect(returnTo);
     }
 
     return (
@@ -87,7 +105,7 @@ export default async function OnboardingPage() {
             </div>
 
             <div className="relative z-10 w-full max-w-2xl">
-                <OnboardingWizard />
+                <OnboardingWizard returnTo={returnTo} />
             </div>
 
             <div className="relative z-10 mt-8 text-center text-xs text-zinc-400">

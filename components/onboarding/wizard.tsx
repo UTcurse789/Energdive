@@ -1,8 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { useUser, useSession } from "@clerk/nextjs";
+import { useState } from "react";
+import { useUser } from "@clerk/nextjs";
 import { motion, AnimatePresence } from "framer-motion";
 import StepPersonal from "./step-personal";
 import StepVerify from "./step-verify";
@@ -12,10 +11,12 @@ import StepPreferences from "./step-preferences";
 
 const TOTAL_STEPS = 5;
 
-export default function OnboardingWizard() {
-    const router = useRouter();
+export default function OnboardingWizard({
+    returnTo = "/dashboard",
+}: {
+    returnTo?: string;
+}) {
     const { user } = useUser();
-    const { session } = useSession();
     const [step, setStep] = useState(1);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -96,7 +97,7 @@ export default function OnboardingWizard() {
 
             // Full page reload to /dashboard ensures the server-side
             // currentUser() in dashboard layout fetches fresh metadata.
-            window.location.href = "/dashboard";
+            window.location.href = returnTo || "/dashboard";
         } catch (error) {
             console.error("Onboarding error:", error);
             alert("Something went wrong. Please try again.");

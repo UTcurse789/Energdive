@@ -1,7 +1,16 @@
+import type { Metadata } from "next";
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { getUserProfile } from "@/lib/queries";
 import DashboardShell from "@/components/dashboard/dashboard-shell";
+
+export const metadata: Metadata = {
+    title: {
+        default: "ENERGClub Dashboard",
+        template: "%s | ENERGClub Dashboard",
+    },
+    description: "Private EnergClub dashboard for members, intelligence feeds, events, and account settings.",
+};
 
 export default async function DashboardLayout({
     children,
