@@ -7,6 +7,7 @@ import {
     Rss,
     FileBarChart2,
     CalendarDays,
+    FileText,
     Settings,
 } from "lucide-react";
 import { useDashboard } from "./dashboard-shell";
@@ -15,6 +16,7 @@ const NAV_ITEMS = [
     { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     { label: "Intelligence Feed", href: "/dashboard/feed", icon: Rss },
     { label: "Market Reports", href: "/dashboard/reports", icon: FileBarChart2 },
+    { label: "My Submissions", href: "/dashboard/my-submissions", icon: FileText },
     { label: "Events", href: "/dashboard/events", icon: CalendarDays },
     { label: "Settings", href: "/dashboard/settings", icon: Settings },
 ];

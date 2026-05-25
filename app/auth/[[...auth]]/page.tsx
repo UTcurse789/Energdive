@@ -1,7 +1,7 @@
 "use client";
 
 import { useSignIn, useSignUp, useAuth } from "@clerk/nextjs";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useCallback, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
@@ -25,11 +25,57 @@ const formatPhoneForAPI = (phone: string): string => {
     return `+91${cleaned}`;
 };
 
+const DEFAULT_POST_AUTH_REDIRECT = "/dashboard";
+
+const getBrowserRedirectParam = (): string | null => {
+    if (typeof window === "undefined") {
+        return null;
+    }
+
+    return new URLSearchParams(window.location.search).get("redirect_url");
+};
+
+const getSafeRedirectPath = (value: string | null): string => {
+    if (!value) return DEFAULT_POST_AUTH_REDIRECT;
+
+    const sanitizePath = (path: string) => {
+        if (!path.startsWith("/") || path.startsWith("//")) {
+            return DEFAULT_POST_AUTH_REDIRECT;
+        }
+
+        if (path === "/auth" || path.startsWith("/auth/")) {
+            return DEFAULT_POST_AUTH_REDIRECT;
+        }
+
+        return path;
+    };
+
+    if (value.startsWith("/")) {
+        return sanitizePath(value);
+    }
+
+    if (typeof window === "undefined") {
+        return DEFAULT_POST_AUTH_REDIRECT;
+    }
+
+    try {
+        const parsed = new URL(value, window.location.origin);
+        if (parsed.origin !== window.location.origin) {
+            return DEFAULT_POST_AUTH_REDIRECT;
+        }
+
+        return sanitizePath(`${parsed.pathname}${parsed.search}${parsed.hash}`);
+    } catch {
+        return DEFAULT_POST_AUTH_REDIRECT;
+    }
+};
+
 export default function UnifiedAuthPage() {
     const { signIn, isLoaded: signInLoaded, setActive } = useSignIn();
     const { signUp, isLoaded: signUpLoaded } = useSignUp();
     const { isSignedIn } = useAuth();
     const router = useRouter();
+    const searchParams = useSearchParams();
 
     const [identifier, setIdentifier] = useState("");
     const [code, setCode] = useState("");
@@ -38,8 +84,19 @@ export default function UnifiedAuthPage() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     const [info, setInfo] = useState("");
+    const [resolvedPostAuthRedirect, setResolvedPostAuthRedirect] = useState<string | null>(null);
 
     const posthog = usePostHog();
+    const postAuthRedirect = resolvedPostAuthRedirect ?? DEFAULT_POST_AUTH_REDIRECT;
+
+    const resolvePostAuthRedirect = useCallback(
+        () => getSafeRedirectPath(getBrowserRedirectParam() ?? searchParams.get("redirect_url")),
+        [searchParams]
+    );
+
+    useEffect(() => {
+        setResolvedPostAuthRedirect(resolvePostAuthRedirect());
+    }, [resolvePostAuthRedirect]);
 
     // Track registration started when the auth page mounts
     useEffect(() => {
@@ -62,10 +119,10 @@ export default function UnifiedAuthPage() {
 
     // If already signed in, redirect
     useEffect(() => {
-        if (isSignedIn) {
-            router.replace("/dashboard");
+        if (isSignedIn && resolvedPostAuthRedirect) {
+            router.replace(postAuthRedirect);
         }
-    }, [isSignedIn, router]);
+    }, [isSignedIn, postAuthRedirect, resolvedPostAuthRedirect, router]);
 
     // ── Step 1: Submit identifier ──
     const handleSubmit = useCallback(async () => {
@@ -135,7 +192,7 @@ export default function UnifiedAuthPage() {
                         }
                     }
                     setStep("complete");
-                    window.location.href = "/dashboard";
+                    window.location.href = resolvePostAuthRedirect();
                 }
             } catch (err: any) {
                 const clerkError = err?.errors?.[0];
@@ -172,7 +229,7 @@ export default function UnifiedAuthPage() {
         }
 
         setLoading(false);
-    }, [identifier, posthog, signIn, signUp, signInLoaded, signUpLoaded, setActive]);
+    }, [identifier, posthog, resolvePostAuthRedirect, signIn, signUp, signInLoaded, signUpLoaded, setActive]);
 
     // ── Step 2a: Verify OTP (Email - Clerk) ──
     const handleEmailOTPSubmit = useCallback(async () => {
@@ -201,7 +258,7 @@ export default function UnifiedAuthPage() {
                         }
                     }
                     setStep("complete");
-                    setTimeout(() => window.location.replace("/dashboard"), 300);
+                    setTimeout(() => window.location.replace(resolvePostAuthRedirect()), 300);
                 } else if (result.status === "missing_requirements") {
                     // Email verified but CAPTCHA/other requirement blocked completion
                     // Fallback: use backend to create user + sign-in token (bypasses CAPTCHA)
@@ -229,7 +286,7 @@ export default function UnifiedAuthPage() {
                             }
                         }
                         setStep("complete");
-                        setTimeout(() => window.location.replace("/dashboard"), 300);
+                        setTimeout(() => window.location.replace(resolvePostAuthRedirect()), 300);
                     } else {
                         setError(data.error || "Could not complete sign-up. Please try again.");
                     }
@@ -255,7 +312,7 @@ export default function UnifiedAuthPage() {
                         }
                     }
                     setStep("complete");
-                    setTimeout(() => window.location.replace("/dashboard"), 300);
+                    setTimeout(() => window.location.replace(resolvePostAuthRedirect()), 300);
                 } else {
                     setError(`Verification status: ${result.status}. Please try again.`);
                 }
@@ -291,7 +348,7 @@ export default function UnifiedAuthPage() {
                             }
                         }
                         setStep("complete");
-                        setTimeout(() => window.location.replace("/dashboard"), 300);
+                        setTimeout(() => window.location.replace(resolvePostAuthRedirect()), 300);
                         return;
                     }
                 } catch (backendErr) {
@@ -303,7 +360,7 @@ export default function UnifiedAuthPage() {
         } finally {
             setLoading(false);
         }
-    }, [code, identifier, isNewUser, posthog, signIn, signUp, signInLoaded, signUpLoaded, setActive]);
+    }, [code, identifier, isNewUser, posthog, resolvePostAuthRedirect, signIn, signUp, signInLoaded, signUpLoaded, setActive]);
 
     // ── Step 2b: Verify OTP (Phone - MSG91 → Clerk sign-in token) ──
     const handlePhoneOTPSubmit = useCallback(async () => {
@@ -348,7 +405,7 @@ export default function UnifiedAuthPage() {
                     }
                     setIsNewUser(data.isNewUser);
                     setStep("complete");
-                    setTimeout(() => window.location.replace("/dashboard"), 300);
+                    setTimeout(() => window.location.replace(resolvePostAuthRedirect()), 300);
                 }
             } else {
                 setError(data.error || "Verification failed. Please try again.");
@@ -358,7 +415,7 @@ export default function UnifiedAuthPage() {
         } finally {
             setLoading(false);
         }
-    }, [code, identifier, posthog, signIn, setActive]);
+    }, [code, identifier, posthog, resolvePostAuthRedirect, signIn, setActive]);
 
     // ── Google OAuth ──
     const handleGoogleAuth = useCallback(async () => {
@@ -368,12 +425,12 @@ export default function UnifiedAuthPage() {
             await signIn!.authenticateWithRedirect({
                 strategy: "oauth_google",
                 redirectUrl: "/auth/sso-callback",
-                redirectUrlComplete: "/dashboard",
+                redirectUrlComplete: postAuthRedirect,
             });
         } catch {
             setError("Google sign-in failed. Please try again.");
         }
-    }, [signIn, signInLoaded, posthog]);
+    }, [postAuthRedirect, posthog, signIn, signInLoaded]);
 
     // ── LinkedIn OAuth ──
     const handleLinkedInAuth = useCallback(async () => {
@@ -383,12 +440,12 @@ export default function UnifiedAuthPage() {
             await signIn!.authenticateWithRedirect({
                 strategy: "oauth_linkedin_oidc",
                 redirectUrl: "/auth/sso-callback",
-                redirectUrlComplete: "/dashboard",
+                redirectUrlComplete: postAuthRedirect,
             });
         } catch {
             setError("LinkedIn sign-in failed. Please try again.");
         }
-    }, [signIn, signInLoaded, posthog]);
+    }, [postAuthRedirect, posthog, signIn, signInLoaded]);
 
     // ── Resend OTP ──
     const handleResend = useCallback(async () => {

@@ -19,6 +19,7 @@ const QUICK_LINKS = [
     { name: "Opinions", href: "/opinion" },
     { name: "Editorials", href: "/editorial" },
     { name: "Reports", href: "/reports" },
+    { name: "Knowledge Base", href: "/knowledge-base" },
     { name: "Videos", href: "/videos" },
     { name: "Events", href: "/events" },
 ];
