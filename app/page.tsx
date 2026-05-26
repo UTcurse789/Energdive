@@ -1,3 +1,4 @@
+import { HOME_PAGE_METADATA } from "@/lib/route-metadata";
 import { Hero } from "@/components/sections/hero";
 import { AdBanner } from "@/components/ads/AdBanner";
 // import { SpotlightSection } from "@/components/sections/spotlight-section";
@@ -17,6 +18,8 @@ import { strapiImageUrl } from "@/lib/strapi-image";
 import { buildContentUrl } from "@/lib/content-routes";
 import { buildSectorArticlesUrl } from "@/lib/sector-content";
 import { getOpinionContentKind } from "@/lib/content-tags";
+
+export const metadata = HOME_PAGE_METADATA;
 
 const STRAPI_BASE = process.env.NEXT_PUBLIC_STRAPI_URL || "https://cms.energdive.com";
 

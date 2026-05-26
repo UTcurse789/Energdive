@@ -153,6 +153,11 @@ const nextConfig: NextConfig = {
         hostname: 'cms.energdive.com',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'cms-staging.energdive.com',
+        pathname: '/**',
+      },
       // ✅ CDN IMAGES
       {
         protocol: 'https',
