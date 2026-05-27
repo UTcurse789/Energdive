@@ -487,6 +487,38 @@ export const ADVERTISE_PAGE_METADATA = buildExactPageMetadata({
   },
 });
 
+export const EDITORIAL_COLLABORATION_PAGE_METADATA = buildExactPageMetadata({
+  title:
+    "Editorial Collaboration with ENERGDIVE | Contribute Insights & Thought Leadership",
+  description:
+    "Collaborate with ENERGDIVE editorially by sharing expert viewpoints, commentary, and research-backed analysis on the energy sector.",
+  keywords:
+    "editorial collaboration, editorial partnerships, contribute to energdive, energy thought leadership, energy commentary, policy analysis submission, expert editorial contributions, energy guest article, editorial enquiry, industry insights submission",
+  author: "ClariSector Technologies Pvt. Ltd.",
+  publisher: "ENERGDIVE",
+  generator: "ClariSector Technologies Pvt. Ltd.",
+  classification:
+    "Editorial Collaboration, Thought Leadership, Energy Media Platform",
+  topic:
+    "Editorial Partnerships, Expert Contributions, Thought Leadership, Energy Sector Commentary",
+  audience:
+    "Thought leaders, researchers, policymakers, industry experts, authors, contributors",
+  canonical: "https://www.energdive.com/editorial-collaboration",
+  openGraph: {
+    title: "Editorial Collaboration with ENERGDIVE",
+    description:
+      "Pitch editorials, expert commentary, and thought-leadership ideas to the ENERGDIVE editorial team.",
+    url: "https://www.energdive.com/editorial-collaboration",
+    siteName: "ENERGDIVE",
+  },
+  twitter: {
+    title: "Editorial Collaboration with ENERGDIVE",
+    description:
+      "Share expert energy insights, editorial ideas, and strategic commentary with the ENERGDIVE team.",
+    site: "@energdive",
+  },
+});
+
 export const ENERGCLUB_PAGE_METADATA = buildExactPageMetadata({
   title: "ENERGClub | India's Energy Network, Community & Industry Platform",
   description:
