@@ -5,14 +5,30 @@ import { ArrowLeft } from "lucide-react";
 interface ZohoFormPageProps {
     title: string;
     description: string;
-    queryType: "Advertisement Enquiry" | "Brochure Download";
+    queryType?: string;
+    formUrl?: string;
+    backHref?: string;
+    backLabel?: string;
 }
 
 const ZOHO_FORM_BASE =
     "https://forms.zohopublic.in/itenmedia1/form/ENERGDIVEEnquiriesForm/formperma/vGdZ0noLDdoGdPS8QIhuH69flKMawpU27Ws-TttbC1A";
 
-export function ZohoFormPage({ title, description, queryType }: ZohoFormPageProps) {
-    const formSrc = `${ZOHO_FORM_BASE}?QueryType=${encodeURIComponent(queryType)}`;
+export function ZohoFormPage({
+    title,
+    description,
+    queryType,
+    formUrl = ZOHO_FORM_BASE,
+    backHref,
+    backLabel,
+}: ZohoFormPageProps) {
+    const srcUrl = new URL(formUrl);
+
+    if (queryType) {
+        srcUrl.searchParams.set("QueryType", queryType);
+    }
+
+    const formSrc = srcUrl.toString();
 
     return (
         <div className="min-h-screen bg-[#F7F9FB] text-zinc-900 selection:bg-[#00A651]/30 pb-32 md:pb-48 lg:pb-64 flex flex-col gap-16 md:gap-24 lg:gap-32">
@@ -29,13 +45,15 @@ export function ZohoFormPage({ title, description, queryType }: ZohoFormPageProp
 
             <section className="container mx-auto px-4 sm:px-6 lg:px-12 relative z-10 flex-grow">
                 <div className="mx-auto max-w-5xl rounded-[28px] border border-zinc-200 bg-white p-6 sm:p-8 md:p-12 shadow-[0_20px_60px_rgba(2,6,23,0.08)]">
-                    <Link
-                        href="/advertise-with-us"
-                        className="inline-flex items-center gap-2 rounded-lg border border-zinc-200 px-3 py-2 text-xs font-bold uppercase tracking-wider text-zinc-500 transition-colors hover:border-[#00A651]/30 hover:text-[#00A651]"
-                    >
-                        <ArrowLeft size={14} />
-                        Back To Advertise
-                    </Link>
+                    {backHref && backLabel ? (
+                        <Link
+                            href={backHref}
+                            className="inline-flex items-center gap-2 rounded-lg border border-zinc-200 px-3 py-2 text-xs font-bold uppercase tracking-wider text-zinc-500 transition-colors hover:border-[#00A651]/30 hover:text-[#00A651]"
+                        >
+                            <ArrowLeft size={14} />
+                            {backLabel}
+                        </Link>
+                    ) : null}
 
                     <h1 className="mt-6 text-3xl sm:text-4xl md:text-5xl font-black leading-tight text-zinc-900">
                         {title}

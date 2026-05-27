@@ -10,7 +10,7 @@ const RESERVED_PATHS = [
     "index", "about", "access", "advertise", "advertisement-enquiry",
     "analysis", "api", "articles", "auth", "author", "case-study",
     "contact", "cookies", "cover-story", "dashboard", "download-media-kit",
-    "editorial", "energclub", "energclub-info", "events", "feature",
+    "editorial", "editorial-collaboration", "energclub", "energclub-info", "events", "feature",
     "interview", "issues", "login", "market", "news", "onboarding",
     "opinion", "print", "privacy", "register", "reports", "search",
     "sectors", "subscribe", "tags", "terms", "videos", "accept-invite",

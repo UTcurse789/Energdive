@@ -25,6 +25,7 @@ export async function GET() {
     { url: '/about', priority: '0.60', changefreq: 'monthly' },
     { url: '/contact', priority: '0.60', changefreq: 'monthly' },
     { url: '/advertise', priority: '0.60', changefreq: 'monthly' },
+    { url: '/editorial-collaboration', priority: '0.60', changefreq: 'monthly' },
     { url: '/energclub', priority: '0.60', changefreq: 'monthly' },
     { url: '/subscribe', priority: '0.50', changefreq: 'monthly' },
     { url: '/privacy', priority: '0.30', changefreq: 'yearly' },
