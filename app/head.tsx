@@ -1,6 +1,7 @@
 export default function Head() {
   return (
     <>
+      <meta httpEquiv="Content-Language" content="en" />
       <link
         rel="alternate"
         type="application/rss+xml"

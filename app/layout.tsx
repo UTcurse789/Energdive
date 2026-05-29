@@ -93,62 +93,8 @@ const serif = Merriweather({
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.energdive.com"),
-
-  title: {
-    template: "%s - ENERGDIVE",
-    default: "ENERGDIVE - Insights and Market Intelligence | ENERGDIVE Magazine | India's Energy Intelligence Platform",
-  },
-
-  description:
-    "ENERGDIVE is India's strategic energy intelligence platform delivering insights on energy transition, oil & gas, power, new energies, sustainability, and climate policy through expert journalism and the ENERGDIVE magazine.",
-
-  keywords: [
-    "energdive",
-    "energy dive",
-    "energdive magazine",
-    "energy dive magazine",
-    "energydive magazine",
-    "energ dive magazine",
-    "india energy magazine",
-    "energy transition india",
-    "energy policy india",
-    "oil and gas india",
-    "power and utilities india",
-    "clean energy india",
-    "energy intelligence platform"
-  ],
-
-  authors: [{ name: "ClariSector Technologies Pvt. Ltd." }],
-  creator: "ENERGDIVE - Insights and Market Intelligence",
-  publisher: "ClariSector Technologies Pvt. Ltd.",
-
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: {
-      index: true,
-      follow: true,
-    },
-  },
-
-  openGraph: {
-    type: "website",
-    siteName: "ENERGDIVE",
-    images: [
-      {
-        url: "/og-image.jpg",
-        width: 1200,
-        height: 630,
-        alt: "ENERGDIVE - India's Energy Intelligence Platform",
-      },
-    ],
-  },
-
-  twitter: {
-    card: "summary_large_image",
-    site: "@energdive",
-    creator: "@energdive",
-  },
+  title: "ENERGDIVE",
+  description: "ENERGDIVE",
 };
 
 export default function RootLayout({

@@ -33,20 +33,20 @@ export default function KnowledgeBaseExtraInfoForm({
     };
 
     return (
-        <div className="dashboard-theme">
-            <section className="bg-[var(--dash-bg)]">
-                <div className="container py-12 md:py-16">
+        <div className="kb-submit-theme">
+            <section className="bg-[var(--dash-bg)] pb-16 md:pb-28">
+                <div className="container pt-12 pb-12 md:pt-16 md:pb-16">
                     <div className="mx-auto max-w-3xl">
                         <Link
                             href="/knowledge-base"
-                            className="inline-flex items-center gap-2 text-sm transition-colors"
+                            className="inline-flex items-center gap-2 text-sm transition-colors mt-10"
                             style={{ color: "var(--dash-text-dim)" }}
                         >
                             <ArrowLeft className="h-4 w-4" />
                             Back to Knowledge Base
                         </Link>
 
-                        <div className="mt-6 rounded-[30px] border p-8 shadow-[0_24px_80px_rgba(0,0,0,0.24)] sm:p-10" style={{ background: "var(--dash-card)", borderColor: "var(--dash-border)" }}>
+                        <div className="mt-6 mb-12 md:mb-20 rounded-[30px] border p-8 shadow-[0_24px_80px_rgba(0,0,0,0.06)] sm:p-10" style={{ background: "var(--dash-card)", borderColor: "var(--dash-border)" }}>
                             <p className="text-[11px] font-semibold uppercase tracking-[0.24em]" style={{ color: "var(--dash-accent)" }}>
                                 Step 1 of 2
                             </p>
@@ -65,7 +65,7 @@ export default function KnowledgeBaseExtraInfoForm({
                                         value={institution}
                                         onChange={(event) => setInstitution(event.target.value)}
                                         placeholder="Enter your university, institution, or organization"
-                                        className="w-full rounded-2xl border px-4 py-3 text-sm outline-none transition-all placeholder:text-[#6B6660] focus:border-[var(--dash-accent)]"
+                                        className="w-full rounded-2xl border px-4 py-3 text-sm outline-none transition-all placeholder:text-slate-400 focus:border-[var(--dash-accent)]"
                                         style={{
                                             background: "var(--dash-surface-2)",
                                             borderColor: "var(--dash-border-subtle)",
@@ -102,7 +102,7 @@ export default function KnowledgeBaseExtraInfoForm({
                                     <button
                                         type="submit"
                                         className="inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-3 text-sm font-semibold transition-all"
-                                        style={{ background: "var(--dash-accent)", color: "#0A0A0B" }}
+                                        style={{ background: "var(--dash-accent)", color: "#ffffff" }}
                                     >
                                         Continue
                                         <ArrowRight className="h-4 w-4" />
