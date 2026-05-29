@@ -9,11 +9,15 @@ export const metadata = {
     title: "My Submissions",
 };
 
-export default async function MySubmissionsPage() {
+export default async function MySubmissionsPage({ searchParams }) {
     const user = await currentUser();
     const email = user?.primaryEmailAddress?.emailAddress ?? "";
+    const resolvedSearchParams = searchParams ? await searchParams : {};
+    const showSuccessBanner = resolvedSearchParams?.submitted === "1";
+    const submittedTitle =
+        typeof resolvedSearchParams?.title === "string" ? resolvedSearchParams.title : "";
     const query = email
-        ? `filters[author_email][$eq]=${encodeURIComponent(email)}&populate[sectors][fields][0]=name&populate[sectors][fields][1]=slug&populate[sectors][populate][parent][fields][0]=name&populate[sectors][populate][parent][fields][1]=slug&sort[0]=submitted_date:desc`
+        ? `status=draft&filters[author_email][$eq]=${encodeURIComponent(email)}&populate[sectors][fields][0]=name&populate[sectors][fields][1]=slug&populate[sectors][populate][parent][fields][0]=name&populate[sectors][populate][parent][fields][1]=slug&sort[0]=submitted_date:desc`
         : "";
 
     let submissions = [];
@@ -29,6 +33,17 @@ export default async function MySubmissionsPage() {
 
     return (
         <div className="animate-fade-in-up max-w-5xl mx-auto">
+            {showSuccessBanner ? (
+                <div
+                    className="mb-6 rounded-[24px] border px-5 py-4 text-sm"
+                    style={{ background: "rgba(16,185,129,0.12)", borderColor: "rgba(16,185,129,0.24)", color: "var(--dash-text)" }}
+                >
+                    {submittedTitle
+                        ? <span><strong>{submittedTitle}</strong> was submitted successfully and is now in your review queue.</span>
+                        : <span>Your paper was submitted successfully and is now in your review queue.</span>}
+                </div>
+            ) : null}
+
             <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                     <h1 className="text-3xl font-bold" style={{ color: "var(--dash-text)" }}>

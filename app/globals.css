@@ -88,6 +88,38 @@
   --dash-sidebar-w: 240px;
 }
 
+/* ── Knowledge Base Submission Theme ──────────────────────── */
+/* Light Sand + Emerald palette matching Knowledge Base main page */
+.kb-submit-theme {
+  /* Backgrounds */
+  --dash-bg: #f6f3eb;
+  --dash-surface: #ffffff;
+  --dash-surface-2: #F4F1EA;
+  --dash-surface-hover: #EAE5DA;
+  --dash-card: #ffffff;
+  --dash-card-hover: #ffffff;
+
+  /* Emerald accent (from main page) */
+  --dash-accent: #09B697;
+  --dash-accent-hover: #078a72;
+  --dash-accent-dim: rgba(9, 182, 151, 0.12);
+  --dash-accent-glow: rgba(9, 182, 151, 0.25);
+
+  /* Text */
+  --dash-text: #0f172a;
+  --dash-text-muted: #475569;
+  --dash-text-dim: #64748b;
+
+  /* Borders */
+  --dash-border: #E4DFD5;
+  --dash-border-subtle: #EBE6DC;
+  --dash-border-gold: rgba(9, 182, 151, 0.3);
+
+  /* Legacy teal kept for backward compat */
+  --dash-teal: #09B697;
+}
+
+
 
 
 

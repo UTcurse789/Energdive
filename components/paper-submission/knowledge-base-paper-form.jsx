@@ -13,6 +13,10 @@ import {
     Send,
 } from "lucide-react";
 import UploadZone from "@/components/paper-submission/UploadZone";
+import {
+    POST_AUTH_REDIRECT_COOKIE,
+    POST_AUTH_REDIRECT_STORAGE_KEY,
+} from "@/lib/post-auth-redirect";
 
 const PAPER_SUBMISSIONS_ENDPOINT = "/api/submit-paper";
 const ABSTRACT_MIN_LENGTH = 100;
@@ -115,6 +119,23 @@ export default function KnowledgeBasePaperForm({
             document.removeEventListener("mousedown", handlePointerDown);
         };
     }, [isSectorDropdownOpen]);
+
+    useEffect(() => {
+        if (!successTitle) {
+            return undefined;
+        }
+
+        sessionStorage.removeItem(POST_AUTH_REDIRECT_STORAGE_KEY);
+        document.cookie = `${POST_AUTH_REDIRECT_COOKIE}=; path=/; max-age=0; SameSite=Lax`;
+
+        const timeoutId = window.setTimeout(() => {
+            window.location.href = `/dashboard/my-submissions?submitted=1&title=${encodeURIComponent(successTitle)}`;
+        }, 900);
+
+        return () => {
+            window.clearTimeout(timeoutId);
+        };
+    }, [successTitle]);
 
     const toggleSector = (sector) => {
         const sectorId = normalizeId(sector.id);
@@ -281,14 +302,14 @@ export default function KnowledgeBasePaperForm({
 
     if (successTitle) {
         return (
-            <div className="dashboard-theme">
-                <section className="bg-[var(--dash-bg)]">
-                    <div className="container py-12 md:py-16">
-                        <div className="mx-auto max-w-3xl rounded-[30px] overflow-hidden" style={cardStyle}>
+            <div className="kb-submit-theme">
+                <section className="bg-[var(--dash-bg)] pb-16 md:pb-10">
+                    <div className="container pt-12 pb-12 md:pt-16 md:pb-16">
+                        <div className="mx-auto max-w-3xl mb-12 md:mb-20 rounded-[30px] overflow-hidden" style={cardStyle}>
                             <div className="p-8 sm:p-10">
                                 <div
                                     className="mb-6 inline-flex h-14 w-14 items-center justify-center rounded-2xl"
-                                    style={{ background: "rgba(201,168,76,0.15)" }}
+                                    style={{ background: "rgba(9, 182, 151, 0.12)" }}
                                 >
                                     <CheckCircle2 className="h-7 w-7" style={{ color: "var(--dash-accent)" }} />
                                 </div>
@@ -297,8 +318,7 @@ export default function KnowledgeBasePaperForm({
                                 </h1>
                                 <p className="mt-3 max-w-2xl text-sm leading-7 sm:text-base" style={{ color: "var(--dash-text-muted)" }}>
                                     <span className="font-semibold" style={{ color: "var(--dash-text)" }}>{successTitle}</span> has
-                                    been added to the submission queue. You can review the knowledge base or go back to
-                                    your dashboard.
+                                    been added to the submission queue. Redirecting you to My Submissions.
                                 </p>
                             </div>
 
@@ -307,18 +327,18 @@ export default function KnowledgeBasePaperForm({
                                 style={{ borderTop: "1px solid var(--dash-border)" }}
                             >
                                 <Link
-                                    href="/knowledge-base"
+                                    href="/dashboard/my-submissions?submitted=1"
                                     className="inline-flex items-center justify-center rounded-2xl px-5 py-3 text-sm font-semibold transition-all"
-                                    style={{ background: "var(--dash-accent)", color: "#0A0A0B" }}
+                                    style={{ background: "var(--dash-accent)", color: "#ffffff" }}
                                 >
-                                    View Knowledge Base
+                                    Go to My Submissions
                                 </Link>
                                 <Link
-                                    href="/dashboard"
-                                    className="inline-flex items-center justify-center rounded-2xl px-5 py-3 text-sm font-semibold transition-all hover:bg-white/5"
+                                    href="/knowledge-base"
+                                    className="inline-flex items-center justify-center rounded-2xl px-5 py-3 text-sm font-semibold transition-all hover:bg-black/5"
                                     style={{ ...mutedCardStyle, color: "var(--dash-text-muted)" }}
                                 >
-                                    Go to Dashboard
+                                    View Knowledge Base
                                 </Link>
                             </div>
                         </div>
@@ -329,13 +349,13 @@ export default function KnowledgeBasePaperForm({
     }
 
     return (
-        <div className="dashboard-theme">
-            <section className="bg-[var(--dash-bg)]">
-                <div className="container py-12 md:py-16">
+        <div className="kb-submit-theme">
+            <section className="bg-[var(--dash-bg)] pb-16 md:pb-10">
+                <div className="container pt-12 pb-12 md:pt-16 md:pb-10">
                     <div className="mx-auto max-w-4xl">
                         <Link
                             href={summaryHref}
-                            className="inline-flex items-center gap-2 text-sm transition-colors"
+                            className="inline-flex items-center gap-2 text-sm transition-colors pt-10"
                             style={{ color: "var(--dash-text-dim)" }}
                         >
                             <ArrowLeft className="h-4 w-4" />
@@ -360,14 +380,14 @@ export default function KnowledgeBasePaperForm({
                             <InfoCard label="Profession / Role" value={initialProfession || "Not provided yet"} />
                         </div>
 
-                        <form onSubmit={handleSubmit} className="overflow-hidden rounded-[30px] shadow-sm" style={cardStyle}>
+                        <form onSubmit={handleSubmit} className="overflow-hidden rounded-[30px] shadow-[0_24px_80px_rgba(0,0,0,0.06)] mb-12 md:mb-10" style={cardStyle}>
                             <div className="p-6 sm:p-7">
                                 <div className="mb-7 flex items-start justify-between gap-4">
                                     <div>
                                         <div className="mb-3 flex items-center gap-3">
                                             <div
                                                 className="flex h-10 w-10 items-center justify-center rounded-xl"
-                                                style={{ background: "rgba(201,168,76,0.15)" }}
+                                                style={{ background: "rgba(9, 182, 151, 0.12)" }}
                                             >
                                                 <FileText size={18} style={{ color: "var(--dash-accent)" }} />
                                             </div>
@@ -392,7 +412,7 @@ export default function KnowledgeBasePaperForm({
                                                 value={title}
                                                 onChange={(event) => setTitle(event.target.value)}
                                                 placeholder="Enter the paper title"
-                                                className="w-full rounded-2xl border px-4 py-3 text-sm outline-none transition-all placeholder:text-[#6B6660] focus:border-[var(--dash-accent)]"
+                                                className="w-full rounded-2xl border px-4 py-3 text-sm outline-none transition-all placeholder:text-slate-400 focus:border-[var(--dash-accent)]"
                                                 style={{ background: "var(--dash-surface-2)", borderColor: "var(--dash-border-subtle)", color: "var(--dash-text)" }}
                                                 disabled={isSubmitting}
                                                 required
@@ -406,7 +426,7 @@ export default function KnowledgeBasePaperForm({
                                                 value={affiliation}
                                                 onChange={(event) => setAffiliation(event.target.value)}
                                                 placeholder="Organisation or institution"
-                                                className="w-full rounded-2xl border px-4 py-3 text-sm outline-none transition-all placeholder:text-[#6B6660] focus:border-[var(--dash-accent)]"
+                                                className="w-full rounded-2xl border px-4 py-3 text-sm outline-none transition-all placeholder:text-slate-400 focus:border-[var(--dash-accent)]"
                                                 style={{ background: "var(--dash-surface-2)", borderColor: "var(--dash-border-subtle)", color: "var(--dash-text)" }}
                                                 disabled={isSubmitting}
                                             />
@@ -420,7 +440,7 @@ export default function KnowledgeBasePaperForm({
                                                 type="text"
                                                 value={authorName}
                                                 onChange={(event) => setAuthorName(event.target.value)}
-                                                className="w-full rounded-2xl border px-4 py-3 text-sm outline-none transition-all placeholder:text-[#6B6660] focus:border-[var(--dash-accent)]"
+                                                className="w-full rounded-2xl border px-4 py-3 text-sm outline-none transition-all placeholder:text-slate-400 focus:border-[var(--dash-accent)]"
                                                 style={{ background: "var(--dash-surface-2)", borderColor: "var(--dash-border-subtle)", color: "var(--dash-text)" }}
                                                 disabled={isSubmitting}
                                                 required
@@ -433,7 +453,7 @@ export default function KnowledgeBasePaperForm({
                                                 type="email"
                                                 value={authorEmail}
                                                 onChange={(event) => setAuthorEmail(event.target.value)}
-                                                className="w-full rounded-2xl border px-4 py-3 text-sm outline-none transition-all placeholder:text-[#6B6660] focus:border-[var(--dash-accent)]"
+                                                className="w-full rounded-2xl border px-4 py-3 text-sm outline-none transition-all placeholder:text-slate-400 focus:border-[var(--dash-accent)]"
                                                 style={{ background: "var(--dash-surface-2)", borderColor: "var(--dash-border-subtle)", color: "var(--dash-text)" }}
                                                 disabled={isSubmitting}
                                                 required
@@ -443,18 +463,6 @@ export default function KnowledgeBasePaperForm({
 
                                     <Field label="Sectors" htmlFor="kb-paper-sectors">
                                         <div id="kb-paper-sectors" className="space-y-3">
-                                            <div
-                                                className="rounded-2xl px-4 py-3 text-sm"
-                                                style={{ ...mutedCardStyle, color: "var(--dash-text-muted)" }}
-                                            >
-                                                {selectedSectorIds.length > 0
-                                                    ? `${selectedSectorIds.length} sector${selectedSectorIds.length > 1 ? "s" : ""} selected`
-                                                    : "Select one or more sectors from the left, then pick sub-sectors from the right."}
-                                                {selectedSubSectorNames.length > 0
-                                                    ? ` ${selectedSubSectorNames.length} sub-sector${selectedSubSectorNames.length > 1 ? "s" : ""} selected.`
-                                                    : ""}
-                                            </div>
-
                                             <div className="grid gap-4 md:grid-cols-2">
                                                 <div ref={sectorDropdownRef} className="relative">
                                                     <div className="overflow-hidden rounded-2xl" style={mutedCardStyle}>
@@ -497,7 +505,7 @@ export default function KnowledgeBasePaperForm({
                                                                             disabled={isSubmitting}
                                                                             className="flex w-full items-center gap-3 px-4 py-3 text-left transition-all disabled:cursor-not-allowed disabled:opacity-60"
                                                                             style={{
-                                                                                background: isSelected ? "rgba(201,168,76,0.14)" : "transparent",
+                                                                                background: isSelected ? "rgba(9, 182, 151, 0.12)" : "transparent",
                                                                                 borderBottom: "1px solid var(--dash-border-subtle)",
                                                                             }}
                                                                         >
@@ -506,7 +514,7 @@ export default function KnowledgeBasePaperForm({
                                                                                 style={{
                                                                                     background: isSelected ? "var(--dash-accent)" : "transparent",
                                                                                     borderColor: isSelected ? "var(--dash-accent)" : "var(--dash-border-subtle)",
-                                                                                    color: isSelected ? "#0A0A0B" : "transparent",
+                                                                                    color: isSelected ? "#ffffff" : "transparent",
                                                                                 }}
                                                                             >
                                                                                 <Check className="h-3.5 w-3.5" />
@@ -571,7 +579,7 @@ export default function KnowledgeBasePaperForm({
                                                                             style={{
                                                                                 background: isChildSelected ? "var(--dash-accent)" : "var(--dash-surface)",
                                                                                 borderColor: isChildSelected ? "var(--dash-accent)" : "var(--dash-border-subtle)",
-                                                                                color: isChildSelected ? "#0A0A0B" : "var(--dash-text-muted)",
+                                                                                color: isChildSelected ? "#ffffff" : "var(--dash-text-muted)",
                                                                             }}
                                                                         >
                                                                             {subSector.name}
@@ -584,9 +592,6 @@ export default function KnowledgeBasePaperForm({
                                                 </div>
                                             </div>
                                         </div>
-                                        <p className="mt-2 text-sm" style={{ color: "var(--dash-text-dim)" }}>
-                                            Select one or more sectors first. Sub-sectors become available once a sector is chosen.
-                                        </p>
                                     </Field>
 
                                     <Field
@@ -608,7 +613,7 @@ export default function KnowledgeBasePaperForm({
                                             onChange={(event) => setAbstract(event.target.value)}
                                             placeholder="Summarise the core argument, methods, and key findings."
                                             rows={8}
-                                            className="w-full rounded-2xl border px-4 py-3 text-sm outline-none transition-all placeholder:text-[#6B6660] focus:border-[var(--dash-accent)]"
+                                            className="w-full rounded-2xl border px-4 py-3 text-sm outline-none transition-all placeholder:text-slate-400 focus:border-[var(--dash-accent)]"
                                             style={{ background: "var(--dash-surface-2)", borderColor: "var(--dash-border-subtle)", color: "var(--dash-text)" }}
                                             disabled={isSubmitting}
                                             required
@@ -637,7 +642,7 @@ export default function KnowledgeBasePaperForm({
                                         type="submit"
                                         disabled={isSubmitting}
                                         className="inline-flex w-full items-center justify-center gap-2 rounded-2xl px-5 py-3 text-sm font-semibold transition-all disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto"
-                                        style={{ background: "var(--dash-accent)", color: "#0A0A0B" }}
+                                        style={{ background: "var(--dash-accent)", color: "#ffffff" }}
                                     >
                                         {isSubmitting ? (
                                             <>
@@ -654,7 +659,7 @@ export default function KnowledgeBasePaperForm({
                                 </div>
 
                                 {formError ? (
-                                    <div className="mt-4 flex items-start gap-2 rounded-2xl border border-red-400/25 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+                                    <div className="mt-4 flex items-start gap-2 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                                         <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
                                         <span>{formError}</span>
                                     </div>

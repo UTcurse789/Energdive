@@ -117,7 +117,7 @@ export default function UploadZone({
                             : file
                                 ? "var(--dash-border-gold)"
                                 : "var(--dash-border-subtle)",
-                    boxShadow: isDragOver ? "0 0 0 3px rgba(201, 168, 76, 0.12)" : "none",
+                    boxShadow: isDragOver ? "0 0 0 3px rgba(9, 182, 151, 0.12)" : "none",
                 }}
             >
                 <input
@@ -134,7 +134,7 @@ export default function UploadZone({
                         <div className="flex items-start gap-3">
                             <div
                                 className="flex h-12 w-12 items-center justify-center rounded-xl"
-                                style={{ background: "rgba(201,168,76,0.15)" }}
+                                style={{ background: "rgba(9, 182, 151, 0.12)" }}
                             >
                                 <FileText className="h-5 w-5" style={{ color: "var(--dash-accent)" }} />
                             </div>
@@ -158,7 +158,7 @@ export default function UploadZone({
                     <div className="flex flex-col items-center justify-center text-center">
                         <div
                             className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl"
-                            style={{ background: isDragOver ? "rgba(201,168,76,0.15)" : "rgba(201,168,76,0.08)" }}
+                            style={{ background: isDragOver ? "rgba(9, 182, 151, 0.12)" : "rgba(9, 182, 151, 0.08)" }}
                         >
                             <UploadCloud
                                 className="h-6 w-6"
@@ -172,7 +172,7 @@ export default function UploadZone({
             </div>
 
             {error ? (
-                <div className="flex items-start gap-2 rounded-xl border border-red-400/25 bg-red-500/10 px-3 py-2.5 text-sm text-red-200">
+                <div className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-700">
                     <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
                     <span>{error}</span>
                 </div>

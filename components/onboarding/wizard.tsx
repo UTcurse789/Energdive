@@ -8,6 +8,10 @@ import StepVerify from "./step-verify";
 import StepProfessional from "./step-professional";
 import StepInterests from "./step-interests";
 import StepPreferences from "./step-preferences";
+import {
+    POST_AUTH_REDIRECT_COOKIE,
+    POST_AUTH_REDIRECT_STORAGE_KEY,
+} from "@/lib/post-auth-redirect";
 
 const TOTAL_STEPS = 5;
 
@@ -95,9 +99,24 @@ export default function OnboardingWizard({
 
             if (!res.ok) throw new Error("Failed to save profile");
 
-            // Full page reload to /dashboard ensures the server-side
+            // Determine final redirect: use returnTo from server, or fall back to
+            // the redirect stored in sessionStorage by the auth page (survives OAuth
+            // roundtrips where the URL param gets lost through /dashboard → /onboarding).
+            let finalRedirect = returnTo || "/dashboard";
+            if (finalRedirect === "/dashboard") {
+                const storedRedirect = sessionStorage.getItem(POST_AUTH_REDIRECT_STORAGE_KEY);
+                if (storedRedirect && storedRedirect !== "/dashboard") {
+                    finalRedirect = storedRedirect;
+                }
+            }
+
+            // Clean up the stored redirect
+            sessionStorage.removeItem(POST_AUTH_REDIRECT_STORAGE_KEY);
+            document.cookie = `${POST_AUTH_REDIRECT_COOKIE}=; path=/; max-age=0; SameSite=Lax`;
+
+            // Full page reload ensures the server-side
             // currentUser() in dashboard layout fetches fresh metadata.
-            window.location.href = returnTo || "/dashboard";
+            window.location.href = finalRedirect;
         } catch (error) {
             console.error("Onboarding error:", error);
             alert("Something went wrong. Please try again.");
