@@ -111,7 +111,7 @@ export default async function MySubmissionsPage({ searchParams }) {
                                         <FileText className="h-3.5 w-3.5" />
                                         {submission.primarySector}
                                     </div>
-                                    <h2 className="mt-4 text-2xl font-bold leading-tight" style={{ color: "var(--dash-text)" }}>
+                                    <h2 className="mt-4 text-2xl font-bold leading-tight break-words" style={{ color: "var(--dash-text)" }}>
                                         {submission.title || "Untitled paper"}
                                     </h2>
                                 </div>

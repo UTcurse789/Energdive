@@ -290,6 +290,12 @@ export default function KnowledgeBasePaperForm({
                 throw new Error(finalErrorMessage);
             }
 
+            try {
+                await fetch("/api/user/mark-submitter", { method: "POST" });
+            } catch (error) {
+                console.error("Failed to mark user as submitter:", error);
+            }
+
             // TODO: Trigger submission confirmation notifications once the notification workflow is defined.
             setSuccessTitle(normalizedTitle);
             resetForm();

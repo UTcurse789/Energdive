@@ -1,6 +1,6 @@
 import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
-import { getUserProfile } from "@/lib/queries";
+import { getUserProfile, hasUserDownloads } from "@/lib/queries";
 
 /**
  * GET /api/user/profile
@@ -22,7 +22,15 @@ export async function GET() {
             return NextResponse.json({ exists: false });
         }
 
-        return NextResponse.json({ exists: true, user: profile });
+        const hasDownloads = await hasUserDownloads(userId);
+
+        return NextResponse.json({
+            exists: true,
+            user: {
+                ...profile,
+                hasDownloads
+            }
+        });
     } catch (error) {
         console.error("[USER_PROFILE]", error);
         return NextResponse.json(

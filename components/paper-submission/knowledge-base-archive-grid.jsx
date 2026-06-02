@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { Building2, CalendarDays, Filter, UserRound } from "lucide-react";
 import { formatSubmissionDate, truncateText } from "@/lib/paper-submissions";
+import Link from "next/link";
 
 export default function KnowledgeBaseArchiveGrid({ papers }) {
     const [selectedSector, setSelectedSector] = useState("all");
@@ -140,8 +141,8 @@ export default function KnowledgeBaseArchiveGrid({ papers }) {
                                 </span>
                             </div>
 
-                            <h3 className="mt-5 text-3xl font-bold leading-tight text-slate-950">
-                                {paper.title || "Untitled paper"}
+                            <h3 className="mt-5 break-words text-3xl font-bold leading-tight text-slate-950">
+                                {truncateText(paper.title || "Untitled paper", 50)}
                             </h3>
 
                             <p className="mt-4 text-sm leading-7 text-slate-600">
@@ -157,12 +158,28 @@ export default function KnowledgeBaseArchiveGrid({ papers }) {
                                     value={formatSubmissionDate(paper.submittedDate)}
                                 />
                             </div>
+
+                            <div className="mt-6 pt-5 border-t border-slate-200/80">
+                                <Link
+                                    href={`/knowledge-base/abstract/${slugify(paper.title || "untitled-paper")}`}
+                                    className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-50 text-emerald-800 px-5 py-3 text-sm font-semibold transition-all hover:bg-emerald-100"
+                                >
+                                    Read more
+                                </Link>
+                            </div>
                         </article>
                     ))}
                 </div>
             )}
         </div>
     );
+}
+
+function slugify(text) {
+    return String(text || "")
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '');
 }
 
 function FilterSelect({ label, value, onChange, options, placeholder, compact = false }) {

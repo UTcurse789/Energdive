@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-    Home, LayoutGrid, CreditCard, Calendar, Settings, Bookmark, FileText
+    Home, LayoutGrid, CreditCard, Calendar, Settings, Bookmark, FileText, Download
 } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
 import { CustomUserMenu } from "@/components/layout/CustomUserMenu";
@@ -14,6 +14,7 @@ const NAV_ITEMS = [
     { label: "ENERGDIVE", href: "/", icon: Home },
     { label: "My Feed", href: "/dashboard", icon: LayoutGrid },
     { label: "My Submissions", href: "/dashboard/my-submissions", icon: FileText },
+    { label: "My Downloads", href: "/dashboard/my-downloads", icon: Download },
     { label: "Saved", href: "/dashboard/saved", icon: Bookmark },
     { label: "Subscriptions", href: "/dashboard/subscriptions", icon: CreditCard },
     { label: "Events", href: "/dashboard/events", icon: Calendar },
@@ -27,6 +28,13 @@ export function DashboardHeader() {
     const firstName = profile.first_name || user?.firstName || "User";
     const lastName = profile.last_name || user?.lastName || "";
     const role = profile.job_title || "Member";
+
+    // Filter nav items based on user activity
+    const visibleNavItems = NAV_ITEMS.filter((item) => {
+        if (item.label === "My Submissions" && !profile.has_submitted_paper) return false;
+        if (item.label === "My Downloads" && !profile.hasDownloads) return false;
+        return true;
+    });
 
     return (
         <header
@@ -91,7 +99,7 @@ export function DashboardHeader() {
             >
                 {/* ENERGDIVE link on the left */}
                 {(() => {
-                    const homeItem = NAV_ITEMS[0];
+                    const homeItem = visibleNavItems[0];
                     const Icon = homeItem.icon;
                     const isActive = pathname === homeItem.href;
                     return (
@@ -112,7 +120,7 @@ export function DashboardHeader() {
 
                 {/* Rest of nav items centered */}
                 <div className="flex items-center gap-1 mx-auto">
-                    {NAV_ITEMS.slice(1).map((item) => {
+                    {visibleNavItems.slice(1).map((item) => {
                         const isActive =
                             item.href === "/dashboard"
                                 ? pathname === "/dashboard"
