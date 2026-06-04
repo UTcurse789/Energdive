@@ -145,8 +145,8 @@ export default function KnowledgeBaseArchiveGrid({ papers }) {
                                 {truncateText(paper.title || "Untitled paper", 50)}
                             </h3>
 
-                            <p className="mt-4 text-sm leading-7 text-slate-600">
-                                {truncateText(paper.abstract, 170) || "Abstract not available."}
+                            <p className="mt-4 flex-1 break-words text-sm leading-7 text-slate-600">
+                                {truncateText(paper.abstract, 173) || "Abstract not available."}
                             </p>
 
                             <div className="mt-6 grid gap-3 border-t border-slate-200/80 pt-5">

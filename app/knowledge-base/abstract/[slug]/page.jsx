@@ -198,7 +198,7 @@ export default async function AbstractPage({ params }) {
 
                         <div className="rounded-[32px] border border-slate-200/80 bg-[#faf8f2]/60 p-8 shadow-[0_8px_30px_rgb(0,0,0,0.03)] sm:p-12">
                             {paper.abstract ? (
-                                <p className="whitespace-pre-wrap text-[17px] leading-[1.9] text-slate-700 sm:text-lg">
+                                <p className="whitespace-pre-wrap break-words text-[17px] leading-[1.9] text-slate-700 sm:text-lg">
                                     {paper.abstract}
                                 </p>
                             ) : (
