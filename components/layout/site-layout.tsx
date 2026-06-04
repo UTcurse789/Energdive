@@ -15,7 +15,9 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
     const isOnboarding = pathname.startsWith("/onboarding");
     const isPrint = pathname.startsWith("/print/");
 
-    if (isAuthPage || isDashboard || isOnboarding || isPrint) {
+    const isRecruiterReview = pathname.startsWith("/energjob/applications/");
+
+    if (isAuthPage || isDashboard || isOnboarding || isPrint || isRecruiterReview) {
         return <main className="min-h-screen">{children}</main>;
     }
 

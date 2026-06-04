@@ -294,10 +294,10 @@ export default function ClientReviewManager({
 
               <div className="relative mt-8 space-y-6">
                 {/* Timeline Step 1: Received */}
-                <div className="flex gap-4 items-start relative">
+                <div className="flex relative" style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
                   {/* Vertical connector line segment to next step */}
                   <div className="absolute left-[7px] top-4 bottom-0 w-0.5 bg-black/[0.06] -mb-6 z-0" />
-                  <div className="relative z-10 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-white">
+                  <div className="relative z-10 rounded-full bg-white" style={{ display: 'flex', width: '16px', height: '16px', flexShrink: 0, alignItems: 'center', justifyContent: 'center' }}>
                     <div
                       className={`h-2.5 w-2.5 rounded-full transition-all duration-300 ring-4 ${
                         isReceivedActive
@@ -315,10 +315,10 @@ export default function ClientReviewManager({
                 </div>
 
                 {/* Timeline Step 2: Viewed */}
-                <div className="flex gap-4 items-start relative">
+                <div className="flex relative" style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
                   {/* Vertical connector line segment to next step */}
                   <div className="absolute left-[7px] top-4 bottom-0 w-0.5 bg-black/[0.06] -mb-6 z-0" />
-                  <div className="relative z-10 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-white">
+                  <div className="relative z-10 rounded-full bg-white" style={{ display: 'flex', width: '16px', height: '16px', flexShrink: 0, alignItems: 'center', justifyContent: 'center' }}>
                     <div
                       className={`h-2.5 w-2.5 rounded-full transition-all duration-300 ring-4 ${
                         isViewedActive
@@ -344,8 +344,8 @@ export default function ClientReviewManager({
                 </div>
 
                 {/* Timeline Step 3: Shortlisted */}
-                <div className="flex gap-4 items-start relative">
-                  <div className="relative z-10 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-white">
+                <div className="flex relative" style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
+                  <div className="relative z-10 rounded-full bg-white" style={{ display: 'flex', width: '16px', height: '16px', flexShrink: 0, alignItems: 'center', justifyContent: 'center' }}>
                     <div
                       className={`h-2.5 w-2.5 rounded-full transition-all duration-300 ring-4 ${
                         isShortlistedActive
