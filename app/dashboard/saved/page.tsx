@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Bookmark, Clock, ArrowRight, Trash2 } from "lucide-react";
 
 interface SavedArticle {
+    id: number;
     title: string;
     url: string;
     savedAt: string;
@@ -15,11 +16,16 @@ export default function SavedArticlesPage() {
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        const loadArticles = () => {
+        const loadArticles = async () => {
             try {
-                const articles = JSON.parse(localStorage.getItem('saved_articles') || '[]');
-                articles.sort((a: any, b: any) => new Date(b.savedAt).getTime() - new Date(a.savedAt).getTime());
-                setSavedArticles(articles);
+                const res = await fetch("/api/user/saved-articles", {
+                    method: "GET",
+                    cache: "no-store",
+                });
+                if (!res.ok) throw new Error("Failed to load saved articles");
+
+                const data = await res.json();
+                setSavedArticles(Array.isArray(data.articles) ? data.articles : []);
             } catch (e) {
                 console.error("Error loading saved articles", e);
             } finally {
@@ -33,14 +39,24 @@ export default function SavedArticlesPage() {
         return () => window.removeEventListener('saved_articles_updated', loadArticles);
     }, []);
 
-    const handleRemove = (url: string, e: React.MouseEvent) => {
+    const handleRemove = async (url: string, e: React.MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
 
-        const updated = savedArticles.filter(a => a.url !== url);
-        localStorage.setItem('saved_articles', JSON.stringify(updated));
-        setSavedArticles(updated);
-        window.dispatchEvent(new Event('saved_articles_updated'));
+        try {
+            const res = await fetch("/api/user/saved-articles", {
+                method: "DELETE",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ url }),
+            });
+            if (!res.ok) throw new Error("Failed to remove saved article");
+
+            const updated = savedArticles.filter(a => a.url !== url);
+            setSavedArticles(updated);
+            window.dispatchEvent(new Event('saved_articles_updated'));
+        } catch (error) {
+            console.error("Error removing saved article", error);
+        }
     };
 
     const formatDate = (isoString: string) => {
@@ -81,10 +97,10 @@ export default function SavedArticlesPage() {
                 </div>
             ) : (
                 <div className="grid gap-4">
-                    {savedArticles.map((article, i) => (
+                    {savedArticles.map((article) => (
                         <Link
                             href={article.url}
-                            key={i}
+                            key={article.id}
                             className="group bg-zinc-900/40 hover:bg-zinc-800 border border-white/5 hover:border-white/10 rounded-xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all"
                         >
                             <div className="flex-1 min-w-0">

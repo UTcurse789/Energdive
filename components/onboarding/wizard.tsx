@@ -1,28 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useUser } from "@clerk/nextjs";
 import { motion, AnimatePresence } from "framer-motion";
-import StepPersonal from "./step-personal";
-import StepVerify from "./step-verify";
-import StepProfessional from "./step-professional";
-import StepInterests from "./step-interests";
-import StepPreferences from "./step-preferences";
+import StepProfile, { type ProfileData } from "./step-profile";
+import StepInterestsPreferences, { type InterestsPreferencesData } from "./step-interests-preferences";
 
-const TOTAL_STEPS = 5;
+const TOTAL_STEPS = 2;
 
-export default function OnboardingWizard({
-    returnTo = "/dashboard",
-}: {
-    returnTo?: string;
-}) {
+export default function OnboardingWizard() {
     const { user } = useUser();
     const [step, setStep] = useState(1);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // Determine which contact method was used for initial registration.
-    // If registrationMethod is "phone", user needs email verification at Step 2.
-    // If registrationMethod is "email" (or unknown), user needs phone verification at Step 2.
+    // Determine which second contact method must be verified before CRM sync.
     const registrationMethod =
         (user?.publicMetadata?.isPhoneUser ? "phone" : null) ||
         (user?.publicMetadata?.registrationMethod as string) ||
@@ -31,42 +22,52 @@ export default function OnboardingWizard({
     const needsVerification: "email" | "phone" =
         registrationMethod === "phone" ? "email" : "phone";
 
+    const metadata = user?.publicMetadata as Record<string, unknown> | undefined;
+    const primaryEmail = user?.emailAddresses?.[0]?.emailAddress || "";
+    const hasRealEmail = Boolean(primaryEmail && !primaryEmail.endsWith("@phone.energdive.com"));
+    const verificationComplete =
+        needsVerification === "phone"
+            ? Boolean(metadata?.phoneVerified || metadata?.phone)
+            : Boolean(metadata?.emailVerified || metadata?.verifiedEmail || hasRealEmail);
+
     // Centralized State
     const [formData, setFormData] = useState({
-        // Step 1
         salutation: "",
         firstName: user?.firstName || "",
         lastName: user?.lastName || "",
-        phone: "",
+        phone: typeof metadata?.phone === "string" ? metadata.phone : "",
         country: "",
         state: "",
-        // Step 3
         jobTitle: "",
         organization: "",
-        // Step 4
         industryId: 0,
         subIndustryId: 0,
         communitySelections: [] as { communityId: number; subCommunityId: number }[],
-        // Step 5
         preferredFrequency: "daily",
         preferredFormats: [] as string[],
     });
 
-    const handleNext = (data: Partial<typeof formData>) => {
+    useEffect(() => {
+        if (!user) return;
+
+        setFormData((prev) => ({
+            ...prev,
+            firstName: prev.firstName || user.firstName || "",
+            lastName: prev.lastName || user.lastName || "",
+            phone: prev.phone || (typeof user.publicMetadata?.phone === "string" ? user.publicMetadata.phone : ""),
+        }));
+    }, [user]);
+
+    const handleNext = (data: ProfileData) => {
         setFormData((prev) => ({ ...prev, ...data }));
         setStep((prev) => prev + 1);
     };
 
     const handleBack = () => {
-        setStep((prev) => prev - 1);
+        setStep((prev) => Math.max(1, prev - 1));
     };
 
-    const handleVerified = () => {
-        // Move to step 3 after second verification completes
-        setStep(3);
-    };
-
-    const handleFinalSubmit = async (finalStepData: Record<string, unknown>) => {
+    const handleFinalSubmit = async (finalStepData: InterestsPreferencesData) => {
         setIsSubmitting(true);
 
         // Retrieve UTM parameters stored by <UtmTracker />
@@ -95,9 +96,24 @@ export default function OnboardingWizard({
 
             if (!res.ok) throw new Error("Failed to save profile");
 
-            // Full page reload to /dashboard ensures the server-side
+            // Determine final redirect: use returnTo from server, or fall back to
+            // the redirect stored in sessionStorage by the auth page (survives OAuth
+            // roundtrips where the URL param gets lost through /dashboard → /onboarding).
+            let finalRedirect = returnTo || "/dashboard";
+            if (finalRedirect === "/dashboard") {
+                const storedRedirect = sessionStorage.getItem(POST_AUTH_REDIRECT_STORAGE_KEY);
+                if (storedRedirect && storedRedirect !== "/dashboard") {
+                    finalRedirect = storedRedirect;
+                }
+            }
+
+            // Clean up the stored redirect
+            sessionStorage.removeItem(POST_AUTH_REDIRECT_STORAGE_KEY);
+            document.cookie = `${POST_AUTH_REDIRECT_COOKIE}=; path=/; max-age=0; SameSite=Lax`;
+
+            // Full page reload ensures the server-side
             // currentUser() in dashboard layout fetches fresh metadata.
-            window.location.href = returnTo || "/dashboard";
+            window.location.href = finalRedirect;
         } catch (error) {
             console.error("Onboarding error:", error);
             alert("Something went wrong. Please try again.");
@@ -106,12 +122,12 @@ export default function OnboardingWizard({
     };
 
     return (
-        <div className="w-full max-w-2xl bg-white rounded-2xl shadow-xl overflow-hidden border border-zinc-100">
+        <div className="w-full max-w-3xl bg-white rounded-2xl shadow-xl overflow-hidden border border-zinc-100">
             {/* Progress Bar */}
             <div className="h-1.5 bg-zinc-100 w-full">
                 <motion.div
                     className="h-full bg-[#0AB996]"
-                    initial={{ width: "20%" }}
+                    initial={{ width: "50%" }}
                     animate={{ width: `${(step / TOTAL_STEPS) * 100}%` }}
                     transition={{ duration: 0.3 }}
                 />
@@ -126,40 +142,17 @@ export default function OnboardingWizard({
 
                 <AnimatePresence mode="wait">
                     {step === 1 && (
-                        <StepPersonal
-                            key="step1"
+                        <StepProfile
+                            key="profile"
                             defaultValues={formData}
+                            verifyType={needsVerification}
+                            verificationComplete={verificationComplete}
                             onNext={handleNext}
                         />
                     )}
                     {step === 2 && (
-                        <StepVerify
-                            key="step2"
-                            verifyType={needsVerification}
-                            onBack={handleBack}
-                            onVerified={handleVerified}
-                        />
-                    )}
-                    {step === 3 && (
-                        <StepProfessional
-                            key="step3"
-                            defaultValues={formData}
-                            onBack={handleBack}
-                            onNext={handleNext}
-                        />
-                    )}
-                    {step === 4 && (
-                        <StepInterests
-                            key="step4"
-                            defaultValues={formData}
-                            onBack={handleBack}
-                            onNext={handleNext}
-                            isSubmitting={false}
-                        />
-                    )}
-                    {step === 5 && (
-                        <StepPreferences
-                            key="step5"
+                        <StepInterestsPreferences
+                            key="interests-preferences"
                             defaultValues={formData}
                             onBack={handleBack}
                             onSubmit={handleFinalSubmit}

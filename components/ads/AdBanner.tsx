@@ -7,6 +7,15 @@ import { useAdTracking } from "./useAdTracking";
 
 const STRAPI_BASE = process.env.NEXT_PUBLIC_STRAPI_URL || "https://cms.energdive.com";
 
+interface StrapiMedia {
+    url?: string;
+    formats?: {
+        large?: { url?: string };
+        medium?: { url?: string };
+        small?: { url?: string };
+    };
+}
+
 interface Ad {
     id: number;
     documentId: string;
@@ -18,12 +27,12 @@ interface Ad {
     start_date: string;
     end_date: string;
     priority: number | null;
-    logo: any[] | null;
-    creative: any[] | null;
-    sectors: any[];
+    logo: StrapiMedia[] | null;
+    creative: StrapiMedia[] | null;
+    sectors: unknown[];
 }
 
-function getImageUrl(media: any): string | null {
+function getImageUrl(media: StrapiMedia | undefined | null): string | null {
     if (!media) return null;
     const url =
         media.formats?.large?.url ||
@@ -316,26 +325,25 @@ function BannerAd({
 
     if (isExactSizedPlacement) {
         const creativeContent = (
-            <div
-                className="relative shrink-0 overflow-hidden rounded-none bg-white"
-                style={{ width: EXACT_LEADERBOARD_SIZE.width, height: EXACT_LEADERBOARD_SIZE.height }}
-            >
-                <Image
-                    src={imageUrl}
-                    alt={ad.title || "Advertisement"}
-                    fill
-                    sizes={`${EXACT_LEADERBOARD_SIZE.width}px`}
-                    loading="lazy"
-                    unoptimized
-                    className="object-contain transition-transform duration-500 group-hover:scale-[1.015]"
-                />
+            <div className="relative w-full max-w-[728px] overflow-hidden rounded-none bg-white">
+                <div className="relative w-full" style={{ aspectRatio: `${EXACT_LEADERBOARD_SIZE.width}/${EXACT_LEADERBOARD_SIZE.height}` }}>
+                    <Image
+                        src={imageUrl}
+                        alt={ad.title || "Advertisement"}
+                        fill
+                        sizes="(max-width: 767px) 100vw, 728px"
+                        loading="lazy"
+                        unoptimized
+                        className="object-contain transition-transform duration-500 group-hover:scale-[1.015]"
+                    />
+                </div>
             </div>
         );
 
         return (
-            <div className={`group ${className}`}>
-                <div className="flex justify-start overflow-x-auto md:justify-center">
-                    {wrapWithLink(ad.target_url, creativeContent, "block shrink-0")}
+            <div className={`group w-full max-w-full overflow-hidden ${className}`}>
+                <div className="mx-auto flex w-full max-w-[728px] justify-center overflow-hidden">
+                    {wrapWithLink(ad.target_url, creativeContent, "block w-full max-w-[728px]")}
                 </div>
             </div>
         );

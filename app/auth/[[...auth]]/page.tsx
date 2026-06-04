@@ -1,12 +1,18 @@
 "use client";
 
 import { useSignIn, useSignUp, useAuth } from "@clerk/nextjs";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useState, useCallback, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import DotGrid from "@/components/DotGrid";
 import { usePostHog } from "@posthog/react";
+import {
+    DEFAULT_POST_AUTH_REDIRECT,
+    POST_AUTH_REDIRECT_COOKIE,
+    POST_AUTH_REDIRECT_STORAGE_KEY,
+    getSafeRedirectPath,
+} from "@/lib/post-auth-redirect";
 
 type AuthStep = "identifier" | "otp-signin" | "otp-signup" | "otp-phone" | "complete";
 type InputMode = "email" | "phone";
@@ -25,8 +31,6 @@ const formatPhoneForAPI = (phone: string): string => {
     return `+91${cleaned}`;
 };
 
-const DEFAULT_POST_AUTH_REDIRECT = "/dashboard";
-
 const getBrowserRedirectParam = (): string | null => {
     if (typeof window === "undefined") {
         return null;
@@ -35,46 +39,10 @@ const getBrowserRedirectParam = (): string | null => {
     return new URLSearchParams(window.location.search).get("redirect_url");
 };
 
-const getSafeRedirectPath = (value: string | null): string => {
-    if (!value) return DEFAULT_POST_AUTH_REDIRECT;
-
-    const sanitizePath = (path: string) => {
-        if (!path.startsWith("/") || path.startsWith("//")) {
-            return DEFAULT_POST_AUTH_REDIRECT;
-        }
-
-        if (path === "/auth" || path.startsWith("/auth/")) {
-            return DEFAULT_POST_AUTH_REDIRECT;
-        }
-
-        return path;
-    };
-
-    if (value.startsWith("/")) {
-        return sanitizePath(value);
-    }
-
-    if (typeof window === "undefined") {
-        return DEFAULT_POST_AUTH_REDIRECT;
-    }
-
-    try {
-        const parsed = new URL(value, window.location.origin);
-        if (parsed.origin !== window.location.origin) {
-            return DEFAULT_POST_AUTH_REDIRECT;
-        }
-
-        return sanitizePath(`${parsed.pathname}${parsed.search}${parsed.hash}`);
-    } catch {
-        return DEFAULT_POST_AUTH_REDIRECT;
-    }
-};
-
 export default function UnifiedAuthPage() {
     const { signIn, isLoaded: signInLoaded, setActive } = useSignIn();
     const { signUp, isLoaded: signUpLoaded } = useSignUp();
     const { isSignedIn } = useAuth();
-    const router = useRouter();
     const searchParams = useSearchParams();
 
     const [identifier, setIdentifier] = useState("");
@@ -90,12 +58,32 @@ export default function UnifiedAuthPage() {
     const postAuthRedirect = resolvedPostAuthRedirect ?? DEFAULT_POST_AUTH_REDIRECT;
 
     const resolvePostAuthRedirect = useCallback(
-        () => getSafeRedirectPath(getBrowserRedirectParam() ?? searchParams.get("redirect_url")),
+        () => {
+            const fromUrl = getBrowserRedirectParam() ?? searchParams.get("redirect_url");
+            const fromStorage = typeof window !== "undefined"
+                ? sessionStorage.getItem(POST_AUTH_REDIRECT_STORAGE_KEY)
+                : null;
+            return getSafeRedirectPath(fromUrl ?? fromStorage);
+        },
         [searchParams]
     );
 
     useEffect(() => {
-        setResolvedPostAuthRedirect(resolvePostAuthRedirect());
+        const resolved = resolvePostAuthRedirect();
+        setResolvedPostAuthRedirect(resolved);
+        if (typeof window === "undefined") {
+            return;
+        }
+
+        // Persist to sessionStorage and a regular cookie so the server can
+        // recover the intended return path if Clerk lands on /dashboard first.
+        if (resolved !== DEFAULT_POST_AUTH_REDIRECT) {
+            sessionStorage.setItem(POST_AUTH_REDIRECT_STORAGE_KEY, resolved);
+            document.cookie = `${POST_AUTH_REDIRECT_COOKIE}=${encodeURIComponent(resolved)}; path=/; max-age=86400; SameSite=Lax`;
+        } else {
+            sessionStorage.removeItem(POST_AUTH_REDIRECT_STORAGE_KEY);
+            document.cookie = `${POST_AUTH_REDIRECT_COOKIE}=; path=/; max-age=0; SameSite=Lax`;
+        }
     }, [resolvePostAuthRedirect]);
 
     // Track registration started when the auth page mounts
@@ -108,6 +96,31 @@ export default function UnifiedAuthPage() {
         }
     }, [posthog]);
 
+    const redirectTarget = useMemo(() => {
+        const rawValue = searchParams.get("redirect_url");
+        const origin =
+            typeof window !== "undefined" ? window.location.origin : "https://www.energdive.com";
+
+        if (!rawValue) {
+            return "/dashboard";
+        }
+
+        try {
+            if (rawValue.startsWith("/") && !rawValue.startsWith("//")) {
+                return rawValue;
+            }
+
+            const parsed = new URL(rawValue, origin);
+            if (parsed.origin === origin) {
+                return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+            }
+        } catch {
+            return "/dashboard";
+        }
+
+        return "/dashboard";
+    }, [searchParams]);
+
     // Auto-detect input type
     const inputMode: InputMode = useMemo(() => {
         const trimmed = identifier.trim();
@@ -117,12 +130,12 @@ export default function UnifiedAuthPage() {
         return "email";
     }, [identifier]);
 
-    // If already signed in, redirect
+    // If already signed in, redirect (hard navigation to beat Clerk's internal redirect)
     useEffect(() => {
-        if (isSignedIn && resolvedPostAuthRedirect) {
-            router.replace(postAuthRedirect);
+        if (isSignedIn) {
+            window.location.replace(redirectTarget);
         }
-    }, [isSignedIn, postAuthRedirect, resolvedPostAuthRedirect, router]);
+    }, [isSignedIn, redirectTarget]);
 
     // ── Step 1: Submit identifier ──
     const handleSubmit = useCallback(async () => {
@@ -183,16 +196,20 @@ export default function UnifiedAuthPage() {
                     setStep("otp-signin");
                 } else if (result.status === "complete") {
                     if (result.createdSessionId) {
-                        await setActive!({ session: result.createdSessionId });
                         if (posthog) {
                             posthog.capture("login_completed", {
                                 timestamp: new Date().toISOString(),
                                 path: window.location.pathname,
                             });
                         }
+                        const target = resolvePostAuthRedirect();
+                        console.log("[AUTH-REDIRECT] handleSubmit complete, navigating to:", target);
+                        await setActive!({ session: result.createdSessionId });
+                        window.location.href = target;
+                        return;
                     }
                     setStep("complete");
-                    window.location.href = resolvePostAuthRedirect();
+                    window.location.href = redirectTarget;
                 }
             } catch (err: any) {
                 const clerkError = err?.errors?.[0];
@@ -229,7 +246,7 @@ export default function UnifiedAuthPage() {
         }
 
         setLoading(false);
-    }, [identifier, posthog, resolvePostAuthRedirect, signIn, signUp, signInLoaded, signUpLoaded, setActive]);
+    }, [identifier, redirectTarget, signIn, signUp, signInLoaded, signUpLoaded, setActive]);
 
     // ── Step 2a: Verify OTP (Email - Clerk) ──
     const handleEmailOTPSubmit = useCallback(async () => {
@@ -249,16 +266,20 @@ export default function UnifiedAuthPage() {
                 if (result.status === "complete") {
                     const sessionId = result.createdSessionId || signUp!.createdSessionId;
                     if (sessionId) {
-                        await setActive!({ session: sessionId });
                         if (posthog) {
                             posthog.capture("registration_completed", {
                                 timestamp: new Date().toISOString(),
                                 path: window.location.pathname,
                             });
                         }
+                        const target = resolvePostAuthRedirect();
+                        console.log("[AUTH-REDIRECT] signup complete, navigating to:", target);
+                        await setActive!({ session: sessionId });
+                        window.location.href = target;
+                        return;
                     }
                     setStep("complete");
-                    setTimeout(() => window.location.replace(resolvePostAuthRedirect()), 300);
+                    setTimeout(() => window.location.replace(redirectTarget), 300);
                 } else if (result.status === "missing_requirements") {
                     // Email verified but CAPTCHA/other requirement blocked completion
                     // Fallback: use backend to create user + sign-in token (bypasses CAPTCHA)
@@ -277,16 +298,20 @@ export default function UnifiedAuthPage() {
                             ticket: data.token,
                         });
                         if (ticketResult.createdSessionId) {
-                            await setActive!({ session: ticketResult.createdSessionId });
                             if (posthog) {
                                 posthog.capture("registration_completed", {
                                     timestamp: new Date().toISOString(),
                                     path: window.location.pathname,
                                 });
                             }
+                            const target = resolvePostAuthRedirect();
+                            console.log("[AUTH-REDIRECT] signup-ticket complete, navigating to:", target);
+                            await setActive!({ session: ticketResult.createdSessionId });
+                            window.location.href = target;
+                            return;
                         }
                         setStep("complete");
-                        setTimeout(() => window.location.replace(resolvePostAuthRedirect()), 300);
+                        setTimeout(() => window.location.replace(redirectTarget), 300);
                     } else {
                         setError(data.error || "Could not complete sign-up. Please try again.");
                     }
@@ -303,16 +328,20 @@ export default function UnifiedAuthPage() {
                 if (result.status === "complete") {
                     const sessionId = result.createdSessionId || signIn!.createdSessionId;
                     if (sessionId) {
-                        await setActive!({ session: sessionId });
                         if (posthog) {
                             posthog.capture("login_completed", {
                                 timestamp: new Date().toISOString(),
                                 path: window.location.pathname,
                             });
                         }
+                        const target = resolvePostAuthRedirect();
+                        console.log("[AUTH-REDIRECT] signin complete, navigating to:", target);
+                        await setActive!({ session: sessionId });
+                        window.location.href = target;
+                        return;
                     }
                     setStep("complete");
-                    setTimeout(() => window.location.replace(resolvePostAuthRedirect()), 300);
+                    setTimeout(() => window.location.replace(redirectTarget), 300);
                 } else {
                     setError(`Verification status: ${result.status}. Please try again.`);
                 }
@@ -339,16 +368,20 @@ export default function UnifiedAuthPage() {
                             ticket: data.token,
                         });
                         if (ticketResult.createdSessionId) {
-                            await setActive!({ session: ticketResult.createdSessionId });
                             if (posthog) {
                                 posthog.capture("registration_completed", {
                                     timestamp: new Date().toISOString(),
                                     path: window.location.pathname,
                                 });
                             }
+                            const target = resolvePostAuthRedirect();
+                            console.log("[AUTH-REDIRECT] signin-ticket complete, navigating to:", target);
+                            await setActive!({ session: ticketResult.createdSessionId });
+                            window.location.href = target;
+                            return;
                         }
                         setStep("complete");
-                        setTimeout(() => window.location.replace(resolvePostAuthRedirect()), 300);
+                        setTimeout(() => window.location.replace(redirectTarget), 300);
                         return;
                     }
                 } catch (backendErr) {
@@ -360,7 +393,7 @@ export default function UnifiedAuthPage() {
         } finally {
             setLoading(false);
         }
-    }, [code, identifier, isNewUser, posthog, resolvePostAuthRedirect, signIn, signUp, signInLoaded, signUpLoaded, setActive]);
+    }, [code, identifier, isNewUser, redirectTarget, signIn, signUp, signInLoaded, signUpLoaded, setActive]);
 
     // ── Step 2b: Verify OTP (Phone - MSG91 → Clerk sign-in token) ──
     const handlePhoneOTPSubmit = useCallback(async () => {
@@ -388,7 +421,6 @@ export default function UnifiedAuthPage() {
 
                 if (result.status === "complete") {
                     if (result.createdSessionId) {
-                        await setActive!({ session: result.createdSessionId });
                         if (posthog) {
                             if (data.isNewUser) {
                                 posthog.capture("registration_completed", {
@@ -402,10 +434,15 @@ export default function UnifiedAuthPage() {
                                 });
                             }
                         }
+                        const target = resolvePostAuthRedirect();
+                        console.log("[AUTH-REDIRECT] phone-verify complete, navigating to:", target);
+                        await setActive!({ session: result.createdSessionId });
+                        window.location.href = target;
+                        return;
                     }
                     setIsNewUser(data.isNewUser);
                     setStep("complete");
-                    setTimeout(() => window.location.replace(resolvePostAuthRedirect()), 300);
+                    setTimeout(() => window.location.replace(redirectTarget), 300);
                 }
             } else {
                 setError(data.error || "Verification failed. Please try again.");
@@ -415,7 +452,7 @@ export default function UnifiedAuthPage() {
         } finally {
             setLoading(false);
         }
-    }, [code, identifier, posthog, resolvePostAuthRedirect, signIn, setActive]);
+    }, [code, identifier, redirectTarget, signIn, setActive]);
 
     // ── Google OAuth ──
     const handleGoogleAuth = useCallback(async () => {
@@ -425,12 +462,12 @@ export default function UnifiedAuthPage() {
             await signIn!.authenticateWithRedirect({
                 strategy: "oauth_google",
                 redirectUrl: "/auth/sso-callback",
-                redirectUrlComplete: postAuthRedirect,
+                redirectUrlComplete: redirectTarget,
             });
         } catch {
             setError("Google sign-in failed. Please try again.");
         }
-    }, [postAuthRedirect, posthog, signIn, signInLoaded]);
+    }, [redirectTarget, signIn, signInLoaded]);
 
     // ── LinkedIn OAuth ──
     const handleLinkedInAuth = useCallback(async () => {
@@ -440,12 +477,12 @@ export default function UnifiedAuthPage() {
             await signIn!.authenticateWithRedirect({
                 strategy: "oauth_linkedin_oidc",
                 redirectUrl: "/auth/sso-callback",
-                redirectUrlComplete: postAuthRedirect,
+                redirectUrlComplete: redirectTarget,
             });
         } catch {
             setError("LinkedIn sign-in failed. Please try again.");
         }
-    }, [postAuthRedirect, posthog, signIn, signInLoaded]);
+    }, [redirectTarget, signIn, signInLoaded]);
 
     // ── Resend OTP ──
     const handleResend = useCallback(async () => {
