@@ -604,7 +604,6 @@ export async function POST(request: NextRequest) {
             "title",
             "author_name",
             "author_email",
-            "affiliation",
             "submitted_date",
             "paper_status",
         ];
@@ -613,6 +612,10 @@ export async function POST(request: NextRequest) {
             if (data[field] !== undefined) {
                 strapiData[field] = data[field];
             }
+        }
+
+        if (data.affiliation !== undefined) {
+            strapiData.institution = data.affiliation;
         }
 
         const abstractBlocks = buildAbstractBlocks(data.abstract);

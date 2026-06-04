@@ -35,7 +35,7 @@ export function FeedCard({ item }: { item: FeedItem }) {
 
             {/* Content */}
             <div className="mb-3">
-                <h3 className="text-lg font-bold text-gray-900 mb-2 leading-tight group-hover:text-[--dash-accent] transition-colors">
+                <h3 className="text-lg font-bold text-gray-900 mb-2 leading-tight break-words group-hover:text-[--dash-accent] transition-colors">
                     {item.title}
                 </h3>
                 <p className="text-sm text-gray-500 leading-relaxed line-clamp-2">
