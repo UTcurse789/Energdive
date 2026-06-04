@@ -1,8 +1,14 @@
 import type { Metadata } from "next";
 import { auth } from "@clerk/nextjs/server";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { getUserProfile } from "@/lib/queries";
+import { getUserProfile, hasUserDownloads } from "@/lib/queries";
 import DashboardShell from "@/components/dashboard/dashboard-shell";
+import {
+    DEFAULT_POST_AUTH_REDIRECT,
+    POST_AUTH_REDIRECT_COOKIE,
+    getSafeRedirectFromStoredValue,
+} from "@/lib/post-auth-redirect";
 
 export const metadata: Metadata = {
     title: {
@@ -28,11 +34,22 @@ export default async function DashboardLayout({
     const profile = await getUserProfile(userId);
 
     if (!profile || !profile.onboarding_completed) {
-        redirect("/onboarding");
+        const cookieStore = await cookies();
+        const storedReturnTo = getSafeRedirectFromStoredValue(
+            cookieStore.get(POST_AUTH_REDIRECT_COOKIE)?.value
+        );
+        const returnTo = storedReturnTo !== DEFAULT_POST_AUTH_REDIRECT
+            ? storedReturnTo
+            : "/dashboard";
+
+        redirect(`/onboarding?return_to=${encodeURIComponent(returnTo)}`);
     }
 
+    // Check if user has any downloads for conditional nav visibility
+    const downloadsExist = await hasUserDownloads(userId);
+
     return (
-        <DashboardShell initialProfile={profile}>
+        <DashboardShell initialProfile={{ ...profile, hasDownloads: downloadsExist }}>
             {children}
         </DashboardShell>
     );

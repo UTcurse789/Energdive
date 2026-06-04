@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import { AlertCircle, FileText, RefreshCcw, UploadCloud } from "lucide-react";
 
-const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
+const DEFAULT_MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
 
 function formatFileSize(bytes) {
     if (!bytes) return "0 KB";
@@ -13,10 +13,10 @@ function formatFileSize(bytes) {
     return `${Math.max(1, Math.round(bytes / 1024))} KB`;
 }
 
-function isPdfFile(file) {
+function isValidFile(file, allowedExtensions) {
     if (!file) return false;
     const lowerCaseName = file.name.toLowerCase();
-    return file.type === "application/pdf" || lowerCaseName.endsWith(".pdf");
+    return allowedExtensions.some((ext) => lowerCaseName.endsWith(ext.toLowerCase()));
 }
 
 export default function UploadZone({
@@ -25,6 +25,10 @@ export default function UploadZone({
     disabled = false,
     label = "Paper PDF",
     helperText = "PDF only, maximum size 10 MB.",
+    accept = ".pdf,application/pdf",
+    allowedExtensions = [".pdf"],
+    maxFileSizeBytes = DEFAULT_MAX_FILE_SIZE_BYTES,
+    maxFileSizeLabel = "10 MB",
 }) {
     const inputRef = useRef(null);
     const [isDragOver, setIsDragOver] = useState(false);
@@ -33,13 +37,14 @@ export default function UploadZone({
     const validateAndSelectFile = (nextFile) => {
         if (!nextFile) return;
 
-        if (!isPdfFile(nextFile)) {
-            setError("Only PDF files are allowed.");
+        if (!isValidFile(nextFile, allowedExtensions)) {
+            setError(`Only ${allowedExtensions.join(", ")} files are allowed.`);
             return;
         }
 
-        if (nextFile.size > MAX_FILE_SIZE_BYTES) {
-            setError("The file exceeds the 10 MB limit.");
+
+        if (nextFile.size > maxFileSizeBytes) {
+            setError(`The file exceeds the ${maxFileSizeLabel} limit.`);
             return;
         }
 
@@ -117,13 +122,13 @@ export default function UploadZone({
                             : file
                                 ? "var(--dash-border-gold)"
                                 : "var(--dash-border-subtle)",
-                    boxShadow: isDragOver ? "0 0 0 3px rgba(201, 168, 76, 0.12)" : "none",
+                    boxShadow: isDragOver ? "0 0 0 3px rgba(9, 182, 151, 0.12)" : "none",
                 }}
             >
                 <input
                     ref={inputRef}
                     type="file"
-                    accept=".pdf,application/pdf"
+                    accept={accept}
                     onChange={handleInputChange}
                     className="hidden"
                     disabled={disabled}
@@ -134,14 +139,14 @@ export default function UploadZone({
                         <div className="flex items-start gap-3">
                             <div
                                 className="flex h-12 w-12 items-center justify-center rounded-xl"
-                                style={{ background: "rgba(201,168,76,0.15)" }}
+                                style={{ background: "rgba(9, 182, 151, 0.12)" }}
                             >
                                 <FileText className="h-5 w-5" style={{ color: "var(--dash-accent)" }} />
                             </div>
                             <div className="min-w-0">
                                 <p className="truncate text-sm font-semibold" style={{ color: "var(--dash-text)" }}>{file.name}</p>
                                 <p className="mt-1 text-xs" style={{ color: "var(--dash-text-dim)" }}>
-                                    {formatFileSize(file.size)} • Click or drop a new PDF to replace it
+                                    {formatFileSize(file.size)} • Click or drop a new file to replace it
                                 </p>
                             </div>
                         </div>
@@ -158,7 +163,7 @@ export default function UploadZone({
                     <div className="flex flex-col items-center justify-center text-center">
                         <div
                             className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl"
-                            style={{ background: isDragOver ? "rgba(201,168,76,0.15)" : "rgba(201,168,76,0.08)" }}
+                            style={{ background: isDragOver ? "rgba(9, 182, 151, 0.12)" : "rgba(9, 182, 151, 0.08)" }}
                         >
                             <UploadCloud
                                 className="h-6 w-6"
@@ -172,7 +177,7 @@ export default function UploadZone({
             </div>
 
             {error ? (
-                <div className="flex items-start gap-2 rounded-xl border border-red-400/25 bg-red-500/10 px-3 py-2.5 text-sm text-red-200">
+                <div className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-700">
                     <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
                     <span>{error}</span>
                 </div>

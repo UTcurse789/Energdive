@@ -27,13 +27,31 @@ function readSavedArticles() {
 
 export function useArticleSave({ title, url }: UseArticleSaveOptions) {
   const [isSaved, setIsSaved] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
   const { isLoaded, isSignedIn } = useAuth();
 
   useEffect(() => {
-    const syncSavedState = () => {
+    const syncSavedState = async () => {
       if (typeof window === "undefined") return;
+
+      if (isLoaded && isSignedIn) {
+        try {
+          const res = await fetch("/api/user/saved-articles", {
+            method: "GET",
+            cache: "no-store",
+          });
+          if (!res.ok) throw new Error("Failed to load saved articles");
+          const data = await res.json();
+          const articles = Array.isArray(data.articles) ? data.articles : [];
+          setIsSaved(articles.some((article: SavedArticle) => article.url === url));
+        } catch (error) {
+          console.error("Error loading saved state", error);
+          setIsSaved(false);
+        }
+        return;
+      }
 
       const savedArticles = readSavedArticles();
       setIsSaved(savedArticles.some((article) => article.url === url));
@@ -45,7 +63,7 @@ export function useArticleSave({ title, url }: UseArticleSaveOptions) {
     return () => {
       window.removeEventListener("saved_articles_updated", syncSavedState);
     };
-  }, [url]);
+  }, [isLoaded, isSignedIn, url]);
 
   const loginHref = useMemo(() => {
     if (typeof window === "undefined") {
@@ -55,13 +73,42 @@ export function useArticleSave({ title, url }: UseArticleSaveOptions) {
     return `/auth?redirect_url=${encodeURIComponent(window.location.href)}`;
   }, [url]);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (isLoaded && !isSignedIn) {
       setShowLoginPrompt(true);
       return;
     }
 
+    if (isSaving) return;
+
     try {
+      setIsSaving(true);
+
+      if (isSignedIn) {
+        if (isSaved) {
+          const res = await fetch("/api/user/saved-articles", {
+            method: "DELETE",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ url }),
+          });
+          if (!res.ok) throw new Error("Failed to remove saved article");
+          setIsSaved(false);
+        } else {
+          const res = await fetch("/api/user/saved-articles", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ title, url }),
+          });
+          if (!res.ok) throw new Error("Failed to save article");
+          setIsSaved(true);
+          setShowToast(true);
+          window.setTimeout(() => setShowToast(false), 3000);
+        }
+
+        window.dispatchEvent(new Event("saved_articles_updated"));
+        return;
+      }
+
       const savedArticles = readSavedArticles();
 
       if (isSaved) {
@@ -80,12 +127,15 @@ export function useArticleSave({ title, url }: UseArticleSaveOptions) {
       window.dispatchEvent(new Event("saved_articles_updated"));
     } catch (error) {
       console.error("Error saving article", error);
+    } finally {
+      setIsSaving(false);
     }
   };
 
   return {
     isGuest: isLoaded && !isSignedIn,
     isSaved,
+    isSaving,
     loginHref,
     showLoginPrompt,
     showToast,

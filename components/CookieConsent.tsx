@@ -3,6 +3,10 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
+type ConsentWindow = Window & {
+    dataLayer?: Array<Record<string, string>>;
+};
+
 /**
  * Returns the current consent status from localStorage.
  * "accepted" | "rejected" | null
@@ -61,8 +65,8 @@ export default function CookieConsent() {
         dismiss();
 
         // Fire GTM consent update so tags can fire
-        if (typeof window !== "undefined" && (window as any).dataLayer) {
-            (window as any).dataLayer.push({
+        if (typeof window !== "undefined" && (window as ConsentWindow).dataLayer) {
+            (window as ConsentWindow).dataLayer?.push({
                 event: "cookie_consent_update",
                 cookie_consent: "accepted",
             });
@@ -74,8 +78,8 @@ export default function CookieConsent() {
         setCookie("cookie_consent", "rejected", 365);
         dismiss();
 
-        if (typeof window !== "undefined" && (window as any).dataLayer) {
-            (window as any).dataLayer.push({
+        if (typeof window !== "undefined" && (window as ConsentWindow).dataLayer) {
+            (window as ConsentWindow).dataLayer?.push({
                 event: "cookie_consent_update",
                 cookie_consent: "rejected",
             });
@@ -95,77 +99,30 @@ export default function CookieConsent() {
             id="cookie-consent-banner"
             role="dialog"
             aria-label="Cookie consent"
+            className="fixed inset-x-0 bottom-0 z-[9999]"
             style={{
-                position: "fixed",
-                bottom: 0,
-                left: 0,
-                right: 0,
-                zIndex: 9999,
                 transform: animateIn ? "translateY(0)" : "translateY(100%)",
                 opacity: animateIn ? 1 : 0,
                 transition: "transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease",
             }}
         >
-            <div
-                style={{
-                    background: "#ffffff",
-                    borderTop: "1px solid #e5e7eb",
-                    boxShadow: "0 -4px 24px rgba(0, 0, 0, 0.08)",
-                }}
-            >
-                <div
-                    style={{
-                        maxWidth: 1200,
-                        margin: "0 auto",
-                        padding: "20px 24px",
-                        display: "flex",
-                        flexWrap: "wrap",
-                        alignItems: "center",
-                        gap: "16px",
-                    }}
-                >
+            <div className="border-t border-zinc-200 bg-white shadow-[0_-4px_24px_rgba(0,0,0,0.08)]">
+                <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-3 sm:px-6 md:flex-row md:items-center md:gap-4 md:py-4">
                     {/* Cookie icon + text */}
-                    <div style={{ flex: "1 1 400px", minWidth: 0 }}>
-                        <p
-                            style={{
-                                margin: 0,
-                                fontSize: 14,
-                                lineHeight: 1.6,
-                                color: "#374151",
-                                fontFamily: "var(--font-sans), system-ui, sans-serif",
-                            }}
-                        >
+                    <div className="min-w-0 flex-1">
+                        <p className="m-0 text-xs leading-5 text-zinc-700 sm:text-sm sm:leading-6">
                             We use cookies to improve your experience, serve personalised ads, and analyse traffic. By
                             clicking &lsquo;Accept All&rsquo;, you consent to our use of cookies.
                         </p>
                     </div>
 
                     {/* Buttons */}
-                    <div
-                        style={{
-                            display: "flex",
-                            flexWrap: "wrap",
-                            gap: "10px",
-                            flexShrink: 0,
-                        }}
-                    >
+                    <div className="grid grid-cols-2 gap-2 md:flex md:flex-shrink-0 md:flex-wrap md:gap-2.5">
                         {/* Accept All */}
                         <button
                             id="cookie-accept-all"
                             onClick={handleAccept}
-                            style={{
-                                padding: "10px 22px",
-                                fontSize: 13,
-                                fontWeight: 700,
-                                color: "#ffffff",
-                                background: "#0d9488",
-                                border: "none",
-                                borderRadius: 8,
-                                cursor: "pointer",
-                                letterSpacing: "0.02em",
-                                transition: "background 0.2s ease, transform 0.15s ease",
-                                fontFamily: "var(--font-sans), system-ui, sans-serif",
-                            }}
+                            className="h-10 rounded-lg border-0 bg-teal-700 px-4 text-xs font-bold tracking-[0.02em] text-white transition hover:-translate-y-px hover:bg-teal-800 sm:text-sm md:px-5"
                             onMouseEnter={(e) => {
                                 (e.target as HTMLButtonElement).style.background = "#0f766e";
                                 (e.target as HTMLButtonElement).style.transform = "translateY(-1px)";
@@ -182,19 +139,7 @@ export default function CookieConsent() {
                         <button
                             id="cookie-reject-nonessential"
                             onClick={handleReject}
-                            style={{
-                                padding: "10px 22px",
-                                fontSize: 13,
-                                fontWeight: 600,
-                                color: "#374151",
-                                background: "#ffffff",
-                                border: "1px solid #d1d5db",
-                                borderRadius: 8,
-                                cursor: "pointer",
-                                letterSpacing: "0.01em",
-                                transition: "background 0.2s ease, border-color 0.2s ease, transform 0.15s ease",
-                                fontFamily: "var(--font-sans), system-ui, sans-serif",
-                            }}
+                            className="h-10 rounded-lg border border-zinc-300 bg-white px-4 text-xs font-semibold tracking-[0.01em] text-zinc-700 transition hover:-translate-y-px hover:border-zinc-400 hover:bg-zinc-50 sm:text-sm md:px-5"
                             onMouseEnter={(e) => {
                                 (e.target as HTMLButtonElement).style.background = "#f9fafb";
                                 (e.target as HTMLButtonElement).style.borderColor = "#9ca3af";
@@ -213,22 +158,7 @@ export default function CookieConsent() {
                         <Link
                             id="cookie-settings-link"
                             href="/cookies"
-                            style={{
-                                display: "inline-flex",
-                                alignItems: "center",
-                                padding: "10px 22px",
-                                fontSize: 13,
-                                fontWeight: 600,
-                                color: "#6b7280",
-                                background: "transparent",
-                                border: "1px solid transparent",
-                                borderRadius: 8,
-                                cursor: "pointer",
-                                letterSpacing: "0.01em",
-                                textDecoration: "none",
-                                transition: "color 0.2s ease, background 0.2s ease",
-                                fontFamily: "var(--font-sans), system-ui, sans-serif",
-                            }}
+                            className="col-span-2 inline-flex h-9 items-center justify-center rounded-lg border border-transparent px-4 text-xs font-semibold tracking-[0.01em] text-zinc-500 no-underline transition hover:bg-zinc-100 hover:text-zinc-950 sm:text-sm md:col-span-1 md:h-10 md:px-5"
                             onMouseEnter={(e) => {
                                 (e.target as HTMLAnchorElement).style.color = "#111827";
                                 (e.target as HTMLAnchorElement).style.background = "#f3f4f6";
