@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-    Home, LayoutGrid, CreditCard, Calendar, Settings, Bookmark, FileText, Download
+    Home, LayoutGrid, CreditCard, Calendar, Settings, Bookmark, LibraryBig
 } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
 import { CustomUserMenu } from "@/components/layout/CustomUserMenu";
@@ -13,8 +13,13 @@ import { useDashboard } from "./dashboard-shell";
 const NAV_ITEMS = [
     { label: "ENERGDIVE", href: "/", icon: Home },
     { label: "My Feed", href: "/dashboard", icon: LayoutGrid },
-    { label: "My Submissions", href: "/dashboard/my-submissions", icon: FileText },
-    { label: "My Downloads", href: "/dashboard/my-downloads", icon: Download },
+    {
+        label: "Knowledge Base",
+        href: "/dashboard/my-submissions",
+        fallbackHref: "/dashboard/my-downloads",
+        icon: LibraryBig,
+        activeHrefs: ["/dashboard/my-submissions", "/dashboard/my-downloads"],
+    },
     { label: "Saved", href: "/dashboard/saved", icon: Bookmark },
     { label: "Subscriptions", href: "/dashboard/subscriptions", icon: CreditCard },
     { label: "Events", href: "/dashboard/events", icon: Calendar },
@@ -30,11 +35,7 @@ export function DashboardHeader() {
     const role = profile.job_title || "Member";
 
     // Filter nav items based on user activity
-    const visibleNavItems = NAV_ITEMS.filter((item) => {
-        if (item.label === "My Submissions" && !profile.has_submitted_paper) return false;
-        if (item.label === "My Downloads" && !profile.hasDownloads) return false;
-        return true;
-    });
+    const visibleNavItems = NAV_ITEMS;
 
     return (
         <header
@@ -121,15 +122,20 @@ export function DashboardHeader() {
                 {/* Rest of nav items centered */}
                 <div className="flex items-center gap-1 mx-auto">
                     {visibleNavItems.slice(1).map((item) => {
+                        const href =
+                            item.label === "Knowledge Base" && !profile.has_submitted_abstract && profile.hasDownloads
+                                ? item.fallbackHref ?? item.href
+                                : item.href;
                         const isActive =
-                            item.href === "/dashboard"
+                            item.activeHrefs?.some((activeHref) => pathname.startsWith(activeHref)) ??
+                            (item.href === "/dashboard"
                                 ? pathname === "/dashboard"
-                                : pathname.startsWith(item.href);
+                                : pathname.startsWith(item.href));
                         const Icon = item.icon;
                         return (
                             <Link
                                 key={item.label}
-                                href={item.href}
+                                href={href}
                                 className="flex items-center gap-2 px-4 h-full text-sm font-medium transition-all whitespace-nowrap border-b-2"
                                 style={
                                     isActive

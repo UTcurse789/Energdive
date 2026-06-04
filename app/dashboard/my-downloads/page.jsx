@@ -3,6 +3,7 @@ import { currentUser } from "@clerk/nextjs/server";
 import { Download, FileText, FolderDown, ArrowUpRight } from "lucide-react";
 import { formatSubmissionDate } from "@/lib/paper-submissions";
 import { getUserDownloads } from "@/lib/queries";
+import { KnowledgeBaseDashboardFrame } from "@/components/dashboard/knowledge-base-dashboard-frame";
 
 export const metadata = {
     title: "My Downloads",
@@ -25,7 +26,7 @@ export default async function MyDownloadsPage() {
     }
 
     return (
-        <div className="animate-fade-in-up max-w-5xl mx-auto">
+        <KnowledgeBaseDashboardFrame>
             <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                     <h1 className="text-3xl font-bold" style={{ color: "var(--dash-text)" }}>
@@ -70,11 +71,11 @@ export default async function MyDownloadsPage() {
                     </Link>
                 </div>
             ) : (
-                <div className="grid gap-4 md:grid-cols-2">
+                <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
                     {downloads.map((item) => (
                         <article
                             key={item.id}
-                            className="flex flex-col justify-between rounded-[28px] border p-6 transition-all hover:shadow-[0_12px_40px_rgba(0,0,0,0.18)] hover:-translate-y-0.5"
+                            className="flex min-h-[230px] flex-col justify-between rounded-[24px] border p-5 transition-all hover:shadow-[0_12px_40px_rgba(0,0,0,0.18)] hover:-translate-y-0.5"
                             style={{ background: "var(--dash-card)", borderColor: "var(--dash-border)" }}
                         >
                             <div>
@@ -116,6 +117,6 @@ export default async function MyDownloadsPage() {
                     ))}
                 </div>
             )}
-        </div>
+        </KnowledgeBaseDashboardFrame>
     );
 }

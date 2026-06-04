@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import { AlertCircle, FileText, RefreshCcw, UploadCloud } from "lucide-react";
 
-const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
+const DEFAULT_MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
 
 function formatFileSize(bytes) {
     if (!bytes) return "0 KB";
@@ -13,10 +13,10 @@ function formatFileSize(bytes) {
     return `${Math.max(1, Math.round(bytes / 1024))} KB`;
 }
 
-function isPdfFile(file) {
+function isValidFile(file, allowedExtensions) {
     if (!file) return false;
     const lowerCaseName = file.name.toLowerCase();
-    return file.type === "application/pdf" || lowerCaseName.endsWith(".pdf");
+    return allowedExtensions.some((ext) => lowerCaseName.endsWith(ext.toLowerCase()));
 }
 
 export default function UploadZone({
@@ -25,6 +25,10 @@ export default function UploadZone({
     disabled = false,
     label = "Paper PDF",
     helperText = "PDF only, maximum size 10 MB.",
+    accept = ".pdf,application/pdf",
+    allowedExtensions = [".pdf"],
+    maxFileSizeBytes = DEFAULT_MAX_FILE_SIZE_BYTES,
+    maxFileSizeLabel = "10 MB",
 }) {
     const inputRef = useRef(null);
     const [isDragOver, setIsDragOver] = useState(false);
@@ -33,13 +37,14 @@ export default function UploadZone({
     const validateAndSelectFile = (nextFile) => {
         if (!nextFile) return;
 
-        if (!isPdfFile(nextFile)) {
-            setError("Only PDF files are allowed.");
+        if (!isValidFile(nextFile, allowedExtensions)) {
+            setError(`Only ${allowedExtensions.join(", ")} files are allowed.`);
             return;
         }
 
-        if (nextFile.size > MAX_FILE_SIZE_BYTES) {
-            setError("The file exceeds the 10 MB limit.");
+
+        if (nextFile.size > maxFileSizeBytes) {
+            setError(`The file exceeds the ${maxFileSizeLabel} limit.`);
             return;
         }
 
@@ -123,7 +128,7 @@ export default function UploadZone({
                 <input
                     ref={inputRef}
                     type="file"
-                    accept=".pdf,application/pdf"
+                    accept={accept}
                     onChange={handleInputChange}
                     className="hidden"
                     disabled={disabled}
@@ -141,7 +146,7 @@ export default function UploadZone({
                             <div className="min-w-0">
                                 <p className="truncate text-sm font-semibold" style={{ color: "var(--dash-text)" }}>{file.name}</p>
                                 <p className="mt-1 text-xs" style={{ color: "var(--dash-text-dim)" }}>
-                                    {formatFileSize(file.size)} • Click or drop a new PDF to replace it
+                                    {formatFileSize(file.size)} • Click or drop a new file to replace it
                                 </p>
                             </div>
                         </div>

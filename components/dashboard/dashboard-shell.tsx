@@ -22,7 +22,7 @@ export interface DashboardProfile {
     job_title: string | null;
     organization: string | null;
     onboarding_completed: boolean;
-    has_submitted_paper: boolean;
+    has_submitted_abstract: boolean;
     hasDownloads: boolean;
     preferred_frequency: string | null;
     preferred_formats: string[];

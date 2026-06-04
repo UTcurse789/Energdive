@@ -1,11 +1,11 @@
 import { notFound } from "next/navigation";
 import { fetchPaperSubmissions } from "@/lib/paper-submissions-server";
 import { formatSubmissionDate } from "@/lib/paper-submissions";
-import { Building2, CalendarDays, UserRound, ArrowLeft, Download, FileText, ExternalLink } from "lucide-react";
+import { Building2, CalendarDays, UserRound, ArrowLeft, Download, FileText } from "lucide-react";
 import Link from "next/link";
 
 const KNOWLEDGE_BASE_QUERY =
-    "populate[sectors][fields][0]=name&populate[sectors][fields][1]=slug&populate[sectors][populate][parent][fields][0]=name&populate[sectors][populate][parent][fields][1]=slug&populate[pdf][fields][0]=url&populate[pdf][fields][1]=name&populate[pdf][fields][2]=size&populate[pdf][fields][3]=ext&sort[0]=submitted_date:desc&filters[paper_status][$eq]=accepted&pagination[pageSize]=100";
+    "populate[sectors][fields][0]=name&populate[sectors][fields][1]=slug&populate[sectors][populate][parent][fields][0]=name&populate[sectors][populate][parent][fields][1]=slug&populate[abstract_pdf][fields][0]=url&populate[abstract_pdf][fields][1]=name&populate[abstract_pdf][fields][2]=size&populate[abstract_pdf][fields][3]=ext&populate[final_paper_submissions][fields][0]=final_status&populate[final_paper_submissions][fields][1]=final_submission_date&sort[0]=submitted_date:desc&pagination[pageSize]=100";
 
 function slugify(text) {
     return String(text || "")
@@ -51,7 +51,7 @@ export async function generateMetadata({ params }) {
         return { title: "Paper Abstract | Knowledge Base" };
     }
 
-    const paper = papers.find((p) => slugify(p.title || "untitled-paper") === slug);
+    const paper = papers.find((p) => p.hasAcceptedFinalPaper && slugify(p.title || "untitled-paper") === slug);
     return {
         title: paper ? `${paper.title} | Knowledge Base` : "Paper Abstract | Knowledge Base",
         description: paper?.abstract ? paper.abstract.slice(0, 160) : "Read the full research paper abstract.",
@@ -68,7 +68,7 @@ export default async function AbstractPage({ params }) {
         notFound();
     }
 
-    const paper = papers.find((p) => slugify(p.title || "untitled-paper") === slug);
+    const paper = papers.find((p) => p.hasAcceptedFinalPaper && slugify(p.title || "untitled-paper") === slug);
     if (!paper) notFound();
 
     const pdfUrl = extractPdfUrl(paper.pdf);

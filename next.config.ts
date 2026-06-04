@@ -119,6 +119,12 @@ const nextConfig: NextConfig = {
         destination: '/interviews/:slug',
         permanent: true,
       },
+      // Redirect old paper submission route to abstract submission route
+      {
+        source: '/knowledge-base/submit/paper',
+        destination: '/knowledge-base/submit/abstract',
+        permanent: true,
+      },
     ];
   },
 
