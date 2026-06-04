@@ -1829,7 +1829,7 @@ export async function sendAbstractAcceptedEmail(
                     </tr>
                     <tr>
                         <td style="background-color:#F9FAFB;padding:24px 40px;text-align:center;border-top:1px solid #F3F4F6;">
-                            <p style="margin:0 0 8px;color:#111827;font-size:13px;font-weight:700;">ENERGDive Intelligence</p>
+                            <p style="margin:0 0 8px;color:#111827;font-size:13px;font-weight:700;">ENERGDIVE Intelligence</p>
                             <p style="margin:0;color:#9CA3AF;font-size:11px;">&copy; ${new Date().getFullYear()} ENERGDIVE. All rights reserved.</p>
                         </td>
                     </tr>
