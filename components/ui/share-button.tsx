@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { Share2, Check, Facebook, Twitter, Linkedin, Link as LinkIcon } from "lucide-react";
+import posthog from "posthog-js";
 
 interface ShareButtonProps {
     title?: string;
@@ -70,6 +71,11 @@ export function ShareButton({ title, text, url, className = "", iconClassName = 
                 document.body.removeChild(textArea);
             }
             setCopied(true);
+            posthog.capture("content_shared", {
+                platform: "copy_link",
+                url: shareUrl,
+                title: title || text || "",
+            });
             setTimeout(() => {
                 setCopied(false);
                 setIsOpen(false);
@@ -97,7 +103,12 @@ export function ShareButton({ title, text, url, className = "", iconClassName = 
         }
 
         if (shareLink) {
-            window.open(shareLink, '_blank', 'noopener,noreferrer');
+            posthog.capture("content_shared", {
+                platform,
+                url: currentUrl,
+                title: currentTitle,
+            });
+            window.open(shareLink, '_blank', 'noopener');
         }
         setIsOpen(false);
     };

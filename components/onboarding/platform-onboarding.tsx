@@ -6,6 +6,7 @@ import { useAuth } from "@clerk/nextjs";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { BellRing, Mail, X } from "lucide-react";
+import { usePostHog } from "@posthog/react";
 import { OnboardingProgress } from "@/components/onboarding/onboarding-progress";
 import {
   ONBOARDING_KEYS,
@@ -24,6 +25,7 @@ export function PlatformOnboarding() {
   const pathname = usePathname();
   const { isLoaded, isSignedIn } = useAuth();
   const [isNewsletterEligible, setIsNewsletterEligible] = useState(false);
+  const posthog = usePostHog();
 
   const loginHref = useMemo(() => {
     if (typeof window === "undefined") {
@@ -137,6 +139,14 @@ export function PlatformOnboarding() {
 
               <Link
                 href={loginHref}
+                onClick={() => {
+                  if (posthog) {
+                    posthog.capture("login_clicked", {
+                      timestamp: new Date().toISOString(),
+                      path: window.location.pathname,
+                    });
+                  }
+                }}
                 className="mt-6 inline-flex w-full items-center justify-center rounded-xl bg-gradient-to-r from-[#0AB996] to-[#00A651] px-5 py-3.5 text-[15px] font-bold text-white shadow-lg shadow-[#00A651]/25 transition-all duration-300 hover:from-[#099c82] hover:to-[#008c44] hover:shadow-xl hover:shadow-[#00A651]/40 hover:-translate-y-0.5 active:translate-y-0 active:scale-95"
               >
                 Login & Subscribe

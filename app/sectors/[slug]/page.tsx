@@ -29,7 +29,7 @@ async function fetchSectorWithChildren(slug: string) {
         const url = `${STRAPI}/api/sectors?${filterStr}&populate=*`;
         const res = await fetch(url, { cache: "no-store" });
         const json = await res.json();
-        
+
         let bestMatch = null;
         if (json?.data?.length) {
             bestMatch = json.data.find((s: any) => {
@@ -659,9 +659,8 @@ function SectorArticlesSection({
     return (
         <section className="container mx-auto px-6 lg:px-16 max-w-[1400px] py-24 min-h-[40vh] mb-10">
             <div
-                className={`grid grid-cols-1 gap-12 items-start ${
-                    hasRightAd ? "xl:grid-cols-[minmax(0,1fr)_160px]" : ""
-                }`}
+                className={`grid grid-cols-1 gap-12 items-start ${hasRightAd ? "xl:grid-cols-[minmax(0,1fr)_160px]" : ""
+                    }`}
             >
                 <div>
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-x-10 gap-y-16 mt-15 mb-15">

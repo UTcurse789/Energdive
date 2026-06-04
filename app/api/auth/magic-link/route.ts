@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { validateMagicToken } from "@/lib/magic-link-db";
 import { createOtp } from "@/lib/otp";
 import { sendOtpEmail } from "@/lib/email";
+import { getPostHogClient } from "@/lib/posthog-server";
 
 /**
  * GET /api/auth/magic-link?token=xyz
@@ -48,6 +49,15 @@ export async function GET(req: NextRequest) {
         await sendOtpEmail(pending.email, pending.name || "Member", otp);
 
         console.log(`[MAGIC-LINK] OTP sent to ${pending.email}, pending_id=${pending.id}`);
+
+        getPostHogClient().capture({
+            distinctId: pending.email,
+            event: "magic_link_validated",
+            properties: {
+                email: pending.email,
+                source: pending.source || "unknown",
+            },
+        });
 
         return NextResponse.json({
             success: true,

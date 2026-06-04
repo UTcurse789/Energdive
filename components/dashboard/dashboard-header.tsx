@@ -4,8 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-    Search, Bell, Home, LayoutGrid, BrainCircuit, Users,
-    CreditCard, Calendar, Settings, Bookmark
+    Home, LayoutGrid, CreditCard, Calendar, Settings, Bookmark, FileText
 } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
 import { CustomUserMenu } from "@/components/layout/CustomUserMenu";
@@ -14,8 +13,7 @@ import { useDashboard } from "./dashboard-shell";
 const NAV_ITEMS = [
     { label: "ENERGDIVE", href: "/", icon: Home },
     { label: "My Feed", href: "/dashboard", icon: LayoutGrid },
-    // { label: "Intelligence", href: "/dashboard/feed", icon: BrainCircuit },
-    // { label: "Community", href: "/dashboard/community", icon: Users },
+    { label: "My Submissions", href: "/dashboard/my-submissions", icon: FileText },
     { label: "Saved", href: "/dashboard/saved", icon: Bookmark },
     { label: "Subscriptions", href: "/dashboard/subscriptions", icon: CreditCard },
     { label: "Events", href: "/dashboard/events", icon: Calendar },
@@ -124,7 +122,7 @@ export function DashboardHeader() {
                             <Link
                                 key={item.label}
                                 href={item.href}
-                                className="flex items-center gap-2 px-4 h-full text-sm font-medium transition-all whitespace-nowrap"
+                                className="flex items-center gap-2 px-4 h-full text-sm font-medium transition-all whitespace-nowrap border-b-2"
                                 style={
                                     isActive
                                         ? { color: "var(--dash-accent)", borderBottomColor: "var(--dash-accent)" }

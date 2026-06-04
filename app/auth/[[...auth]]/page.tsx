@@ -6,6 +6,7 @@ import { useState, useCallback, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import DotGrid from "@/components/DotGrid";
+import { usePostHog } from "@posthog/react";
 
 type AuthStep = "identifier" | "otp-signin" | "otp-signup" | "otp-phone" | "complete";
 type InputMode = "email" | "phone";
@@ -24,6 +25,51 @@ const formatPhoneForAPI = (phone: string): string => {
     return `+91${cleaned}`;
 };
 
+const DEFAULT_POST_AUTH_REDIRECT = "/dashboard";
+
+const getBrowserRedirectParam = (): string | null => {
+    if (typeof window === "undefined") {
+        return null;
+    }
+
+    return new URLSearchParams(window.location.search).get("redirect_url");
+};
+
+const getSafeRedirectPath = (value: string | null): string => {
+    if (!value) return DEFAULT_POST_AUTH_REDIRECT;
+
+    const sanitizePath = (path: string) => {
+        if (!path.startsWith("/") || path.startsWith("//")) {
+            return DEFAULT_POST_AUTH_REDIRECT;
+        }
+
+        if (path === "/auth" || path.startsWith("/auth/")) {
+            return DEFAULT_POST_AUTH_REDIRECT;
+        }
+
+        return path;
+    };
+
+    if (value.startsWith("/")) {
+        return sanitizePath(value);
+    }
+
+    if (typeof window === "undefined") {
+        return DEFAULT_POST_AUTH_REDIRECT;
+    }
+
+    try {
+        const parsed = new URL(value, window.location.origin);
+        if (parsed.origin !== window.location.origin) {
+            return DEFAULT_POST_AUTH_REDIRECT;
+        }
+
+        return sanitizePath(`${parsed.pathname}${parsed.search}${parsed.hash}`);
+    } catch {
+        return DEFAULT_POST_AUTH_REDIRECT;
+    }
+};
+
 export default function UnifiedAuthPage() {
     const { signIn, isLoaded: signInLoaded, setActive } = useSignIn();
     const { signUp, isLoaded: signUpLoaded } = useSignUp();
@@ -37,6 +83,29 @@ export default function UnifiedAuthPage() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     const [info, setInfo] = useState("");
+    const [resolvedPostAuthRedirect, setResolvedPostAuthRedirect] = useState<string | null>(null);
+
+    const posthog = usePostHog();
+    const postAuthRedirect = resolvedPostAuthRedirect ?? DEFAULT_POST_AUTH_REDIRECT;
+
+    const resolvePostAuthRedirect = useCallback(
+        () => getSafeRedirectPath(getBrowserRedirectParam() ?? searchParams.get("redirect_url")),
+        [searchParams]
+    );
+
+    useEffect(() => {
+        setResolvedPostAuthRedirect(resolvePostAuthRedirect());
+    }, [resolvePostAuthRedirect]);
+
+    // Track registration started when the auth page mounts
+    useEffect(() => {
+        if (posthog) {
+            posthog.capture("registration_started", {
+                timestamp: new Date().toISOString(),
+                path: window.location.pathname,
+            });
+        }
+    }, [posthog]);
 
     const redirectTarget = useMemo(() => {
         const rawValue = searchParams.get("redirect_url");
@@ -86,6 +155,13 @@ export default function UnifiedAuthPage() {
         setError("");
         setInfo("");
 
+        if (posthog) {
+            posthog.capture("registration_step1_completed", {
+                timestamp: new Date().toISOString(),
+                path: window.location.pathname,
+            });
+        }
+
         const isPhone = isPhoneInput(identifier.trim());
 
         if (isPhone) {
@@ -132,6 +208,12 @@ export default function UnifiedAuthPage() {
                 } else if (result.status === "complete") {
                     if (result.createdSessionId) {
                         await setActive!({ session: result.createdSessionId });
+                        if (posthog) {
+                            posthog.capture("login_completed", {
+                                timestamp: new Date().toISOString(),
+                                path: window.location.pathname,
+                            });
+                        }
                     }
                     setStep("complete");
                     window.location.href = redirectTarget;
@@ -192,6 +274,12 @@ export default function UnifiedAuthPage() {
                     const sessionId = result.createdSessionId || signUp!.createdSessionId;
                     if (sessionId) {
                         await setActive!({ session: sessionId });
+                        if (posthog) {
+                            posthog.capture("registration_completed", {
+                                timestamp: new Date().toISOString(),
+                                path: window.location.pathname,
+                            });
+                        }
                     }
                     setStep("complete");
                     setTimeout(() => window.location.replace(redirectTarget), 300);
@@ -214,6 +302,12 @@ export default function UnifiedAuthPage() {
                         });
                         if (ticketResult.createdSessionId) {
                             await setActive!({ session: ticketResult.createdSessionId });
+                            if (posthog) {
+                                posthog.capture("registration_completed", {
+                                    timestamp: new Date().toISOString(),
+                                    path: window.location.pathname,
+                                });
+                            }
                         }
                         setStep("complete");
                         setTimeout(() => window.location.replace(redirectTarget), 300);
@@ -234,6 +328,12 @@ export default function UnifiedAuthPage() {
                     const sessionId = result.createdSessionId || signIn!.createdSessionId;
                     if (sessionId) {
                         await setActive!({ session: sessionId });
+                        if (posthog) {
+                            posthog.capture("login_completed", {
+                                timestamp: new Date().toISOString(),
+                                path: window.location.pathname,
+                            });
+                        }
                     }
                     setStep("complete");
                     setTimeout(() => window.location.replace(redirectTarget), 300);
@@ -264,6 +364,12 @@ export default function UnifiedAuthPage() {
                         });
                         if (ticketResult.createdSessionId) {
                             await setActive!({ session: ticketResult.createdSessionId });
+                            if (posthog) {
+                                posthog.capture("registration_completed", {
+                                    timestamp: new Date().toISOString(),
+                                    path: window.location.pathname,
+                                });
+                            }
                         }
                         setStep("complete");
                         setTimeout(() => window.location.replace(redirectTarget), 300);
@@ -307,6 +413,19 @@ export default function UnifiedAuthPage() {
                 if (result.status === "complete") {
                     if (result.createdSessionId) {
                         await setActive!({ session: result.createdSessionId });
+                        if (posthog) {
+                            if (data.isNewUser) {
+                                posthog.capture("registration_completed", {
+                                    timestamp: new Date().toISOString(),
+                                    path: window.location.pathname,
+                                });
+                            } else {
+                                posthog.capture("login_completed", {
+                                    timestamp: new Date().toISOString(),
+                                    path: window.location.pathname,
+                                });
+                            }
+                        }
                     }
                     setIsNewUser(data.isNewUser);
                     setStep("complete");
@@ -325,6 +444,7 @@ export default function UnifiedAuthPage() {
     // ── Google OAuth ──
     const handleGoogleAuth = useCallback(async () => {
         if (!signInLoaded) return;
+        if (posthog) posthog.capture('login_clicked', { timestamp: new Date().toISOString(), path: window.location.pathname });
         try {
             await signIn!.authenticateWithRedirect({
                 strategy: "oauth_google",
@@ -339,6 +459,7 @@ export default function UnifiedAuthPage() {
     // ── LinkedIn OAuth ──
     const handleLinkedInAuth = useCallback(async () => {
         if (!signInLoaded) return;
+        if (posthog) posthog.capture('login_clicked', { timestamp: new Date().toISOString(), path: window.location.pathname });
         try {
             await signIn!.authenticateWithRedirect({
                 strategy: "oauth_linkedin_oidc",

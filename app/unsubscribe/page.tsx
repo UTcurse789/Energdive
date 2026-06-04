@@ -5,9 +5,11 @@ import Image from "next/image";
 import { useSearchParams, useRouter } from "next/navigation";
 
 const REASONS = [
-    "Too many emails",
+    "I want to reduce my email frequency",
+    "I need a break, but may return later",
     "Content not relevant",
     "Not interested",
+    "Too many emails",
     "Other"
 ];
 

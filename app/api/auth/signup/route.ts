@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { query } from "@/lib/db";
 import { generateOtp, setOtp } from "@/lib/otp-store";
 import { sendOtpEmail } from "@/lib/email";
+import { getPostHogClient } from "@/lib/posthog-server";
 
 /**
  * POST /api/auth/signup
@@ -70,6 +71,17 @@ export async function POST(req: NextRequest, { params }: { params: Promise<Recor
         await sendOtpEmail(normalizedEmail, name.trim(), otp);
 
         console.log(`[signup] OTP sent to ${normalizedEmail}, pending_id=${pendingId}`);
+
+        getPostHogClient().capture({
+            distinctId: normalizedEmail,
+            event: "signup_otp_sent",
+            properties: {
+                email: normalizedEmail,
+                has_phone: !!phone,
+                has_company: !!company,
+                source: "website",
+            },
+        });
 
         return NextResponse.json({
             success: true,

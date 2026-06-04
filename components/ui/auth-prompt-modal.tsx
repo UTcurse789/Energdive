@@ -6,8 +6,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
 import { X } from "lucide-react";
-
 import { usePathname } from "next/navigation";
+import { usePostHog } from "@posthog/react";
 
 const DISMISSAL_COOLDOWN_MS = 60 * 60 * 1000; // 1 hour
 const POPUP_DELAY_MS = 5 * 1000; // 5 seconds
@@ -16,6 +16,7 @@ export default function AuthPromptModal() {
     const { isLoaded, isSignedIn } = useAuth();
     const [show, setShow] = useState(false);
     const pathname = usePathname();
+    const posthog = usePostHog();
 
     useEffect(() => {
         // Only run on the client, and only if auth is loaded and user is NOT signed in
@@ -103,7 +104,15 @@ export default function AuthPromptModal() {
                                 {/* Primary CTA */}
                                 <Link
                                     href="/auth"
-                                    onClick={handleDismiss}
+                                    onClick={() => {
+                                        handleDismiss();
+                                        if (posthog) {
+                                            posthog.capture("signup_button_clicked", {
+                                                timestamp: new Date().toISOString(),
+                                                path: window.location.pathname,
+                                            });
+                                        }
+                                    }}
                                     className="w-full h-12 rounded-xl bg-[#0AB996] hover:bg-[#099c82] text-white font-semibold flex items-center justify-center gap-2 transition-all shadow-lg shadow-[#0AB996]/20 active:scale-[0.98]"
                                 >
                                     REGISTER / LOGIN

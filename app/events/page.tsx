@@ -1,31 +1,42 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { Header } from "@/components/layout/header";
-import { Footer } from "@/components/layout/footer";
 import { motion, AnimatePresence } from "framer-motion";
-import { MapPin, Clock, ArrowUpRight, Navigation, Loader2 } from "lucide-react";
+import { MapPin, Clock, ArrowUpRight, Navigation } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { BlocksRenderer } from "@strapi/blocks-react-renderer";
 import { DateChip } from "@/components/ui/date-chip";
 import { Skeleton } from "@/components/ui/skeleton";
 import ArticleBody from "@/components/ArticleBody";
-import { strapiImageUrl } from "@/lib/strapi-image";
+
+type EventItem = {
+    id: string;
+    title: string;
+    slug: string;
+    date: string;
+    time: string;
+    location: string;
+    venue: string;
+    url: string;
+    mapUrl: string;
+    description: string;
+    occurrence: string;
+    imageUrl: string;
+};
 
 export default function EventsPage() {
-    const [events, setEvents] = useState<any[]>([]);
+    const [events, setEvents] = useState<EventItem[]>([]);
     const [loading, setLoading] = useState(true);
-    const BASE_URL = "https://cms.energdive.com";
-    const [activeTab, setActiveTab] = useState("upcoming");
+    const [activeTab, setActiveTab] = useState<"upcoming" | "past">("upcoming");
 
     useEffect(() => {
-        // Use an internal function so we don't need external dependencies
         async function fetchEvents() {
             try {
-                const res = await fetch(`${BASE_URL}/api/events?populate=image`);
+                setLoading(true);
+                const res = await fetch(`/api/public/events?occurrence=${activeTab}`, { cache: "no-store" });
                 const json = await res.json();
-                setEvents(json.data || []);
+                setEvents(Array.isArray(json.events) ? json.events : []);
             } catch (error) {
                 console.error("Error fetching events:", error);
             } finally {
@@ -34,60 +45,13 @@ export default function EventsPage() {
         }
 
         fetchEvents();
-    }, []);
+    }, [activeTab]);
 
-    const tabs = [
+    const tabs: Array<{ id: "upcoming" | "past"; label: string }> = [
         // { id: "ongoing", label: "Ongoing" },
         { id: "upcoming", label: "Upcoming" },
         { id: "past", label: "Past Events" },
     ];
-
-    const filteredEvents = useMemo(() => {
-        const filtered = events.filter(event => event.occurrence?.toLowerCase() === activeTab);
-
-        // Helper to parse dates like "01st - 03rd September 2026" or "26 February 2026"
-        const parseEventDate = (dateString?: string) => {
-            if (!dateString) return 0;
-            const str = String(dateString).toLowerCase();
-
-            const months = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
-            let monthIndex = 0;
-            for (let i = 0; i < months.length; i++) {
-                if (str.includes(months[i])) {
-                    monthIndex = i;
-                    break;
-                }
-            }
-
-            let year = new Date().getFullYear();
-            const yearMatch = str.match(/\b(20\d\d)\b/);
-            if (yearMatch) {
-                year = parseInt(yearMatch[1], 10);
-            }
-
-            let day = 1;
-            const dayMatch = str.match(/(\d{1,2})/);
-            if (dayMatch) {
-                day = parseInt(dayMatch[1], 10);
-            }
-
-            return new Date(year, monthIndex, day).getTime();
-        };
-
-        // Sort chronologically by extracted date
-        return filtered.sort((a, b) => {
-            const timeA = parseEventDate(a.date);
-            const timeB = parseEventDate(b.date);
-
-            if (activeTab === "upcoming") {
-                // Soonest events first (ascending order)
-                return timeA - timeB;
-            } else {
-                // Most recent past events first (descending order)
-                return timeB - timeA;
-            }
-        });
-    }, [activeTab, events]);
 
     if (loading) {
         return (
@@ -174,12 +138,7 @@ export default function EventsPage() {
                             exit={{ opacity: 0 }}
                             className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10"
                         >
-                            {filteredEvents.map((event, idx) => {
-                                // FIXED: Accessing the image from the array in your JSON
-                                const imageUrl = event.image?.[0]?.url
-                                    ? strapiImageUrl(event.image[0].url)
-                                    : "/api/placeholder/400/150";
-
+                            {events.map((event, idx) => {
                                 return (
                                     <motion.div
                                         key={event.id}
@@ -190,7 +149,7 @@ export default function EventsPage() {
                                     >
                                         <div className="relative aspect-video bg-zinc-50 border-b border-zinc-100 overflow-hidden">
                                             <Image
-                                                src={imageUrl}
+                                                src={event.imageUrl}
                                                 alt={event.title}
                                                 fill
                                                 className="object-contain p-10 transition-transform duration-700 group-hover:scale-110"
@@ -229,7 +188,7 @@ export default function EventsPage() {
                                                 <a
                                                     href={event.mapUrl}
                                                     target="_blank"
-                                                    rel="noopener noreferrer"
+                                                    rel="noopener"
                                                     className="flex items-start gap-3 group/map p-3 -mx-3 rounded-xl hover:bg-zinc-50 transition-colors"
                                                 >
                                                     <div className="mt-0.5 p-1.5 bg-[#00A651]/10 rounded-full text-[#00A651]">
@@ -252,7 +211,7 @@ export default function EventsPage() {
                                             <a
                                                 href={event.url}
                                                 target="_blank"
-                                                rel="noopener noreferrer"
+                                                rel="noopener"
                                                 className="w-full py-4 rounded-xl border border-zinc-200 flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] hover:bg-black hover:text-white hover:border-black transition-all"
                                             >
                                                 View Website <ArrowUpRight size={14} />
@@ -264,7 +223,7 @@ export default function EventsPage() {
                         </motion.div>
                     </AnimatePresence>
 
-                    {filteredEvents.length === 0 && (
+                    {events.length === 0 && (
                         <div className="text-center py-20 text-zinc-400 font-serif italic">
                             No summits currently listed in this category.
                         </div>

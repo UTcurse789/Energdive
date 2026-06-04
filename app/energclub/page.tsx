@@ -4,10 +4,8 @@ import React from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import {
-    Brain, Lightbulb, Share2, ArrowRight, CheckCircle2
-} from "lucide-react";
-import { title } from "process";
+import { Brain, Lightbulb, Share2, ArrowRight, CheckCircle2 } from "lucide-react";
+import { usePostHog } from "@posthog/react";
 
 // --- Components ---
 
@@ -30,7 +28,19 @@ const FeatureCard = ({ icon, title, description }: { icon: React.ReactNode, titl
     </motion.div>
 );
 
-const TierCard = ({ title, price, features, recommended = false }: { title: string, price: string, features: string[], recommended?: boolean }) => (
+const TierCard = ({
+    title,
+    price,
+    features,
+    recommended = false,
+    onJoinClick,
+}: {
+    title: string,
+    price: string,
+    features: string[],
+    recommended?: boolean,
+    onJoinClick?: () => void,
+}) => (
     <div className={`relative p-8 rounded-2xl border ${recommended ? 'border-[#E5B866] bg-[#E5B866]/5' : 'border-zinc-800 bg-zinc-900/50'} flex flex-col h-full`}>
         {recommended && (
             <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#E5B866] text-black text-xs font-bold px-4 py-1 rounded-full uppercase tracking-widest">
@@ -47,10 +57,14 @@ const TierCard = ({ title, price, features, recommended = false }: { title: stri
                 </li>
             ))}
         </ul>
-        <Link href="/auth" className={`w-full py-3 rounded-lg font-bold text-sm uppercase tracking-widest transition-all block text-center ${recommended
-            ? 'bg-[#E5B866] text-black hover:bg-[#d4a855]'
-            : 'bg-zinc-800 text-white hover:bg-zinc-700'
-            }`}>
+        <Link
+            href="/auth"
+            onClick={recommended ? onJoinClick : undefined}
+            className={`w-full py-3 rounded-lg font-bold text-sm uppercase tracking-widest transition-all block text-center ${recommended
+                ? 'bg-[#E5B866] text-black hover:bg-[#d4a855]'
+                : 'bg-zinc-800 text-white hover:bg-zinc-700'
+                }`}
+        >
             {recommended ? 'Join Now' : 'Coming Soon'}
         </Link>
     </div>
@@ -70,6 +84,26 @@ const ecosystemItems = [
 ];
 
 export default function EnergClubPage() {
+    const posthog = usePostHog();
+
+    const captureSignupClick = React.useCallback(() => {
+        if (posthog) {
+            posthog.capture("signup_button_clicked", {
+                timestamp: new Date().toISOString(),
+                path: window.location.pathname,
+            });
+        }
+    }, [posthog]);
+
+    React.useEffect(() => {
+        if (posthog) {
+            posthog.capture('energclub_page_viewed', {
+                timestamp: new Date().toISOString(),
+                path: window.location.pathname
+            });
+        }
+    }, [posthog]);
+
     return (
         <main className="bg-black text-white min-h-screen selection:bg-[#E5B866] selection:text-black">
 
@@ -216,7 +250,11 @@ export default function EnergClubPage() {
                     <p className="text-zinc-400 text-lg mb-10 leading-relaxed">
                         An integrated digital platform for India's energy professionals. All figures, power, generation, markets, storage, policy, and one goal: To Access Insights, Fuel Innovation, and Sustain Power for a better ecosystem.
                     </p>
-                    <Link href="/auth" className="bg-[#E5B866] text-black px-10 py-4 rounded-full font-bold uppercase tracking-widest hover:bg-white transition-colors duration-300 shadow-[0_0_20px_rgba(229,184,102,0.3)] inline-block">
+                    <Link
+                        href="/auth"
+                        onClick={captureSignupClick}
+                        className="bg-[#E5B866] text-black px-10 py-4 rounded-full font-bold uppercase tracking-widest hover:bg-white transition-colors duration-300 shadow-[0_0_20px_rgba(229,184,102,0.3)] inline-block"
+                    >
                         Join Now
                     </Link>
                 </div>
@@ -300,6 +338,7 @@ export default function EnergClubPage() {
                         <TierCard
                             title="Premier"
                             price="Paid"
+                            onJoinClick={captureSignupClick}
                             features={[
                                 "Complimentary Subscription to EnergDive Magazine (12 Issues)",
                                 "Publish view points, technical papers & research on our Digital Feed",
@@ -311,6 +350,7 @@ export default function EnergClubPage() {
                             title="Standard"
                             price="Free"
                             recommended={true}
+                            onJoinClick={captureSignupClick}
                             features={[
                                 "Early access to EnergDive featured content",
                                 "Join multiple digital sub-communities",
@@ -323,6 +363,7 @@ export default function EnergClubPage() {
                         <TierCard
                             title="Executive"
                             price="Invite / Corporate"
+                            onJoinClick={captureSignupClick}
                             features={[
                                 "Reserved for CXOs, Founder, Directors, Policy Makers",
                                 "Complimentary Print Edition of EnergDive Magazine",
@@ -384,7 +425,11 @@ export default function EnergClubPage() {
                     <p className="text-zinc-400 mb-10 leading-relaxed">
                         Your access to India's most influential energy community is just one step away. Join now and start engaging with policymakers, industry giants, and opportunities that matter to your journey.
                     </p>
-                    <Link href="/auth" className="bg-[#E5B866] text-black px-12 py-4 rounded-full font-bold uppercase tracking-widest hover:bg-white transition-colors duration-300 shadow-[0_0_30px_rgba(229,184,102,0.4)] inline-block">
+                    <Link
+                        href="/auth"
+                        onClick={captureSignupClick}
+                        className="bg-[#E5B866] text-black px-12 py-4 rounded-full font-bold uppercase tracking-widest hover:bg-white transition-colors duration-300 shadow-[0_0_30px_rgba(229,184,102,0.4)] inline-block"
+                    >
                         Join Now
                     </Link>
 

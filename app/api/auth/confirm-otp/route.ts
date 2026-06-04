@@ -3,6 +3,7 @@ import { verifyOtp } from "@/lib/otp-store";
 import { query, getClient } from "@/lib/db";
 import { sendMembershipWelcomeCardEmail } from "@/lib/email";
 import { issueMagicToken } from "@/lib/queries";
+import { getPostHogClient } from "@/lib/posthog-server";
 
 function getPrimaryCommunityLabel(value: unknown): string | null {
     if (!value) {
@@ -197,6 +198,28 @@ export async function POST(req: NextRequest) {
             const message = emailErr instanceof Error ? emailErr.message : String(emailErr);
             console.warn(`[CONFIRM-OTP:${requestId}] Welcome email failed (non-fatal):`, message);
         }
+
+        getPostHogClient().capture({
+            distinctId: pending.email,
+            event: "user_registration_completed",
+            properties: {
+                email: pending.email,
+                membership_id: membershipId,
+                source: pending.source || "website",
+                has_company: !!pending.company,
+                has_phone: !!pending.phone,
+            },
+        });
+
+        getPostHogClient().identify({
+            distinctId: pending.email,
+            properties: {
+                email: pending.email,
+                name: pending.name,
+                membership_id: membershipId,
+                source: pending.source || "website",
+            },
+        });
 
         return NextResponse.json({
             success: true,

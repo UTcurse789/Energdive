@@ -98,7 +98,7 @@ export default function OnboardingWizard() {
 
             // Full page reload to /dashboard ensures the server-side
             // currentUser() in dashboard layout fetches fresh metadata.
-            window.location.href = "/dashboard";
+            window.location.href = returnTo || "/dashboard";
         } catch (error) {
             console.error("Onboarding error:", error);
             alert("Something went wrong. Please try again.");
