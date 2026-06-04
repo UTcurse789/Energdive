@@ -20,6 +20,8 @@ import {
 
 const SUBMISSIONS_ENDPOINT = "/api/submit-abstract";
 const ABSTRACT_MIN_LENGTH = 200;
+const ABSTRACT_PDF_MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
+const ABSTRACT_PDF_MAX_FILE_SIZE_LABEL = "10 MB";
 
 function normalizeId(value) {
     if (value === null || value === undefined) return "";
@@ -31,6 +33,30 @@ function getErrorMessage(error) {
         return error.message;
     }
     return "We couldn't submit your abstract. Please review the form and try again.";
+}
+
+function getSubmissionErrorMessage(response, responseText) {
+    const fallback = "We couldn't submit your abstract. Please try again.";
+
+    if (response.status === 413) {
+        return `The server rejected this PDF before it could be uploaded. Files up to ${ABSTRACT_PDF_MAX_FILE_SIZE_LABEL} are allowed here, but the deployment upload limit needs to be increased.`;
+    }
+
+    if (!responseText) {
+        return fallback;
+    }
+
+    try {
+        const parsed = JSON.parse(responseText);
+        const message = parsed?.error?.message || parsed?.message || parsed?.error;
+        return typeof message === "string" && message.trim() ? message : fallback;
+    } catch {
+        if (/<html[\s>]/i.test(responseText) || /<body[\s>]/i.test(responseText)) {
+            return fallback;
+        }
+
+        return responseText;
+    }
 }
 
 export default function KnowledgeBaseAbstractForm({
@@ -257,16 +283,7 @@ export default function KnowledgeBaseAbstractForm({
 
             if (!response.ok) {
                 const responseText = await response.text();
-                let message = "We couldn't submit your abstract. Please try again.";
-                if (responseText) {
-                    try {
-                        const parsed = JSON.parse(responseText);
-                        message = parsed?.error?.message || parsed?.message || message;
-                    } catch {
-                        message = responseText;
-                    }
-                }
-                throw new Error(message);
+                throw new Error(getSubmissionErrorMessage(response, responseText));
             }
 
             // Flag the user as abstract submitter locally
@@ -624,6 +641,9 @@ export default function KnowledgeBaseAbstractForm({
                                             file={pdfFile}
                                             onFileSelect={setPdfFile}
                                             disabled={isSubmitting}
+                                            helperText={`PDF only, maximum size ${ABSTRACT_PDF_MAX_FILE_SIZE_LABEL}.`}
+                                            maxFileSizeBytes={ABSTRACT_PDF_MAX_FILE_SIZE_BYTES}
+                                            maxFileSizeLabel={ABSTRACT_PDF_MAX_FILE_SIZE_LABEL}
                                         />
                                     </Field>
                                 </div>

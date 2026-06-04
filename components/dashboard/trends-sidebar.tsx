@@ -522,7 +522,7 @@ export function TrendsSidebar() {
                                         {i + 1}
                                     </span>
                                     <div className="min-w-0">
-                                        <h4 className="text-sm font-semibold leading-snug line-clamp-2 mb-1.5 transition-colors" style={{ color: "var(--dash-text)" }}>
+                                        <h4 className="text-sm font-semibold leading-snug line-clamp-2 break-words mb-1.5 transition-colors" style={{ color: "var(--dash-text)" }}>
                                             <span className="group-hover:text-var(--dash-accent) transition-colors">
                                                 {item.title}
                                             </span>

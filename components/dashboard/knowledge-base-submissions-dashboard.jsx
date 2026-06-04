@@ -133,7 +133,7 @@ export default function KnowledgeBaseSubmissionsDashboard({
                                     style={{ background: "var(--dash-card)", borderColor: "var(--dash-border)" }}
                                 >
                                     <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                                        <div className="space-y-3">
+                                        <div className="space-y-3 min-w-0 flex-1">
                                             <div className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em]" style={{ background: "var(--dash-accent-dim)", color: "var(--dash-accent)" }}>
                                                 <FileText className="h-3.5 w-3.5" />
                                                 {abstract.primarySector}
