@@ -6,9 +6,15 @@ import { motion, AnimatePresence } from "framer-motion";
 import StepProfile, { type ProfileData } from "./step-profile";
 import StepInterestsPreferences, { type InterestsPreferencesData } from "./step-interests-preferences";
 
+import { POST_AUTH_REDIRECT_STORAGE_KEY, POST_AUTH_REDIRECT_COOKIE } from "@/lib/post-auth-redirect";
+
 const TOTAL_STEPS = 2;
 
-export default function OnboardingWizard() {
+interface OnboardingWizardProps {
+    returnTo?: string;
+}
+
+export default function OnboardingWizard({ returnTo = "/dashboard" }: OnboardingWizardProps) {
     const { user } = useUser();
     const [step, setStep] = useState(1);
     const [isSubmitting, setIsSubmitting] = useState(false);

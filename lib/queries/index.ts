@@ -28,3 +28,7 @@ export {
   markEnergJobEntitySyncFailed,
   logEnergJobSyncEvent,
 } from "./energjob";
+
+export { addPaperDownload, getUserDownloads, hasUserDownloads } from "./downloads";
+export type { UserDownload } from "./downloads";
+
