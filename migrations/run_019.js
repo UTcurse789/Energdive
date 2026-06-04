@@ -1,10 +1,8 @@
 /**
- * Run migration 019: Rename has_submitted_paper to has_submitted_abstract in users table
+ * Run migration 019: application token
  *
  * Usage:
  *   node migrations/run_019.js
- *
- * Requires DATABASE_URL in environment or .env
  */
 
 const { Pool } = require("pg");
@@ -23,17 +21,17 @@ async function run() {
   });
 
   const sql = fs.readFileSync(
-    path.resolve(__dirname, "019_user_abstract_flag.sql"),
+    path.resolve(__dirname, "019_application_token.sql"),
     "utf-8"
   );
 
-  console.log("Running migration 019_user_abstract_flag.sql ...");
+  console.log("Running migration 019_application_token.sql ...");
 
   try {
     await pool.query(sql);
-    console.log("✅ Migration 019 applied successfully.");
+    console.log("Migration 019 applied successfully.");
   } catch (err) {
-    console.error("❌ Migration 019 failed:", err.message);
+    console.error("Migration 019 failed:", err.message);
     process.exit(1);
   } finally {
     await pool.end();

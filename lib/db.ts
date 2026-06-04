@@ -25,9 +25,10 @@ function createPool(): Pool {
         // Pool tuning — production-grade for 5000+ concurrent users
         max: 20,                          // scaled for concurrent load
         idleTimeoutMillis: 30_000,        // close idle clients after 30s
-        connectionTimeoutMillis: 2_000,   // fail fast if DB unreachable
+        connectionTimeoutMillis: 5_000,   // managed PG handshakes can exceed 2s
         allowExitOnIdle: true,            // let Node exit even if pool has idle clients
         statement_timeout: 10_000,        // kill queries running > 10s
+        keepAlive: true,
     });
 
     // Error handling to prevent "Error: Connection terminated unexpectedly" crashing the app
@@ -49,7 +50,7 @@ if (process.env.NODE_ENV !== "production") {
 const shutdown = async () => {
     try {
         await pool.end();
-    } catch (_) {
+    } catch {
         // ignore
     }
     process.exit(0);

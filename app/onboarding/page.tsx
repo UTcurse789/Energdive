@@ -108,8 +108,8 @@ export default async function OnboardingPage({
                 <p className="text-zinc-500">Let&apos;s set up your personalized experience.</p>
             </div>
 
-            <div className="relative z-10 w-full max-w-2xl">
-                <OnboardingWizard returnTo={returnTo} />
+            <div className="relative z-10 w-full max-w-3xl">
+                <OnboardingWizard />
             </div>
 
             <div className="relative z-10 mt-8 text-center text-xs text-zinc-400">

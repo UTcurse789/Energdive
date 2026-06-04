@@ -45,6 +45,20 @@ interface PreferenceDigestSection {
     }>;
 }
 
+interface EnergJobApplicationEmailPayload {
+    applicantEmail: string;
+    applicantName: string;
+    companyName: string;
+    coverNote?: string | null;
+    jobTitle: string;
+    jobUrl: string;
+    phone?: string | null;
+    recruiterEmail?: string | null;
+    recruiterName?: string | null;
+    resumeUrl?: string | null;
+    applicationViewUrl?: string | null;
+}
+
 function escapeHtml(value: string): string {
     return value
         .replace(/&/g, "&amp;")
@@ -64,6 +78,51 @@ function formatMembershipDate(value?: string | Date | null): string {
         year: "numeric",
         timeZone: "Asia/Kolkata",
     }).format(safeDate);
+}
+
+function getEnergdiveLogoUrl() {
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://www.energdive.com";
+    return `${appUrl}/Energdive-Logo.png`;
+}
+
+function buildEnergJobEmailShell(subject: string, body: string) {
+    const logoUrl = getEnergdiveLogoUrl();
+
+    return `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>${subject}</title>
+</head>
+<body style="margin:0;padding:0;background-color:#0B0F19;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#0B0F19;padding:40px 20px;">
+        <tr>
+            <td align="center">
+                <table width="640" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 20px 40px rgba(0,0,0,0.3);">
+                    <tr>
+                        <td style="background:#0a2e1f;padding:32px 40px;text-align:center;border-bottom:4px solid #09B697;">
+                            <img src="${logoUrl}" alt="EnergDive Logo" width="180" style="display:block;margin:0 auto;max-width:200px;height:auto;" />
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding:40px;">
+                            ${body}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="background-color:#F9FAFB;padding:24px 40px;text-align:center;border-top:1px solid #F3F4F6;">
+                            <p style="margin:0 0 8px;color:#111827;font-size:13px;font-weight:700;">ENERGDIVE</p>
+                            <p style="margin:0;color:#9CA3AF;font-size:11px;">&copy; ${new Date().getFullYear()} ENERGDIVE. All rights reserved.</p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>`;
 }
 
 /**
@@ -200,6 +259,474 @@ export async function sendPortalAccessEmail(
 </html>`;
 
     await sendEmail({ to, toName: firstName, subject, htmlContent });
+}
+
+export async function sendEnergJobApplicationApplicantEmail(
+    payload: EnergJobApplicationEmailPayload
+): Promise<void> {
+    const subject = `Application received for ${payload.jobTitle}`;
+    const recruiterLabel = payload.recruiterName || payload.companyName;
+    const logoUrl = getEnergdiveLogoUrl();
+    const yr = new Date().getFullYear();
+    const appliedDate = new Intl.DateTimeFormat("en-IN", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+        timeZone: "Asia/Kolkata",
+    }).format(new Date());
+
+    const htmlContent = `<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>${subject}</title>
+    <!--[if mso]><style>table{border-collapse:collapse;}td{border-collapse:collapse;}</style><![endif]-->
+    <style type="text/css">
+        body, table, td, p, a, li { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+        img { -ms-interpolation-mode: bicubic; border: 0; outline: none; text-decoration: none; }
+        @media only screen and (max-width: 640px) {
+            .email-wrap { width: 100% !important; }
+            .content-pad { padding: 28px 20px !important; }
+            .header-pad { padding: 24px 20px !important; }
+            .footer-pad { padding: 20px !important; }
+            .job-card-td { padding: 20px !important; }
+            .step-table { width: 100% !important; }
+            .step-td { display: block !important; width: 100% !important; padding: 0 0 16px 0 !important; text-align: center !important; }
+            .cta-btn { display: block !important; text-align: center !important; }
+        }
+    </style>
+</head>
+<body style="margin:0;padding:0;background-color:#f0f4f8;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;-webkit-font-smoothing:antialiased;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f0f4f8;padding:32px 16px;">
+        <tr>
+            <td align="center">
+                <table class="email-wrap" width="600" cellpadding="0" cellspacing="0" style="width:100%;max-width:600px;background-color:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+
+                    <!-- ═══ LOGO HEADER ═══ -->
+                    <tr>
+                        <td class="header-pad" style="padding:28px 40px;background:#ffffff;border-bottom:1px solid #e8ecf1;">
+                            <table width="100%" cellpadding="0" cellspacing="0">
+                                <tr>
+                                    <td>
+                                        <img src="${logoUrl}" alt="ENERGDIVE" width="160" style="display:block;max-width:160px;height:auto;" />
+                                    </td>
+                                    <td align="right" style="color:#6b7280;font-size:12px;font-weight:600;">
+                                        EnergJob
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- ═══ SUCCESS BANNER ═══ -->
+                    <tr>
+                        <td style="padding:0;">
+                            <table width="100%" cellpadding="0" cellspacing="0" style="background:linear-gradient(135deg,#091d3a 0%,#0d3150 100%);">
+                                <tr>
+                                    <td class="content-pad" style="padding:40px;text-align:center;">
+                                        <div style="font-size:48px;line-height:1;margin-bottom:16px;">🚀</div>
+                                        <h1 style="margin:0 0 8px;color:#ffffff;font-size:24px;font-weight:800;letter-spacing:-0.3px;">Application Submitted!</h1>
+                                        <p style="margin:0;color:rgba(255,255,255,0.75);font-size:14px;line-height:1.5;">Your application has been successfully received</p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- ═══ GREETING ═══ -->
+                    <tr>
+                        <td class="content-pad" style="padding:32px 40px 0;">
+                            <p style="margin:0 0 6px;color:#091d3a;font-size:18px;font-weight:700;">Hi ${escapeHtml(payload.applicantName)},</p>
+                            <p style="margin:0;color:#4b5563;font-size:14px;line-height:1.7;">
+                                Thank you for applying. Your application for the position below has been received and shared with <strong>${escapeHtml(recruiterLabel)}</strong>.
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- ═══ JOB DETAILS CARD ═══ -->
+                    <tr>
+                        <td class="content-pad" style="padding:24px 40px;">
+                            <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+                                <tr>
+                                    <td style="background:#09B697;padding:3px 0;font-size:0;line-height:0;">&nbsp;</td>
+                                </tr>
+                                <tr>
+                                    <td class="job-card-td" style="padding:24px 28px;">
+                                        <table width="100%" cellpadding="0" cellspacing="0">
+                                            <tr>
+                                                <td>
+                                                    <p style="margin:0 0 4px;color:#09B697;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;">Position Applied</p>
+                                                    <h2 style="margin:0 0 16px;color:#091d3a;font-size:20px;font-weight:800;line-height:1.3;">${escapeHtml(payload.jobTitle)}</h2>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>
+                                                    <table width="100%" cellpadding="0" cellspacing="0">
+                                                        <tr>
+                                                            <td width="50%" valign="top" style="padding:0 8px 12px 0;">
+                                                                <p style="margin:0 0 2px;color:#9ca3af;font-size:11px;font-weight:600;text-transform:uppercase;">Company</p>
+                                                                <p style="margin:0;color:#374151;font-size:14px;font-weight:600;">${escapeHtml(payload.companyName)}</p>
+                                                            </td>
+                                                            <td width="50%" valign="top" style="padding:0 0 12px 8px;">
+                                                                <p style="margin:0 0 2px;color:#9ca3af;font-size:11px;font-weight:600;text-transform:uppercase;">Applied On</p>
+                                                                <p style="margin:0;color:#374151;font-size:14px;font-weight:600;">${appliedDate}</p>
+                                                            </td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td width="50%" valign="top" style="padding:0 8px 0 0;">
+                                                                <p style="margin:0 0 2px;color:#9ca3af;font-size:11px;font-weight:600;text-transform:uppercase;">Phone</p>
+                                                                <p style="margin:0;color:#374151;font-size:14px;font-weight:600;">${escapeHtml(payload.phone || "Not provided")}</p>
+                                                            </td>
+                                                            <td width="50%" valign="top" style="padding:0 0 0 8px;">
+                                                                <p style="margin:0 0 2px;color:#9ca3af;font-size:11px;font-weight:600;text-transform:uppercase;">Resume</p>
+                                                                <p style="margin:0;font-size:14px;font-weight:600;">${payload.resumeUrl ? `<a href="${payload.resumeUrl}" style="color:#09B697;text-decoration:underline;">View Resume</a>` : `<span style="color:#374151;">Not provided</span>`}</p>
+                                                            </td>
+                                                        </tr>
+                                                    </table>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- ═══ WHAT'S NEXT ═══ -->
+                    <tr>
+                        <td class="content-pad" style="padding:0 40px 8px;">
+                            <p style="margin:0 0 16px;color:#091d3a;font-size:16px;font-weight:700;">What happens next?</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="content-pad" style="padding:0 40px 24px;">
+                            <table width="100%" cellpadding="0" cellspacing="0">
+                                <tr>
+                                    <td style="padding:0 0 16px;">
+                                        <table width="100%" cellpadding="0" cellspacing="0">
+                                            <tr>
+                                                <td width="36" valign="top">
+                                                    <div style="width:32px;height:32px;background:#e6f9f4;border-radius:50%;text-align:center;line-height:32px;color:#09B697;font-size:14px;font-weight:800;">1</div>
+                                                </td>
+                                                <td valign="top" style="padding-left:12px;">
+                                                    <p style="margin:0 0 2px;color:#091d3a;font-size:14px;font-weight:700;">Application Received</p>
+                                                    <p style="margin:0;color:#6b7280;font-size:13px;line-height:1.5;">Your application has been saved and synced with the hiring workflow.</p>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding:0 0 16px;">
+                                        <table width="100%" cellpadding="0" cellspacing="0">
+                                            <tr>
+                                                <td width="36" valign="top">
+                                                    <div style="width:32px;height:32px;background:#e6f9f4;border-radius:50%;text-align:center;line-height:32px;color:#09B697;font-size:14px;font-weight:800;">2</div>
+                                                </td>
+                                                <td valign="top" style="padding-left:12px;">
+                                                    <p style="margin:0 0 2px;color:#091d3a;font-size:14px;font-weight:700;">Recruiter Review</p>
+                                                    <p style="margin:0;color:#6b7280;font-size:13px;line-height:1.5;">The hiring team at ${escapeHtml(payload.companyName)} will review your profile.</p>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding:0;">
+                                        <table width="100%" cellpadding="0" cellspacing="0">
+                                            <tr>
+                                                <td width="36" valign="top">
+                                                    <div style="width:32px;height:32px;background:#e6f9f4;border-radius:50%;text-align:center;line-height:32px;color:#09B697;font-size:14px;font-weight:800;">3</div>
+                                                </td>
+                                                <td valign="top" style="padding-left:12px;">
+                                                    <p style="margin:0 0 2px;color:#091d3a;font-size:14px;font-weight:700;">Next Steps</p>
+                                                    <p style="margin:0;color:#6b7280;font-size:13px;line-height:1.5;">If shortlisted, you'll be contacted directly for further rounds.</p>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- ═══ CTA BUTTON ═══ -->
+                    <tr>
+                        <td class="content-pad" style="padding:0 40px 32px;text-align:center;">
+                            <table cellpadding="0" cellspacing="0" style="margin:0 auto;">
+                                <tr>
+                                    <td align="center" style="border-radius:8px;background:#09B697;">
+                                        <a class="cta-btn" href="${payload.jobUrl}" style="display:inline-block;padding:14px 36px;color:#ffffff;font-size:15px;font-weight:700;text-decoration:none;letter-spacing:0.3px;">View Job Details &rarr;</a>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- ═══ DIVIDER ═══ -->
+                    <tr>
+                        <td style="padding:0 40px;">
+                            <div style="border-top:1px solid #e8ecf1;"></div>
+                        </td>
+                    </tr>
+
+                    <!-- ═══ FOOTER ═══ -->
+                    <tr>
+                        <td class="footer-pad" style="padding:24px 40px 32px;text-align:center;">
+                            <p style="margin:0 0 6px;color:#091d3a;font-size:13px;font-weight:700;">ENERGDIVE</p>
+                            <p style="margin:0 0 4px;color:#9ca3af;font-size:11px;line-height:1.5;">India's leading energy intelligence platform</p>
+                            <p style="margin:0;color:#9ca3af;font-size:11px;">&copy; ${yr} ENERGDIVE. All rights reserved.</p>
+                        </td>
+                    </tr>
+
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>`;
+
+    await sendEmail({
+        to: payload.applicantEmail,
+        toName: payload.applicantName,
+        subject,
+        htmlContent,
+        tags: ["energjob", "application", "applicant"],
+    });
+}
+
+export async function sendEnergJobApplicationRecruiterEmail(
+    payload: EnergJobApplicationEmailPayload
+): Promise<void> {
+    if (!payload.recruiterEmail) {
+        return;
+    }
+
+    const subject = `New application for ${payload.jobTitle}`;
+    const logoUrl = getEnergdiveLogoUrl();
+    const yr = new Date().getFullYear();
+    const appliedDate = new Intl.DateTimeFormat("en-IN", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+        timeZone: "Asia/Kolkata",
+    }).format(new Date());
+    const initials = payload.applicantName
+        .split(" ")
+        .map((n) => n.charAt(0).toUpperCase())
+        .slice(0, 2)
+        .join("");
+
+    const htmlContent = `<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>${subject}</title>
+    <!--[if mso]><style>table{border-collapse:collapse;}td{border-collapse:collapse;}</style><![endif]-->
+    <style type="text/css">
+        body, table, td, p, a, li { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+        img { -ms-interpolation-mode: bicubic; border: 0; outline: none; text-decoration: none; }
+        @media only screen and (max-width: 640px) {
+            .email-wrap { width: 100% !important; }
+            .content-pad { padding: 24px 20px !important; }
+            .header-pad { padding: 24px 20px !important; }
+            .footer-pad { padding: 20px !important; }
+            .profile-card-td { padding: 20px !important; }
+            .cta-table { width: 100% !important; }
+            .cta-td { display: block !important; width: 100% !important; padding: 0 0 10px 0 !important; text-align: center !important; }
+            .cta-td a { display: block !important; text-align: center !important; }
+        }
+    </style>
+</head>
+<body style="margin:0;padding:0;background-color:#f0f4f8;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;-webkit-font-smoothing:antialiased;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f0f4f8;padding:32px 16px;">
+        <tr>
+            <td align="center">
+                <table class="email-wrap" width="600" cellpadding="0" cellspacing="0" style="width:100%;max-width:600px;background-color:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+
+                    <!-- ═══ LOGO HEADER ═══ -->
+                    <tr>
+                        <td class="header-pad" style="padding:28px 40px;background:#ffffff;border-bottom:1px solid #e8ecf1;">
+                            <table width="100%" cellpadding="0" cellspacing="0">
+                                <tr>
+                                    <td>
+                                        <img src="${logoUrl}" alt="ENERGDIVE" width="160" style="display:block;max-width:160px;height:auto;" />
+                                    </td>
+                                    <td align="right" style="color:#6b7280;font-size:12px;font-weight:600;">
+                                        EnergJob &middot; Recruiter
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- ═══ NOTIFICATION BAR ═══ -->
+                    <tr>
+                        <td style="padding:0;">
+                            <table width="100%" cellpadding="0" cellspacing="0" style="background:#091d3a;">
+                                <tr>
+                                    <td style="padding:16px 40px;">
+                                        <table width="100%" cellpadding="0" cellspacing="0">
+                                            <tr>
+                                                <td>
+                                                    <p style="margin:0;color:#ffffff;font-size:15px;font-weight:700;">📩 New Application Received</p>
+                                                </td>
+                                                <td align="right">
+                                                    <p style="margin:0;color:rgba(255,255,255,0.6);font-size:12px;">${appliedDate}</p>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- ═══ GREETING ═══ -->
+                    <tr>
+                        <td class="content-pad" style="padding:28px 40px 0;">
+                            <p style="margin:0 0 4px;color:#091d3a;font-size:16px;font-weight:700;">Hi ${escapeHtml(payload.recruiterName || "Hiring Manager")},</p>
+                            <p style="margin:0;color:#4b5563;font-size:14px;line-height:1.6;">
+                                A new candidate has applied for <strong style="color:#091d3a;">${escapeHtml(payload.jobTitle)}</strong> at <strong style="color:#091d3a;">${escapeHtml(payload.companyName)}</strong>. Here's the applicant profile summary:
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- ═══ CANDIDATE PROFILE CARD ═══ -->
+                    <tr>
+                        <td class="content-pad" style="padding:24px 40px;">
+                            <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+                                <!-- Card Header -->
+                                <tr>
+                                    <td style="background:linear-gradient(135deg,#09B697 0%,#07a085 100%);padding:20px 24px;">
+                                        <table width="100%" cellpadding="0" cellspacing="0">
+                                            <tr>
+                                                <td width="52" valign="middle">
+                                                    <div style="width:48px;height:48px;background:#ffffff;border-radius:50%;text-align:center;line-height:48px;color:#09B697;font-size:18px;font-weight:800;font-family:'Segoe UI',Roboto,Arial,sans-serif;">${initials}</div>
+                                                </td>
+                                                <td valign="middle" style="padding-left:14px;">
+                                                    <p style="margin:0 0 2px;color:#ffffff;font-size:18px;font-weight:800;">${escapeHtml(payload.applicantName)}</p>
+                                                    <p style="margin:0;color:rgba(255,255,255,0.85);font-size:13px;">Applicant for ${escapeHtml(payload.jobTitle)}</p>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                                <!-- Card Body -->
+                                <tr>
+                                    <td class="profile-card-td" style="padding:0;">
+                                        <table width="100%" cellpadding="0" cellspacing="0">
+                                            <!-- Email -->
+                                            <tr>
+                                                <td style="padding:16px 24px;border-bottom:1px solid #f3f4f6;">
+                                                    <table width="100%" cellpadding="0" cellspacing="0">
+                                                        <tr>
+                                                            <td width="24" valign="top" style="color:#09B697;font-size:16px;">✉️</td>
+                                                            <td valign="top" style="padding-left:10px;">
+                                                                <p style="margin:0 0 2px;color:#9ca3af;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Email Address</p>
+                                                                <p style="margin:0;font-size:14px;"><a href="mailto:${payload.applicantEmail}" style="color:#09B697;text-decoration:none;font-weight:600;">${escapeHtml(payload.applicantEmail)}</a></p>
+                                                            </td>
+                                                        </tr>
+                                                    </table>
+                                                </td>
+                                            </tr>
+                                            <!-- Phone -->
+                                            <tr>
+                                                <td style="padding:16px 24px;border-bottom:1px solid #f3f4f6;">
+                                                    <table width="100%" cellpadding="0" cellspacing="0">
+                                                        <tr>
+                                                            <td width="24" valign="top" style="color:#09B697;font-size:16px;">📱</td>
+                                                            <td valign="top" style="padding-left:10px;">
+                                                                <p style="margin:0 0 2px;color:#9ca3af;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Phone Number</p>
+                                                                <p style="margin:0;color:#374151;font-size:14px;font-weight:600;">${escapeHtml(payload.phone || "Not provided")}</p>
+                                                            </td>
+                                                        </tr>
+                                                    </table>
+                                                </td>
+                                            </tr>
+                                            <!-- Resume -->
+                                            <tr>
+                                                <td style="padding:16px 24px;border-bottom:1px solid #f3f4f6;">
+                                                    <table width="100%" cellpadding="0" cellspacing="0">
+                                                        <tr>
+                                                            <td width="24" valign="top" style="color:#09B697;font-size:16px;">📄</td>
+                                                            <td valign="top" style="padding-left:10px;">
+                                                                <p style="margin:0 0 2px;color:#9ca3af;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Resume / Profile</p>
+                                                                <p style="margin:0;font-size:14px;font-weight:600;">${payload.resumeUrl ? `<a href="${payload.resumeUrl}" style="color:#09B697;text-decoration:underline;">Download Resume</a>` : `<span style="color:#374151;">Not provided</span>`}</p>
+                                                            </td>
+                                                        </tr>
+                                                    </table>
+                                                </td>
+                                            </tr>
+                                            <!-- Cover Note -->
+                                            <tr>
+                                                <td style="padding:16px 24px;">
+                                                    <table width="100%" cellpadding="0" cellspacing="0">
+                                                        <tr>
+                                                            <td width="24" valign="top" style="color:#09B697;font-size:16px;">💬</td>
+                                                            <td valign="top" style="padding-left:10px;">
+                                                                <p style="margin:0 0 2px;color:#9ca3af;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Cover Note</p>
+                                                                <p style="margin:0;color:#374151;font-size:14px;line-height:1.6;">${escapeHtml(payload.coverNote || "No cover note provided.")}</p>
+                                                            </td>
+                                                        </tr>
+                                                    </table>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- ═══ CTA BUTTONS ═══ -->
+                    <tr>
+                        <td class="content-pad" style="padding:0 40px 32px;">
+                            <table class="cta-table" cellpadding="0" cellspacing="0" width="100%">
+                                <tr>
+                                    <td class="cta-td" style="padding-right:8px;">
+                                        <a href="${payload.applicationViewUrl || payload.jobUrl}" style="display:inline-block;padding:13px 28px;background:#09B697;color:#ffffff;font-size:14px;font-weight:700;text-decoration:none;border-radius:8px;letter-spacing:0.2px;">View Applicant &rarr;</a>
+                                    </td>
+                                    <td class="cta-td">
+                                        <a href="${payload.jobUrl}" style="display:inline-block;padding:13px 28px;background:#091d3a;color:#ffffff;font-size:14px;font-weight:700;text-decoration:none;border-radius:8px;letter-spacing:0.2px;">Open Job Page &rarr;</a>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- ═══ DIVIDER ═══ -->
+                    <tr>
+                        <td style="padding:0 40px;">
+                            <div style="border-top:1px solid #e8ecf1;"></div>
+                        </td>
+                    </tr>
+
+                    <!-- ═══ FOOTER ═══ -->
+                    <tr>
+                        <td class="footer-pad" style="padding:24px 40px 32px;text-align:center;">
+                            <p style="margin:0 0 6px;color:#091d3a;font-size:13px;font-weight:700;">ENERGDIVE</p>
+                            <p style="margin:0 0 4px;color:#9ca3af;font-size:11px;line-height:1.5;">India's leading energy intelligence platform</p>
+                            <p style="margin:0;color:#9ca3af;font-size:11px;">&copy; ${yr} ENERGDIVE. All rights reserved.</p>
+                        </td>
+                    </tr>
+
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>`;
+
+    await sendEmail({
+        to: payload.recruiterEmail,
+        toName: payload.recruiterName || payload.companyName,
+        subject,
+        htmlContent,
+        tags: ["energjob", "application", "recruiter"],
+    });
 }
 
 /**
@@ -978,80 +1505,127 @@ export async function sendMembershipWelcomeCardEmail(
     await sendEmail({ to, toName: name, subject, htmlContent, attachment });
 }
 
-/**
- * Send an email notifying the user that their abstract has been accepted.
- */
-export async function sendAbstractAcceptedEmail(
-    to: string,
-    authorName: string,
-    abstractTitle: string
+export async function sendApplicationViewedEmail(
+    payload: EnergJobApplicationEmailPayload
 ): Promise<void> {
-    const subject = "Your abstract has been accepted!";
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://www.energdive.com";
-    const logoUrl = `${appUrl}/logo2-removebg-preview.png`;
-    const dashboardUrl = `${appUrl}/dashboard/my-submissions`;
+    const subject = `Your application has been viewed — ${payload.jobTitle}`;
+    const logoUrl = getEnergdiveLogoUrl();
+    const yr = new Date().getFullYear();
 
-    const htmlContent = `
-<!DOCTYPE html>
+    const htmlContent = `<!DOCTYPE html>
 <html>
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>${subject}</title>
+    <!--[if mso]><style>table{border-collapse:collapse;}td{border-collapse:collapse;}</style><![endif]-->
+    <style type="text/css">
+        body, table, td, p, a, li { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+        img { -ms-interpolation-mode: bicubic; border: 0; outline: none; text-decoration: none; }
+        @media only screen and (max-width: 640px) {
+            .email-wrap { width: 100% !important; }
+            .content-pad { padding: 28px 20px !important; }
+            .header-pad { padding: 24px 20px !important; }
+            .footer-pad { padding: 20px !important; }
+        }
+    </style>
 </head>
-<body style="margin:0;padding:0;background-color:#0B0F19;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;">
-    <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#0B0F19;padding:40px 20px;">
+<body style="margin:0;padding:0;background-color:#f0f4f8;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;-webkit-font-smoothing:antialiased;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f0f4f8;padding:32px 16px;">
         <tr>
             <td align="center">
-                <table width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 20px 40px rgba(0,0,0,0.3);">
+                <table class="email-wrap" width="600" cellpadding="0" cellspacing="0" style="width:100%;max-width:600px;background-color:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
                     
+                    <!-- LOGO HEADER -->
                     <tr>
-                        <td style="background:#0a2e1f;padding:40px 40px 32px;text-align:center;border-bottom:4px solid #09B697;">
-                            <img src="${logoUrl}" alt="EnergDive Logo" width="180" style="display:block;margin:0 auto;max-width:200px;height:auto;" />
+                        <td class="header-pad" style="padding:28px 40px;background:#ffffff;border-bottom:1px solid #e8ecf1;">
+                            <table width="100%" cellpadding="0" cellspacing="0">
+                                <tr>
+                                    <td>
+                                        <img src="${logoUrl}" alt="ENERGDIVE" width="160" style="display:block;max-width:160px;height:auto;" />
+                                    </td>
+                                    <td align="right" style="color:#6b7280;font-size:12px;font-weight:600;">
+                                        EnergJob Update
+                                    </td>
+                                </tr>
+                            </table>
                         </td>
                     </tr>
 
+                    <!-- BANNER -->
                     <tr>
-                        <td style="padding:48px 40px;">
-                            <h2 style="margin:0 0 16px;color:#111827;font-size:26px;font-weight:800;letter-spacing:-0.5px;line-height:1.2;">
-                                Dear ${authorName},
-                            </h2>
-                            <p style="margin:0 0 24px;color:#4B5563;font-size:16px;line-height:1.7;">
-                                Your abstract "<strong>${escapeHtml(abstractTitle)}</strong>" has been accepted! You can now submit your final paper.
-                            </p>
+                        <td style="padding:0;">
+                            <table width="100%" cellpadding="0" cellspacing="0" style="background:linear-gradient(135deg, #09B697 0%, #0d463d 100%);">
+                                <tr>
+                                    <td class="content-pad" style="padding:40px;text-align:center;">
+                                        <div style="font-size:48px;line-height:1;margin-bottom:16px;">👁️</div>
+                                        <h1 style="margin:0 0 8px;color:#ffffff;font-size:24px;font-weight:800;letter-spacing:-0.3px;">Application Viewed</h1>
+                                        <p style="margin:0;color:rgba(255,255,255,0.85);font-size:14px;line-height:1.5;">Good news! The recruiter has opened your profile</p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
 
-                            <div style="background-color:#F0FDF9;border:1px solid #09B697;border-radius:12px;padding:32px;text-align:center;margin-bottom:24px;">
-                                <p style="margin:0 0 20px;color:#065F46;font-size:14px;font-weight:600;text-transform:uppercase;letter-spacing:1px;">
-                                    Submit Your Final Paper
-                                </p>
-                                <a href="${dashboardUrl}"
-                                   style="display:inline-block;background:#09B697;color:#ffffff;font-size:16px;font-weight:700;text-decoration:none;padding:16px 40px;border-radius:10px;box-shadow:0 4px 12px rgba(9,182,151,0.3);">
-                                    Submit Final Paper &rarr;
-                                </a>
-                                <p style="margin:20px 0 0;color:#9CA3AF;font-size:12px;">
-                                    Please submit your final paper from your submissions dashboard.
-                                </p>
-                            </div>
-
-                            <p style="margin:0 0 32px;color:#6B7280;font-size:14px;line-height:1.6;">
-                                Thank you for your contribution to ENERGDIVE.
+                    <!-- GREETING -->
+                    <tr>
+                        <td class="content-pad" style="padding:32px 40px 0;">
+                            <p style="margin:0 0 6px;color:#091d3a;font-size:18px;font-weight:700;">Hi ${escapeHtml(payload.applicantName)},</p>
+                            <p style="margin:0;color:#4b5563;font-size:14px;line-height:1.7;">
+                                We are pleased to inform you that the hiring team at <strong>${escapeHtml(payload.companyName)}</strong> has viewed your application for the position of <strong style="color:#091d3a;">${escapeHtml(payload.jobTitle)}</strong>.
                             </p>
                         </td>
                     </tr>
 
+                    <!-- INFO CARD -->
                     <tr>
-                        <td style="background-color:#F9FAFB;padding:32px 40px;text-align:center;border-top:1px solid #F3F4F6;">
-                            <p style="margin:0 0 8px;color:#111827;font-size:13px;font-weight:700;">
-                                ENERGDIVE Intelligence
-                            </p>
-                            <p style="margin:0 0 12px;color:#9CA3AF;font-size:12px;">
-                                <a href="https://www.energdive.com/unsubscribe?email=${encodeURIComponent(to)}" style="color:#9CA3AF;text-decoration:underline;">Unsubscribe</a>
-                            </p>
-                            <p style="margin:0;color:#9CA3AF;font-size:11px;">
-                                &copy; ${new Date().getFullYear()} ENERGDIVE. All rights reserved.
-                            </p>
+                        <td class="content-pad" style="padding:24px 40px;">
+                            <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e2e8f0;border-radius:10px;background-color:#fafcfb;padding:20px 24px;">
+                                <tr>
+                                    <td>
+                                        <p style="margin:0 0 4px;color:#09B697;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;">Job Title</p>
+                                        <h3 style="margin:0 0 12px;color:#091d3a;font-size:16px;font-weight:800;">${escapeHtml(payload.jobTitle)}</h3>
+                                        <p style="margin:0 0 4px;color:#9ca3af;font-size:11px;font-weight:600;text-transform:uppercase;">Company</p>
+                                        <p style="margin:0;color:#374151;font-size:14px;font-weight:600;">${escapeHtml(payload.companyName)}</p>
+                                    </td>
+                                </tr>
+                            </table>
                         </td>
                     </tr>
+
+                    <!-- TIPS / WHAT'S NEXT -->
+                    <tr>
+                        <td class="content-pad" style="padding:0 40px 32px;">
+                            <p style="margin:0 0 12px;color:#091d3a;font-size:15px;font-weight:700;">What does this mean?</p>
+                            <p style="margin:0 0 16px;color:#4b5563;font-size:13px;line-height:1.6;">
+                                The recruiter has reviewed your resume and profile details. If they find your qualifications fit their requirements, they will reach out to you directly or update your status to shortlist.
+                            </p>
+                            <table cellpadding="0" cellspacing="0" style="margin:0;">
+                                <tr>
+                                    <td align="center" style="border-radius:8px;background:#09B697;">
+                                        <a href="${payload.jobUrl}" style="display:inline-block;padding:12px 28px;color:#ffffff;font-size:14px;font-weight:700;text-decoration:none;">View Job Details &rarr;</a>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- DIVIDER -->
+                    <tr>
+                        <td style="padding:0 40px;">
+                            <div style="border-top:1px solid #e8ecf1;"></div>
+                        </td>
+                    </tr>
+
+                    <!-- FOOTER -->
+                    <tr>
+                        <td class="footer-pad" style="padding:24px 40px 32px;text-align:center;">
+                            <p style="margin:0 0 6px;color:#091d3a;font-size:13px;font-weight:700;">ENERGDIVE</p>
+                            <p style="margin:0 0 4px;color:#9ca3af;font-size:11px;line-height:1.5;">India's leading energy intelligence platform</p>
+                            <p style="margin:0;color:#9ca3af;font-size:11px;">&copy; ${yr} ENERGDIVE. All rights reserved.</p>
+                        </td>
+                    </tr>
+
                 </table>
             </td>
         </tr>
@@ -1059,5 +1633,148 @@ export async function sendAbstractAcceptedEmail(
 </body>
 </html>`;
 
-    await sendEmail({ to, toName: authorName, subject, htmlContent });
+    await sendEmail({
+        to: payload.applicantEmail,
+        toName: payload.applicantName,
+        subject,
+        htmlContent,
+        tags: ["energjob", "application", "status-update", "viewed"],
+    });
+}
+
+export async function sendApplicationShortlistedEmail(
+    payload: EnergJobApplicationEmailPayload
+): Promise<void> {
+    const subject = `Congratulations! You've been shortlisted — ${payload.jobTitle}`;
+    const logoUrl = getEnergdiveLogoUrl();
+    const yr = new Date().getFullYear();
+
+    const htmlContent = `<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>${subject}</title>
+    <!--[if mso]><style>table{border-collapse:collapse;}td{border-collapse:collapse;}</style><![endif]-->
+    <style type="text/css">
+        body, table, td, p, a, li { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+        img { -ms-interpolation-mode: bicubic; border: 0; outline: none; text-decoration: none; }
+        @media only screen and (max-width: 640px) {
+            .email-wrap { width: 100% !important; }
+            .content-pad { padding: 28px 20px !important; }
+            .header-pad { padding: 24px 20px !important; }
+            .footer-pad { padding: 20px !important; }
+        }
+    </style>
+</head>
+<body style="margin:0;padding:0;background-color:#f0f4f8;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;-webkit-font-smoothing:antialiased;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f0f4f8;padding:32px 16px;">
+        <tr>
+            <td align="center">
+                <table class="email-wrap" width="600" cellpadding="0" cellspacing="0" style="width:100%;max-width:600px;background-color:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+                    
+                    <!-- LOGO HEADER -->
+                    <tr>
+                        <td class="header-pad" style="padding:28px 40px;background:#ffffff;border-bottom:1px solid #e8ecf1;">
+                            <table width="100%" cellpadding="0" cellspacing="0">
+                                <tr>
+                                    <td>
+                                        <img src="${logoUrl}" alt="ENERGDIVE" width="160" style="display:block;max-width:160px;height:auto;" />
+                                    </td>
+                                    <td align="right" style="color:#6b7280;font-size:12px;font-weight:600;">
+                                        EnergJob Status
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- BANNER -->
+                    <tr>
+                        <td style="padding:0;">
+                            <table width="100%" cellpadding="0" cellspacing="0" style="background:linear-gradient(135deg, #10b981 0%, #064e3b 100%);">
+                                <tr>
+                                    <td class="content-pad" style="padding:40px;text-align:center;">
+                                        <div style="font-size:48px;line-height:1;margin-bottom:16px;">🎉</div>
+                                        <h1 style="margin:0 0 8px;color:#ffffff;font-size:24px;font-weight:800;letter-spacing:-0.3px;">Congratulations!</h1>
+                                        <p style="margin:0;color:rgba(255,255,255,0.9);font-size:14px;line-height:1.5;">You've been shortlisted by the recruiter</p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- GREETING -->
+                    <tr>
+                        <td class="content-pad" style="padding:32px 40px 0;">
+                            <p style="margin:0 0 6px;color:#091d3a;font-size:18px;font-weight:700;">Dear ${escapeHtml(payload.applicantName)},</p>
+                            <p style="margin:0;color:#4b5563;font-size:14px;line-height:1.7;">
+                                Great news! The hiring team at <strong>${escapeHtml(payload.companyName)}</strong> has reviewed your application and <strong>shortlisted</strong> you for the role of <strong style="color:#091d3a;">${escapeHtml(payload.jobTitle)}</strong>.
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- INFO CARD -->
+                    <tr>
+                        <td class="content-pad" style="padding:24px 40px;">
+                            <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e2e8f0;border-radius:10px;background-color:#f0fdf4;padding:20px 24px;">
+                                <tr>
+                                    <td>
+                                        <p style="margin:0 0 4px;color:#10b981;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;">Role Shortlisted</p>
+                                        <h3 style="margin:0 0 12px;color:#091d3a;font-size:16px;font-weight:800;">${escapeHtml(payload.jobTitle)}</h3>
+                                        <p style="margin:0 0 4px;color:#9ca3af;font-size:11px;font-weight:600;text-transform:uppercase;">Company</p>
+                                        <p style="margin:0;color:#374151;font-size:14px;font-weight:600;">${escapeHtml(payload.companyName)}</p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- WHAT'S NEXT -->
+                    <tr>
+                        <td class="content-pad" style="padding:0 40px 32px;">
+                            <p style="margin:0 0 12px;color:#091d3a;font-size:15px;font-weight:700;">What's next?</p>
+                            <p style="margin:0 0 16px;color:#4b5563;font-size:13px;line-height:1.6;">
+                                The recruiter will contact you shortly via email or phone to discuss the interview schedule and further assessment steps. Please keep your phone reachable and check your emails regularly.
+                            </p>
+                            <table cellpadding="0" cellspacing="0" style="margin:0;">
+                                <tr>
+                                    <td align="center" style="border-radius:8px;background:#10b981;">
+                                        <a href="${payload.jobUrl}" style="display:inline-block;padding:12px 28px;color:#ffffff;font-size:14px;font-weight:700;text-decoration:none;">View Job Details &rarr;</a>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- DIVIDER -->
+                    <tr>
+                        <td style="padding:0 40px;">
+                            <div style="border-top:1px solid #e8ecf1;"></div>
+                        </td>
+                    </tr>
+
+                    <!-- FOOTER -->
+                    <tr>
+                        <td class="footer-pad" style="padding:24px 40px 32px;text-align:center;">
+                            <p style="margin:0 0 6px;color:#091d3a;font-size:13px;font-weight:700;">ENERGDIVE</p>
+                            <p style="margin:0 0 4px;color:#9ca3af;font-size:11px;line-height:1.5;">India's leading energy intelligence platform</p>
+                            <p style="margin:0;color:#9ca3af;font-size:11px;">&copy; ${yr} ENERGDIVE. All rights reserved.</p>
+                        </td>
+                    </tr>
+
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>`;
+
+    await sendEmail({
+        to: payload.applicantEmail,
+        toName: payload.applicantName,
+        subject,
+        htmlContent,
+        tags: ["energjob", "application", "status-update", "shortlisted"],
+    });
 }

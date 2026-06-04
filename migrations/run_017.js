@@ -1,10 +1,8 @@
 /**
- * Run migration 017: user_downloads tracking table
+ * Run migration 017: energjob core tables
  *
  * Usage:
  *   node migrations/run_017.js
- *
- * Requires DATABASE_URL in environment or .env
  */
 
 const { Pool } = require("pg");
@@ -23,11 +21,11 @@ async function run() {
   });
 
   const sql = fs.readFileSync(
-    path.resolve(__dirname, "017_user_downloads.sql"),
+    path.resolve(__dirname, "017_energjob_core.sql"),
     "utf-8"
   );
 
-  console.log("Running migration 017_user_downloads.sql ...");
+  console.log("Running migration 017_energjob_core.sql ...");
 
   try {
     await pool.query(sql);

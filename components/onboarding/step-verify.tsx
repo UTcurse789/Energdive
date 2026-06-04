@@ -8,6 +8,8 @@ interface StepVerifyProps {
     verifyType: "email" | "phone";
     onBack: () => void;
     onVerified: () => void;
+    compact?: boolean;
+    hideBack?: boolean;
 }
 
 /**
@@ -19,6 +21,8 @@ export default function StepVerify({
     verifyType,
     onBack,
     onVerified,
+    compact = false,
+    hideBack = false,
 }: StepVerifyProps) {
     const [value, setValue] = useState("");
     const [otp, setOtp] = useState("");
@@ -75,8 +79,8 @@ export default function StepVerify({
 
             if (!res.ok) throw new Error(data.error || "Failed to send OTP");
             setOtpSent(true);
-        } catch (err: any) {
-            setError(err.message);
+        } catch (err: unknown) {
+            setError(err instanceof Error ? err.message : "Failed to send OTP");
         } finally {
             setIsLoading(false);
         }
@@ -113,8 +117,8 @@ export default function StepVerify({
             if (!res.ok) throw new Error(data.error || "Verification failed");
             setSuccess(true);
             setTimeout(() => onVerified(), 800);
-        } catch (err: any) {
-            setError(err.message);
+        } catch (err: unknown) {
+            setError(err instanceof Error ? err.message : "Verification failed");
         } finally {
             setIsLoading(false);
         }
@@ -133,11 +137,15 @@ export default function StepVerify({
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
-            className="space-y-6"
+            className={compact ? "space-y-4" : "space-y-6"}
         >
-            <div className="space-y-4">
-                <h2 className="text-2xl font-bold text-zinc-900">{title}</h2>
-                <p className="text-zinc-500">{subtitle}</p>
+            <div className={compact ? "space-y-3" : "space-y-4"}>
+                <div>
+                    <h2 className={compact ? "text-lg font-bold text-zinc-900" : "text-2xl font-bold text-zinc-900"}>
+                        {title}
+                    </h2>
+                    <p className={compact ? "text-sm text-zinc-500 mt-1" : "text-zinc-500"}>{subtitle}</p>
+                </div>
 
                 {/* Success state */}
                 {success && (
@@ -294,7 +302,7 @@ export default function StepVerify({
                 )}
             </div>
 
-            {!success && !otpSent && (
+            {!hideBack && !success && !otpSent && (
                 <div className="flex justify-between pt-4">
                     <button
                         type="button"

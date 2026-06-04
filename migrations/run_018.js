@@ -1,10 +1,8 @@
 /**
- * Run migration 018: Add has_submitted_paper flag to users table
+ * Run migration 018: saved articles
  *
  * Usage:
  *   node migrations/run_018.js
- *
- * Requires DATABASE_URL in environment or .env
  */
 
 const { Pool } = require("pg");
@@ -23,17 +21,17 @@ async function run() {
   });
 
   const sql = fs.readFileSync(
-    path.resolve(__dirname, "018_user_submission_flag.sql"),
+    path.resolve(__dirname, "018_saved_articles.sql"),
     "utf-8"
   );
 
-  console.log("Running migration 018_user_submission_flag.sql ...");
+  console.log("Running migration 018_saved_articles.sql ...");
 
   try {
     await pool.query(sql);
-    console.log("✅ Migration 018 applied successfully.");
+    console.log("Migration 018 applied successfully.");
   } catch (err) {
-    console.error("❌ Migration 018 failed:", err.message);
+    console.error("Migration 018 failed:", err.message);
     process.exit(1);
   } finally {
     await pool.end();
