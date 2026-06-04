@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-    Home, LayoutGrid, CreditCard, Calendar, Settings, Bookmark, FileText
+    Home, LayoutGrid, CreditCard, Calendar, Settings, Bookmark, LibraryBig
 } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
 import { CustomUserMenu } from "@/components/layout/CustomUserMenu";
@@ -13,7 +13,13 @@ import { useDashboard } from "./dashboard-shell";
 const NAV_ITEMS = [
     { label: "ENERGDIVE", href: "/", icon: Home },
     { label: "My Feed", href: "/dashboard", icon: LayoutGrid },
-    { label: "My Submissions", href: "/dashboard/my-submissions", icon: FileText },
+    {
+        label: "Knowledge Base",
+        href: "/dashboard/my-submissions",
+        fallbackHref: "/dashboard/my-downloads",
+        icon: LibraryBig,
+        activeHrefs: ["/dashboard/my-submissions", "/dashboard/my-downloads"],
+    },
     { label: "Saved", href: "/dashboard/saved", icon: Bookmark },
     { label: "Subscriptions", href: "/dashboard/subscriptions", icon: CreditCard },
     { label: "Events", href: "/dashboard/events", icon: Calendar },
@@ -27,6 +33,9 @@ export function DashboardHeader() {
     const firstName = profile.first_name || user?.firstName || "User";
     const lastName = profile.last_name || user?.lastName || "";
     const role = profile.job_title || "Member";
+
+    // Filter nav items based on user activity
+    const visibleNavItems = NAV_ITEMS;
 
     return (
         <header
@@ -91,7 +100,7 @@ export function DashboardHeader() {
             >
                 {/* ENERGDIVE link on the left */}
                 {(() => {
-                    const homeItem = NAV_ITEMS[0];
+                    const homeItem = visibleNavItems[0];
                     const Icon = homeItem.icon;
                     const isActive = pathname === homeItem.href;
                     return (
@@ -112,16 +121,21 @@ export function DashboardHeader() {
 
                 {/* Rest of nav items centered */}
                 <div className="flex items-center gap-1 mx-auto">
-                    {NAV_ITEMS.slice(1).map((item) => {
+                    {visibleNavItems.slice(1).map((item) => {
+                        const href =
+                            item.label === "Knowledge Base" && !profile.has_submitted_abstract && profile.hasDownloads
+                                ? item.fallbackHref ?? item.href
+                                : item.href;
                         const isActive =
-                            item.href === "/dashboard"
+                            item.activeHrefs?.some((activeHref) => pathname.startsWith(activeHref)) ??
+                            (item.href === "/dashboard"
                                 ? pathname === "/dashboard"
-                                : pathname.startsWith(item.href);
+                                : pathname.startsWith(item.href));
                         const Icon = item.icon;
                         return (
                             <Link
                                 key={item.label}
-                                href={item.href}
+                                href={href}
                                 className="flex items-center gap-2 px-4 h-full text-sm font-medium transition-all whitespace-nowrap border-b-2"
                                 style={
                                     isActive

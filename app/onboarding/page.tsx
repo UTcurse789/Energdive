@@ -44,21 +44,16 @@
 import Image from "next/image";
 import OnboardingWizard from "@/components/onboarding/wizard";
 import { auth } from "@clerk/nextjs/server";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getUserProfile } from "@/lib/queries";
 import OnboardingBackground from "@/components/onboarding/onboarding-bg";
-
-function getSafeReturnTo(value: string | string[] | undefined) {
-    if (typeof value !== "string" || !value.startsWith("/") || value.startsWith("//")) {
-        return "/dashboard";
-    }
-
-    if (value === "/auth" || value.startsWith("/auth/")) {
-        return "/dashboard";
-    }
-
-    return value;
-}
+import {
+    DEFAULT_POST_AUTH_REDIRECT,
+    POST_AUTH_REDIRECT_COOKIE,
+    getSafeRedirectFromStoredValue,
+    getSafeRedirectPath,
+} from "@/lib/post-auth-redirect";
 
 export default async function OnboardingPage({
     searchParams,
@@ -77,7 +72,16 @@ export default async function OnboardingPage({
     // This avoids a redirect loop when Clerk metadata is ahead of the DB row.
     const profile = await getUserProfile(userId);
     const resolvedSearchParams = searchParams ? await searchParams : undefined;
-    const returnTo = getSafeReturnTo(resolvedSearchParams?.return_to);
+    const cookieStore = await cookies();
+    const returnToFromQuery = typeof resolvedSearchParams?.return_to === "string"
+        ? getSafeRedirectPath(resolvedSearchParams.return_to)
+        : null;
+    const returnToFromCookie = getSafeRedirectFromStoredValue(
+        cookieStore.get(POST_AUTH_REDIRECT_COOKIE)?.value
+    );
+    const returnTo = returnToFromQuery ||
+        (returnToFromCookie !== DEFAULT_POST_AUTH_REDIRECT ? returnToFromCookie : null) ||
+        "/dashboard";
     if (profile?.onboarding_completed) {
         redirect(returnTo);
     }

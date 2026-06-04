@@ -2,12 +2,20 @@
 
 import { AuthenticateWithRedirectCallback, useAuth } from "@clerk/nextjs";
 import { usePostHog } from "@posthog/react";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { POST_AUTH_REDIRECT_STORAGE_KEY } from "@/lib/post-auth-redirect";
 
 export default function SSOCallbackPage() {
     const { isLoaded, isSignedIn } = useAuth();
     const posthog = usePostHog();
     const hasCapturedLogin = useRef(false);
+    const [redirectUrl] = useState<string>(() => {
+        if (typeof window === "undefined") {
+            return "/dashboard";
+        }
+
+        return sessionStorage.getItem(POST_AUTH_REDIRECT_STORAGE_KEY) || "/dashboard";
+    });
 
     useEffect(() => {
         if (!isLoaded || !isSignedIn || !posthog || hasCapturedLogin.current) {
@@ -66,7 +74,10 @@ export default function SSOCallbackPage() {
 
             {/* Hidden Clerk callback handler */}
             <div className="sr-only">
-                <AuthenticateWithRedirectCallback />
+                <AuthenticateWithRedirectCallback
+                    signInForceRedirectUrl={redirectUrl}
+                    signUpForceRedirectUrl={redirectUrl}
+                />
             </div>
         </div>
     );
