@@ -37,7 +37,7 @@ export interface UserProfile {
     job_title: string | null;
     organization: string | null;
     onboarding_completed: boolean;
-    has_submitted_paper: boolean;
+    has_submitted_abstract: boolean;
     created_at: string;
     preferred_frequency: string | null;
     preferred_formats: string[];
@@ -176,7 +176,7 @@ export async function getUserProfile(
                 u.id, u.clerk_id, u.email,
                 u.first_name, u.last_name, u.phone,
                 u.country, u.state, u.job_title, u.organization,
-                u.onboarding_completed, COALESCE(u.has_submitted_paper, false) AS has_submitted_paper,
+                u.onboarding_completed, COALESCE(u.has_submitted_abstract, false) AS has_submitted_abstract,
                 u.created_at,
                 u.preferred_frequency, u.preferred_formats,
                 COALESCE(u.content_digest_opted_out, false) AS content_digest_opted_out,
@@ -873,12 +873,31 @@ export async function writePendingCommunities(
 }
 
 /**
- * Mark a user as having submitted a paper.
- * Sets has_submitted_paper = true in the users table.
+ * Mark a user as having submitted an abstract.
+ * Sets has_submitted_abstract = true and fills missing profile details.
  */
-export async function markUserAsSubmitter(clerkId: string): Promise<void> {
+export async function markUserAsAbstractSubmitter(
+    clerkId: string,
+    payload: { institution?: string; profession?: string } = {}
+): Promise<void> {
     await query(
-        `UPDATE users SET has_submitted_paper = true WHERE clerk_id = $1`,
-        [clerkId]
+        `UPDATE users
+         SET
+             has_submitted_abstract = true,
+             organization = CASE
+                 WHEN NULLIF(BTRIM($2), '') IS NOT NULL
+                      AND (organization IS NULL OR BTRIM(organization) = '')
+                     THEN BTRIM($2)
+                 ELSE organization
+             END,
+             job_title = CASE
+                 WHEN NULLIF(BTRIM($3), '') IS NOT NULL
+                      AND (job_title IS NULL OR BTRIM(job_title) = '')
+                     THEN BTRIM($3)
+                 ELSE job_title
+             END,
+             updated_at = NOW()
+         WHERE clerk_id = $1`,
+        [clerkId, payload.institution ?? "", payload.profession ?? ""]
     );
 }

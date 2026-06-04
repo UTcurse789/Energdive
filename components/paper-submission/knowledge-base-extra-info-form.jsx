@@ -26,8 +26,8 @@ export default function KnowledgeBaseExtraInfoForm({
         }
 
         const nextPath = params.toString()
-            ? `/knowledge-base/submit/paper?${params.toString()}`
-            : "/knowledge-base/submit/paper";
+            ? `/dashboard/my-submissions/new?${params.toString()}`
+            : "/dashboard/my-submissions/new";
 
         router.push(nextPath);
     };

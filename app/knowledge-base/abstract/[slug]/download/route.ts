@@ -4,7 +4,7 @@ import { getUserProfile, addPaperDownload } from "@/lib/queries";
 import { fetchPaperSubmissions } from "@/lib/paper-submissions-server";
 
 const KNOWLEDGE_BASE_QUERY =
-    "populate[pdf][fields][0]=url&populate[pdf][fields][1]=name&populate[pdf][fields][2]=size&populate[pdf][fields][3]=ext&sort[0]=submitted_date:desc&filters[paper_status][$eq]=accepted&pagination[pageSize]=100";
+    "populate[abstract_pdf][fields][0]=url&populate[abstract_pdf][fields][1]=name&populate[abstract_pdf][fields][2]=size&populate[abstract_pdf][fields][3]=ext&populate[final_paper_submissions][fields][0]=final_status&populate[final_paper_submissions][fields][1]=final_submission_date&sort[0]=submitted_date:desc&pagination[pageSize]=100";
 
 function slugify(text: string) {
     return String(text || "")
@@ -13,12 +13,35 @@ function slugify(text: string) {
         .replace(/(^-|-$)/g, "");
 }
 
-function extractPdfUrl(pdf: any) {
+type PaperSubmission = {
+    title?: string;
+    pdf?: unknown;
+    hasAcceptedFinalPaper?: boolean;
+};
+
+function getRelationData(relation: unknown) {
+    if (!relation || typeof relation !== "object") return null;
+    const value = relation as {
+        data?: { attributes?: unknown } | unknown;
+        attributes?: unknown;
+    };
+
+    if (value.data && typeof value.data === "object" && "attributes" in value.data) {
+        return (value.data as { attributes?: unknown }).attributes;
+    }
+
+    return value.data ?? value.attributes ?? relation;
+}
+
+function extractPdfUrl(pdf: unknown) {
     if (!pdf) return null;
     if (typeof pdf === "string") return pdf;
 
-    const data = pdf?.data?.attributes ?? pdf?.data ?? pdf?.attributes ?? pdf;
-    if (!data?.url) return null;
+    const data = getRelationData(pdf);
+    if (!data || typeof data !== "object") return null;
+
+    const url = (data as { url?: unknown }).url;
+    if (typeof url !== "string") return null;
 
     const base =
         process.env.STRAPI_API_URL ||
@@ -26,7 +49,7 @@ function extractPdfUrl(pdf: any) {
         process.env.NEXT_PUBLIC_STRAPI_URL ||
         "https://cms-staging.energdive.com";
 
-    return data.url.startsWith("http") ? data.url : `${base}${data.url}`;
+    return url.startsWith("http") ? url : `${base}${url}`;
 }
 
 export async function GET(
@@ -61,7 +84,9 @@ export async function GET(
         return new NextResponse("Error fetching paper submissions", { status: 500 });
     }
 
-    const paper = papers.find((p: any) => slugify(p.title || "untitled-paper") === slug);
+    const paper = (papers as PaperSubmission[]).find((p) =>
+        p.hasAcceptedFinalPaper && slugify(p.title || "untitled-paper") === slug
+    );
     if (!paper) {
         return new NextResponse("Paper not found", { status: 404 });
     }
