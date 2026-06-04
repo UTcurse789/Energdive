@@ -1,7 +1,7 @@
 "use client";
 
-import { useSignIn, useSignUp, useAuth, useClerk } from "@clerk/nextjs";
-import { useRouter } from "next/navigation";
+import { useSignIn, useSignUp, useAuth } from "@clerk/nextjs";
+import { useSearchParams } from "next/navigation";
 import { useState, useCallback, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
@@ -28,8 +28,7 @@ export default function UnifiedAuthPage() {
     const { signIn, isLoaded: signInLoaded, setActive } = useSignIn();
     const { signUp, isLoaded: signUpLoaded } = useSignUp();
     const { isSignedIn } = useAuth();
-    const clerk = useClerk();
-    const router = useRouter();
+    const searchParams = useSearchParams();
 
     const [identifier, setIdentifier] = useState("");
     const [code, setCode] = useState("");
@@ -38,6 +37,31 @@ export default function UnifiedAuthPage() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     const [info, setInfo] = useState("");
+
+    const redirectTarget = useMemo(() => {
+        const rawValue = searchParams.get("redirect_url");
+        const origin =
+            typeof window !== "undefined" ? window.location.origin : "https://www.energdive.com";
+
+        if (!rawValue) {
+            return "/dashboard";
+        }
+
+        try {
+            if (rawValue.startsWith("/") && !rawValue.startsWith("//")) {
+                return rawValue;
+            }
+
+            const parsed = new URL(rawValue, origin);
+            if (parsed.origin === origin) {
+                return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+            }
+        } catch {
+            return "/dashboard";
+        }
+
+        return "/dashboard";
+    }, [searchParams]);
 
     // Auto-detect input type
     const inputMode: InputMode = useMemo(() => {
@@ -51,9 +75,9 @@ export default function UnifiedAuthPage() {
     // If already signed in, redirect
     useEffect(() => {
         if (isSignedIn) {
-            router.replace("/dashboard");
+            window.location.replace(redirectTarget);
         }
-    }, [isSignedIn, router]);
+    }, [isSignedIn, redirectTarget]);
 
     // ── Step 1: Submit identifier ──
     const handleSubmit = useCallback(async () => {
@@ -110,7 +134,7 @@ export default function UnifiedAuthPage() {
                         await setActive!({ session: result.createdSessionId });
                     }
                     setStep("complete");
-                    window.location.href = "/dashboard";
+                    window.location.href = redirectTarget;
                 }
             } catch (err: any) {
                 const clerkError = err?.errors?.[0];
@@ -147,7 +171,7 @@ export default function UnifiedAuthPage() {
         }
 
         setLoading(false);
-    }, [identifier, signIn, signUp, signInLoaded, signUpLoaded, setActive, router]);
+    }, [identifier, redirectTarget, signIn, signUp, signInLoaded, signUpLoaded, setActive]);
 
     // ── Step 2a: Verify OTP (Email - Clerk) ──
     const handleEmailOTPSubmit = useCallback(async () => {
@@ -170,7 +194,7 @@ export default function UnifiedAuthPage() {
                         await setActive!({ session: sessionId });
                     }
                     setStep("complete");
-                    setTimeout(() => window.location.replace("/dashboard"), 300);
+                    setTimeout(() => window.location.replace(redirectTarget), 300);
                 } else if (result.status === "missing_requirements") {
                     // Email verified but CAPTCHA/other requirement blocked completion
                     // Fallback: use backend to create user + sign-in token (bypasses CAPTCHA)
@@ -192,7 +216,7 @@ export default function UnifiedAuthPage() {
                             await setActive!({ session: ticketResult.createdSessionId });
                         }
                         setStep("complete");
-                        setTimeout(() => window.location.replace("/dashboard"), 300);
+                        setTimeout(() => window.location.replace(redirectTarget), 300);
                     } else {
                         setError(data.error || "Could not complete sign-up. Please try again.");
                     }
@@ -212,7 +236,7 @@ export default function UnifiedAuthPage() {
                         await setActive!({ session: sessionId });
                     }
                     setStep("complete");
-                    setTimeout(() => window.location.replace("/dashboard"), 300);
+                    setTimeout(() => window.location.replace(redirectTarget), 300);
                 } else {
                     setError(`Verification status: ${result.status}. Please try again.`);
                 }
@@ -242,7 +266,7 @@ export default function UnifiedAuthPage() {
                             await setActive!({ session: ticketResult.createdSessionId });
                         }
                         setStep("complete");
-                        setTimeout(() => window.location.replace("/dashboard"), 300);
+                        setTimeout(() => window.location.replace(redirectTarget), 300);
                         return;
                     }
                 } catch (backendErr) {
@@ -254,7 +278,7 @@ export default function UnifiedAuthPage() {
         } finally {
             setLoading(false);
         }
-    }, [code, identifier, isNewUser, signIn, signUp, signInLoaded, signUpLoaded, setActive, router]);
+    }, [code, identifier, isNewUser, redirectTarget, signIn, signUp, signInLoaded, signUpLoaded, setActive]);
 
     // ── Step 2b: Verify OTP (Phone - MSG91 → Clerk sign-in token) ──
     const handlePhoneOTPSubmit = useCallback(async () => {
@@ -286,7 +310,7 @@ export default function UnifiedAuthPage() {
                     }
                     setIsNewUser(data.isNewUser);
                     setStep("complete");
-                    setTimeout(() => window.location.replace("/dashboard"), 300);
+                    setTimeout(() => window.location.replace(redirectTarget), 300);
                 }
             } else {
                 setError(data.error || "Verification failed. Please try again.");
@@ -296,7 +320,7 @@ export default function UnifiedAuthPage() {
         } finally {
             setLoading(false);
         }
-    }, [code, identifier, signIn, setActive, router]);
+    }, [code, identifier, redirectTarget, signIn, setActive]);
 
     // ── Google OAuth ──
     const handleGoogleAuth = useCallback(async () => {
@@ -305,12 +329,12 @@ export default function UnifiedAuthPage() {
             await signIn!.authenticateWithRedirect({
                 strategy: "oauth_google",
                 redirectUrl: "/auth/sso-callback",
-                redirectUrlComplete: "/dashboard",
+                redirectUrlComplete: redirectTarget,
             });
         } catch {
             setError("Google sign-in failed. Please try again.");
         }
-    }, [signIn, signInLoaded]);
+    }, [redirectTarget, signIn, signInLoaded]);
 
     // ── LinkedIn OAuth ──
     const handleLinkedInAuth = useCallback(async () => {
@@ -319,12 +343,12 @@ export default function UnifiedAuthPage() {
             await signIn!.authenticateWithRedirect({
                 strategy: "oauth_linkedin_oidc",
                 redirectUrl: "/auth/sso-callback",
-                redirectUrlComplete: "/dashboard",
+                redirectUrlComplete: redirectTarget,
             });
         } catch {
             setError("LinkedIn sign-in failed. Please try again.");
         }
-    }, [signIn, signInLoaded]);
+    }, [redirectTarget, signIn, signInLoaded]);
 
     // ── Resend OTP ──
     const handleResend = useCallback(async () => {

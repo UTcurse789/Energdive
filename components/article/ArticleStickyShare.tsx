@@ -18,6 +18,7 @@ export function ArticleStickyShare({ title, url }: ArticleStickyShareProps) {
     const {
         handleSave,
         isGuest,
+        isSaving,
         isSaved,
         loginHref,
         showLoginPrompt,
@@ -56,14 +57,15 @@ export function ArticleStickyShare({ title, url }: ArticleStickyShareProps) {
                 <button 
                     ref={saveButtonRef}
                     onClick={handleSave}
-                    className={`relative flex flex-col items-center gap-1 transition-colors ${isSaved ? 'text-teal-600' : 'text-gray-500 hover:text-teal-600'}`} 
+                    disabled={isSaving}
+                    className={`relative flex flex-col items-center gap-1 transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${isSaved ? 'text-teal-600' : 'text-gray-500 hover:text-teal-600'}`} 
                     title={isSaved ? "Saved" : "Save for later"}
                 >
                     {!isSaved && isGuest && (
                         <span className="absolute top-0 h-7 w-7 rounded-full bg-emerald-500/15 animate-pulse" />
                     )}
                     {isSaved ? <BookmarkPlus className="relative z-10 w-5 h-5 fill-current" /> : <BookmarkPlus className="relative z-10 w-5 h-5" />}
-                    <span className="text-[10px] font-medium">{isSaved ? 'Saved' : 'Save'}</span>
+                    <span className="text-[10px] font-medium">{isSaving ? 'Saving' : isSaved ? 'Saved' : 'Save'}</span>
                 </button>
                 
                 <button className="flex flex-col items-center gap-1 text-gray-500 hover:text-teal-600 transition-colors" title="Comments">

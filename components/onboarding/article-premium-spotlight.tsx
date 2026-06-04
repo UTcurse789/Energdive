@@ -117,9 +117,6 @@ export function ArticlePremiumSpotlight({
                 Login / Join ENERGCLUB
               </Link>
 
-              <p className="mt-3 text-center text-xs font-medium text-slate-500">
-                Trusted by energy professionals & decision makers.
-              </p>
             </div>
           </div>
         </motion.aside>
