@@ -1,7 +1,7 @@
 import qs from "qs";
 import { normalizeRichTextBlocks } from "@/lib/energjob-schemas";
 
-const ENERGJOB_STRAPI_URL =
+export const ENERGJOB_STRAPI_URL =
   process.env.ENERGJOB_STRAPI_URL ||
   process.env.ENERGJOB_STRAPI_API_URL ||
   "https://cms-staging.energdive.com";
@@ -255,6 +255,7 @@ export async function createCmsJob(
     apply_email: string | null;
     job_status: string;
     openings: number;
+    external_apply_url: string | null;
   },
   relations?: {
     postedBy?: CmsIdentifier | null;
@@ -282,6 +283,7 @@ export async function createCmsJob(
     apply_email: job.apply_email,
     job_status: job.job_status,
     openings: job.openings,
+    external_apply_url: job.external_apply_url,
   };
 
   const postedBy = getRelationValue(relations?.postedBy);
