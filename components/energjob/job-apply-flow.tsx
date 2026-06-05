@@ -16,6 +16,7 @@ type JobApplyFlowProps = {
   jobSnapshot: PublicEnergJob;
   jobTitle: string;
   routeSlug: string;
+  hideIcon?: boolean;
 };
 
 function buildReturnUrl(pathname: string, searchParams: { toString(): string }) {
@@ -35,6 +36,7 @@ export default function JobApplyFlow({
   jobSnapshot,
   jobTitle,
   routeSlug,
+  hideIcon = false,
 }: JobApplyFlowProps) {
   const pathname = usePathname();
   const router = useRouter();
@@ -57,7 +59,7 @@ export default function JobApplyFlow({
   const [coverNote, setCoverNote] = useState("");
   const autoHandledRef = useRef(false);
 
-  const currentPath = pathname || `/energjob/jobs/${routeSlug}`;
+  const currentPath = pathname || `/energyjobs/${routeSlug}`;
   const returnUrl = useMemo(
     () => buildReturnUrl(currentPath, searchParams),
     [currentPath, searchParams]
@@ -268,11 +270,42 @@ export default function JobApplyFlow({
     }
   };
 
+  // Normalize external URL: trim whitespace, treat empty strings, "null", and "undefined" as null
+  const externalUrl = useMemo(() => {
+    if (!jobSnapshot || !jobSnapshot.externalApplyUrl) {
+      return null;
+    }
+    const val = String(jobSnapshot.externalApplyUrl).trim();
+    if (!val || val.toLowerCase() === "null" || val.toLowerCase() === "undefined") {
+      return null;
+    }
+    return val;
+  }, [jobSnapshot?.externalApplyUrl]);
+
+  // Debug: log the external URL value on both server (SSR) and client
+  console.log(
+    `[JobApplyFlow Render] jobId=${jobId} title="${jobTitle}" externalApplyUrl=${JSON.stringify(jobSnapshot?.externalApplyUrl)} → resolvedExternalUrl=${JSON.stringify(externalUrl)}`
+  );
+
+  if (externalUrl) {
+    return (
+      <a
+        href={externalUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={buttonClassName}
+      >
+        {buttonLabel}
+        {!hideIcon && <ArrowRight className="h-4 w-4" />}
+      </a>
+    );
+  }
+
   return (
     <>
       <button type="button" onClick={handleApplyClick} className={buttonClassName}>
         {buttonLabel}
-        <ArrowRight className="h-4 w-4" />
+        {!hideIcon && <ArrowRight className="h-4 w-4" />}
       </button>
 
       {isOpen ? (

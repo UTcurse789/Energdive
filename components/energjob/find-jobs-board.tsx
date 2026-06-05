@@ -5,6 +5,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { startTransition, useDeferredValue, useEffect, useState } from "react";
 import { ArrowRight, MapPin, Search, SlidersHorizontal } from "lucide-react";
 import type { PublicEnergJob } from "@/lib/energjob-public";
+import { slugify } from "@/lib/utils";
 import {
   EMPLOYMENT_FILTERS,
   EXPERIENCE_FILTERS,
@@ -92,7 +93,7 @@ function CompanyMark({
       <div
         className={`${size} shrink-0 overflow-hidden rounded-[20px] border border-[#d7e3ea] bg-white shadow-[0_6px_18px_rgba(20,63,82,0.08)]`}
       >
-        <img src={logoUrl} alt={name} className="h-full w-full object-cover object-center" />
+        <img src={logoUrl} alt={name} className="h-full w-full object-contain p-1" />
       </div>
     );
   }
@@ -121,7 +122,7 @@ function toAnchorId(value: string) {
 }
 
 function getJobHref(job: PublicEnergJob) {
-  return `/energjob/jobs/${job.routeSlug}`;
+  return `/energyjobs/${job.routeSlug}`;
 }
 
 function parseDelimitedValues<T extends string>(rawValue: string | null, allowedValues: readonly T[]) {
@@ -150,6 +151,9 @@ function normalizeSearchState(state: EnergJobSearchState): EnergJobSearchState {
       state.employmentFilters.join(","),
       EMPLOYMENT_FILTERS.map((filter) => filter.id)
     ),
+    categoryFilters: (state.categoryFilters || [])
+      .map((value) => value.trim())
+      .filter(Boolean),
   };
 }
 
@@ -168,6 +172,10 @@ function buildStateFromParams(
       searchParams.get("employment"),
       EMPLOYMENT_FILTERS.map((filter) => filter.id)
     ),
+    categoryFilters: (searchParams.get("category") || "")
+      .split(",")
+      .map((value) => value.trim())
+      .filter(Boolean),
   });
 }
 
@@ -192,6 +200,10 @@ function buildSearchUrl(pathname: string, state: EnergJobSearchState) {
 
   if (state.employmentFilters.length > 0) {
     searchParams.set("employment", state.employmentFilters.join(","));
+  }
+
+  if (state.categoryFilters && state.categoryFilters.length > 0) {
+    searchParams.set("category", state.categoryFilters.join(","));
   }
 
   const queryString = searchParams.toString();
@@ -222,6 +234,9 @@ export default function FindJobsBoard({ jobs }: FindJobsBoardProps) {
   const [draftEmploymentFilters, setDraftEmploymentFilters] = useState<EmploymentFilterId[]>(
     initialState.employmentFilters
   );
+  const [draftCategoryFilters, setDraftCategoryFilters] = useState<string[]>(
+    initialState.categoryFilters || []
+  );
   const [draftFilterLocation, setDraftFilterLocation] = useState(initialState.filterLocation);
   const [appliedTitleQuery, setAppliedTitleQuery] = useState(initialState.titleQuery);
   const [appliedLocationQuery, setAppliedLocationQuery] = useState(initialState.locationQuery);
@@ -231,6 +246,9 @@ export default function FindJobsBoard({ jobs }: FindJobsBoardProps) {
   const [appliedEmploymentFilters, setAppliedEmploymentFilters] = useState<
     EmploymentFilterId[]
   >(initialState.employmentFilters);
+  const [appliedCategoryFilters, setAppliedCategoryFilters] = useState<string[]>(
+    initialState.categoryFilters || []
+  );
   const [appliedFilterLocation, setAppliedFilterLocation] = useState(
     initialState.filterLocation
   );
@@ -270,13 +288,29 @@ export default function FindJobsBoard({ jobs }: FindJobsBoardProps) {
     setLocationQuery(nextState.locationQuery);
     setDraftExperienceFilters(nextState.experienceFilters);
     setDraftEmploymentFilters(nextState.employmentFilters);
+    setDraftCategoryFilters(nextState.categoryFilters || []);
     setDraftFilterLocation(nextState.filterLocation);
     setAppliedTitleQuery(nextState.titleQuery);
     setAppliedLocationQuery(nextState.locationQuery);
     setAppliedExperienceFilters(nextState.experienceFilters);
     setAppliedEmploymentFilters(nextState.employmentFilters);
+    setAppliedCategoryFilters(nextState.categoryFilters || []);
     setAppliedFilterLocation(nextState.filterLocation);
   }, [searchParamsKey]);
+
+  // Dynamically extract unique categories from jobs
+  const categories = Array.from(
+    new Set(
+      jobs
+        .map((job) => job.roleCategory?.trim())
+        .filter((cat): cat is string => Boolean(cat))
+    )
+  )
+    .map((cat) => ({
+      id: slugify(cat),
+      label: formatLabel(cat) || cat,
+    }))
+    .sort((left, right) => left.label.localeCompare(right.label));
 
   const rankedJobs = filterAndRankJobs(jobs, {
     titleQuery: deferredAppliedTitleQuery,
@@ -284,6 +318,7 @@ export default function FindJobsBoard({ jobs }: FindJobsBoardProps) {
     filterLocation: deferredAppliedFilterLocation,
     experienceFilters: appliedExperienceFilters,
     employmentFilters: appliedEmploymentFilters,
+    categoryFilters: appliedCategoryFilters,
   });
 
   const sectorMap = new Map<string, typeof rankedJobs>();
@@ -330,7 +365,8 @@ export default function FindJobsBoard({ jobs }: FindJobsBoardProps) {
       appliedLocationQuery ||
       appliedFilterLocation ||
       appliedExperienceFilters.length > 0 ||
-      appliedEmploymentFilters.length > 0
+      appliedEmploymentFilters.length > 0 ||
+      appliedCategoryFilters.length > 0
   );
 
   const toggleSaved = (jobId: number | string) => {
@@ -353,6 +389,7 @@ export default function FindJobsBoard({ jobs }: FindJobsBoardProps) {
     filterLocation: draftFilterLocation,
     experienceFilters: draftExperienceFilters,
     employmentFilters: draftEmploymentFilters,
+    categoryFilters: draftCategoryFilters,
   });
 
   const applySearchState = (
@@ -365,11 +402,13 @@ export default function FindJobsBoard({ jobs }: FindJobsBoardProps) {
     setLocationQuery(normalizedState.locationQuery);
     setDraftExperienceFilters(normalizedState.experienceFilters);
     setDraftEmploymentFilters(normalizedState.employmentFilters);
+    setDraftCategoryFilters(normalizedState.categoryFilters || []);
     setDraftFilterLocation(normalizedState.filterLocation);
     setAppliedTitleQuery(normalizedState.titleQuery);
     setAppliedLocationQuery(normalizedState.locationQuery);
     setAppliedExperienceFilters(normalizedState.experienceFilters);
     setAppliedEmploymentFilters(normalizedState.employmentFilters);
+    setAppliedCategoryFilters(normalizedState.categoryFilters || []);
     setAppliedFilterLocation(normalizedState.filterLocation);
 
     startTransition(() => {
@@ -392,6 +431,7 @@ export default function FindJobsBoard({ jobs }: FindJobsBoardProps) {
       filterLocation: "",
       experienceFilters: [],
       employmentFilters: [],
+      categoryFilters: [],
     });
   };
 
@@ -403,6 +443,7 @@ export default function FindJobsBoard({ jobs }: FindJobsBoardProps) {
         filterLocation: "",
         experienceFilters: [],
         employmentFilters: [],
+        categoryFilters: [],
       },
       { shouldScroll: false }
     );
@@ -434,7 +475,7 @@ export default function FindJobsBoard({ jobs }: FindJobsBoardProps) {
             <div className="absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-[#09B697]/30 to-transparent" />
             <div className="relative mx-auto max-w-4xl text-center">
               <p className="text-xs font-bold uppercase tracking-[0.34em] text-[#09B697]">
-                EnergJob
+                EnergyJobs
               </p>
               <h1 className="mt-4 text-4xl font-black tracking-[-0.06em] text-[#091d3a] sm:text-5xl lg:text-7xl">
                 Find what&apos;s next:
@@ -505,6 +546,7 @@ export default function FindJobsBoard({ jobs }: FindJobsBoardProps) {
                       filterLocation: draftFilterLocation,
                       experienceFilters: draftExperienceFilters,
                       employmentFilters: draftEmploymentFilters,
+                      categoryFilters: draftCategoryFilters,
                     })
                   }
                   className="rounded-full border border-[#09B697]/16 bg-[#09B697]/7 px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] text-[#11624f] transition-colors hover:bg-[#09B697]/14"
@@ -592,7 +634,7 @@ export default function FindJobsBoard({ jobs }: FindJobsBoardProps) {
                   <section
                     key={sector}
                     id={toAnchorId(sector)}
-                    className="rounded-[28px] border border-[#091d3a]/6 bg-white px-4 py-5 shadow-[0_18px_45px_rgba(20,63,82,0.05)] sm:px-5 lg:px-6 lg:py-6"
+                    className="rounded-[28px] border border-[#091d3a]/6 bg-white px-4 py-5 shadow-[0_18px_45px_rgba(20,63,82,0.05)] sm:px-5 lg:px-6 lg:py-6 gsap-stagger-container"
                   >
                     <div className="flex items-center justify-between gap-3 border-b border-black/8 pb-3">
                       <div>
@@ -608,16 +650,18 @@ export default function FindJobsBoard({ jobs }: FindJobsBoardProps) {
                       </div>
                     </div>
 
-                    <div className="mt-2 divide-y divide-black/8">
+                    <div className="mt-4 space-y-3">
                       {sectorJobs.map(({ job }) => {
                         const companyName =
                           job.companyName || job.recruiterName || "Energy ecosystem employer";
-                        const metadata = buildMetaLine([
-                          companyName,
+                        const primaryMeta = buildMetaLine([
                           formatLabel(job.workMode),
                           job.location,
+                        ]);
+                        const secondaryMeta = buildMetaLine([
                           formatSalary(job.salaryMin, job.salaryMax),
                           formatExperience(job.experienceMin, job.experienceMax),
+                          job.qualification,
                         ]);
                         const tags = [
                           ...(job.sectors || []).slice(0, 2),
@@ -629,31 +673,51 @@ export default function FindJobsBoard({ jobs }: FindJobsBoardProps) {
                         return (
                           <article
                             key={`${sector}-${job.id}`}
-                            className="flex flex-col gap-4 py-4 sm:flex-row sm:items-center sm:justify-between"
+                            className="flex flex-col gap-4 rounded-[24px] border border-black/8 bg-[#fcfdfc] px-4 py-5 shadow-[0_12px_34px_rgba(20,63,82,0.04)] sm:px-5 gsap-stagger-item"
                           >
-                            <div className="flex min-w-0 items-start gap-4">
+                            <div className="flex gap-4 items-start sm:gap-5">
                               <CompanyMark
                                 name={companyName}
                                 logoUrl={job.companyLogoUrl}
-                                size="h-12 w-12"
+                                size="h-[78px] w-[78px] sm:h-[84px] sm:w-[84px]"
                               />
 
                               <div className="min-w-0 flex-1">
+                                <div className="flex flex-wrap items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-[#09B697]">
+                                  <span>{companyName}</span>
+                                  {job.openings ? (
+                                    <span className="rounded-full bg-[#eef4fb] px-2.5 py-1 text-[10px] tracking-[0.14em] text-[#2f5577]">
+                                      {job.openings} {job.openings === 1 ? "role" : "roles"}
+                                    </span>
+                                  ) : null}
+                                </div>
                                 <Link
                                   href={getJobHref(job)}
-                                  className="line-clamp-2 text-lg font-bold leading-snug text-[#111111] transition-colors hover:text-[#09B697] sm:line-clamp-1"
+                                  className="mt-1 block line-clamp-2 text-[1.4rem] font-black leading-tight tracking-[-0.04em] text-[#111111] transition-colors hover:text-[#09B697] sm:text-[1.6rem]"
                                 >
                                   {job.title}
                                 </Link>
-                                <p className="mt-1 line-clamp-2 text-sm leading-6 text-black/65">
-                                  {metadata}
-                                </p>
+                                {primaryMeta ? (
+                                  <p className="mt-2 text-[15px] leading-7 text-black/68">
+                                    {primaryMeta}
+                                  </p>
+                                ) : null}
+                                {secondaryMeta ? (
+                                  <p className="text-[14px] leading-6 text-black/58">
+                                    {secondaryMeta}
+                                  </p>
+                                ) : null}
+                                {job.summary ? (
+                                  <p className="mt-2 line-clamp-2 max-w-2xl text-sm leading-6 text-black/54">
+                                    {job.summary}
+                                  </p>
+                                ) : null}
                                 {tags.length > 0 ? (
-                                  <div className="mt-2 flex flex-wrap gap-2">
-                                    {tags.map((tag) => (
+                                  <div className="mt-3 flex flex-wrap gap-2">
+                                    {tags.slice(0, 3).map((tag) => (
                                       <span
                                         key={`${job.id}-${tag}`}
-                                        className="rounded-full bg-[#f4f7f8] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#33415c]"
+                                        className="rounded-full bg-[#f4f7f8] px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#33415c]"
                                       >
                                         {tag}
                                       </span>
@@ -663,19 +727,19 @@ export default function FindJobsBoard({ jobs }: FindJobsBoardProps) {
                               </div>
                             </div>
 
-                            <div className="flex shrink-0 items-center gap-2 self-end sm:self-center">
+                            <div className="flex items-center justify-end gap-3 border-t border-black/5 pt-4">
                               <button
                                 type="button"
                                 onClick={() => toggleSaved(job.id)}
-                                className="inline-flex h-10 items-center justify-center rounded-[10px] border border-black/14 bg-white px-4 text-sm font-bold text-[#111111] transition-colors hover:border-[#09B697] hover:text-[#09B697]"
+                                className="inline-flex h-11 items-center justify-center rounded-[14px] border border-black/14 bg-white px-5 text-sm font-bold text-[#111111] transition-colors hover:border-[#09B697] hover:text-[#09B697]"
                               >
                                 {isSaved ? "Saved" : "Save"}
                               </button>
                               <Link
                                 href={getJobHref(job)}
-                                className="inline-flex h-10 items-center justify-center gap-1 rounded-[10px] bg-[#121417] px-4 text-sm font-bold text-white transition-colors hover:bg-[#09B697]"
+                                className="inline-flex h-11 items-center justify-center gap-1 rounded-[14px] bg-[#121417] px-5 text-sm font-bold text-white transition-colors hover:bg-[#09B697]"
                               >
-                                View
+                                View role
                                 <ArrowRight className="h-4 w-4" />
                               </Link>
                             </div>
@@ -751,6 +815,32 @@ export default function FindJobsBoard({ jobs }: FindJobsBoardProps) {
                 ))}
               </div>
             </div>
+
+            {categories.length > 0 && (
+              <div className="mt-6">
+                <p className="text-sm font-bold text-[#24344b]">Job Category</p>
+                <div className="mt-3 space-y-2.5">
+                  {categories.map((category) => (
+                    <label
+                      key={category.id}
+                      className="flex cursor-pointer items-center gap-3 text-sm text-[#46556f]"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={draftCategoryFilters.includes(category.id)}
+                        onChange={() =>
+                          setDraftCategoryFilters((current) =>
+                            toggleSelection(current, category.id)
+                          )
+                        }
+                        className="h-4 w-4 rounded border border-black/20 text-[#09B697] focus:ring-[#09B697]"
+                      />
+                      <span>{category.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="mt-6">
               <p className="text-sm font-bold text-[#24344b]">Location</p>

@@ -1,4 +1,5 @@
 import type { PublicEnergJob } from "@/lib/energjob-public";
+import { slugify } from "@/lib/utils";
 
 export const EXPERIENCE_FILTERS = [
   { id: "internship", label: "Internship" },
@@ -23,6 +24,7 @@ export type EnergJobSearchState = {
   filterLocation: string;
   experienceFilters: ExperienceFilterId[];
   employmentFilters: EmploymentFilterId[];
+  categoryFilters: string[];
 };
 
 export type RankedPublicEnergJob = {
@@ -402,6 +404,14 @@ function jobMatchesFilters(job: PublicEnergJob, state: EnergJobSearchState) {
   if (
     state.employmentFilters.length > 0 &&
     !state.employmentFilters.some((filterId) => matchesEmploymentFilter(job, filterId))
+  ) {
+    return null;
+  }
+
+  if (
+    state.categoryFilters &&
+    state.categoryFilters.length > 0 &&
+    (!job.roleCategory || !state.categoryFilters.includes(slugify(job.roleCategory)))
   ) {
     return null;
   }
