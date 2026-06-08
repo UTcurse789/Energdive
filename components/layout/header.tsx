@@ -423,11 +423,7 @@ export function Header() {
                         {/* RIGHT NAV */}
                         <div className="relative flex items-center gap-x-3 md:gap-x-5 xl:gap-x-7 flex-1 justify-end">
                             <nav className="hidden sm:flex items-center gap-x-3 md:gap-x-5 xl:gap-x-7">
-                                <Link href="/energjob" className="inline-flex items-center gap-2 rounded-[16px] border-2 border-dashed border-[#00A651]/70 px-3 py-1.5 text-[12px] xl:text-[13px] font-bold uppercase tracking-[1px] whitespace-nowrap transition-colors hover:border-[#00A651] hover:bg-[#00A651]/[0.04]" onClick={closeMenus}>
-                                    <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-[#00A651]" />
-                                    ENERGJOB
-                                    <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-[#00A651]" />
-                                </Link>
+
                                 <Link href="/energclub" target="_blank" className="text-[12px] xl:text-[13px] font-bold uppercase tracking-[1px] hover:opacity-70 whitespace-nowrap" onClick={closeMenus}>ENERGCLUB</Link>
                                 <Link href="/subscribe" style={{ color: brandGreen }} className="text-[12px] xl:text-[13px] font-bold uppercase tracking-[1px] hover:opacity-70 whitespace-nowrap" onClick={closeMenus}>SUBSCRIBE</Link>
                             </nav>
@@ -1246,11 +1242,11 @@ export function Header() {
 
                                 {/* Bottom links - visible on mobile only */}
                                 <div className="border-t border-gray-100 mt-2 pt-2">
-                                    <Link href="/energjob" onClick={closeAll} className="mx-6 my-3 inline-flex w-fit items-center gap-2 rounded-[16px] border-2 border-dashed border-[#00A651]/70 px-4 py-3 text-[13px] font-bold uppercase tracking-[1px] transition-colors hover:bg-gray-50">
+                                    {/* <Link href="/energjob" onClick={closeAll} className="mx-6 my-3 inline-flex w-fit items-center gap-2 rounded-[16px] border-2 border-dashed border-[#00A651]/70 px-4 py-3 text-[13px] font-bold uppercase tracking-[1px] transition-colors hover:bg-gray-50">
                                         <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-[#00A651]" />
                                         ENERGJOB
                                         <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-[#00A651]" />
-                                    </Link>
+                                    </Link> */}
                                     <Link href="/energclub" onClick={closeAll} className="px-6 py-4 text-[13px] font-bold uppercase tracking-[1px] hover:bg-gray-50 transition-colors block">
                                         ENERGCLUB
                                     </Link>
