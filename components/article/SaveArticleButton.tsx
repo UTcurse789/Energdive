@@ -5,10 +5,8 @@ import { usePathname } from "next/navigation";
 import { BookmarkPlus, CheckCircle2 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { SaveLoginPrompt } from "@/components/onboarding/save-login-prompt";
-import { SaveButtonDiscovery } from "@/components/onboarding/save-button-discovery";
 import { useArticleSave } from "@/hooks/use-article-save";
 import { ONBOARDING_KEYS, isArticlePath, isSessionFlagSet, setSessionFlag } from "@/lib/onboarding-storage";
-import { useOnboardingStep } from "@/hooks/use-onboarding-step";
 
 interface SaveArticleButtonProps {
     title: string;
@@ -29,18 +27,7 @@ export function SaveArticleButton({ title, url }: SaveArticleButtonProps) {
         setShowLoginPrompt,
     } = useArticleSave({ title, url });
 
-    const { isOpen: showDiscoveryHint, close: closeDiscoveryHint } = useOnboardingStep({
-        id: "save-button-hint",
-        enabled: isGuest && !isSaved && isArticlePath(pathname) && !isSessionFlagSet(ONBOARDING_KEYS.saveButtonHintSeenSession),
-        delayMs: 1400,
-        autoHideMs: 4500,
-        onClose: () => {
-            setSessionFlag(ONBOARDING_KEYS.saveButtonHintSeenSession);
-        },
-    });
-
     const handleSaveClick = () => {
-        closeDiscoveryHint();
         handleSave();
     };
 
@@ -65,12 +52,6 @@ export function SaveArticleButton({ title, url }: SaveArticleButtonProps) {
                 </span>
                 {isSaving ? "Saving..." : isSaved ? "Saved" : "Save"}
             </button>
-
-            <SaveButtonDiscovery
-                anchorRef={buttonRef}
-                open={showDiscoveryHint}
-                onClose={closeDiscoveryHint}
-            />
 
             <SaveLoginPrompt
                 anchorRef={buttonRef}
