@@ -6,7 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { formatContentDate } from "@/lib/date";
-import { Search, ChevronDown, Facebook, Linkedin, Megaphone, ChevronRight, Zap, Menu, X, MapPin, Mail, Phone, Play, ArrowRight, Youtube, Instagram } from "lucide-react";
+import { Search, ChevronDown, Facebook, Linkedin, Megaphone, ChevronRight, Zap, Menu, X, MapPin, Mail, Phone, Play, ArrowRight, Youtube, Instagram, LibraryBig } from "lucide-react";
 import { SECTORS } from "@/data/dummy";
 import { motion, AnimatePresence } from "framer-motion";
 import { SignedIn, SignedOut, useAuth } from "@clerk/nextjs";
@@ -747,6 +747,20 @@ export function Header() {
                                         </Link>
 
                                         <Link
+                                            href="/energdive-insights-exchange"
+                                            onClick={closeMenus}
+                                            className={cn(
+                                                "px-4 py-3 text-[14px] font-bold text-gray-800 flex justify-between items-center transition-colors",
+                                                hoveredMoreItem === "insights-exchange"
+                                                    ? "bg-[#00A651] text-white"
+                                                    : "hover:bg-[#00A651] hover:text-white"
+                                            )}
+                                            onMouseEnter={() => setHoveredMoreItem("insights-exchange")}
+                                        >
+                                            Insights Exchange <ChevronRight size={14} />
+                                        </Link>
+
+                                        <Link
                                             href="/about"
                                             onClick={closeMenus}
                                             className={cn(
@@ -883,6 +897,29 @@ export function Header() {
                                             <Link href="/events" onClick={closeMenus} className="mt-8 inline-flex items-center gap-1.5 text-[11px] font-bold text-[#00A651] uppercase tracking-widest hover:underline">
                                                 View All Events <ArrowRight size={13} />
                                             </Link>
+                                        </div>
+                                    )}
+
+                                    {/* Insights Exchange hover content */}
+                                    {hoveredMoreItem === "insights-exchange" && (
+                                        <div className="flex items-start gap-12 h-full">
+                                            <div className="flex-1">
+                                                <h4 className="text-[12px] font-bold uppercase text-gray-400 border-b pb-3 mb-6 tracking-widest">ENERGDIVE Insights Exchange</h4>
+                                                <div className="w-14 h-14 rounded-lg flex items-center justify-center mb-5" style={{ background: '#00A65112' }}>
+                                                    <LibraryBig size={24} style={{ color: '#00A651' }} />
+                                                </div>
+                                                <h3 className="text-2xl font-serif font-bold text-zinc-900 mb-4 leading-tight">Where Knowledge Powers Energy Transition</h3>
+                                                <p className="text-[14px] text-gray-500 leading-relaxed mb-4">EIX is a curated knowledge platform powered by ENERGClub for research papers, sector outlooks, case studies, white papers, technical notes, and knowledge briefs.</p>
+                                                <p className="text-[14px] text-gray-500 leading-relaxed mb-6">It brings together professionals, researchers, academics, policymakers, consultants, technology providers, and emerging talent across India&apos;s energy ecosystem.</p>
+                                                <div className="flex flex-wrap gap-3">
+                                                    <Link href="/energdive-insights-exchange" onClick={closeMenus} className="inline-flex items-center gap-1.5 text-[11px] font-bold text-[#00A651] uppercase tracking-widest hover:underline">
+                                                        Explore EIX <ArrowRight size={13} />
+                                                    </Link>
+                                                    <Link href="/knowledge-base/submit" onClick={closeMenus} className="inline-flex items-center gap-1.5 text-[11px] font-bold text-zinc-900 uppercase tracking-widest hover:underline">
+                                                        Submit a Paper <ArrowRight size={13} />
+                                                    </Link>
+                                                </div>
+                                            </div>
                                         </div>
                                     )}
 
@@ -1232,6 +1269,9 @@ export function Header() {
                                                 </Link>
                                                 <Link href="/events" onClick={closeAll} className="block px-10 py-3 text-[13px] font-medium text-gray-700 hover:text-[#00A651] hover:bg-white transition-colors border-b border-gray-100">
                                                     Events
+                                                </Link>
+                                                <Link href="/energdive-insights-exchange" onClick={closeAll} className="block px-10 py-3 text-[13px] font-medium text-gray-700 hover:text-[#00A651] hover:bg-white transition-colors border-b border-gray-100">
+                                                    Insights Exchange
                                                 </Link>
                                                 <Link href="/about" onClick={closeAll} className="block px-10 py-3 text-[13px] font-medium text-gray-700 hover:text-[#00A651] hover:bg-white transition-colors border-b border-gray-100">
                                                     About
