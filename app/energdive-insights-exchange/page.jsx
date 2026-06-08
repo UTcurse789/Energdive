@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import {
     ArrowRight,
@@ -114,99 +113,68 @@ export default function EnergdiveInsightsExchangePage() {
     return (
         <div className="bg-white text-zinc-950">
             <section className="relative overflow-hidden bg-[#f6f3eb]">
-                <div className="container relative grid gap-10 pb-16 pt-16 md:pb-20 md:pt-20 lg:grid-cols-[minmax(0,1fr)_420px] lg:items-center lg:justify-between lg:gap-12 lg:pb-24 lg:pt-24 xl:grid-cols-[minmax(0,760px)_460px]">
-                    <div className="min-w-0 max-w-[760px]">
-                        <div className="inline-flex items-center gap-2 border border-emerald-900/10 bg-white px-4 py-2 text-[11px] font-black uppercase tracking-[0.24em] text-emerald-800 shadow-sm mt-3">
-                            <LibraryBig className="h-4 w-4" />
+                <div className="mx-auto w-full max-w-[1400px] px-6 md:px-10 lg:px-16 xl:px-24 2xl:px-12 relative flex flex-col items-center text-center pb-12 pt-12 md:pb-16 md:pt-16">
+                    <div className="min-w-0 max-w-3xl flex flex-col items-center">
+                        <div className="inline-flex items-center gap-2 border border-emerald-900/10 bg-white px-3.5 py-1.5 text-[10px] font-black uppercase tracking-[0.24em] text-emerald-800 shadow-xs mt-2">
+                            <LibraryBig className="h-3.5 w-3.5" />
                             Powered by ENERGClub
                         </div>
 
-                        <h1 className="mt-7 max-w-[760px] break-words text-5xl font-black leading-[0.95] tracking-normal text-zinc-950 sm:text-6xl lg:text-7xl">
-                            ENERGDIVE Insights Exchange
-                            <span className="block text-[#00A651]">(EIX)</span>
+                        <h1 className="mt-5 break-words text-3xl font-black leading-tight tracking-tight text-zinc-950 sm:text-4xl lg:text-5xl">
+                            ENERGDIVE Insights Exchange <span className="inline-block text-[#00A651]">(EIX)</span>
                         </h1>
 
-                        <p className="mt-6 max-w-2xl text-xl font-semibold leading-8 text-zinc-800">
+                        <p className="mt-4 text-lg font-bold leading-7 text-zinc-800">
                             Where Knowledge Powers Energy Transition
                         </p>
 
-                        <p className="mt-5 max-w-3xl text-base leading-8 text-zinc-600 sm:text-lg">
-                            The ENERGDIVE Insights Exchange is a curated knowledge platform bringing together industry
-                            professionals, researchers, academics, policymakers, consultants, technology providers, and
-                            emerging talent to share insights, research, practical experiences, and forward-looking
-                            perspectives on India&apos;s energy transition.
+                        <p className="mt-3.5 max-w-2xl text-[14px] leading-6 text-zinc-600">
+                            A curated knowledge platform powered by ENERGClub, EIX enables professionals, researchers, academics, consultants, policymakers, and innovators to publish and discover research papers, white papers, case studies, technical notes, and industry insights on India's energy sector.
                         </p>
 
-                        <p className="mt-4 max-w-3xl text-base leading-8 text-zinc-600 sm:text-lg">
-                            Through Research Papers, Sector Outlooks, Case Studies, White Papers, Technical Notes, and
-                            Knowledge Briefs, EIX fosters informed dialogue, bridges research and practice, and supports
-                            a more sustainable, resilient, and innovative energy future.
+                        <p className="mt-3 text-[11px] font-bold tracking-wider text-zinc-500 uppercase">
+                            Research Papers • Sector Outlooks • Case Studies • White Papers • Technical Notes • Knowledge Briefs
                         </p>
 
-                        <div className="mt-9 mb-9 flex flex-col gap-3 sm:flex-row">
+                        <div className="mt-7 mb-4 flex flex-col gap-2.5 sm:flex-row justify-center w-full sm:w-auto">
                             <Link
                                 href="/knowledge-base"
-                                className="inline-flex items-center justify-center gap-2 bg-zinc-950 px-5 py-3 text-sm font-bold uppercase tracking-[0.12em] text-white transition-colors hover:bg-[#00A651]"
+                                className="inline-flex items-center justify-center gap-2 bg-zinc-950 px-4 py-2.5 text-xs font-bold uppercase tracking-[0.12em] text-white transition-colors hover:bg-[#00A651]"
                             >
                                 Browse Papers
-                                <ArrowRight className="h-4 w-4" />
+                                <ArrowRight className="h-3.5 w-3.5" />
                             </Link>
                             <Link
                                 href="/knowledge-base/submit"
-                                className="inline-flex items-center justify-center gap-2 border border-zinc-950 bg-white px-5 py-3 text-sm font-bold uppercase tracking-[0.12em] text-zinc-950 transition-colors hover:border-[#00A651] hover:text-[#00A651]"
+                                className="inline-flex items-center justify-center gap-2 border border-zinc-950 bg-white px-4 py-2.5 text-xs font-bold uppercase tracking-[0.12em] text-zinc-950 transition-colors hover:border-[#00A651] hover:text-[#00A651]"
                             >
                                 Submit a Paper
-                                <ArrowRight className="h-4 w-4" />
+                                <ArrowRight className="h-3.5 w-3.5" />
                             </Link>
-                        </div>
-                    </div>
-
-                    <div className="relative min-w-0 w-full max-w-[460px] lg:justify-self-end">
-                        <div className="relative aspect-[4/5] overflow-hidden border border-white/70 bg-zinc-900 shadow-2xl">
-                            <Image
-                                src="/key outcomes.jpg"
-                                alt="Energy transition knowledge and innovation visual"
-                                fill
-                                priority
-                                sizes="(min-width: 1024px) 460px, 90vw"
-                                className="object-cover"
-                            />
-                            <div className="absolute inset-0 bg-linear-to-t from-zinc-950/80 via-zinc-950/20 to-transparent" />
-                            <div className="absolute inset-x-0 bottom-0 p-6 text-white">
-                                <p className="text-[11px] font-black uppercase tracking-[0.22em] text-emerald-300">
-                                    Editor-reviewed platform
-                                </p>
-                                <p className="mt-3 text-2xl font-black leading-tight">
-                                    Research, applied insight, and industry perspective in one exchange.
-                                </p>
-                            </div>
                         </div>
                     </div>
                 </div>
             </section>
 
             <section className="bg-white py-16 md:py-20">
-                <div className="container">
+                <div className="mx-auto w-full max-w-[1400px] px-6 md:px-10 lg:px-16 xl:px-24 2xl:px-12">
                     <div className="max-w-3xl">
-                        <p className="text-[11px] font-black uppercase tracking-[0.28em] text-[#00A651]">
-                            Content Categories
-                        </p>
-                        <h2 className="mt-3 text-3xl font-black text-zinc-950 sm:text-4xl">
-                            Submission streams accepted by EIX
+                        <h2 className="text-2xl font-black text-zinc-950 sm:text-3xl">
+                            Paper Categories
                         </h2>
                     </div>
 
-                    <div className="mt-10 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                    <div className="mt-8 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                         {contentCategories.map(({ title, description, Icon }) => (
                             <article
                                 key={title}
-                                className="border border-zinc-200 bg-white p-6 shadow-[0_14px_36px_rgba(15,23,42,0.05)] transition-colors hover:border-[#00A651]/60"
+                                className="border border-zinc-200 bg-white p-4 shadow-[0_14px_36px_rgba(15,23,42,0.05)] transition-colors hover:border-[#00A651]/60"
                             >
-                                <div className="flex h-11 w-11 items-center justify-center bg-[#00A651]/10 text-[#00A651]">
-                                    <Icon className="h-5 w-5" />
+                                <div className="flex h-9 w-9 items-center justify-center bg-[#00A651]/10 text-[#00A651]">
+                                    <Icon className="h-4 w-4" />
                                 </div>
-                                <h3 className="mt-5 text-xl font-black text-zinc-950">{title}</h3>
-                                <p className="mt-3 text-sm leading-7 text-zinc-600">{description}</p>
+                                <h3 className="mt-3 text-base font-black text-zinc-950">{title}</h3>
+                                <p className="mt-2 text-[13px] leading-6 text-zinc-600">{description}</p>
                             </article>
                         ))}
                     </div>
@@ -214,7 +182,7 @@ export default function EnergdiveInsightsExchangePage() {
             </section>
 
             <section className="bg-[#f8faf9] py-16 md:py-20">
-                <div className="container grid gap-12 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] lg:items-start">
+                <div className="mx-auto w-full max-w-[1400px] px-6 md:px-10 lg:px-16 xl:px-24 2xl:px-12 grid gap-12 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] lg:items-start">
                     <div>
                         <p className="text-[11px] font-black uppercase tracking-[0.28em] text-[#00A651]">
                             Who Can Contribute
@@ -243,7 +211,7 @@ export default function EnergdiveInsightsExchangePage() {
             </section>
 
             <section className="bg-white py-16 md:py-20">
-                <div className="container">
+                <div className="mx-auto w-full max-w-[1400px] px-6 md:px-10 lg:px-16 xl:px-24 2xl:px-12">
                     <div className="grid gap-12 lg:grid-cols-2">
                         <InfoList
                             eyebrow="For Contributors"
@@ -260,7 +228,7 @@ export default function EnergdiveInsightsExchangePage() {
             </section>
 
             <section className="bg-zinc-950 py-16 text-white md:py-20">
-                <div className="container grid gap-12 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+                <div className="mx-auto w-full max-w-[1400px] px-6 md:px-10 lg:px-16 xl:px-24 2xl:px-12 grid gap-12 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
                     <div>
                         <div className="inline-flex h-12 w-12 items-center justify-center bg-[#00A651] text-white">
                             <ShieldCheck className="h-6 w-6" />
@@ -315,88 +283,88 @@ export default function EnergdiveInsightsExchangePage() {
                 </div>
             </section>
 
-            <section className="bg-[#f6f3eb] py-16 md:py-20">
-                <div className="container grid gap-12 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+            <section className="bg-[#f6f3eb] py-12 md:py-14">
+                <div className="mx-auto w-full max-w-[1400px] px-6 md:px-10 lg:px-16 xl:px-24 2xl:px-12 grid gap-8 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
                     <div>
                         <p className="text-[11px] font-black uppercase tracking-[0.28em] text-[#00A651]">
                             Submission Principles
                         </p>
-                        <h2 className="mt-3 text-3xl font-black text-zinc-950 sm:text-4xl">
+                        <h2 className="mt-2 text-2xl font-black text-zinc-950 sm:text-3xl">
                             What EIX contributions should deliver
                         </h2>
                     </div>
 
-                    <div className="grid gap-3">
+                    <div className="grid gap-2">
                         {submissionPrinciples.map((principle) => (
-                            <div key={principle} className="flex gap-3 border border-zinc-200 bg-white p-4">
-                                <CheckCircle2 className="mt-1 h-5 w-5 shrink-0 text-[#00A651]" />
-                                <p className="text-sm leading-7 text-zinc-700">{principle}</p>
+                            <div key={principle} className="flex gap-2 border border-zinc-200 bg-white p-3">
+                                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[#00A651]" />
+                                <p className="text-[13px] leading-6 text-zinc-700">{principle}</p>
                             </div>
                         ))}
                     </div>
                 </div>
             </section>
 
-            <section className="bg-white py-16 md:py-20">
-                <div className="container">
+            <section className="bg-white py-12 md:py-14">
+                <div className="mx-auto w-full max-w-[1400px] px-6 md:px-10 lg:px-16 xl:px-24 2xl:px-12">
                     <div className="max-w-3xl">
                         <p className="text-[11px] font-black uppercase tracking-[0.28em] text-[#00A651]">
                             Explore EIX
                         </p>
-                        <h2 className="mt-3 text-3xl font-black text-zinc-950 sm:text-4xl">
+                        <h2 className="mt-2 text-2xl font-black text-zinc-950 sm:text-3xl">
                             Guidelines, templates, and review process
                         </h2>
                     </div>
 
-                    <div className="mt-10 grid gap-6 md:grid-cols-3">
-                        <article className="flex flex-col border border-zinc-200 bg-white p-6 shadow-[0_14px_36px_rgba(15,23,42,0.05)] transition-colors hover:border-[#00A651]/60">
-                            <div className="flex h-11 w-11 items-center justify-center bg-[#00A651]/10 text-[#00A651]">
-                                <Megaphone className="h-5 w-5" />
+                    <div className="mt-8 grid gap-3 md:grid-cols-3">
+                        <article className="flex flex-col border border-zinc-200 bg-white p-4 shadow-[0_14px_36px_rgba(15,23,42,0.05)] transition-colors hover:border-[#00A651]/60">
+                            <div className="flex h-9 w-9 items-center justify-center bg-[#00A651]/10 text-[#00A651]">
+                                <Megaphone className="h-4 w-4" />
                             </div>
-                            <h3 className="mt-5 text-xl font-black text-zinc-950">Call for Papers</h3>
-                            <p className="mt-3 text-sm leading-7 text-zinc-600 flex-1">
+                            <h3 className="mt-3 text-base font-black text-zinc-950">Call for Papers</h3>
+                            <p className="mt-2 text-[13px] leading-6 text-zinc-600 flex-1">
                                 Learn about the current topics of interest, accepted submission streams, and how you can share your insights.
                             </p>
                             <Link
                                 href="/energdive-insights-exchange/call-for-papers"
-                                className="mt-6 inline-flex items-center gap-1 text-sm font-bold uppercase tracking-wider text-[#00A651] hover:text-[#008c43] group"
+                                className="mt-4 inline-flex items-center gap-1 text-xs font-bold uppercase tracking-wider text-[#00A651] hover:text-[#008c43] group"
                             >
                                 Learn More
-                                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                                <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
                             </Link>
                         </article>
 
-                        <article className="flex flex-col border border-zinc-200 bg-white p-6 shadow-[0_14px_36px_rgba(15,23,42,0.05)] transition-colors hover:border-[#00A651]/60">
-                            <div className="flex h-11 w-11 items-center justify-center bg-[#00A651]/10 text-[#00A651]">
-                                <BookOpen className="h-5 w-5" />
+                        <article className="flex flex-col border border-zinc-200 bg-white p-4 shadow-[0_14px_36px_rgba(15,23,42,0.05)] transition-colors hover:border-[#00A651]/60">
+                            <div className="flex h-9 w-9 items-center justify-center bg-[#00A651]/10 text-[#00A651]">
+                                <BookOpen className="h-4 w-4" />
                             </div>
-                            <h3 className="mt-5 text-xl font-black text-zinc-950">Author Guidelines</h3>
-                            <p className="mt-3 text-sm leading-7 text-zinc-600 flex-1">
+                            <h3 className="mt-3 text-base font-black text-zinc-950">Author Guidelines</h3>
+                            <p className="mt-2 text-[13px] leading-6 text-zinc-600 flex-1">
                                 Check document formatting guidelines, recommended word limits, required biography details, and evaluation criteria.
                             </p>
                             <Link
                                 href="/energdive-insights-exchange/author-guidelines"
-                                className="mt-6 inline-flex items-center gap-1 text-sm font-bold uppercase tracking-wider text-[#00A651] hover:text-[#008c43] group"
+                                className="mt-4 inline-flex items-center gap-1 text-xs font-bold uppercase tracking-wider text-[#00A651] hover:text-[#008c43] group"
                             >
                                 Learn More
-                                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                                <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
                             </Link>
                         </article>
 
-                        <article className="flex flex-col border border-zinc-200 bg-white p-6 shadow-[0_14px_36px_rgba(15,23,42,0.05)] transition-colors hover:border-[#00A651]/60">
-                            <div className="flex h-11 w-11 items-center justify-center bg-[#00A651]/10 text-[#00A651]">
-                                <ShieldCheck className="h-5 w-5" />
+                        <article className="flex flex-col border border-zinc-200 bg-white p-4 shadow-[0_14px_36px_rgba(15,23,42,0.05)] transition-colors hover:border-[#00A651]/60">
+                            <div className="flex h-9 w-9 items-center justify-center bg-[#00A651]/10 text-[#00A651]">
+                                <ShieldCheck className="h-4 w-4" />
                             </div>
-                            <h3 className="mt-5 text-xl font-black text-zinc-950">Editorial & Review Process</h3>
-                            <p className="mt-3 text-sm leading-7 text-zinc-600 flex-1">
+                            <h3 className="mt-3 text-base font-black text-zinc-950">Editorial & Review Process</h3>
+                            <p className="mt-2 text-[13px] leading-6 text-zinc-600 flex-1">
                                 Understand our staged review process, timeline from abstract submission to publication, and review parameters.
                             </p>
                             <Link
                                 href="/energdive-insights-exchange/editorial-review-process"
-                                className="mt-6 inline-flex items-center gap-1 text-sm font-bold uppercase tracking-wider text-[#00A651] hover:text-[#008c43] group"
+                                className="mt-4 inline-flex items-center gap-1 text-xs font-bold uppercase tracking-wider text-[#00A651] hover:text-[#008c43] group"
                             >
                                 Learn More
-                                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                                <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
                             </Link>
                         </article>
                     </div>
@@ -404,7 +372,7 @@ export default function EnergdiveInsightsExchangePage() {
             </section>
 
             <section className="bg-white py-16 md:py-20">
-                <div className="container">
+                <div className="mx-auto w-full max-w-[1400px] px-6 md:px-10 lg:px-16 xl:px-24 2xl:px-12">
                     <div className="grid gap-8 border border-zinc-200 bg-zinc-50 p-6 md:p-8 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
                         <div>
                             <p className="text-[11px] font-black uppercase tracking-[0.28em] text-zinc-500">
@@ -444,14 +412,14 @@ export default function EnergdiveInsightsExchangePage() {
 
 function InfoList({ eyebrow, title, items }) {
     return (
-        <article className="border border-zinc-200 bg-white p-6 shadow-[0_14px_36px_rgba(15,23,42,0.05)]">
+        <article className="border border-zinc-200 bg-white p-4 shadow-[0_14px_36px_rgba(15,23,42,0.05)]">
             <p className="text-[11px] font-black uppercase tracking-[0.24em] text-[#00A651]">{eyebrow}</p>
-            <h2 className="mt-3 text-2xl font-black text-zinc-950">{title}</h2>
-            <ul className="mt-6 space-y-4">
+            <h2 className="mt-2 text-lg font-black text-zinc-950">{title}</h2>
+            <ul className="mt-4 space-y-3">
                 {items.map((item) => (
-                    <li key={item} className="flex gap-3">
-                        <CheckCircle2 className="mt-1 h-5 w-5 shrink-0 text-[#00A651]" />
-                        <span className="text-sm leading-7 text-zinc-600">{item}</span>
+                    <li key={item} className="flex gap-2">
+                        <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[#00A651]" />
+                        <span className="text-[13px] leading-6 text-zinc-600">{item}</span>
                     </li>
                 ))}
             </ul>
