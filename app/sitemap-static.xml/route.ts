@@ -12,6 +12,7 @@ export async function GET() {
     { url: '/reports', priority: '0.80', changefreq: 'weekly' },
     { url: '/videos', priority: '0.70', changefreq: 'daily' },
     { url: '/events', priority: '0.70', changefreq: 'weekly' },
+    { url: '/energdive-insights-exchange', priority: '0.70', changefreq: 'weekly' },
     { url: '/sectors', priority: '0.70', changefreq: 'weekly' },
     { url: '/sectors/oil-gas', priority: '0.70', changefreq: 'daily' },
     { url: '/sectors/power-generation', priority: '0.70', changefreq: 'daily' },
