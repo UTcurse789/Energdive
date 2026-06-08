@@ -101,74 +101,73 @@ export default function CallForPapersPage() {
     return (
         <div className="bg-white text-zinc-950">
             {/* Hero Section */}
-            <section className="relative overflow-hidden bg-[#f6f3eb] pb-16 pt-16 md:pb-20 md:pt-20">
-                <div className="container relative max-w-4xl">
-                    <div className="inline-flex items-center gap-2 border border-emerald-900/10 bg-white px-4 py-2 text-[11px] font-black uppercase tracking-[0.24em] text-emerald-800 shadow-sm mt-3">
-                        <Megaphone className="h-4 w-4" />
-                        Call for Papers
-                    </div>
+            <section className="relative overflow-hidden bg-[#f6f3eb] pb-12 pt-12 md:pb-16 md:pt-16">
+                <div className="mx-auto w-full max-w-4xl px-6 md:px-10 lg:px-16 xl:px-24 2xl:px-12 relative flex flex-col items-center text-center">
+                    <div className="min-w-0 max-w-3xl flex flex-col items-center">
+                        <div className="inline-flex items-center gap-2 border border-emerald-900/10 bg-white px-3.5 py-1.5 text-[10px] font-black uppercase tracking-[0.24em] text-emerald-800 shadow-xs mt-2">
+                            <Megaphone className="h-3.5 w-3.5" />
+                            Call for Papers
+                        </div>
 
-                    <h1 className="mt-7 break-words text-5xl font-black leading-[0.95] tracking-normal text-zinc-950 sm:text-6xl lg:text-7xl">
-                        Share Your Insights with India&apos;s Energy Community
-                    </h1>
+                        <h1 className="mt-5 break-words text-3xl font-black leading-tight tracking-tight text-zinc-950 sm:text-4xl lg:text-5xl">
+                            Share Your Insights with India&apos;s Energy Community
+                        </h1>
 
-                    <p className="mt-6 text-xl font-semibold leading-8 text-zinc-800">
-                        Join India&apos;s leading platform for applied energy insights and practical research.
-                    </p>
+                        <p className="mt-4 text-lg font-bold leading-7 text-zinc-800">
+                            Join India&apos;s leading platform for applied energy insights and practical research.
+                        </p>
 
-                    <p className="mt-5 text-base leading-8 text-zinc-600 sm:text-lg">
-                        The ENERGDIVE Insights Exchange invites submissions from professionals, researchers,
-                        academics, students, consultants, think tanks, startups, and organizations working across
-                        the energy ecosystem.
-                    </p>
+                        <p className="mt-3.5 text-[14px] leading-6 text-zinc-600">
+                            The ENERGDIVE Insights Exchange invites submissions from professionals, researchers,
+                            academics, students, consultants, think tanks, startups, and organizations working across
+                            the energy ecosystem.
+                        </p>
 
-                    <p className="mt-4 text-base leading-8 text-zinc-600 sm:text-lg">
-                        We welcome original contributions that advance understanding, stimulate discussion, and
-                        provide actionable insights on topics related to India&apos;s energy transition.
-                    </p>
+                        <p className="mt-3 text-[14px] leading-6 text-zinc-600">
+                            We welcome original contributions that advance understanding, stimulate discussion, and
+                            provide actionable insights on topics related to India&apos;s energy transition.
+                        </p>
 
-                    <div className="mt-9 flex flex-col gap-3 sm:flex-row">
-                        <Link
-                            href="/knowledge-base/submit"
-                            className="inline-flex items-center justify-center gap-2 bg-zinc-950 px-5 py-3 text-sm font-bold uppercase tracking-[0.12em] text-white transition-colors hover:bg-[#00A651]"
-                        >
-                            Submit Abstract
-                            <ArrowRight className="h-4 w-4" />
-                        </Link>
-                        <Link
-                            href="/knowledge-base"
-                            className="inline-flex items-center justify-center gap-2 border border-zinc-950 bg-white px-5 py-3 text-sm font-bold uppercase tracking-[0.12em] text-zinc-950 transition-colors hover:border-[#00A651] hover:text-[#00A651]"
-                        >
-                            Browse Papers
-                            <ArrowRight className="h-4 w-4" />
-                        </Link>
+                        <div className="mt-7 flex flex-col gap-2.5 sm:flex-row justify-center w-full sm:w-auto">
+                            <Link
+                                href="/knowledge-base/submit"
+                                className="inline-flex items-center justify-center gap-2 bg-zinc-950 px-4 py-2.5 text-xs font-bold uppercase tracking-[0.12em] text-white transition-colors hover:bg-[#00A651]"
+                            >
+                                Submit Abstract
+                                <ArrowRight className="h-3.5 w-3.5" />
+                            </Link>
+                            <Link
+                                href="/knowledge-base"
+                                className="inline-flex items-center justify-center gap-2 border border-zinc-950 bg-white px-4 py-2.5 text-xs font-bold uppercase tracking-[0.12em] text-zinc-950 transition-colors hover:border-[#00A651] hover:text-[#00A651]"
+                            >
+                                Browse Papers
+                                <ArrowRight className="h-3.5 w-3.5" />
+                            </Link>
+                        </div>
                     </div>
                 </div>
             </section>
 
             {/* Content Categories Section */}
             <section className="bg-white py-16 md:py-20">
-                <div className="container">
+                <div className="mx-auto w-full max-w-[1400px] px-6 md:px-10 lg:px-16 xl:px-24 2xl:px-12">
                     <div className="max-w-3xl">
-                        <p className="text-[11px] font-black uppercase tracking-[0.28em] text-[#00A651]">
-                            Content Categories
-                        </p>
-                        <h2 className="mt-3 text-3xl font-black text-zinc-950 sm:text-4xl">
-                            Submission streams accepted by EIX
+                        <h2 className="text-2xl font-black text-zinc-950 sm:text-3xl">
+                            Paper Categories
                         </h2>
                     </div>
 
-                    <div className="mt-10 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                    <div className="mt-8 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                         {contentCategories.map(({ title, description, Icon }) => (
                             <article
                                 key={title}
-                                className="border border-zinc-200 bg-white p-6 shadow-[0_14px_36px_rgba(15,23,42,0.05)] transition-colors hover:border-[#00A651]/60"
+                                className="border border-zinc-200 bg-white p-4 shadow-[0_14px_36px_rgba(15,23,42,0.05)] transition-colors hover:border-[#00A651]/60"
                             >
-                                <div className="flex h-11 w-11 items-center justify-center bg-[#00A651]/10 text-[#00A651]">
-                                    <Icon className="h-5 w-5" />
+                                <div className="flex h-9 w-9 items-center justify-center bg-[#00A651]/10 text-[#00A651]">
+                                    <Icon className="h-4 w-4" />
                                 </div>
-                                <h3 className="mt-5 text-xl font-black text-zinc-950">{title}</h3>
-                                <p className="mt-3 text-sm leading-7 text-zinc-600">{description}</p>
+                                <h3 className="mt-3 text-base font-black text-zinc-950">{title}</h3>
+                                <p className="mt-2 text-[13px] leading-6 text-zinc-600">{description}</p>
                             </article>
                         ))}
                     </div>
@@ -177,7 +176,7 @@ export default function CallForPapersPage() {
 
             {/* Submission Process Section */}
             <section className="bg-[#f8faf9] py-16 md:py-20">
-                <div className="container">
+                <div className="mx-auto w-full max-w-[1400px] px-6 md:px-10 lg:px-16 xl:px-24 2xl:px-12">
                     <div className="grid gap-10 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:items-start">
                         <div>
                             <p className="text-[11px] font-black uppercase tracking-[0.28em] text-[#00A651]">
@@ -217,7 +216,7 @@ export default function CallForPapersPage() {
 
             {/* Topics of Interest Section */}
             <section className="bg-white py-16 md:py-20">
-                <div className="container">
+                <div className="mx-auto w-full max-w-[1400px] px-6 md:px-10 lg:px-16 xl:px-24 2xl:px-12">
                     <div className="flex flex-col justify-between gap-4 border-b border-zinc-200 pb-5 md:flex-row md:items-end">
                         <div>
                             <p className="text-[11px] font-black uppercase tracking-[0.28em] text-[#00A651]">
@@ -263,7 +262,7 @@ export default function CallForPapersPage() {
 
             {/* Bottom CTA Section */}
             <section className="bg-zinc-950 py-16 text-white md:py-20">
-                <div className="container max-w-4xl text-center">
+                <div className="mx-auto w-full max-w-4xl px-6 md:px-10 lg:px-16 xl:px-24 2xl:px-12 text-center">
                     <h2 className="text-3xl font-black sm:text-4xl">Ready to contribute to India&apos;s energy intelligence?</h2>
                     <p className="mt-4 text-zinc-400 max-w-xl mx-auto text-sm leading-7">
                         Submit your 300-500 word abstract to get started. Be sure to review our author guidelines for template, format, and formatting requirements.
