@@ -10,7 +10,7 @@ export const metadata = {
 };
 
 const KNOWLEDGE_BASE_QUERY =
-    "populate[sectors][fields][0]=name&populate[sectors][fields][1]=slug&populate[sectors][populate][parent][fields][0]=name&populate[sectors][populate][parent][fields][1]=slug&populate[abstract_pdf][fields][0]=url&populate[abstract_pdf][fields][1]=name&populate[final_paper_submissions][fields][0]=final_status&populate[final_paper_submissions][fields][1]=final_submission_date&sort[0]=submitted_date:desc&pagination[pageSize]=100";
+    "populate[sectors][fields][0]=name&populate[sectors][fields][1]=slug&populate[sectors][populate][parent][fields][0]=name&populate[sectors][populate][parent][fields][1]=slug&populate[abstract_pdf][fields][0]=url&populate[abstract_pdf][fields][1]=name&populate[final_paper_submissions][fields][0]=final_status&populate[final_paper_submissions][fields][1]=final_submission_date&populate[final_paper_submissions][populate][full_paper][fields][0]=url&populate[final_paper_submissions][populate][full_paper][fields][1]=name&sort[0]=submitted_date:desc&pagination[pageSize]=100";
 
 export default async function KnowledgeBasePage() {
     let papers = [];
@@ -18,7 +18,7 @@ export default async function KnowledgeBasePage() {
 
     try {
         const submissions = await fetchPaperSubmissions(KNOWLEDGE_BASE_QUERY);
-        papers = submissions.filter((paper) => paper.hasAcceptedFinalPaper);
+        papers = submissions.filter((paper) => paper.status === "accepted");
     } catch (error) {
         loadError = error instanceof Error ? error.message : "Unable to load papers right now.";
     }

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { sendAbstractSubmissionAdminNotification } from "@/lib/email";
 
 const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL;
 const STRAPI_API_TOKEN = process.env.STRAPI_API_TOKEN;
@@ -554,6 +555,29 @@ export async function POST(request: NextRequest) {
                 documentId: updatedEntry?.documentId ?? documentId,
                 mediaId: uploadedPdf.mediaId,
             });
+        }
+
+        try {
+            let pdfBase64: string | undefined;
+            if (pdfFile) {
+                const arrayBuffer = await pdfFile.arrayBuffer();
+                pdfBase64 = Buffer.from(arrayBuffer).toString('base64');
+            }
+
+            await sendAbstractSubmissionAdminNotification({
+                title: (strapiData.title as string) || "",
+                authorName: (strapiData.author_name as string) || "",
+                authorEmail: (strapiData.author_email as string) || "",
+                coAuthor: strapiData.co_author as string,
+                institution: strapiData.institution as string,
+                profession: strapiData.Profession as string,
+                abstractText: data.abstract || "",
+                pdfFileName: pdfFile?.name,
+                pdfBase64,
+            });
+        } catch (emailError) {
+            console.error("[SUBMIT-ABSTRACT] Failed to send admin email:", emailError);
+            // Don't fail the request if email fails
         }
 
         return NextResponse.json(createdEntry.body, { status: createdEntry.status });
