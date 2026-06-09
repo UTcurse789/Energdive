@@ -47,7 +47,7 @@ export default async function KnowledgeBasePage() {
 
                             <div className="mt-6 max-w-4xl">
                                 <h1 className="max-w-3xl text-5xl font-bold tracking-[-0.04em] text-slate-950 sm:text-6xl lg:text-7xl">
-                                    Knowledge Base
+                                    Knowledge Hub
                                 </h1>
                                 <p className="mt-5 max-w-2xl text-base leading-8 text-slate-600 sm:text-lg">
                                     Explore approved research across the energy value chain, from fuels, generation,
@@ -57,11 +57,11 @@ export default async function KnowledgeBasePage() {
 
                             <div className="mt-8 grid gap-4 sm:grid-cols-2 mb-8">
                                 <SummaryCard
-                                    label="Visible Papers"
+                                    label="Abstracts"
                                     value={paperCountLabel}
                                 />
                                 <SummaryCard
-                                    label="Latest Release"
+                                    label="Latest Published"
                                     value={latestArchiveLabel}
                                 />
                             </div>
@@ -74,8 +74,8 @@ export default async function KnowledgeBasePage() {
                                     <p className="text-[11px] font-semibold uppercase tracking-[0.26em] text-emerald-300">
                                         Contribute Research
                                     </p>
-                                    <h2 className="mt-4 max-w-xs text-3xl font-bold leading-tight text-white sm:text-[2rem]">
-                                        Submit Your Paper
+                                    <h2 className="mt-4 max-w-xs text-2xl font-bold leading-tight text-white sm:text-[1.25rem]">
+                                        Submit Your Abstract
                                     </h2>
                                     <p className="mt-4 max-w-sm text-sm leading-7 text-slate-300">
                                         Share your research with India&apos;s energy community through a streamlined

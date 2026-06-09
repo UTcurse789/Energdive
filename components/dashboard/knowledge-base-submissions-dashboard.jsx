@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ArrowRight, FileCheck2, FileText, FolderOpenDot, Repeat2 } from "lucide-react";
+import { ArrowRight, FileCheck2, FileText, FolderOpenDot, Repeat2, UploadCloud } from "lucide-react";
 import PaperStatusBadge from "@/components/paper-submission/paper-status-badge";
 import KnowledgeBaseAbstractForm from "@/components/paper-submission/KnowledgeBaseAbstractForm";
 import KnowledgeBaseFinalPaperForm from "@/components/paper-submission/KnowledgeBaseFinalPaperForm";
@@ -154,6 +154,11 @@ export default function KnowledgeBaseSubmissionsDashboard({
                                                     <PaperStatusBadge status="accepted" />
                                                 </>
                                             )}
+                                            {lane === "submissions" && abstract.finalPaperSubmissions?.length > 0 && (
+                                                <span className="mt-1 text-[9px] text-slate-500">
+                                                    {abstract.finalPaperSubmissions.length} version{abstract.finalPaperSubmissions.length !== 1 ? "s" : ""} submitted
+                                                </span>
+                                            )}
                                         </div>
                                     </div>
 
@@ -194,6 +199,19 @@ export default function KnowledgeBaseSubmissionsDashboard({
                                             <ArrowRight className="h-3.5 w-3.5" />
                                         </button>
                                     )}
+
+                                    {lane === "submissions" && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setInlineAction(isExpanded ? null : actionKey)}
+                                            className="mt-5 inline-flex items-center justify-center gap-2 self-start rounded-xl px-4 py-2.5 text-xs font-bold transition-all"
+                                            style={{ background: "var(--dash-accent)", color: "#0A0A0B" }}
+                                        >
+                                            <UploadCloud className="h-3.5 w-3.5" />
+                                            Submit New Version
+                                            <ArrowRight className="h-3.5 w-3.5" />
+                                        </button>
+                                    )}
                                 </div>
 
                                 {isExpanded && lane === "final-paper" && (
@@ -204,6 +222,18 @@ export default function KnowledgeBaseSubmissionsDashboard({
                                             returnHref={`/dashboard/my-submissions?view=final-paper`}
                                             secondarySuccessHref="/dashboard/my-submissions?view=final-paper"
                                             secondarySuccessLabel="Back to Final paper"
+                                        />
+                                    </div>
+                                )}
+
+                                {isExpanded && lane === "submissions" && (
+                                    <div className="mt-5 rounded-[24px] border p-5" style={{ background: "var(--dash-card)", borderColor: "var(--dash-border)" }}>
+                                        <KnowledgeBaseFinalPaperForm
+                                            abstract={abstract}
+                                            variant="dashboard"
+                                            returnHref="/dashboard/my-submissions?view=submissions"
+                                            secondarySuccessHref="/dashboard/my-submissions?view=submissions"
+                                            secondarySuccessLabel="Back to Submissions"
                                         />
                                     </div>
                                 )}
