@@ -4,6 +4,7 @@ import {
     BookOpen,
     Briefcase,
     Building2,
+    CalendarDays,
     CheckCircle2,
     FileText,
     GraduationCap,
@@ -14,9 +15,12 @@ import {
     Search,
     ShieldCheck,
     TrendingUp,
+    UserRound,
     Users,
     Wrench,
 } from "lucide-react";
+import { fetchPaperSubmissions } from "@/lib/paper-submissions-server";
+import { formatSubmissionDate, truncateText } from "@/lib/paper-submissions";
 
 const contentCategories = [
     {
@@ -109,7 +113,25 @@ const submissionPrinciples = [
 ];
 
 
-export default function EnergdiveInsightsExchangePage() {
+const EIX_PAPERS_QUERY =
+    "populate[sectors][fields][0]=name&populate[sectors][fields][1]=slug&populate[sectors][populate][parent][fields][0]=name&populate[sectors][populate][parent][fields][1]=slug&populate[abstract_pdf][fields][0]=url&populate[final_paper_submissions][fields][0]=final_status&populate[final_paper_submissions][fields][1]=final_submission_date&populate[final_paper_submissions][populate][full_paper][fields][0]=url&sort[0]=submitted_date:desc&pagination[pageSize]=100";
+
+function slugify(text) {
+    return String(text || "")
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/(^-|-$)/g, "");
+}
+
+export default async function EnergdiveInsightsExchangePage() {
+    let papers = [];
+    try {
+        const submissions = await fetchPaperSubmissions(EIX_PAPERS_QUERY);
+        papers = submissions.filter((paper) => paper.status === "accepted").slice(0, 6);
+    } catch {
+        // silently fail – section just won't render
+    }
+
     return (
         <div className="bg-white text-zinc-950">
             <section className="relative overflow-hidden bg-[#f6f3eb]">
@@ -181,23 +203,13 @@ export default function EnergdiveInsightsExchangePage() {
                 </div>
             </section>
 
-            <section className="bg-[#f8faf9] py-16 md:py-20">
-                <div className="mx-auto w-full max-w-[1400px] px-6 md:px-10 lg:px-16 xl:px-24 2xl:px-12 grid gap-12 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] lg:items-start">
-                    <div>
-                        <p className="text-[11px] font-black uppercase tracking-[0.28em] text-[#00A651]">
-                            Who Can Contribute
-                        </p>
-                        <h2 className="mt-3 text-3xl font-black text-zinc-950 sm:text-4xl">
-                            Built for the full energy ecosystem
-                        </h2>
-                        <p className="mt-5 text-base leading-8 text-zinc-600">
-                            EIX welcomes knowledge contributions from professionals and institutions working across
-                            India&apos;s energy transition, including research, policy, operations, markets, technology,
-                            and implementation.
-                        </p>
-                    </div>
+            <section className="bg-[#f8faf9] py-10 md:py-12">
+                <div className="mx-auto w-full max-w-[1400px] px-6 md:px-10 lg:px-16 xl:px-24 2xl:px-12 flex flex-col items-center">
+                    <h2 className="text-center text-3xl font-black text-zinc-950 sm:text-4xl">
+                        Who Can Contribute
+                    </h2>
 
-                    <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="mt-8 grid w-full gap-3 sm:grid-cols-2 lg:grid-cols-3">
                         {contributorGroups.map(({ label, Icon }) => (
                             <div key={label} className="flex items-center gap-3 border border-zinc-200 bg-white p-4">
                                 <div className="flex h-10 w-10 shrink-0 items-center justify-center bg-emerald-50 text-[#00A651]">
@@ -226,6 +238,98 @@ export default function EnergdiveInsightsExchangePage() {
                     </div>
                 </div>
             </section>
+
+            {/* ── Published Papers ── */}
+            {papers.length > 0 && (
+                <section className="bg-[#f6f3eb] py-16 md:py-20">
+                    <div className="mx-auto w-full max-w-[1400px] px-6 md:px-10 lg:px-16 xl:px-24 2xl:px-12">
+                        <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                            <div>
+                                <h2 className="mt-2 text-2xl font-black text-zinc-950 sm:text-3xl">
+                                    Published Papers
+                                </h2>
+                            </div>
+                            <Link
+                                href="/knowledge-base"
+                                className="inline-flex items-center gap-2 text-sm font-bold text-zinc-950 transition-colors hover:text-[#00A651] group"
+                            >
+                                View All Papers
+                                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                            </Link>
+                        </div>
+
+                        <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                            {papers.map((paper) => (
+                                <article
+                                    key={paper.id}
+                                    className="flex h-full flex-col border border-zinc-200 bg-white p-5 shadow-[0_14px_36px_rgba(15,23,42,0.05)] transition-all duration-200 hover:-translate-y-0.5 hover:border-[#00A651]/60 hover:shadow-[0_24px_54px_rgba(15,23,42,0.09)]"
+                                >
+                                    <div className="flex items-center justify-between gap-3">
+                                        <span className="inline-flex items-center border border-emerald-900/10 bg-emerald-50 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-800">
+                                            {paper.primarySector}
+                                        </span>
+                                        <span className="text-xs font-medium text-zinc-500">
+                                            {formatSubmissionDate(paper.submittedDate)}
+                                        </span>
+                                    </div>
+
+                                    <h3 className="mt-4 break-words text-lg font-black leading-tight text-zinc-950">
+                                        {truncateText(paper.title || "Untitled paper", 60)}
+                                    </h3>
+
+                                    <p className="mt-3 flex-1 break-words text-[13px] leading-6 text-zinc-600">
+                                        {truncateText(paper.abstract, 140) || "Abstract not available."}
+                                    </p>
+
+                                    <div className="mt-4 grid grid-cols-3 gap-3 border-t border-zinc-200/80 pt-4">
+                                        <div className="flex flex-col gap-1">
+                                            <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.15em] text-zinc-500">
+                                                <UserRound className="h-3 w-3 text-[#00A651]" />
+                                                Author
+                                            </div>
+                                            <p className="text-sm font-medium text-zinc-900 line-clamp-1">{paper.authorName || "Not provided"}</p>
+                                        </div>
+                                        <div className="flex flex-col gap-1">
+                                            <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.15em] text-zinc-500">
+                                                <Building2 className="h-3 w-3 text-[#00A651]" />
+                                                University
+                                            </div>
+                                            <p className="text-sm font-medium text-zinc-900 line-clamp-1">{paper.affiliation || "Not provided"}</p>
+                                        </div>
+                                        <div className="flex flex-col gap-1">
+                                            <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.15em] text-zinc-500">
+                                                <CalendarDays className="h-3 w-3 text-[#00A651]" />
+                                                Date
+                                            </div>
+                                            <p className="text-sm font-medium text-zinc-900 line-clamp-1">{formatSubmissionDate(paper.submittedDate)}</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="mt-4 pt-4 border-t border-zinc-200/80">
+                                        <Link
+                                            href={`/knowledge-base/abstract/${slugify(paper.title || "untitled-paper")}`}
+                                            className="inline-flex w-full items-center justify-center gap-2 bg-zinc-950 px-5 py-2.5 text-xs font-bold uppercase tracking-[0.12em] text-white transition-colors hover:bg-[#00A651]"
+                                        >
+                                            Read more
+                                            <ArrowRight className="h-3.5 w-3.5" />
+                                        </Link>
+                                    </div>
+                                </article>
+                            ))}
+                        </div>
+
+                        <div className="mt-8 flex justify-center">
+                            <Link
+                                href="/knowledge-base"
+                                className="inline-flex items-center justify-center gap-2 border border-zinc-950 bg-white px-6 py-3 text-sm font-bold uppercase tracking-[0.12em] text-zinc-950 transition-colors hover:border-[#00A651] hover:text-[#00A651]"
+                            >
+                                View More Papers
+                                <ArrowRight className="h-4 w-4" />
+                            </Link>
+                        </div>
+                    </div>
+                </section>
+            )}
 
             <section className="bg-zinc-950 py-16 text-white md:py-20">
                 <div className="mx-auto w-full max-w-[1400px] px-6 md:px-10 lg:px-16 xl:px-24 2xl:px-12 grid gap-12 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
