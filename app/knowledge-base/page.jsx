@@ -42,7 +42,7 @@ export default async function KnowledgeBasePage() {
                         <div>
                             <div className="inline-flex items-center gap-2 rounded-full border border-emerald-900/10 bg-white/80 mt-3 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.28em] text-emerald-800 shadow-[0_10px_30px_rgba(15,23,42,0.05)] backdrop-blur">
                                 <LibraryBig className="h-3.5 w-3.5" />
-                                Research Archive
+                                EIX
                             </div>
 
                             <div className="mt-6 max-w-4xl">
