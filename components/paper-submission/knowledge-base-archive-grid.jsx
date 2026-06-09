@@ -149,12 +149,12 @@ export default function KnowledgeBaseArchiveGrid({ papers }) {
                                 {truncateText(paper.abstract, 173) || "Abstract not available."}
                             </p>
 
-                            <div className="mt-6 grid gap-3 border-t border-slate-200/80 pt-5">
+                            <div className="mt-5 grid grid-cols-3 gap-4 border-t border-slate-200/80 pt-4">
                                 <MetaRow icon={UserRound} label="Author" value={paper.authorName || "Not provided"} />
                                 <MetaRow icon={Building2} label="University / Institution" value={paper.affiliation || "Not provided"} />
                                 <MetaRow
                                     icon={CalendarDays}
-                                    label="Archive Date"
+                                    label="Date"
                                     value={formatSubmissionDate(paper.submittedDate)}
                                 />
                             </div>
@@ -209,12 +209,12 @@ function FilterSelect({ label, value, onChange, options, placeholder, compact = 
 
 function MetaRow({ icon: Icon, label, value }) {
     return (
-        <div className="rounded-[22px] border border-slate-200/80 bg-[#faf8f2] px-4 py-3">
-            <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
-                <Icon className="h-3.5 w-3.5 text-emerald-800" />
-                {label}
+        <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.15em] text-slate-500">
+                <Icon className="h-3 w-3 text-emerald-700" />
+                {label === "University / Institution" ? "University" : label}
             </div>
-            <p className="mt-2 text-sm font-medium leading-6 text-slate-900">
+            <p className="text-sm font-medium text-slate-900 line-clamp-1">
                 {value}
             </p>
         </div>
