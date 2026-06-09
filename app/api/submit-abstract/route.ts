@@ -465,7 +465,7 @@ export async function POST(request: NextRequest) {
     try {
         const formData = await request.formData();
         const dataString = formData.get("data") as string;
-        const pdfFile = formData.get("files.pdf") as File | null;
+        let pdfFile = formData.get("files.pdf") as File | null;
 
         console.log("[SUBMIT-ABSTRACT] Has PDF:", !!pdfFile, "Size:", pdfFile?.size ?? 0);
 
@@ -478,6 +478,16 @@ export async function POST(request: NextRequest) {
                 },
                 { status: 400 }
             );
+        }
+
+        let pdfBase64: string | undefined;
+        if (pdfFile) {
+            // Read array buffer and generate base64 first, before the stream is consumed by Strapi upload
+            const arrayBuffer = await pdfFile.arrayBuffer();
+            const pdfBuffer = Buffer.from(arrayBuffer);
+            pdfBase64 = pdfBuffer.toString('base64');
+            // Re-assign pdfFile to a fresh File object created from the in-memory buffer
+            pdfFile = new File([pdfBuffer], pdfFile.name, { type: pdfFile.type });
         }
 
         const data = JSON.parse(dataString);
@@ -558,11 +568,6 @@ export async function POST(request: NextRequest) {
         }
 
         try {
-            let pdfBase64: string | undefined;
-            if (pdfFile) {
-                const arrayBuffer = await pdfFile.arrayBuffer();
-                pdfBase64 = Buffer.from(arrayBuffer).toString('base64');
-            }
 
             await sendAbstractSubmissionAdminNotification({
                 title: (strapiData.title as string) || "",
