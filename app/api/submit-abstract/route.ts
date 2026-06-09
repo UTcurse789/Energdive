@@ -6,8 +6,8 @@ const STRAPI_API_TOKEN = process.env.STRAPI_API_TOKEN;
 const STRAPI_ABSTRACT_COLLECTION_PATH = "paper-submissions";
 const STRAPI_ABSTRACT_UID = "api::paper-submission.paper-submission";
 const STRAPI_ABSTRACT_PDF_FIELD = "abstract_pdf";
-const ABSTRACT_PDF_MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
-const ABSTRACT_PDF_MAX_FILE_SIZE_LABEL = "10 MB";
+const ABSTRACT_PDF_MAX_FILE_SIZE_BYTES = 20 * 1024 * 1024;
+const ABSTRACT_PDF_MAX_FILE_SIZE_LABEL = "20 MB";
 
 type StrapiEntityResponse = {
     data?: {
@@ -564,8 +564,8 @@ export async function POST(request: NextRequest) {
             if (uploadedPdf.mediaUrl) {
                 let cdnUrl = uploadedPdf.mediaUrl;
                 if (!cdnUrl.startsWith("http://") && !cdnUrl.startsWith("https://")) {
-                    const base = STRAPI_URL?.endsWith("/") ? STRAPI_URL.slice(0, -1) : STRAPI_URL;
-                    cdnUrl = `${base}${cdnUrl.startsWith("/") ? "" : "/"}${cdnUrl}`;
+                    const cdnBase = process.env.NEXT_PUBLIC_CDN_URL || "https://cdn.energdive.com";
+                    cdnUrl = `${cdnBase.endsWith("/") ? cdnBase.slice(0, -1) : cdnBase}${cdnUrl.startsWith("/") ? "" : "/"}${cdnUrl}`;
                 }
                 uploadedPdfUrl = cdnUrl;
             }

@@ -20,8 +20,8 @@ import {
 
 const SUBMISSIONS_ENDPOINT = "/api/submit-abstract";
 const ABSTRACT_MIN_LENGTH = 200;
-const ABSTRACT_PDF_MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
-const ABSTRACT_PDF_MAX_FILE_SIZE_LABEL = "10 MB";
+const ABSTRACT_PDF_MAX_FILE_SIZE_BYTES = 20 * 1024 * 1024;
+const ABSTRACT_PDF_MAX_FILE_SIZE_LABEL = "20 MB";
 
 function normalizeId(value) {
     if (value === null || value === undefined) return "";
