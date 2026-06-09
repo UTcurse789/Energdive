@@ -118,7 +118,7 @@ export default function KnowledgeBaseSubmissionsDashboard({
                     </p>
                 </div>
             ) : (
-                <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+                <div className="flex flex-col gap-5">
                     {filteredAbstracts.map((abstract) => {
                         const actionKey = `${lane}:${abstract.documentId || abstract.id}`;
                         const isExpanded = inlineAction === actionKey;
@@ -126,10 +126,10 @@ export default function KnowledgeBaseSubmissionsDashboard({
                         return (
                             <article
                                 key={abstract.id}
-                                className={isExpanded ? "md:col-span-2 xl:col-span-3" : ""}
+                                className="w-full"
                             >
                                 <div
-                                    className="flex min-h-[260px] flex-col rounded-[24px] border p-5 transition-shadow hover:shadow-[0_12px_40px_rgba(0,0,0,0.18)]"
+                                    className="flex flex-col rounded-[24px] border p-5 transition-shadow hover:shadow-[0_12px_40px_rgba(0,0,0,0.18)]"
                                     style={{ background: "var(--dash-card)", borderColor: "var(--dash-border)" }}
                                 >
                                     <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -168,8 +168,8 @@ export default function KnowledgeBaseSubmissionsDashboard({
                                             style={{ background: "var(--dash-surface-2)", color: "var(--dash-text-muted)" }}
                                         >
                                             <p className="font-semibold text-xs uppercase tracking-wider mb-1" style={{ color: "var(--dash-text-dim)" }}>Abstract Summary</p>
-                                            <p className="line-clamp-4 break-words [overflow-wrap:anywhere]">
-                                                {abstract.abstract.length > 280 ? `${abstract.abstract.slice(0, 280)}...` : abstract.abstract}
+                                            <p className="line-clamp-2 break-words [overflow-wrap:anywhere]">
+                                                {abstract.abstract.length > 140 ? `${abstract.abstract.slice(0, 140)}...` : abstract.abstract}
                                             </p>
                                         </div>
                                     )}

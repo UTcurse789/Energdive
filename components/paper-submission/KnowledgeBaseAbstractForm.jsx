@@ -38,25 +38,27 @@ function getErrorMessage(error) {
 function getSubmissionErrorMessage(response, responseText) {
     const fallback = "We couldn't submit your abstract. Please try again.";
 
+    if (responseText) {
+        try {
+            const parsed = JSON.parse(responseText);
+            const message = parsed?.error?.message || parsed?.message || parsed?.error;
+            if (typeof message === "string" && message.trim()) {
+                return message;
+            }
+        } catch {
+            // Ignore parse error, fallback to status checks below
+        }
+    }
+
     if (response.status === 413) {
         return `The server rejected this PDF before it could be uploaded. Files up to ${ABSTRACT_PDF_MAX_FILE_SIZE_LABEL} are allowed here, but the deployment upload limit needs to be increased.`;
     }
 
-    if (!responseText) {
+    if (!responseText || /<html[\s>]/i.test(responseText) || /<body[\s>]/i.test(responseText)) {
         return fallback;
     }
 
-    try {
-        const parsed = JSON.parse(responseText);
-        const message = parsed?.error?.message || parsed?.message || parsed?.error;
-        return typeof message === "string" && message.trim() ? message : fallback;
-    } catch {
-        if (/<html[\s>]/i.test(responseText) || /<body[\s>]/i.test(responseText)) {
-            return fallback;
-        }
-
-        return responseText;
-    }
+    return responseText;
 }
 
 export default function KnowledgeBaseAbstractForm({
