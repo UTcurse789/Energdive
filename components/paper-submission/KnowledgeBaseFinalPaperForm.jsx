@@ -13,8 +13,8 @@ import {
 import UploadZone from "@/components/paper-submission/UploadZone";
 
 const SUBMISSIONS_ENDPOINT = "/api/submit-final-paper";
-const FINAL_PAPER_MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
-const FINAL_PAPER_MAX_FILE_SIZE_LABEL = "10 MB";
+const FINAL_PAPER_MAX_FILE_SIZE_BYTES = 20 * 1024 * 1024;
+const FINAL_PAPER_MAX_FILE_SIZE_LABEL = "20 MB";
 
 export default function KnowledgeBaseFinalPaperForm({
     abstract,
