@@ -60,7 +60,7 @@ export default function KnowledgeBaseArchiveGrid({ papers }) {
     );
 
     return (
-        <div className="mt-5">
+        <div className="mt-1">
             <div className="rounded-[26px] border border-slate-200/90 bg-white/92 px-4 py-3 shadow-[0_16px_34px_rgba(15,23,42,0.05)] backdrop-blur sm:px-5 sm:py-4">
                 <div className="flex flex-col gap-3 xl:flex-row xl:items-center">
                     <div className="flex items-center gap-3 xl:w-[190px] xl:flex-none">
