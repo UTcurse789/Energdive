@@ -374,7 +374,7 @@ async function uploadAbstractPdf({
 
         const uploadText = await uploadResponse.text();
         let parsedUploadResponse: unknown = null;
-        let uploadedFiles: Array<{ id?: number; documentId?: string }> = [];
+        let uploadedFiles: Array<{ id?: number; documentId?: string; url?: string }> = [];
         try {
             parsedUploadResponse = uploadText ? JSON.parse(uploadText) : [];
             uploadedFiles = Array.isArray(parsedUploadResponse) ? parsedUploadResponse : [];
@@ -399,6 +399,7 @@ async function uploadAbstractPdf({
                 statusCode: uploadResponse.status,
                 mediaId: uploadedFiles?.[0]?.id ?? null,
                 mediaDocumentId: uploadedFiles?.[0]?.documentId ?? null,
+                mediaUrl: uploadedFiles?.[0]?.url ?? null,
                 errorMessage: null,
             };
         }
@@ -416,6 +417,7 @@ async function uploadAbstractPdf({
         statusCode: lastStatus,
         mediaId: null,
         mediaDocumentId: null,
+        mediaUrl: null,
         errorMessage: lastErrorMessage,
     };
 }
@@ -480,12 +482,10 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        let pdfBase64: string | undefined;
         if (pdfFile) {
-            // Read array buffer and generate base64 first, before the stream is consumed by Strapi upload
+            // Read array buffer first, before the stream is consumed by Strapi upload
             const arrayBuffer = await pdfFile.arrayBuffer();
             const pdfBuffer = Buffer.from(arrayBuffer);
-            pdfBase64 = pdfBuffer.toString('base64');
             // Re-assign pdfFile to a fresh File object created from the in-memory buffer
             pdfFile = new File([pdfBuffer], pdfFile.name, { type: pdfFile.type });
         }
@@ -544,6 +544,8 @@ export async function POST(request: NextRequest) {
             sectorDocumentIds,
         });
 
+        let uploadedPdfUrl: string | undefined;
+
         if (pdfFile) {
             const uploadedPdf = await uploadAbstractPdf({
                 pdfFile,
@@ -565,10 +567,18 @@ export async function POST(request: NextRequest) {
                 documentId: updatedEntry?.documentId ?? documentId,
                 mediaId: uploadedPdf.mediaId,
             });
+
+            if (uploadedPdf.mediaUrl) {
+                let cdnUrl = uploadedPdf.mediaUrl;
+                if (!cdnUrl.startsWith("http://") && !cdnUrl.startsWith("https://")) {
+                    const base = STRAPI_URL?.endsWith("/") ? STRAPI_URL.slice(0, -1) : STRAPI_URL;
+                    cdnUrl = `${base}${cdnUrl.startsWith("/") ? "" : "/"}${cdnUrl}`;
+                }
+                uploadedPdfUrl = cdnUrl;
+            }
         }
 
         try {
-
             await sendAbstractSubmissionAdminNotification({
                 title: (strapiData.title as string) || "",
                 authorName: (strapiData.author_name as string) || "",
@@ -578,7 +588,7 @@ export async function POST(request: NextRequest) {
                 profession: strapiData.Profession as string,
                 abstractText: data.abstract || "",
                 pdfFileName: pdfFile?.name,
-                pdfBase64,
+                pdfUrl: uploadedPdfUrl,
             });
         } catch (emailError) {
             console.error("[SUBMIT-ABSTRACT] Failed to send admin email:", emailError);
