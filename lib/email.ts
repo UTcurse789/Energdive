@@ -740,6 +740,7 @@ export interface AbstractSubmissionAdminNotificationPayload {
     abstractText: string;
     pdfFileName?: string;
     pdfBase64?: string; // Base64 encoded content
+    pdfUrl?: string; // Clickable download/view link
 }
 
 export async function sendAbstractSubmissionAdminNotification(
@@ -799,8 +800,15 @@ export async function sendAbstractSubmissionAdminNotification(
             <div style="background-color: #f4f4f4; padding: 15px; border-radius: 4px; color: #555; white-space: pre-wrap;">${escapeHtml(payload.abstractText || "No description provided.")}</div>
         </div>
 
-        <p style="margin-top: 20px; color: #666;">
-            ${payload.pdfBase64 ? `The submitted PDF document is attached to this email.` : `No PDF document was attached to this submission.`}
+        <p style="margin-top: 25px; margin-bottom: 15px;">
+            ${payload.pdfUrl ? `
+            <strong style="display: block; margin-bottom: 8px; color: #333;">Submitted PDF Document:</strong>
+            <a href="${payload.pdfUrl}" target="_blank" style="display: inline-block; background-color: #00A651; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 14px; box-shadow: 0 4px 10px rgba(0, 166, 81, 0.25);">View / Download PDF</a>
+            ` : payload.pdfBase64 ? `
+            <span style="color: #666;">The submitted PDF document is attached to this email.</span>
+            ` : `
+            <span style="color: #666; font-style: italic;">No PDF document was attached to this submission.</span>
+            `}
         </p>
     </div>
 </body>
