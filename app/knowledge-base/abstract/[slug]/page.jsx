@@ -189,20 +189,20 @@ export default async function AbstractPage({ params }) {
 
             {/* ── Abstract ── */}
             <section className="bg-white py-16 md:py-24">
-                <div className="container">
-                    <div className="max-w-4xl">
+                <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="max-w-6xl mx-auto">
                         <h2 className="mb-10 flex items-center gap-3 text-3xl font-bold tracking-tight text-slate-950">
                             <FileText className="h-8 w-8 text-emerald-700" />
                             Abstract
                         </h2>
 
-                        <div className="rounded-[32px] border border-slate-200/80 bg-[#faf8f2]/60 p-8 shadow-[0_8px_30px_rgb(0,0,0,0.03)] sm:p-12">
+                        <div className="mt-6">
                             {paper.abstract ? (
-                                <p className="whitespace-pre-wrap break-words text-[17px] leading-[1.9] text-slate-700 sm:text-lg">
+                                <p className="whitespace-pre-wrap break-words text-[15px] leading-relaxed text-slate-700 sm:text-base">
                                     {paper.abstract}
                                 </p>
                             ) : (
-                                <p className="text-base italic text-slate-400">
+                                <p className="text-sm italic text-slate-400 sm:text-base">
                                     Abstract not available for this paper.
                                 </p>
                             )}
