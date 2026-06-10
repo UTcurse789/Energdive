@@ -360,11 +360,8 @@ export interface ProvisionPayload {
     magicToken: string;
     magicTokenExpiresAt: Date;
     source?: string;
-<<<<<<< HEAD
-=======
     // Original CRM lead ID (for CRM-invited users)
     crmLeadId?: string;
->>>>>>> 6501694 (zoho auth login for other sources)
 }
 
 /**
@@ -386,13 +383,8 @@ export async function provisionUser(payload: ProvisionPayload): Promise<number> 
                 clerk_id, email, first_name, last_name, salutation, phone,
                 country, state, job_title, organization,
                 onboarding_completed, magic_token, magic_token_expires_at,
-<<<<<<< HEAD
-                source, created_at
-            ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10, true, $11, $12, $13, NOW())
-=======
                 source, crm_lead_id, created_at
             ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10, true, $11, $12, $13, $14, NOW())
->>>>>>> 6501694 (zoho auth login for other sources)
             ON CONFLICT (clerk_id) DO UPDATE SET
                 email                  = EXCLUDED.email,
                 first_name             = EXCLUDED.first_name,
@@ -406,12 +398,8 @@ export async function provisionUser(payload: ProvisionPayload): Promise<number> 
                 onboarding_completed   = true,
                 magic_token            = EXCLUDED.magic_token,
                 magic_token_expires_at = EXCLUDED.magic_token_expires_at,
-<<<<<<< HEAD
-                source                 = COALESCE(EXCLUDED.source, users.source)
-=======
                 source                 = COALESCE(EXCLUDED.source, users.source),
                 crm_lead_id            = COALESCE(EXCLUDED.crm_lead_id, users.crm_lead_id)
->>>>>>> 6501694 (zoho auth login for other sources)
             RETURNING id`,
             [
                 payload.clerkId,
@@ -427,10 +415,7 @@ export async function provisionUser(payload: ProvisionPayload): Promise<number> 
                 payload.magicToken,
                 payload.magicTokenExpiresAt,
                 payload.source || "zoho_form",
-<<<<<<< HEAD
-=======
                 payload.crmLeadId || null,
->>>>>>> 6501694 (zoho auth login for other sources)
             ]
         );
 

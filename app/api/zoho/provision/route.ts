@@ -101,10 +101,7 @@ export async function POST(req: NextRequest) {
                     lastName: lastName || undefined,
                     publicMetadata: {
                         ...(body.phone?.trim() ? { phone: body.phone.trim() } : {}),
-<<<<<<< HEAD
-=======
                         onboarding_completed: true,
->>>>>>> 6501694 (zoho auth login for other sources)
                     },
                 });
             } catch (updateErr: any) {
@@ -118,10 +115,7 @@ export async function POST(req: NextRequest) {
                 skipPasswordRequirement: true,
                 publicMetadata: {
                     ...(body.phone?.trim() ? { phone: body.phone.trim() } : {}),
-<<<<<<< HEAD
-=======
                     onboarding_completed: true,
->>>>>>> 6501694 (zoho auth login for other sources)
                 },
             });
             clerkUserId = newUser.id;
@@ -256,11 +250,8 @@ export async function POST(req: NextRequest) {
             subCommunityNames,
             magicToken,
             magicTokenExpiresAt,
-<<<<<<< HEAD
-=======
             source: "crm_invite",
             crmLeadId: leadIdStr || undefined,
->>>>>>> 6501694 (zoho auth login for other sources)
         });
 
         log(`DB user provisioned: id=${userId}`);

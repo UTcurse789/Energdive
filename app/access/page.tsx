@@ -1,26 +1,15 @@
 "use client";
 
-<<<<<<< HEAD
-import { useAuth } from "@clerk/nextjs";
-=======
 import { useSignIn, useAuth } from "@clerk/nextjs";
->>>>>>> 6501694 (zoho auth login for other sources)
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, useRef, Suspense } from "react";
 import { usePostHog } from "@posthog/react";
 
-<<<<<<< HEAD
-type Status = "loading" | "verifying" | "redirecting" | "error";
-
-function AccessContent() {
-    const posthog = usePostHog();
-=======
 type Status = "loading" | "verifying" | "redirecting" | "signing-in" | "error";
 
 function AccessContent() {
     const posthog = usePostHog();
     const { signIn, setActive } = useSignIn();
->>>>>>> 6501694 (zoho auth login for other sources)
     const { isLoaded, isSignedIn } = useAuth();
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -51,11 +40,7 @@ function AccessContent() {
 
         const authenticate = async () => {
             try {
-<<<<<<< HEAD
-                // Step 1: Verify token server-side (does NOT create session)
-=======
                 // Step 1: Verify token server-side
->>>>>>> 6501694 (zoho auth login for other sources)
                 setStatus("verifying");
                 const verifyRes = await fetch(
                     `/api/auth/access-verify?token=${encodeURIComponent(token)}`
@@ -68,24 +53,6 @@ function AccessContent() {
                     );
                 }
 
-<<<<<<< HEAD
-                const { userId, email, firstName, phone } =
-                    await verifyRes.json();
-
-                if (!userId) {
-                    throw new Error("No user found for this token");
-                }
-
-                // Step 2: Redirect to OTP verification page
-                setStatus("redirecting");
-                const params = new URLSearchParams();
-                params.set("userId", String(userId));
-                if (email) params.set("email", email);
-                if (firstName) params.set("name", firstName);
-                if (phone) {
-                    // Mask phone for display: show last 4 digits only
-                    const cleanPhone = phone.replace(/[^0-9]/g, "");
-=======
                 const data = await verifyRes.json();
 
                 if (!data.userId) {
@@ -130,7 +97,6 @@ function AccessContent() {
                 if (data.phone) {
                     // Mask phone for display: show last 4 digits only
                     const cleanPhone = data.phone.replace(/[^0-9]/g, "");
->>>>>>> 6501694 (zoho auth login for other sources)
                     const masked =
                         "•".repeat(Math.max(0, cleanPhone.length - 4)) +
                         cleanPhone.slice(-4);
@@ -207,10 +173,7 @@ function AccessContent() {
         loading: "Preparing your access...",
         verifying: "Verifying your access link...",
         redirecting: "Preparing identity verification...",
-<<<<<<< HEAD
-=======
         "signing-in": "Signing you in...",
->>>>>>> 6501694 (zoho auth login for other sources)
     };
 
     return (
