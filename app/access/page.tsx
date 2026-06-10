@@ -1,14 +1,15 @@
 "use client";
 
-import { useAuth } from "@clerk/nextjs";
+import { useSignIn, useAuth } from "@clerk/nextjs";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, useRef, Suspense } from "react";
 import { usePostHog } from "@posthog/react";
 
-type Status = "loading" | "verifying" | "redirecting" | "error";
+type Status = "loading" | "verifying" | "redirecting" | "signing-in" | "error";
 
 function AccessContent() {
     const posthog = usePostHog();
+    const { signIn, setActive } = useSignIn();
     const { isLoaded, isSignedIn } = useAuth();
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -39,7 +40,7 @@ function AccessContent() {
 
         const authenticate = async () => {
             try {
-                // Step 1: Verify token server-side (does NOT create session)
+                // Step 1: Verify token server-side
                 setStatus("verifying");
                 const verifyRes = await fetch(
                     `/api/auth/access-verify?token=${encodeURIComponent(token)}`
@@ -52,22 +53,50 @@ function AccessContent() {
                     );
                 }
 
-                const { userId, email, firstName, phone } =
-                    await verifyRes.json();
+                const data = await verifyRes.json();
 
-                if (!userId) {
+                if (!data.userId) {
                     throw new Error("No user found for this token");
                 }
 
-                // Step 2: Redirect to OTP verification page
+                // ── CRM-Invite Fast Path: Auto-login ──────────────────
+                if (data.isCrmInvite && data.ticket && signIn) {
+                    setStatus("signing-in");
+
+                    const result = await signIn.create({
+                        strategy: "ticket",
+                        ticket: data.ticket,
+                    });
+
+                    if (result.status === "complete" && result.createdSessionId) {
+                        await setActive({ session: result.createdSessionId });
+                        if (posthog) {
+                            posthog.capture("login_completed", {
+                                timestamp: new Date().toISOString(),
+                                path: window.location.pathname,
+                                source: "crm_invite",
+                            });
+                        }
+
+                        // Force a full navigation to get fresh server state
+                        setTimeout(() => {
+                            window.location.replace(`/dashboard?reload=${Date.now()}`);
+                        }, 300);
+                        return;
+                    } else {
+                        throw new Error("Sign-in could not be completed");
+                    }
+                }
+
+                // ── Standard Path: Redirect to OTP verification ───────
                 setStatus("redirecting");
                 const params = new URLSearchParams();
-                params.set("userId", String(userId));
-                if (email) params.set("email", email);
-                if (firstName) params.set("name", firstName);
-                if (phone) {
+                params.set("userId", String(data.userId));
+                if (data.email) params.set("email", data.email);
+                if (data.firstName) params.set("name", data.firstName);
+                if (data.phone) {
                     // Mask phone for display: show last 4 digits only
-                    const cleanPhone = phone.replace(/[^0-9]/g, "");
+                    const cleanPhone = data.phone.replace(/[^0-9]/g, "");
                     const masked =
                         "•".repeat(Math.max(0, cleanPhone.length - 4)) +
                         cleanPhone.slice(-4);
@@ -144,6 +173,7 @@ function AccessContent() {
         loading: "Preparing your access...",
         verifying: "Verifying your access link...",
         redirecting: "Preparing identity verification...",
+        "signing-in": "Signing you in...",
     };
 
     return (
