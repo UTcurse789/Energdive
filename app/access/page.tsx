@@ -1,14 +1,26 @@
 "use client";
 
+<<<<<<< HEAD
 import { useAuth } from "@clerk/nextjs";
+=======
+import { useSignIn, useAuth } from "@clerk/nextjs";
+>>>>>>> 6501694 (zoho auth login for other sources)
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, useRef, Suspense } from "react";
 import { usePostHog } from "@posthog/react";
 
+<<<<<<< HEAD
 type Status = "loading" | "verifying" | "redirecting" | "error";
 
 function AccessContent() {
     const posthog = usePostHog();
+=======
+type Status = "loading" | "verifying" | "redirecting" | "signing-in" | "error";
+
+function AccessContent() {
+    const posthog = usePostHog();
+    const { signIn, setActive } = useSignIn();
+>>>>>>> 6501694 (zoho auth login for other sources)
     const { isLoaded, isSignedIn } = useAuth();
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -39,7 +51,11 @@ function AccessContent() {
 
         const authenticate = async () => {
             try {
+<<<<<<< HEAD
                 // Step 1: Verify token server-side (does NOT create session)
+=======
+                // Step 1: Verify token server-side
+>>>>>>> 6501694 (zoho auth login for other sources)
                 setStatus("verifying");
                 const verifyRes = await fetch(
                     `/api/auth/access-verify?token=${encodeURIComponent(token)}`
@@ -52,6 +68,7 @@ function AccessContent() {
                     );
                 }
 
+<<<<<<< HEAD
                 const { userId, email, firstName, phone } =
                     await verifyRes.json();
 
@@ -68,6 +85,52 @@ function AccessContent() {
                 if (phone) {
                     // Mask phone for display: show last 4 digits only
                     const cleanPhone = phone.replace(/[^0-9]/g, "");
+=======
+                const data = await verifyRes.json();
+
+                if (!data.userId) {
+                    throw new Error("No user found for this token");
+                }
+
+                // ── CRM-Invite Fast Path: Auto-login ──────────────────
+                if (data.isCrmInvite && data.ticket && signIn) {
+                    setStatus("signing-in");
+
+                    const result = await signIn.create({
+                        strategy: "ticket",
+                        ticket: data.ticket,
+                    });
+
+                    if (result.status === "complete" && result.createdSessionId) {
+                        await setActive({ session: result.createdSessionId });
+                        if (posthog) {
+                            posthog.capture("login_completed", {
+                                timestamp: new Date().toISOString(),
+                                path: window.location.pathname,
+                                source: "crm_invite",
+                            });
+                        }
+
+                        // Force a full navigation to get fresh server state
+                        setTimeout(() => {
+                            window.location.replace(`/dashboard?reload=${Date.now()}`);
+                        }, 300);
+                        return;
+                    } else {
+                        throw new Error("Sign-in could not be completed");
+                    }
+                }
+
+                // ── Standard Path: Redirect to OTP verification ───────
+                setStatus("redirecting");
+                const params = new URLSearchParams();
+                params.set("userId", String(data.userId));
+                if (data.email) params.set("email", data.email);
+                if (data.firstName) params.set("name", data.firstName);
+                if (data.phone) {
+                    // Mask phone for display: show last 4 digits only
+                    const cleanPhone = data.phone.replace(/[^0-9]/g, "");
+>>>>>>> 6501694 (zoho auth login for other sources)
                     const masked =
                         "•".repeat(Math.max(0, cleanPhone.length - 4)) +
                         cleanPhone.slice(-4);
@@ -144,6 +207,10 @@ function AccessContent() {
         loading: "Preparing your access...",
         verifying: "Verifying your access link...",
         redirecting: "Preparing identity verification...",
+<<<<<<< HEAD
+=======
+        "signing-in": "Signing you in...",
+>>>>>>> 6501694 (zoho auth login for other sources)
     };
 
     return (
