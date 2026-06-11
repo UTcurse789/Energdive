@@ -2,13 +2,13 @@
 
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { Header } from "@/components/layout/header";
 import { motion, AnimatePresence } from "framer-motion";
 import { MapPin, Clock, ArrowUpRight, Navigation } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { DateChip } from "@/components/ui/date-chip";
 import { Skeleton } from "@/components/ui/skeleton";
-import ArticleBody from "@/components/ArticleBody";
 
 type EventItem = {
     id: string;
@@ -147,7 +147,7 @@ export default function EventsPage() {
                                         transition={{ delay: idx * 0.1 }}
                                         className="group flex flex-col h-full bg-white relative rounded-[2rem] border border-zinc-100 shadow-sm hover:shadow-xl transition-all duration-500 overflow-hidden"
                                     >
-                                        <div className="relative aspect-video bg-zinc-50 border-b border-zinc-100 overflow-hidden">
+                                        <Link href={`/events/${event.slug}`} className="relative aspect-video bg-zinc-50 border-b border-zinc-100 overflow-hidden block">
                                             <Image
                                                 src={event.imageUrl}
                                                 alt={event.title}
@@ -164,15 +164,17 @@ export default function EventsPage() {
                                                     {event.occurrence}
                                                 </span>
                                             </div>
-                                        </div>
+                                        </Link>
 
                                         <div className="flex flex-col grow p-8">
-                                            <h3 className="text-xl md:text-2xl font-black uppercase tracking-tight text-zinc-900 leading-[1.1] mb-4 group-hover:text-[#00A651] transition-colors line-clamp-2">
-                                                {event.title}
-                                            </h3>
+                                            <Link href={`/events/${event.slug}`}>
+                                                <h3 className="text-xl md:text-2xl font-black uppercase tracking-tight text-zinc-900 leading-[1.1] mb-4 group-hover:text-[#00A651] transition-colors line-clamp-2">
+                                                    {event.title}
+                                                </h3>
+                                            </Link>
 
                                             <div className="text-sm text-zinc-500 font-serif italic leading-relaxed mb-8 line-clamp-3">
-                                                <ArticleBody content={event.description} />
+                                                {event.description}
                                             </div>
 
                                             <div className="mt-auto space-y-4">
@@ -208,14 +210,12 @@ export default function EventsPage() {
                                         </div>
 
                                         <div className="px-8 pb-8 pt-0">
-                                            <a
-                                                href={event.url}
-                                                target="_blank"
-                                                rel="noopener"
+                                            <Link
+                                                href={`/events/${event.slug}`}
                                                 className="w-full py-4 rounded-xl border border-zinc-200 flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] hover:bg-black hover:text-white hover:border-black transition-all"
                                             >
-                                                View Website <ArrowUpRight size={14} />
-                                            </a>
+                                                View Details <ArrowUpRight size={14} />
+                                            </Link>
                                         </div>
                                     </motion.div>
                                 );
