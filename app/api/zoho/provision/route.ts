@@ -101,6 +101,7 @@ export async function POST(req: NextRequest) {
                     lastName: lastName || undefined,
                     publicMetadata: {
                         ...(body.phone?.trim() ? { phone: body.phone.trim() } : {}),
+                        onboarding_completed: true,
                     },
                 });
             } catch (updateErr: any) {
@@ -114,6 +115,7 @@ export async function POST(req: NextRequest) {
                 skipPasswordRequirement: true,
                 publicMetadata: {
                     ...(body.phone?.trim() ? { phone: body.phone.trim() } : {}),
+                    onboarding_completed: true,
                 },
             });
             clerkUserId = newUser.id;
@@ -248,6 +250,8 @@ export async function POST(req: NextRequest) {
             subCommunityNames,
             magicToken,
             magicTokenExpiresAt,
+            source: "crm_invite",
+            crmLeadId: leadIdStr || undefined,
         });
 
         log(`DB user provisioned: id=${userId}`);
