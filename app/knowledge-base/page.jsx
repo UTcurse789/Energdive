@@ -10,7 +10,7 @@ export const metadata = {
 };
 
 const KNOWLEDGE_BASE_QUERY =
-    "populate[sectors][fields][0]=name&populate[sectors][fields][1]=slug&populate[sectors][populate][parent][fields][0]=name&populate[sectors][populate][parent][fields][1]=slug&populate[abstract_pdf][fields][0]=url&populate[abstract_pdf][fields][1]=name&populate[final_paper_submissions][fields][0]=final_status&populate[final_paper_submissions][fields][1]=final_submission_date&sort[0]=submitted_date:desc&pagination[pageSize]=100";
+    "populate[sectors][fields][0]=name&populate[sectors][fields][1]=slug&populate[sectors][populate][parent][fields][0]=name&populate[sectors][populate][parent][fields][1]=slug&populate[abstract_pdf][fields][0]=url&populate[abstract_pdf][fields][1]=name&populate[final_paper_submissions][fields][0]=final_status&populate[final_paper_submissions][fields][1]=final_submission_date&populate[final_paper_submissions][populate][full_paper][fields][0]=url&populate[final_paper_submissions][populate][full_paper][fields][1]=name&sort[0]=submitted_date:desc&pagination[pageSize]=100";
 
 export default async function KnowledgeBasePage() {
     let papers = [];
@@ -18,7 +18,7 @@ export default async function KnowledgeBasePage() {
 
     try {
         const submissions = await fetchPaperSubmissions(KNOWLEDGE_BASE_QUERY);
-        papers = submissions.filter((paper) => paper.hasAcceptedFinalPaper);
+        papers = submissions.filter((paper) => paper.status === "accepted");
     } catch (error) {
         loadError = error instanceof Error ? error.message : "Unable to load papers right now.";
     }
@@ -37,17 +37,17 @@ export default async function KnowledgeBasePage() {
             <section className="relative overflow-hidden bg-[#f6f3eb]">
                 <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(20,83,45,0.08),transparent_28%),radial-gradient(circle_at_85%_12%,rgba(15,23,42,0.08),transparent_24%),linear-gradient(180deg,rgba(255,255,255,0.62),rgba(246,243,235,0))]" />
 
-                <div className="container relative pt-[67px] pb-[67px] md:pt-[83px] md:pb-[83px] lg:pt-[99px] lg:pb-[99px] xl:pt-[115px] xl:pb-[115px]">
+                <div className="mx-auto w-full max-w-[1400px] px-6 md:px-10 lg:px-16 xl:px-24 2xl:px-12 relative pt-8 pb-8 md:pt-10 md:pb-10 lg:pt-12 lg:pb-12 xl:pt-14 xl:pb-14">
                     <div className="grid gap-10 xl:grid-cols-[minmax(0,1fr)_360px] xl:items-start">
                         <div>
                             <div className="inline-flex items-center gap-2 rounded-full border border-emerald-900/10 bg-white/80 mt-3 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.28em] text-emerald-800 shadow-[0_10px_30px_rgba(15,23,42,0.05)] backdrop-blur">
                                 <LibraryBig className="h-3.5 w-3.5" />
-                                Research Archive
+                                EIX
                             </div>
 
                             <div className="mt-6 max-w-4xl">
                                 <h1 className="max-w-3xl text-5xl font-bold tracking-[-0.04em] text-slate-950 sm:text-6xl lg:text-7xl">
-                                    Knowledge Base
+                                    Knowledge Hub
                                 </h1>
                                 <p className="mt-5 max-w-2xl text-base leading-8 text-slate-600 sm:text-lg">
                                     Explore approved research across the energy value chain, from fuels, generation,
@@ -57,11 +57,11 @@ export default async function KnowledgeBasePage() {
 
                             <div className="mt-8 grid gap-4 sm:grid-cols-2 mb-8">
                                 <SummaryCard
-                                    label="Visible Papers"
+                                    label="Abstracts"
                                     value={paperCountLabel}
                                 />
                                 <SummaryCard
-                                    label="Latest Release"
+                                    label="Latest Published"
                                     value={latestArchiveLabel}
                                 />
                             </div>
@@ -74,8 +74,8 @@ export default async function KnowledgeBasePage() {
                                     <p className="text-[11px] font-semibold uppercase tracking-[0.26em] text-emerald-300">
                                         Contribute Research
                                     </p>
-                                    <h2 className="mt-4 max-w-xs text-3xl font-bold leading-tight text-white sm:text-[2rem]">
-                                        Submit Your Paper
+                                    <h2 className="mt-4 max-w-xs text-2xl font-bold leading-tight text-white sm:text-[1.25rem]">
+                                        Submit Your Abstract
                                     </h2>
                                     <p className="mt-4 max-w-sm text-sm leading-7 text-slate-300">
                                         Share your research with India&apos;s energy community through a streamlined
@@ -96,13 +96,8 @@ export default async function KnowledgeBasePage() {
                 </div>
             </section>
 
-            <section className="bg-white pb-12 pt-12 md:pb-16 md:pt-14 lg:pb-20 lg:pt-16">
-                <div className="container">
-                    <div className="max-w-3xl">
-                        <h2 className="mt-2 text-3xl font-bold text-slate-950">
-                            Research papers
-                        </h2>
-                    </div>
+            <section className="bg-white pb-12 pt-6 md:pb-16 md:pt-8 lg:pb-20 lg:pt-10">
+                <div className="mx-auto w-full max-w-[1400px] px-6 md:px-10 lg:px-16 xl:px-24 2xl:px-12">
 
                     {/* TODO: Add pagination controls once the approved archive grows beyond the initial page size. */}
                     {loadError ? (

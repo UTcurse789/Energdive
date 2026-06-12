@@ -24,11 +24,11 @@ export default function UploadZone({
     onFileSelect,
     disabled = false,
     label = "Paper PDF",
-    helperText = "PDF only, maximum size 10 MB.",
+    helperText = "PDF only, maximum size 20 MB.",
     accept = ".pdf,application/pdf",
     allowedExtensions = [".pdf"],
     maxFileSizeBytes = DEFAULT_MAX_FILE_SIZE_BYTES,
-    maxFileSizeLabel = "10 MB",
+    maxFileSizeLabel = "20 MB",
 }) {
     const inputRef = useRef(null);
     const [isDragOver, setIsDragOver] = useState(false);

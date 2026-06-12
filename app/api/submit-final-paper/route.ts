@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 
 const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL;
 const STRAPI_API_TOKEN = process.env.STRAPI_API_TOKEN;
-const FINAL_PAPER_MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
-const FINAL_PAPER_MAX_FILE_SIZE_LABEL = "10 MB";
+const FINAL_PAPER_MAX_FILE_SIZE_BYTES = 20 * 1024 * 1024;
+const FINAL_PAPER_MAX_FILE_SIZE_LABEL = "20 MB";
 
 type StrapiDataResponse = {
     data?: {
@@ -15,6 +15,7 @@ type StrapiDataResponse = {
 type UploadedFileResponse = {
     id?: number | null;
     documentId?: string | null;
+    url?: string | null;
 };
 
 function getErrorCode(error: unknown) {
@@ -133,26 +134,33 @@ async function uploadFinalPaperFile({
         console.log("[SUBMIT-FINAL-PAPER] File Upload status:", uploadResponse.status);
 
         if (uploadResponse.status === 413) {
-            return { ok: false, statusCode: 413, mediaId: null, mediaDocumentId: null };
+            return { ok: false, statusCode: 413, mediaId: null, mediaDocumentId: null, mediaUrl: null };
         }
 
         if (uploadResponse.ok) {
+            const fileData = uploadedFiles?.[0];
+            let mediaUrl = fileData?.url ?? null;
+            if (mediaUrl && !mediaUrl.startsWith("http://") && !mediaUrl.startsWith("https://")) {
+                const cdnBase = process.env.NEXT_PUBLIC_CDN_URL || "https://cdn.energdive.com";
+                mediaUrl = `${cdnBase.endsWith("/") ? cdnBase.slice(0, -1) : cdnBase}${mediaUrl.startsWith("/") ? "" : "/"}${mediaUrl}`;
+            }
+
             return {
                 ok: true,
                 statusCode: uploadResponse.status,
-                mediaId: uploadedFiles?.[0]?.id ?? null,
-                mediaDocumentId: uploadedFiles?.[0]?.documentId ?? null,
+                mediaId: fileData?.id ?? null,
+                mediaDocumentId: fileData?.documentId ?? null,
+                mediaUrl,
             };
         }
 
-        return { ok: false, statusCode: uploadResponse.status, mediaId: null, mediaDocumentId: null };
+        return { ok: false, statusCode: uploadResponse.status, mediaId: null, mediaDocumentId: null, mediaUrl: null };
     } catch (error) {
         console.error("[SUBMIT-FINAL-PAPER] File Upload fetch error:", error);
         if (isUploadLimitConnectionError(error)) {
-            return { ok: false, statusCode: 413, mediaId: null, mediaDocumentId: null };
+            return { ok: false, statusCode: 413, mediaId: null, mediaDocumentId: null, mediaUrl: null };
         }
-
-        return { ok: false, statusCode: 502, mediaId: null, mediaDocumentId: null };
+        return { ok: false, statusCode: 502, mediaId: null, mediaDocumentId: null, mediaUrl: null };
     }
 }
 
