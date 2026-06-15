@@ -50,7 +50,7 @@ export default function AuthPromptModal() {
     return (
         <AnimatePresence>
             {show && (
-                <div className="fixed inset-0 z-100 flex items-center justify-center p-4 sm:p-6 bg-zinc-900/60 backdrop-blur-sm">
+                <div className="hidden md:flex fixed inset-0 z-100 items-center justify-center p-4 sm:p-6 bg-zinc-900/60 backdrop-blur-sm">
                     {/* Backdrop click to dismiss */}
                     <motion.div
                         initial={{ opacity: 0 }}

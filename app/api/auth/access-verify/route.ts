@@ -212,7 +212,7 @@ export async function GET(req: NextRequest) {
             userId: user.id,
             email: user.email,
             firstName: user.first_name,
-            phone, // Full phone for OTP sending (server-side only)
+            phone,
         });
     } catch (error: any) {
         console.error("[ACCESS_VERIFY] Error:", error);

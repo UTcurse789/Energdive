@@ -4,7 +4,6 @@ import { AuthorBioBox } from "@/components/article/AuthorBioBox";
 import { ArticleNewsletterCTA } from "@/components/article/ArticleNewsletterCTA";
 import { ArticleStickyShare } from "@/components/article/ArticleStickyShare";
 import { SaveArticleButton } from "@/components/article/SaveArticleButton";
-import { ArticlePremiumSpotlight } from "@/components/onboarding/article-premium-spotlight";
 import { getCanonicalUrl } from "@/lib/seo";
 import Link from "next/link";
 import Image from "next/image";
@@ -190,9 +189,6 @@ export default async function AnalysisDetailPage({ params }: { params: Promise<{
             <ScrollProgress /><Header />
             <main className="pt-20 pb-24">
                 <ArticleStickyShare title={article.title} url={canonicalUrl} />
-                <ArticlePremiumSpotlight
-                    loginHref={`/auth?redirect_url=${encodeURIComponent(canonicalUrl)}`}
-                />
                 <div className="mx-auto w-full max-w-[1300px] px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12 mb-6 sm:mb-8">
                     <nav className="flex items-center gap-1.5 text-xs text-gray-400 font-sans">
                         <Link href="/" className="hover:text-teal-600 transition-colors">Home</Link>

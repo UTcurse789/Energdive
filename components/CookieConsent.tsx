@@ -107,10 +107,10 @@ export default function CookieConsent() {
             }}
         >
             <div className="border-t border-zinc-200 bg-white shadow-[0_-4px_24px_rgba(0,0,0,0.08)]">
-                <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-3 sm:px-6 md:flex-row md:items-center md:gap-4 md:py-4">
+                <div className="mx-auto flex max-w-7xl flex-col gap-2.5 px-3 py-2.5 sm:gap-3 sm:px-6 sm:py-3 md:flex-row md:items-center md:gap-4 md:py-4">
                     {/* Cookie icon + text */}
                     <div className="min-w-0 flex-1">
-                        <p className="m-0 text-xs leading-5 text-zinc-700 sm:text-sm sm:leading-6">
+                        <p className="m-0 text-[11px] leading-tight text-zinc-700 sm:text-sm sm:leading-6">
                             We use cookies to improve your experience, serve personalised ads, and analyse traffic. By
                             clicking &lsquo;Accept All&rsquo;, you consent to our use of cookies.
                         </p>
@@ -122,7 +122,7 @@ export default function CookieConsent() {
                         <button
                             id="cookie-accept-all"
                             onClick={handleAccept}
-                            className="h-10 rounded-lg border-0 bg-teal-700 px-4 text-xs font-bold tracking-[0.02em] text-white transition hover:-translate-y-px hover:bg-teal-800 sm:text-sm md:px-5"
+                            className="h-8 rounded border-0 bg-teal-700 px-2.5 text-[11px] font-bold tracking-[0.02em] text-white transition hover:-translate-y-px hover:bg-teal-800 sm:h-10 sm:rounded-lg sm:px-4 sm:text-sm md:px-5"
                             onMouseEnter={(e) => {
                                 (e.target as HTMLButtonElement).style.background = "#0f766e";
                                 (e.target as HTMLButtonElement).style.transform = "translateY(-1px)";
@@ -139,7 +139,7 @@ export default function CookieConsent() {
                         <button
                             id="cookie-reject-nonessential"
                             onClick={handleReject}
-                            className="h-10 rounded-lg border border-zinc-300 bg-white px-4 text-xs font-semibold tracking-[0.01em] text-zinc-700 transition hover:-translate-y-px hover:border-zinc-400 hover:bg-zinc-50 sm:text-sm md:px-5"
+                            className="h-8 rounded border border-zinc-300 bg-white px-2.5 text-[11px] font-semibold tracking-[0.01em] text-zinc-700 transition hover:-translate-y-px hover:border-zinc-400 hover:bg-zinc-50 sm:h-10 sm:rounded-lg sm:px-4 sm:text-sm md:px-5"
                             onMouseEnter={(e) => {
                                 (e.target as HTMLButtonElement).style.background = "#f9fafb";
                                 (e.target as HTMLButtonElement).style.borderColor = "#9ca3af";
@@ -158,7 +158,7 @@ export default function CookieConsent() {
                         <Link
                             id="cookie-settings-link"
                             href="/cookies"
-                            className="col-span-2 inline-flex h-9 items-center justify-center rounded-lg border border-transparent px-4 text-xs font-semibold tracking-[0.01em] text-zinc-500 no-underline transition hover:bg-zinc-100 hover:text-zinc-950 sm:text-sm md:col-span-1 md:h-10 md:px-5"
+                            className="col-span-2 inline-flex h-7 items-center justify-center rounded border border-transparent px-2.5 text-[11px] font-semibold tracking-[0.01em] text-zinc-500 no-underline transition hover:bg-zinc-100 hover:text-zinc-950 sm:col-span-1 sm:h-10 sm:rounded-lg sm:px-4 sm:text-sm md:px-5"
                             onMouseEnter={(e) => {
                                 (e.target as HTMLAnchorElement).style.color = "#111827";
                                 (e.target as HTMLAnchorElement).style.background = "#f3f4f6";
