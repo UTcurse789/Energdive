@@ -157,7 +157,7 @@ export function IntelligenceFeed() {
                                             </span> */}
                                         </div>
 
-                                        <h3 className="text-base font-bold leading-snug mb-2" style={{ color: "var(--dash-text)" }}>
+                                        <h3 className="text-base font-bold leading-snug break-words mb-2" style={{ color: "var(--dash-text)" }}>
                                             <span className="group-hover:text-var(--dash-accent) transition-colors">
                                                 {item.title}
                                             </span>

@@ -20,6 +20,8 @@ import {
 
 const SUBMISSIONS_ENDPOINT = "/api/submit-abstract";
 const ABSTRACT_MIN_LENGTH = 200;
+const ABSTRACT_PDF_MAX_FILE_SIZE_BYTES = 20 * 1024 * 1024;
+const ABSTRACT_PDF_MAX_FILE_SIZE_LABEL = "20 MB";
 
 function normalizeId(value) {
     if (value === null || value === undefined) return "";
@@ -31,6 +33,32 @@ function getErrorMessage(error) {
         return error.message;
     }
     return "We couldn't submit your abstract. Please review the form and try again.";
+}
+
+function getSubmissionErrorMessage(response, responseText) {
+    const fallback = "We couldn't submit your abstract. Please try again.";
+
+    if (responseText) {
+        try {
+            const parsed = JSON.parse(responseText);
+            const message = parsed?.error?.message || parsed?.message || parsed?.error;
+            if (typeof message === "string" && message.trim()) {
+                return message;
+            }
+        } catch {
+            // Ignore parse error, fallback to status checks below
+        }
+    }
+
+    if (response.status === 413) {
+        return `The server rejected this PDF before it could be uploaded. Files up to ${ABSTRACT_PDF_MAX_FILE_SIZE_LABEL} are allowed here, but the deployment upload limit needs to be increased.`;
+    }
+
+    if (!responseText || /<html[\s>]/i.test(responseText) || /<body[\s>]/i.test(responseText)) {
+        return fallback;
+    }
+
+    return responseText;
 }
 
 export default function KnowledgeBaseAbstractForm({
@@ -69,6 +97,8 @@ export default function KnowledgeBaseAbstractForm({
     const accentTextColor = isDashboardVariant ? "#0A0A0B" : "#ffffff";
 
     const abstractLength = abstract.length;
+    const trimmedAbstractLength = abstract.trim().length;
+    const isAbstractTooShort = trimmedAbstractLength < ABSTRACT_MIN_LENGTH;
     const selectedSectors = useMemo(
         () => sectors.filter((sector) => selectedSectorIds.includes(normalizeId(sector.id))),
         [sectors, selectedSectorIds]
@@ -130,7 +160,7 @@ export default function KnowledgeBaseAbstractForm({
         document.cookie = `${POST_AUTH_REDIRECT_COOKIE}=; path=/; max-age=0; SameSite=Lax`;
 
         const timeoutId = window.setTimeout(() => {
-            window.location.href = `/dashboard/my-submissions?submitted=1&title=${encodeURIComponent(successTitle)}`;
+            window.location.href = `/dashboard/my-submissions?view=abstract&submitted=1&title=${encodeURIComponent(successTitle)}`;
         }, 900);
 
         return () => {
@@ -255,16 +285,7 @@ export default function KnowledgeBaseAbstractForm({
 
             if (!response.ok) {
                 const responseText = await response.text();
-                let message = "We couldn't submit your abstract. Please try again.";
-                if (responseText) {
-                    try {
-                        const parsed = JSON.parse(responseText);
-                        message = parsed?.error?.message || parsed?.message || message;
-                    } catch {
-                        message = responseText;
-                    }
-                }
-                throw new Error(message);
+                throw new Error(getSubmissionErrorMessage(response, responseText));
             }
 
             // Flag the user as abstract submitter locally
@@ -317,7 +338,7 @@ export default function KnowledgeBaseAbstractForm({
                                 style={{ borderTop: "1px solid var(--dash-border)" }}
                             >
                                 <Link
-                                    href="/dashboard/my-submissions?submitted=1"
+                                    href="/dashboard/my-submissions?view=abstract&submitted=1"
                                     className="inline-flex items-center justify-center rounded-2xl px-5 py-3 text-sm font-semibold transition-all"
                                     style={{ background: "var(--dash-accent)", color: accentTextColor }}
                                 >
@@ -622,6 +643,9 @@ export default function KnowledgeBaseAbstractForm({
                                             file={pdfFile}
                                             onFileSelect={setPdfFile}
                                             disabled={isSubmitting}
+                                            helperText={`PDF only, maximum size ${ABSTRACT_PDF_MAX_FILE_SIZE_LABEL}.`}
+                                            maxFileSizeBytes={ABSTRACT_PDF_MAX_FILE_SIZE_BYTES}
+                                            maxFileSizeLabel={ABSTRACT_PDF_MAX_FILE_SIZE_LABEL}
                                         />
                                     </Field>
                                 </div>
@@ -636,10 +660,16 @@ export default function KnowledgeBaseAbstractForm({
                                     </div>
                                 ) : null}
 
-                                <div className="mt-8 flex justify-end border-t pt-6" style={{ borderColor: "var(--dash-border)" }}>
+                                <div className="mt-8 flex flex-col items-end gap-3 border-t pt-6" style={{ borderColor: "var(--dash-border)" }}>
+                                    {isAbstractTooShort ? (
+                                        <p className="max-w-md text-right text-xs" style={{ color: "var(--dash-text-dim)" }}>
+                                            Add {ABSTRACT_MIN_LENGTH - trimmedAbstractLength} more character
+                                            {ABSTRACT_MIN_LENGTH - trimmedAbstractLength !== 1 ? "s" : ""} before submitting.
+                                        </p>
+                                    ) : null}
                                     <button
                                         type="submit"
-                                        disabled={isSubmitting || abstractLength < ABSTRACT_MIN_LENGTH}
+                                        disabled={isSubmitting || isAbstractTooShort}
                                         className="inline-flex items-center justify-center gap-2 rounded-2xl px-6 py-3 text-sm font-semibold transition-all hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
                                         style={{ background: "var(--dash-accent)", color: accentTextColor }}
                                     >

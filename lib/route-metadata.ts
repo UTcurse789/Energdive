@@ -519,6 +519,38 @@ export const EDITORIAL_COLLABORATION_PAGE_METADATA = buildExactPageMetadata({
   },
 });
 
+export const EIX_PAGE_METADATA = buildExactPageMetadata({
+  title:
+    "ENERGDIVE Insights Exchange | Research Papers, Case Studies & Energy Knowledge",
+  description:
+    "Explore the ENERGDIVE Insights Exchange, a curated knowledge platform for research papers, sector outlooks, case studies, white papers, technical notes, and knowledge briefs on India's energy transition.",
+  keywords:
+    "ENERGDIVE Insights Exchange, EIX, energy research papers India, energy case studies, energy white papers, energy sector outlooks, technical notes energy, knowledge briefs energy transition, ENERGClub research platform",
+  author: "ClariSector Technologies Pvt. Ltd.",
+  publisher: "ENERGDIVE/ENERGClub",
+  generator: "ClariSector Technologies Pvt. Ltd.",
+  classification:
+    "Energy Knowledge Platform, Research Exchange, Thought Leadership Platform",
+  topic:
+    "Energy Research, Sector Outlooks, Case Studies, White Papers, Technical Notes, Knowledge Briefs",
+  audience:
+    "Industry professionals, researchers, academics, policymakers, consultants, technology providers, startup founders",
+  canonical: "https://www.energdive.com/energdive-insights-exchange",
+  openGraph: {
+    title: "ENERGDIVE Insights Exchange",
+    description:
+      "A curated ENERGClub-powered knowledge platform for research, practical insights, and industry perspectives on India's energy transition.",
+    url: "https://www.energdive.com/energdive-insights-exchange",
+    siteName: "ENERGDIVE",
+  },
+  twitter: {
+    title: "ENERGDIVE Insights Exchange",
+    description:
+      "Research papers, sector outlooks, case studies, white papers, technical notes, and knowledge briefs for India's energy ecosystem.",
+    site: "@energdive",
+  },
+});
+
 export const ENERGCLUB_PAGE_METADATA = buildExactPageMetadata({
   title: "ENERGClub | India's Energy Network, Community & Industry Platform",
   description:

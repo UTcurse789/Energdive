@@ -61,9 +61,12 @@ export async function GET(req: NextRequest) {
 
         if (isCrmInvite) {
             // ── CRM-INVITE FAST PATH ──────────────────────────────────────
+            // Skip OTP + onboarding. Auto-verify, create session, sync externally.
             log(`CRM-invited user detected — entering fast path`);
 
             // 3a. Mark user as verified in DB
+            //     This triggers the Postgres BEFORE trigger (trg_assign_membership_id)
+            //     which auto-assigns ENCL-STN-xxx membership_id.
             await query(
                 `UPDATE users
                  SET verification_status = 'verified',
@@ -106,6 +109,7 @@ export async function GET(req: NextRequest) {
             // 3d. Fetch full profile for external syncs
             const fullUser = await getFullUserProfile(user.clerk_id);
 
+            // Helper: filter null/undefined/empty strings from array fields
             const toCleanArray = (arr: Array<string | null> | undefined): string[] => {
                 if (!arr) return [];
                 return arr.filter((v): v is string => !!v && v.trim() !== "" && v.trim() !== "undefined" && v.trim() !== "null");
@@ -133,7 +137,7 @@ export async function GET(req: NextRequest) {
                     industries,
                     subIndustries,
                 });
-                log(`Synced to Brevo: ${user.email}`);
+                log(`✅ Synced to Brevo: ${user.email}`);
                 await logEvent("BREVO_SYNC_SUCCESS", user.email, "Synced after CRM-invite auto-verification");
             } catch (brevoErr: any) {
                 console.error(`[ACCESS_VERIFY:${requestId}] Brevo sync failed:`, brevoErr.message);
@@ -160,6 +164,7 @@ export async function GET(req: NextRequest) {
                     City: fullUser?.state || undefined,
                 };
 
+                // Generate Community_Portal from communities + sub-communities
                 if (communities.length > 0 && subCommunities.length > 0) {
                     zohoLeadData.Community_Portal = generateCommunityPortal(communities, subCommunities);
                 }
@@ -168,6 +173,7 @@ export async function GET(req: NextRequest) {
 
                 const zohoResult = await createZohoLead(zohoLeadData);
 
+                // Store the new duplicate CRM lead ID on the user row
                 await query(
                     `UPDATE users
                      SET crm_duplicate_lead_id = $2,
@@ -178,7 +184,7 @@ export async function GET(req: NextRequest) {
                     [user.id, zohoResult.id]
                 );
 
-                log(`CRM duplicate lead ${zohoResult.action}: ${zohoResult.id}`);
+                log(`✅ CRM duplicate lead ${zohoResult.action}: ${zohoResult.id}`);
                 await logEvent("CRM_SYNC_SUCCESS", user.email, `CRM duplicate lead ${zohoResult.action}: ${zohoResult.id}`);
             } catch (crmErr: any) {
                 console.error(`[ACCESS_VERIFY:${requestId}] CRM sync failed:`, crmErr.message);
@@ -198,6 +204,7 @@ export async function GET(req: NextRequest) {
         }
 
         // ── STANDARD PATH (self-signup / form users) ──────────────────
+        // Return user info for OTP verification step (no sign-in token yet)
         const phone = userRow?.phone || null;
 
         return NextResponse.json({

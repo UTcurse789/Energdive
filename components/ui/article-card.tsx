@@ -56,7 +56,7 @@ export function ArticleCard({ article, className, variant = "vertical" }: Articl
                     </div>
 
                     <h3 className={cn(
-                        "font-serif font-bold leading-tight group-hover:text-primary transition-colors",
+                        "font-serif font-bold leading-tight break-words group-hover:text-primary transition-colors",
                         variant === "compact" ? "text-sm line-clamp-2" : "text-xl mb-2"
                     )}>
                         {article.title}
