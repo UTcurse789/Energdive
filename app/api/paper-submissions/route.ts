@@ -74,12 +74,16 @@ export async function POST(request: Request) {
         const strapiData: Record<string, unknown> = {};
 
         // Whitelist of known scalar/enum fields on the content type.
-        const SCALAR_FIELDS = ["title", "author_name", "author_email", "affiliation", "submitted_date", "paper_status"];
+        const SCALAR_FIELDS = ["title", "author_name", "author_email", "submitted_date", "paper_status"];
 
         for (const field of SCALAR_FIELDS) {
             if (entryPayload[field] !== undefined) {
                 strapiData[field] = entryPayload[field];
             }
+        }
+
+        if (entryPayload.affiliation !== undefined) {
+            strapiData.institution = entryPayload.affiliation;
         }
 
         // Convert plain-text abstract → Strapi v5 "blocks" format.

@@ -109,6 +109,7 @@ export async function POST(req: Request) {
           apply_email: localJob.apply_email,
           job_status: localJob.job_status,
           openings: localJob.openings,
+          external_apply_url: localJob.external_apply_url,
         },
         {
           postedBy: recruiter

@@ -82,7 +82,12 @@ export async function POST(req: Request) {
         : null;
     const requestedJobSnapshot = getJobSnapshot(body?.jobSnapshot);
     const requestUrl = new URL(req.url);
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || requestUrl.origin;
+    const forwardedProto = req.headers.get("x-forwarded-proto") || "https";
+    const forwardedHost = req.headers.get("x-forwarded-host") || req.headers.get("host") || requestUrl.host;
+    let appUrl = `${forwardedProto}://${forwardedHost}`;
+    if ((forwardedHost.includes("localhost") || forwardedHost.includes("127.0.0.1")) && process.env.NEXT_PUBLIC_APP_URL) {
+      appUrl = process.env.NEXT_PUBLIC_APP_URL;
+    }
     const normalizedResumeUrl = payload.resumeUrl;
 
     let resolvedJob: Awaited<ReturnType<typeof getEnergJobById>> | null =
@@ -209,9 +214,13 @@ export async function POST(req: Request) {
         ? await getEnergJobRecruiterById(job.posted_by_recruiter_id)
         : null;
     const routeSlug = requestedRouteSlug || buildJobRouteSlug(job.title, job.slug, getJobRouteId(job));
-    const jobUrl = `${appUrl}/energjob/jobs/${routeSlug}`;
+    const jobUrl = `${appUrl}/energyjobs/${routeSlug}`;
     const companyName =
-      recruiter?.company_name || recruiter?.recruiter_name || "EnergJob Employer";
+      recruiter?.company_name ||
+      recruiter?.recruiter_name ||
+      requestedJobSnapshot?.companyName ||
+      requestedJobSnapshot?.recruiterName ||
+      "EnergJob Employer";
     let syncStatus: "success" | "failed" = "success";
     let syncErrorMessage: string | null = null;
     let cmsResult: Awaited<ReturnType<typeof createCmsApplication>> | null = null;
@@ -297,7 +306,7 @@ export async function POST(req: Request) {
       });
     }
 
-    const applicationViewUrl = `${appUrl}/energjob/applications/${localApplication.recruiter_token}`;
+    const applicationViewUrl = `${appUrl}/energyjobs/applications/${localApplication.recruiter_token}`;
 
     try {
       await Promise.all([
@@ -309,8 +318,8 @@ export async function POST(req: Request) {
           jobTitle: job.title,
           jobUrl,
           phone: localApplication.phone,
-          recruiterEmail: recruiter?.email || job.apply_email,
-          recruiterName: recruiter?.recruiter_name,
+          recruiterEmail: recruiter?.email || job.apply_email || requestedJobSnapshot?.recruiterEmail || requestedJobSnapshot?.applyEmail,
+          recruiterName: recruiter?.recruiter_name || requestedJobSnapshot?.recruiterName || companyName,
           resumeUrl: localApplication.resume_url,
         }),
         sendEnergJobApplicationRecruiterEmail({
@@ -321,8 +330,8 @@ export async function POST(req: Request) {
           jobTitle: job.title,
           jobUrl,
           phone: localApplication.phone,
-          recruiterEmail: recruiter?.email || job.apply_email,
-          recruiterName: recruiter?.recruiter_name,
+          recruiterEmail: recruiter?.email || job.apply_email || requestedJobSnapshot?.recruiterEmail || requestedJobSnapshot?.applyEmail,
+          recruiterName: recruiter?.recruiter_name || requestedJobSnapshot?.recruiterName || companyName,
           resumeUrl: localApplication.resume_url,
           applicationViewUrl,
         }),

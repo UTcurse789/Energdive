@@ -11,6 +11,7 @@ import {
   sendApplicationShortlistedEmail,
 } from "@/lib/email";
 import { slugify } from "@/lib/utils";
+import { loadPublicEnergJobBySlug } from "@/lib/energjob-public";
 
 function buildJobRouteSlug(title: string, slug: string | null, id: number | string) {
   const base = slugify(slug || title) || "energjob-role";
@@ -114,12 +115,28 @@ export async function PATCH(
       ? await getEnergJobRecruiterById(job.posted_by_recruiter_id)
       : null;
 
-    const companyName = recruiter?.company_name || recruiter?.recruiter_name || "EnergJob Employer";
+    let companyName = recruiter?.company_name || recruiter?.recruiter_name || "EnergJob Employer";
     const requestUrl = new URL(req.url);
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || requestUrl.origin;
+    const forwardedProto = req.headers.get("x-forwarded-proto") || "https";
+    const forwardedHost = req.headers.get("x-forwarded-host") || req.headers.get("host") || requestUrl.host;
+    let appUrl = `${forwardedProto}://${forwardedHost}`;
+    if ((forwardedHost.includes("localhost") || forwardedHost.includes("127.0.0.1")) && process.env.NEXT_PUBLIC_APP_URL) {
+      appUrl = process.env.NEXT_PUBLIC_APP_URL;
+    }
     const jobRouteId = job ? getJobRouteId(job) : application.job_id;
     const routeSlug = job ? buildJobRouteSlug(job.title, job.slug, jobRouteId) : `job-${application.job_id}`;
-    const jobUrl = `${appUrl}/energjob/jobs/${routeSlug}`;
+    const jobUrl = `${appUrl}/energyjobs/${routeSlug}`;
+
+    if (companyName === "EnergJob Employer" && job) {
+      try {
+        const publicJob = await loadPublicEnergJobBySlug(routeSlug);
+        if (publicJob?.companyName) {
+          companyName = publicJob.companyName;
+        }
+      } catch (pubErr) {
+        console.error("Failed to load public job details for company name fallback:", pubErr);
+      }
+    }
 
     // 4. Send email notification to applicant
     try {

@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { query } from "@/lib/db";
 
 function classifyDevice(ua: string): "Mobile" | "Tablet" | "Desktop" {
@@ -129,38 +129,37 @@ export async function POST(req: NextRequest) {
     const dedupeKey = rememberImpression(adDocumentId, ip, eventType);
     const deviceType = classifyDevice(ua);
 
-    let insertResult;
-    try {
-      insertResult = await query<{ id: number }>(
-        `INSERT INTO ad_events (ad_document_id, event_type, ip_address, user_agent, device_type, referrer)
-         VALUES ($1, $2, $3, $4, $5, $6)
-         RETURNING id`,
-        [adDocumentId, eventType, ip, ua, deviceType, referrer || null]
-      );
-    } catch (error) {
-      forgetImpression(dedupeKey);
-      console.error("[ad-track] Failed to persist event:", error);
-      return NextResponse.json({ ok: true, persisted: false });
-    }
+    after(async () => {
+      let insertResult;
+      try {
+        insertResult = await query<{ id: number }>(
+          `INSERT INTO ad_events (ad_document_id, event_type, ip_address, user_agent, device_type, referrer)
+           VALUES ($1, $2, $3, $4, $5, $6)
+           RETURNING id`,
+          [adDocumentId, eventType, ip, ua, deviceType, referrer || null]
+        );
+      } catch (error) {
+        forgetImpression(dedupeKey);
+        console.error("[ad-track] Failed to persist event:", error);
+        return;
+      }
 
-    const eventId = insertResult.rows[0]?.id;
+      const eventId = insertResult.rows[0]?.id;
 
-    if (eventId && ip !== "unknown") {
-      resolveRegion(ip).then(async (region) => {
-        if (!region) {
-          return;
-        }
-
+      if (eventId && ip !== "unknown") {
         try {
-          await query(`UPDATE ad_events SET region = $1 WHERE id = $2`, [
-            region,
-            eventId,
-          ]);
+          const region = await resolveRegion(ip);
+          if (region) {
+            await query(`UPDATE ad_events SET region = $1 WHERE id = $2`, [
+              region,
+              eventId,
+            ]);
+          }
         } catch {
           // Region enrichment is non-critical.
         }
-      });
-    }
+      }
+    });
 
     return NextResponse.json({ ok: true });
   } catch (error) {

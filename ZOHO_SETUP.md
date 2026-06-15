@@ -128,6 +128,7 @@ ZOHO_API_DOMAIN=https://www.zohoapis.in
 # Zoho Webhook Security
 ZOHO_WEBHOOK_SECRET=...
 ZOHO_FORM_WEBHOOK_SECRET=...
+ZOHO_BACKSTAGE_WEBHOOK_SECRET=...
 
 # Clerk
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=...
@@ -144,6 +145,44 @@ NEXT_PUBLIC_APP_URL=https://www.energdive.com
 ---
 
 ## 5. End-to-End Flows
+
+### Flow D: Zoho Backstage Registration -> Direct Member
+
+Use this when a Zoho Backstage event registration should immediately create an EnergDive / ENERGClub member.
+
+Local-first test:
+
+1. Start the app with `npm run dev`.
+2. Run `npm run test:backstage-local`.
+3. The test posts to `http://localhost:3000/api/zoho/backstage-registration?dryRun=1`, validates the payload, and does not create a Clerk user, DB member, Brevo contact, or email.
+4. For local live creation, run `npm run test:backstage-local -- --live`. This uses real Clerk/DB/Brevo env vars, creates the member, and sends the membership email.
+
+Local secret:
+
+If `ZOHO_BACKSTAGE_WEBHOOK_SECRET` is not set in development, the endpoint accepts `local-backstage-secret`. Production still requires a configured secret.
+
+Production setup:
+
+1. Configure the Zoho Backstage registration automation/webhook to call `POST https://www.energdive.com/api/zoho/backstage-registration`
+2. Send the shared secret as `x-webhook-secret: <ZOHO_BACKSTAGE_WEBHOOK_SECRET>` or `Authorization: Bearer <ZOHO_BACKSTAGE_WEBHOOK_SECRET>`.
+3. Send attendee fields as JSON. The endpoint accepts common Backstage and CRM-style aliases:
+
+```json
+{
+  "email": "member@example.com",
+  "first_name": "Asha",
+  "last_name": "Singh",
+  "phone": "+91 9999999999",
+  "company": "Example Energy",
+  "designation": "Manager",
+  "event_id": "EVT-123",
+  "event_name": "Energy Leadership Summit",
+  "registration_id": "REG-456",
+  "ticket_name": "Delegate Pass"
+}
+```
+
+The endpoint is idempotent by email for EnergDive membership. It finds or creates the Clerk user, upserts the local `users` row, marks the member as `verified`, assigns the `ENCL-STN-*` membership ID, syncs the verified contact to Brevo, creates a fresh Zoho CRM lead with `Lead_Source = ENDV Backstage Reg`, `Show = ENERGClub`, `Invite_Source = EnergClub`, and the membership ID, logs `backstage` consent provenance, and sends the membership card/access email only when the person was not already a verified member.
 
 ### Flow A: Zoho Form → Portal → Brevo → CRM (Redesigned)
 
@@ -187,6 +226,7 @@ NEXT_PUBLIC_APP_URL=https://www.energdive.com
 | Endpoint                              | Purpose                                      |
 | :------------------------------------ | :------------------------------------------- |
 | `POST /api/zoho/provision`            | Called by Deluge to provision magic link user |
+| `POST /api/zoho/backstage-registration` | Zoho Backstage registration -> verified member |
 | `POST /api/leads/zoho-webhook`        | Zoho Form webhook → store in DB, send magic link |
 | `GET  /api/auth/verify-account`       | Validate magic token, send OTP               |
 | `POST /api/auth/confirm-otp`          | Verify OTP, create user (no external sync)   |

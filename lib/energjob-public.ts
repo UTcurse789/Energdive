@@ -1,5 +1,5 @@
 import { slugify } from "@/lib/utils";
-import { EnergJobCmsUnauthorizedError, fetchCmsJobs } from "@/lib/energjob-cms";
+import { EnergJobCmsUnauthorizedError, fetchCmsJobs, ENERGJOB_STRAPI_URL } from "@/lib/energjob-cms";
 import { listPublicEnergJobs, PublicEnergJobRow } from "@/lib/queries/energjob";
 import { strapiImageUrl, strapiMediaUrl } from "@/lib/strapi-image";
 
@@ -50,6 +50,7 @@ export type PublicEnergJob = {
   createdAt: string | null;
   updatedAt: string | null;
   publishedAt: string | null;
+  externalApplyUrl: string | null;
 };
 
 function pickValue(record: any, key: string) {
@@ -200,18 +201,21 @@ function uniqueLines(lines: string[]) {
   const tags: string[] = [];
 
   for (const line of lines) {
-    const candidate = sanitizeTag(line);
-    if (!candidate) {
-      continue;
-    }
+    const parts = line.split(/[,;\/\\|]+/);
+    for (const part of parts) {
+      const candidate = sanitizeTag(part);
+      if (!candidate) {
+        continue;
+      }
 
-    const normalized = candidate.toLowerCase();
-    if (seen.has(normalized)) {
-      continue;
-    }
+      const normalized = candidate.toLowerCase();
+      if (seen.has(normalized)) {
+        continue;
+      }
 
-    seen.add(normalized);
-    tags.push(candidate);
+      seen.add(normalized);
+      tags.push(candidate);
+    }
   }
 
   return tags;
@@ -271,7 +275,7 @@ function normalizeCmsJob(job: any): PublicEnergJob | null {
   const requiredSkillLines = extractLinesFromBlocks(requiredSkills);
   const goodToHaveLines = extractLinesFromBlocks(goodToHave);
 
-  return {
+  const result: PublicEnergJob = {
     id,
     cmsDocumentId: typeof cmsDocumentId === "string" ? cmsDocumentId : null,
     cmsId: typeof id === "number" ? id : null,
@@ -281,7 +285,7 @@ function normalizeCmsJob(job: any): PublicEnergJob | null {
     companyName: pickValue(postedBy, "company_name") || null,
     recruiterName: pickValue(postedBy, "recruiter_name") || null,
     recruiterEmail: pickValue(postedBy, "email") || null,
-    companyLogoUrl: pickValue(postedBy, "logo") ? strapiMediaUrl(pickValue(postedBy, "logo"), "") : null,
+    companyLogoUrl: pickValue(postedBy, "logo") ? strapiMediaUrl(pickValue(postedBy, "logo"), "", ENERGJOB_STRAPI_URL) : null,
     companyDescription,
     companyDescriptionLines: extractLinesFromBlocks(companyDescription),
     companyWebsite: pickValue(postedBy, "website") || null,
@@ -316,7 +320,11 @@ function normalizeCmsJob(job: any): PublicEnergJob | null {
     createdAt: normalizeDate(pickValue(job, "createdAt")),
     updatedAt: normalizeDate(pickValue(job, "updatedAt")),
     publishedAt: normalizeDate(pickValue(job, "publishedAt")),
+    externalApplyUrl: pickValue(job, "external_apply_url"),
   };
+
+  console.log(`[normalizeCmsJob] "${title}" (id=${id}) → externalApplyUrl="${result.externalApplyUrl}"`);  
+  return result;
 }
 
 function normalizeLocalJob(job: PublicEnergJobRow): PublicEnergJob {
@@ -342,7 +350,7 @@ function normalizeLocalJob(job: PublicEnergJobRow): PublicEnergJob {
     companyName: job.company_name,
     recruiterName: job.recruiter_name,
     recruiterEmail: job.email,
-    companyLogoUrl: job.logo ? strapiImageUrl(job.logo, "") : null,
+    companyLogoUrl: job.logo ? strapiImageUrl(job.logo, "", ENERGJOB_STRAPI_URL) : null,
     companyDescription,
     companyDescriptionLines: extractLinesFromBlocks(companyDescription),
     companyWebsite: job.website,
@@ -377,6 +385,7 @@ function normalizeLocalJob(job: PublicEnergJobRow): PublicEnergJob {
     createdAt: null,
     updatedAt: null,
     publishedAt: null,
+    externalApplyUrl: job.external_apply_url,
   };
 }
 
@@ -396,8 +405,9 @@ export async function loadPublicEnergJobs(limit = 60) {
     if (cmsJobs.length > 0) {
       return cmsJobs;
     }
-  } catch {
+  } catch (e: any) {
     // CMS unreachable — fall through to local DB
+    console.error("[loadPublicEnergJobs] CMS fetch failed, falling back to local DB. Error:", e?.message || e);
   }
 
   // Fallback: use local DB

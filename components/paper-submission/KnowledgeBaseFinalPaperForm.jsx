@@ -13,8 +13,34 @@ import {
 import UploadZone from "@/components/paper-submission/UploadZone";
 
 const SUBMISSIONS_ENDPOINT = "/api/submit-final-paper";
-const FINAL_PAPER_MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
-const FINAL_PAPER_MAX_FILE_SIZE_LABEL = "10 MB";
+const FINAL_PAPER_MAX_FILE_SIZE_BYTES = 20 * 1024 * 1024;
+const FINAL_PAPER_MAX_FILE_SIZE_LABEL = "20 MB";
+
+function getSubmissionErrorMessage(response, responseText) {
+    const fallback = "We couldn't submit your paper. Please try again.";
+
+    if (responseText) {
+        try {
+            const parsed = JSON.parse(responseText);
+            const message = parsed?.error?.message || parsed?.message || parsed?.error;
+            if (typeof message === "string" && message.trim()) {
+                return message;
+            }
+        } catch {
+            // Ignore parse error, fallback to status checks below
+        }
+    }
+
+    if (response.status === 413) {
+        return `The server rejected this PDF before it could be uploaded. Files up to ${FINAL_PAPER_MAX_FILE_SIZE_LABEL} are allowed here, but the deployment upload limit needs to be increased.`;
+    }
+
+    if (!responseText || /<html[\s>]/i.test(responseText) || /<body[\s>]/i.test(responseText)) {
+        return fallback;
+    }
+
+    return responseText;
+}
 
 export default function KnowledgeBaseFinalPaperForm({
     abstract,
@@ -84,16 +110,7 @@ export default function KnowledgeBaseFinalPaperForm({
 
             if (!response.ok) {
                 const responseText = await response.text();
-                let message = "We couldn't submit your final paper. Please try again.";
-                if (responseText) {
-                    try {
-                        const parsed = JSON.parse(responseText);
-                        message = parsed?.error?.message || parsed?.message || message;
-                    } catch {
-                        message = responseText;
-                    }
-                }
-                throw new Error(message);
+                throw new Error(getSubmissionErrorMessage(response, responseText));
             }
 
             setSuccess(true);

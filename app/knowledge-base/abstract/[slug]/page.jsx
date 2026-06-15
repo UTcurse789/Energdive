@@ -5,7 +5,7 @@ import { Building2, CalendarDays, UserRound, ArrowLeft, Download, FileText } fro
 import Link from "next/link";
 
 const KNOWLEDGE_BASE_QUERY =
-    "populate[sectors][fields][0]=name&populate[sectors][fields][1]=slug&populate[sectors][populate][parent][fields][0]=name&populate[sectors][populate][parent][fields][1]=slug&populate[abstract_pdf][fields][0]=url&populate[abstract_pdf][fields][1]=name&populate[abstract_pdf][fields][2]=size&populate[abstract_pdf][fields][3]=ext&populate[final_paper_submissions][fields][0]=final_status&populate[final_paper_submissions][fields][1]=final_submission_date&sort[0]=submitted_date:desc&pagination[pageSize]=100";
+    "populate[sectors][fields][0]=name&populate[sectors][fields][1]=slug&populate[sectors][populate][parent][fields][0]=name&populate[sectors][populate][parent][fields][1]=slug&populate[abstract_pdf][fields][0]=url&populate[abstract_pdf][fields][1]=name&populate[abstract_pdf][fields][2]=size&populate[abstract_pdf][fields][3]=ext&populate[final_paper_submissions][fields][0]=final_status&populate[final_paper_submissions][fields][1]=final_submission_date&populate[final_paper_submissions][populate][full_paper][fields][0]=url&populate[final_paper_submissions][populate][full_paper][fields][1]=name&populate[final_paper_submissions][populate][full_paper][fields][2]=size&populate[final_paper_submissions][populate][full_paper][fields][3]=ext&sort[0]=submitted_date:desc&pagination[pageSize]=100";
 
 function slugify(text) {
     return String(text || "")
@@ -51,7 +51,7 @@ export async function generateMetadata({ params }) {
         return { title: "Paper Abstract | Knowledge Base" };
     }
 
-    const paper = papers.find((p) => p.hasAcceptedFinalPaper && slugify(p.title || "untitled-paper") === slug);
+    const paper = papers.find((p) => p.status === "accepted" && slugify(p.title || "untitled-paper") === slug);
     return {
         title: paper ? `${paper.title} | Knowledge Base` : "Paper Abstract | Knowledge Base",
         description: paper?.abstract ? paper.abstract.slice(0, 160) : "Read the full research paper abstract.",
@@ -68,11 +68,11 @@ export default async function AbstractPage({ params }) {
         notFound();
     }
 
-    const paper = papers.find((p) => p.hasAcceptedFinalPaper && slugify(p.title || "untitled-paper") === slug);
+    const paper = papers.find((p) => p.status === "accepted" && slugify(p.title || "untitled-paper") === slug);
     if (!paper) notFound();
 
-    const pdfUrl = extractPdfUrl(paper.pdf);
-    const pdfMeta = extractPdfMeta(paper.pdf);
+    const pdfUrl = paper.hasAcceptedFinalPaper ? extractPdfUrl(paper.finalPaperPdf) : null;
+    const pdfMeta = paper.hasAcceptedFinalPaper ? extractPdfMeta(paper.finalPaperPdf) : null;
 
     return (
         <div className="min-h-screen bg-[#f6f3eb]">
@@ -189,20 +189,20 @@ export default async function AbstractPage({ params }) {
 
             {/* ── Abstract ── */}
             <section className="bg-white py-16 md:py-24">
-                <div className="container">
-                    <div className="max-w-4xl">
+                <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="max-w-6xl mx-auto">
                         <h2 className="mb-10 flex items-center gap-3 text-3xl font-bold tracking-tight text-slate-950">
                             <FileText className="h-8 w-8 text-emerald-700" />
                             Abstract
                         </h2>
 
-                        <div className="rounded-[32px] border border-slate-200/80 bg-[#faf8f2]/60 p-8 shadow-[0_8px_30px_rgb(0,0,0,0.03)] sm:p-12">
+                        <div className="mt-6">
                             {paper.abstract ? (
-                                <p className="whitespace-pre-wrap text-[17px] leading-[1.9] text-slate-700 sm:text-lg">
+                                <p className="whitespace-pre-wrap break-words text-[15px] leading-relaxed text-slate-700 sm:text-base">
                                     {paper.abstract}
                                 </p>
                             ) : (
-                                <p className="text-base italic text-slate-400">
+                                <p className="text-sm italic text-slate-400 sm:text-base">
                                     Abstract not available for this paper.
                                 </p>
                             )}

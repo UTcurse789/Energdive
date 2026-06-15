@@ -1,0 +1,501 @@
+{
+  "data": [
+    {
+      "id": 11,
+      "documentId": "gxzbjf373gzqhnb42k4spg8f",
+      "title": "test 2000",
+      "job_type": "Part-time",
+      "work_mode": "Hybrid",
+      "location": "BANGKOK, THAILAND",
+      "experience_min": 1,
+      "experience_max": 2,
+      "salary_min": null,
+      "salary_max": null,
+      "description": [
+        {
+          "type": "paragraph",
+          "children": [
+            {
+              "text": "Energy engineers work on projects designed to reduce energy use or costs. They research how to generate new energy to reduce carbon emissions, minimize environmental damage, and carry-out site inspections and energy surveys. They often design systems that assist with a larger process and propose designs that interact with more extensive systems to make them more energy-efficient. They must first observe specific aspects including how equipment, machinery, and workers interact.",
+              "type": "text"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "children": [
+            {
+              "text": "",
+              "type": "text"
+            }
+          ]
+        },
+        {
+          "type": "heading",
+          "level": 3,
+          "children": [
+            {
+              "text": "Job Overview",
+              "type": "text"
+            }
+          ]
+        },
+        {
+          "type": "list",
+          "format": "unordered",
+          "children": [
+            {
+              "type": "list-item",
+              "children": [
+                {
+                  "text": "Analyze options for gas, electricity, and renewable energy purchases.",
+                  "type": "text"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "list",
+          "format": "unordered",
+          "children": [
+            {
+              "type": "list-item",
+              "children": [
+                {
+                  "text": "Provide ad-hoc energy support and education to clients and prospects.",
+                  "type": "text"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "list",
+          "format": "unordered",
+          "children": [
+            {
+              "type": "list-item",
+              "children": [
+                {
+                  "text": "Monitor and report on energy use and spending trends.",
+                  "type": "text"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "list",
+          "format": "unordered",
+          "children": [
+            {
+              "type": "list-item",
+              "children": [
+                {
+                  "text": "Manage the utility accounting system and create reports and updates using energy data.",
+                  "type": "text"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "children": [
+            {
+              "text": "",
+              "type": "text"
+            }
+          ]
+        },
+        {
+          "type": "heading",
+          "level": 3,
+          "children": [
+            {
+              "text": "Qualifications for Energy Engineer",
+              "type": "text"
+            }
+          ]
+        },
+        {
+          "type": "list",
+          "format": "unordered",
+          "children": [
+            {
+              "type": "list-item",
+              "children": [
+                {
+                  "text": "Analyze options for gas, electricity, and renewable energy purchases.",
+                  "type": "text"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "list",
+          "format": "unordered",
+          "children": [
+            {
+              "type": "list-item",
+              "children": [
+                {
+                  "text": "Provide ad-hoc energy support and education to clients and prospects.",
+                  "type": "text"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "list",
+          "format": "unordered",
+          "children": [
+            {
+              "type": "list-item",
+              "children": [
+                {
+                  "text": "Monitor and report on energy use and spending trends.",
+                  "type": "text"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "list",
+          "format": "unordered",
+          "children": [
+            {
+              "type": "list-item",
+              "children": [
+                {
+                  "text": "Manage the utility accounting system and create reports and updates using energy data.",
+                  "type": "text"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "good_to_have": [
+        {
+          "type": "paragraph",
+          "children": [
+            {
+              "text": "Python",
+              "type": "text"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "children": [
+            {
+              "text": "CPP\nJavascript",
+              "type": "text"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "children": [
+            {
+              "text": "java",
+              "type": "text"
+            }
+          ]
+        }
+      ],
+      "qualification": "12 pass",
+      "department": "cs",
+      "role_category": null,
+      "apply_email": "webadmin@itenmedia.in",
+      "job_status": "published",
+      "openings": 2,
+      "createdAt": "2026-06-04T10:42:32.810Z",
+      "updatedAt": "2026-06-04T10:42:41.380Z",
+      "publishedAt": "2026-06-04T10:42:41.446Z",
+      "external_apply_url": "https://www.glassdoor.com/employers/Job-Descriptions/Energy-Engineer",
+      "sectors": [
+        {
+          "id": 99,
+          "documentId": "skpu3p58zpqyzhky9magpmo5",
+          "createdAt": "2026-02-14T11:32:14.138Z",
+          "updatedAt": "2026-02-14T11:32:14.138Z",
+          "publishedAt": "2026-02-14T11:32:14.164Z",
+          "name": "Battery Energy Storage Systems (BESS)",
+          "slug": null,
+          "description": null
+        }
+      ],
+      "application": null,
+      "posted_by": {
+        "id": 3,
+        "documentId": "lqtqo0jrvjsyp8fpwftpzu61",
+        "recruiter_name": "test kumar",
+        "company_name": "test pvt ltd",
+        "company_description": [
+          {
+            "type": "paragraph",
+            "children": [
+              {
+                "text": "asdv asv eav eas",
+                "type": "text"
+              }
+            ]
+          }
+        ],
+        "email": "webadmin@itenmedia.in",
+        "clerk_user_id": null,
+        "website": "test.com",
+        "address": "cwvcwv",
+        "plot_no_street": "fwfcw",
+        "jobs_remaining": 32,
+        "plans_expires_at": null,
+        "createdAt": "2026-06-03T09:30:49.410Z",
+        "updatedAt": "2026-06-03T09:41:59.041Z",
+        "publishedAt": "2026-06-03T09:41:59.117Z"
+      }
+    },
+    {
+      "id": 5,
+      "documentId": "h9wqzy46el1h13qxht9bswbe",
+      "title": "Web dev",
+      "job_type": "Full-time",
+      "work_mode": "On-site",
+      "location": "Iten media",
+      "experience_min": 2,
+      "experience_max": 3,
+      "salary_min": 120000,
+      "salary_max": 200000,
+      "description": [
+        {
+          "type": "paragraph",
+          "children": [
+            {
+              "text": "We are looking for a Software Developer / Application Developer to join our team at at Munexa It Services, contributing to software, data, or IT system development and support. This role offers an in-hand salary of ₹ 10,000 - ₹ 30,000 and a chance to work in a fast-paced, technology-driven environment.",
+              "type": "text"
+            }
+          ]
+        }
+      ],
+      "good_to_have": [
+        {
+          "type": "paragraph",
+          "children": [
+            {
+              "text": "React",
+              "type": "text"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "children": [
+            {
+              "text": "next",
+              "type": "text"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "children": [
+            {
+              "text": "wordpress",
+              "type": "text"
+            }
+          ]
+        }
+      ],
+      "qualification": "12 pass",
+      "department": "cs",
+      "role_category": "intern",
+      "apply_email": "www.ukutkarsh8279@gmail.com",
+      "job_status": "published",
+      "openings": 2,
+      "createdAt": "2026-06-03T09:31:02.454Z",
+      "updatedAt": "2026-06-04T06:10:41.666Z",
+      "publishedAt": "2026-06-04T06:10:41.729Z",
+      "external_apply_url": null,
+      "sectors": [
+        {
+          "id": 183,
+          "documentId": "hcv7gbqiuyza8fwi5m7yie9n",
+          "createdAt": "2026-02-14T11:32:20.621Z",
+          "updatedAt": "2026-02-27T13:09:19.313Z",
+          "publishedAt": "2026-02-27T13:09:19.338Z",
+          "name": "OLD - Technology",
+          "slug": null,
+          "description": null
+        }
+      ],
+      "application": {
+        "id": 23,
+        "documentId": "twwkc4cs7qc7p8lebl63oz91",
+        "applicant_name": "test job",
+        "applicant_email": "dcportal07@gmail.com",
+        "phone": "97644916494",
+        "cover_note": "test test test",
+        "early_applicant": true,
+        "application_status": "shortlisted",
+        "createdAt": "2026-06-04T06:10:41.384Z",
+        "updatedAt": "2026-06-04T06:11:55.378Z",
+        "publishedAt": "2026-06-04T06:11:55.419Z"
+      },
+      "posted_by": null
+    },
+    {
+      "id": 8,
+      "documentId": "jvg926i4bmnksobuccus0rfr",
+      "title": "Project management trainee ",
+      "job_type": "Internship",
+      "work_mode": "On-site",
+      "location": "Plot No-33, Janki House, 4th Floor, Sector-12 A, Dwarka, New Delhi-110075, India",
+      "experience_min": 1,
+      "experience_max": 4,
+      "salary_min": 1200000,
+      "salary_max": 2000000,
+      "description": [
+        {
+          "type": "paragraph",
+          "children": [
+            {
+              "text": "ENERGDIVE will be India’s foremost energy leadership publication — a definitive voice for insight, foresight, and transformation in the nation’s energy and sustainability journey. Each edition will chronicle India’s decisive decade of energy transition through authentic narratives that unite policy, enterprise, and innovation. Through its depth, design, and discourse, ENERGDIVE will emerge as a national knowledge platform — where leaders write the future, institutions document impact, and ideas ignite action.",
+              "type": "text"
+            }
+          ]
+        }
+      ],
+      "good_to_have": [
+        {
+          "type": "paragraph",
+          "children": [
+            {
+              "text": "Communication",
+              "type": "text"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "children": [
+            {
+              "text": "coding",
+              "type": "text"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "children": [
+            {
+              "text": "collaboration",
+              "type": "text"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "children": [
+            {
+              "text": "python",
+              "type": "text"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "children": [
+            {
+              "text": "javascrpt",
+              "type": "text"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "children": [
+            {
+              "text": "html",
+              "type": "text"
+            }
+          ]
+        }
+      ],
+      "qualification": "12 pass",
+      "department": "marketing",
+      "role_category": "intern",
+      "apply_email": "utkarsh@encis.in",
+      "job_status": "published",
+      "openings": 2,
+      "createdAt": "2026-06-04T07:24:16.401Z",
+      "updatedAt": "2026-06-04T08:56:54.833Z",
+      "publishedAt": "2026-06-04T08:56:54.881Z",
+      "external_apply_url": null,
+      "sectors": [
+        {
+          "id": 214,
+          "documentId": "ps56wz9jjv3dn6eoj1cd5j04",
+          "createdAt": "2026-02-28T08:50:20.701Z",
+          "updatedAt": "2026-02-28T08:50:20.701Z",
+          "publishedAt": "2026-02-28T08:50:20.738Z",
+          "name": "Energy Storage",
+          "slug": null,
+          "description": null
+        }
+      ],
+      "application": {
+        "id": 28,
+        "documentId": "uhc7k44lj08rvmh4bwrc3nsy",
+        "applicant_name": "Web Admin",
+        "applicant_email": "utkarsh@encis.in",
+        "phone": "9549949",
+        "cover_note": null,
+        "early_applicant": true,
+        "application_status": "shortlisted",
+        "createdAt": "2026-06-04T08:56:54.376Z",
+        "updatedAt": "2026-06-04T08:59:52.617Z",
+        "publishedAt": "2026-06-04T08:59:52.642Z"
+      },
+      "posted_by": {
+        "id": 5,
+        "documentId": "n2j7ugkuqpzou3i95iquroig",
+        "recruiter_name": "utkarsh",
+        "company_name": "Encis",
+        "company_description": [
+          {
+            "type": "paragraph",
+            "children": [
+              {
+                "text": "ENCIS most commonly refers to The Energy & Climate Initiatives Society, a New Delhi-based non-profit organization focused on the energy and sustainability sectors. It operates as a think tank and event organizer, uniting policymakers, industry leaders, and researchers to drive low-carbon transitions and climate action.",
+                "type": "text"
+              }
+            ]
+          }
+        ],
+        "email": "utkarsh@encis.in",
+        "clerk_user_id": null,
+        "website": "https://encis.in/",
+        "address": "Plot No-33, Janki House, 4th Floor, Sector-12 A, Dwarka, New Delhi-110075, India",
+        "plot_no_street": "Plot No-33, Janki House, 4th Floor, Sector-12 A, Dwarka, New Delhi-110075, India",
+        "jobs_remaining": null,
+        "plans_expires_at": null,
+        "createdAt": "2026-06-04T07:20:20.494Z",
+        "updatedAt": "2026-06-04T07:20:20.494Z",
+        "publishedAt": "2026-06-04T07:20:20.564Z"
+      }
+    }
+  ],
+  "meta": {
+    "pagination": {
+      "page": 1,
+      "pageSize": 25,
+      "pageCount": 1,
+      "total": 3
+    }
+  }
+}

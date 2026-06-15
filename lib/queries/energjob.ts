@@ -83,6 +83,7 @@ export type EnergJobRow = {
   latest_application_id: number | null;
   cms_id: number | null;
   cms_document_id: string | null;
+  external_apply_url: string | null;
 };
 
 export type PublicEnergJobRow = EnergJobRow & {
@@ -263,13 +264,13 @@ export async function createEnergJob(input: JobCreateInput) {
       experience_min, experience_max, salary_min, salary_max,
       description, key_responsibilities, required_skills, good_to_have,
       qualification, department, role_category, apply_email, job_status,
-      openings, posted_by_recruiter_id, sync_status
+      openings, posted_by_recruiter_id, external_apply_url, sync_status
     ) VALUES (
       $1, $2, $3, $4, $5, $6,
       $7, $8, $9, $10,
       $11, $12, $13, $14,
       $15, $16, $17, $18, $19,
-      $20, $21, 'pending'
+      $20, $21, $22, 'pending'
     )
     RETURNING *`,
     [
@@ -294,6 +295,7 @@ export async function createEnergJob(input: JobCreateInput) {
       input.jobStatus ?? "draft",
       input.openings ?? 1,
       input.recruiterId ?? null,
+      input.externalApplyUrl ?? null,
     ]
   );
 

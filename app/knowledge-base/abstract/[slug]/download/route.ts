@@ -4,7 +4,7 @@ import { getUserProfile, addPaperDownload } from "@/lib/queries";
 import { fetchPaperSubmissions } from "@/lib/paper-submissions-server";
 
 const KNOWLEDGE_BASE_QUERY =
-    "populate[abstract_pdf][fields][0]=url&populate[abstract_pdf][fields][1]=name&populate[abstract_pdf][fields][2]=size&populate[abstract_pdf][fields][3]=ext&populate[final_paper_submissions][fields][0]=final_status&populate[final_paper_submissions][fields][1]=final_submission_date&sort[0]=submitted_date:desc&pagination[pageSize]=100";
+    "populate[abstract_pdf][fields][0]=url&populate[abstract_pdf][fields][1]=name&populate[abstract_pdf][fields][2]=size&populate[abstract_pdf][fields][3]=ext&populate[final_paper_submissions][fields][0]=final_status&populate[final_paper_submissions][fields][1]=final_submission_date&populate[final_paper_submissions][populate][full_paper][fields][0]=url&populate[final_paper_submissions][populate][full_paper][fields][1]=name&populate[final_paper_submissions][populate][full_paper][fields][2]=size&populate[final_paper_submissions][populate][full_paper][fields][3]=ext&sort[0]=submitted_date:desc&pagination[pageSize]=100";
 
 function slugify(text: string) {
     return String(text || "")
@@ -17,6 +17,8 @@ type PaperSubmission = {
     title?: string;
     pdf?: unknown;
     hasAcceptedFinalPaper?: boolean;
+    status?: string;
+    finalPaperPdf?: unknown;
 };
 
 function getRelationData(relation: unknown) {
@@ -91,7 +93,7 @@ export async function GET(
         return new NextResponse("Paper not found", { status: 404 });
     }
 
-    const pdfUrl = extractPdfUrl(paper.pdf);
+    const pdfUrl = extractPdfUrl(paper.finalPaperPdf);
     if (!pdfUrl) {
         return new NextResponse("PDF not found for this paper", { status: 404 });
     }

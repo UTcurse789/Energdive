@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
+import { sendAbstractSubmissionAdminNotification } from "@/lib/email";
 
 const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL;
 const STRAPI_API_TOKEN = process.env.STRAPI_API_TOKEN;
 const STRAPI_ABSTRACT_COLLECTION_PATH = "paper-submissions";
 const STRAPI_ABSTRACT_UID = "api::paper-submission.paper-submission";
 const STRAPI_ABSTRACT_PDF_FIELD = "abstract_pdf";
+const ABSTRACT_PDF_MAX_FILE_SIZE_BYTES = 20 * 1024 * 1024;
+const ABSTRACT_PDF_MAX_FILE_SIZE_LABEL = "20 MB";
 
 type StrapiEntityResponse = {
     data?: {
@@ -22,6 +25,34 @@ function buildAuthHeaders(contentType = "application/json") {
         headers.Authorization = `Bearer ${STRAPI_API_TOKEN}`;
     }
     return headers;
+}
+
+function getErrorCode(error: unknown) {
+    if (!error || typeof error !== "object") return "";
+
+    const directCode = "code" in error ? error.code : "";
+    if (typeof directCode === "string") return directCode;
+
+    const cause = "cause" in error ? error.cause : null;
+    if (cause && typeof cause === "object" && "code" in cause && typeof cause.code === "string") {
+        return cause.code;
+    }
+
+    return "";
+}
+
+function isUploadLimitConnectionError(error: unknown) {
+    const code = getErrorCode(error);
+    const message = error instanceof Error ? error.message.toLowerCase() : "";
+    return code === "EPIPE" || message.includes("terminated") || message.includes("fetch failed");
+}
+
+function formatFileSize(bytes: number) {
+    if (!Number.isFinite(bytes) || bytes <= 0) return "0 KB";
+    if (bytes >= 1024 * 1024) {
+        return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+    }
+    return `${Math.max(1, Math.round(bytes / 1024))} KB`;
 }
 
 function normalizeSectorSelection(value: unknown) {
@@ -320,16 +351,30 @@ async function uploadAbstractPdf({
         uploadFormData.append("refId", refId);
         uploadFormData.append("field", STRAPI_ABSTRACT_PDF_FIELD);
 
-        const uploadResponse = await fetch(`${STRAPI_URL}/api/upload`, {
-            method: "POST",
-            headers: buildAuthHeaders(""),
-            body: uploadFormData,
-            cache: "no-store",
-        });
+        let uploadResponse: Response;
+        try {
+            uploadResponse = await fetch(`${STRAPI_URL}/api/upload`, {
+                method: "POST",
+                headers: buildAuthHeaders(""),
+                body: uploadFormData,
+                cache: "no-store",
+            });
+        } catch (error) {
+            console.error("[SUBMIT-ABSTRACT] PDF Upload fetch error:", error);
+            if (isUploadLimitConnectionError(error)) {
+                lastStatus = 413;
+                lastErrorMessage = null;
+                continue;
+            }
+
+            lastStatus = 502;
+            lastErrorMessage = "PDF upload failed while connecting to the CMS.";
+            continue;
+        }
 
         const uploadText = await uploadResponse.text();
         let parsedUploadResponse: unknown = null;
-        let uploadedFiles: Array<{ id?: number; documentId?: string }> = [];
+        let uploadedFiles: Array<{ id?: number; documentId?: string; url?: string }> = [];
         try {
             parsedUploadResponse = uploadText ? JSON.parse(uploadText) : [];
             uploadedFiles = Array.isArray(parsedUploadResponse) ? parsedUploadResponse : [];
@@ -354,6 +399,7 @@ async function uploadAbstractPdf({
                 statusCode: uploadResponse.status,
                 mediaId: uploadedFiles?.[0]?.id ?? null,
                 mediaDocumentId: uploadedFiles?.[0]?.documentId ?? null,
+                mediaUrl: uploadedFiles?.[0]?.url ?? null,
                 errorMessage: null,
             };
         }
@@ -371,6 +417,7 @@ async function uploadAbstractPdf({
         statusCode: lastStatus,
         mediaId: null,
         mediaDocumentId: null,
+        mediaUrl: null,
         errorMessage: lastErrorMessage,
     };
 }
@@ -422,7 +469,19 @@ export async function POST(request: NextRequest) {
         const dataString = formData.get("data") as string;
         const pdfFile = formData.get("files.pdf") as File | null;
 
-        console.log("[SUBMIT-ABSTRACT] Has PDF:", !!pdfFile);
+        console.log("[SUBMIT-ABSTRACT] Has PDF:", !!pdfFile, "Size:", pdfFile?.size ?? 0);
+
+        if (pdfFile && pdfFile.size > ABSTRACT_PDF_MAX_FILE_SIZE_BYTES) {
+            return NextResponse.json(
+                {
+                    error: {
+                        message: `The selected PDF is ${formatFileSize(pdfFile.size)}. Please upload a PDF up to ${ABSTRACT_PDF_MAX_FILE_SIZE_LABEL}.`,
+                    },
+                },
+                { status: 400 }
+            );
+        }
+
 
         const data = JSON.parse(dataString);
         const rawSector = data.sector ?? data.sectors;
@@ -478,6 +537,8 @@ export async function POST(request: NextRequest) {
             sectorDocumentIds,
         });
 
+        let uploadedPdfUrl: string | undefined;
+
         if (pdfFile) {
             const uploadedPdf = await uploadAbstractPdf({
                 pdfFile,
@@ -488,7 +549,7 @@ export async function POST(request: NextRequest) {
             if (!uploadedPdf.ok) {
                 const statusCode = uploadedPdf.statusCode || 500;
                 const message = statusCode === 413
-                    ? "PDF upload failed because the file is larger than the server upload limit. Please upload a smaller PDF."
+                    ? `PDF upload failed because the CMS/server rejected ${formatFileSize(pdfFile.size)} even though this form allows up to ${ABSTRACT_PDF_MAX_FILE_SIZE_LABEL}. Please increase the CMS upload limit or try a smaller file.`
                     : uploadedPdf.errorMessage ||
                         "PDF upload failed. Please try again with a smaller PDF or contact support.";
                 return NextResponse.json({ error: { message } }, { status: statusCode });
@@ -499,6 +560,32 @@ export async function POST(request: NextRequest) {
                 documentId: updatedEntry?.documentId ?? documentId,
                 mediaId: uploadedPdf.mediaId,
             });
+
+            if (uploadedPdf.mediaUrl) {
+                let cdnUrl = uploadedPdf.mediaUrl;
+                if (!cdnUrl.startsWith("http://") && !cdnUrl.startsWith("https://")) {
+                    const cdnBase = process.env.NEXT_PUBLIC_CDN_URL || "https://cdn.energdive.com";
+                    cdnUrl = `${cdnBase.endsWith("/") ? cdnBase.slice(0, -1) : cdnBase}${cdnUrl.startsWith("/") ? "" : "/"}${cdnUrl}`;
+                }
+                uploadedPdfUrl = cdnUrl;
+            }
+        }
+
+        try {
+            await sendAbstractSubmissionAdminNotification({
+                title: (strapiData.title as string) || "",
+                authorName: (strapiData.author_name as string) || "",
+                authorEmail: (strapiData.author_email as string) || "",
+                coAuthor: strapiData.co_author as string,
+                institution: strapiData.institution as string,
+                profession: strapiData.Profession as string,
+                abstractText: data.abstract || "",
+                pdfFileName: pdfFile?.name,
+                pdfUrl: uploadedPdfUrl,
+            });
+        } catch (emailError) {
+            console.error("[SUBMIT-ABSTRACT] Failed to send admin email:", emailError);
+            // Don't fail the request if email fails
         }
 
         return NextResponse.json(createdEntry.body, { status: createdEntry.status });
