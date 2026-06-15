@@ -112,24 +112,29 @@ export default function UnifiedAuthPage() {
             typeof window !== "undefined" ? window.location.origin : "https://www.energdive.com";
 
         if (!rawValue) {
-            return "/dashboard";
+            return DEFAULT_POST_AUTH_REDIRECT;
         }
 
         try {
             if (rawValue.startsWith("/") && !rawValue.startsWith("//")) {
-                return rawValue;
+                return getSafeRedirectPath(rawValue);
             }
 
             const parsed = new URL(rawValue, origin);
             if (parsed.origin === origin) {
-                return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+                return getSafeRedirectPath(`${parsed.pathname}${parsed.search}${parsed.hash}`);
             }
         } catch {
-            return "/dashboard";
+            return DEFAULT_POST_AUTH_REDIRECT;
         }
 
-        return "/dashboard";
+        return DEFAULT_POST_AUTH_REDIRECT;
     }, [searchParams]);
+
+    const resolveFinalAuthRedirect = useCallback(
+        () => getPostLoginFallbackPath(resolvePostAuthRedirect()),
+        [resolvePostAuthRedirect]
+    );
 
     // Auto-detect input type
     const inputMode: InputMode = useMemo(() => {
@@ -212,51 +217,68 @@ export default function UnifiedAuthPage() {
                                 path: window.location.pathname,
                             });
                         }
-                        const target = resolvePostAuthRedirect();
+                        const target = resolveFinalAuthRedirect();
                         console.log("[AUTH-REDIRECT] handleSubmit complete, navigating to:", target);
                         await setActive!({ session: result.createdSessionId });
                         window.location.href = target;
                         return;
                     }
                     setStep("complete");
-                    window.location.href = redirectTarget;
+                    window.location.href = getPostLoginFallbackPath(postAuthRedirect);
                 }
             } catch (err: any) {
                 const clerkError = err?.errors?.[0];
-                const errCode = clerkError?.code;
+                const clerkCode = clerkError?.code;
+                const clerkMessage =
+                    clerkError?.longMessage ||
+                    clerkError?.message ||
+                    err?.message ||
+                    "Something went wrong. Please try again.";
 
-                // User not found → auto sign-up via Clerk
                 if (
-                    errCode === "form_identifier_not_found" ||
-                    errCode === "identifier_not_found"
+                    clerkCode === "form_identifier_not_found" ||
+                    clerkCode === "identifier_not_found"
                 ) {
+                    setIsNewUser(true);
                     try {
                         await signUp!.create({ emailAddress: emailValue });
                         await signUp!.prepareEmailAddressVerification({
                             strategy: "email_code",
                         });
-                        setIsNewUser(true);
                         setStep("otp-signup");
-                        setInfo(
-                            "No account found — creating one for you! Check your email for the verification code."
-                        );
+                        setInfo("We sent a verification code to your email.");
+                        return;
                     } catch (signUpErr: any) {
+                        const signUpCode = signUpErr?.errors?.[0]?.code;
+
+                        if (signUpCode === "form_identifier_exists") {
+                            setIsNewUser(false);
+                            setError("This account already exists. Please try signing in again.");
+                            return;
+                        }
+
                         setError(
                             signUpErr?.errors?.[0]?.longMessage ||
+                            signUpErr?.errors?.[0]?.message ||
+                            signUpErr?.message ||
                             "Could not create account. Please try again."
                         );
+                        return;
                     }
-                } else {
-                    setError(
-                        clerkError?.longMessage ||
-                        "Something went wrong. Please try again."
-                    );
                 }
+
+                if (clerkCode === "form_identifier_exists") {
+                    setIsNewUser(false);
+                    setError("Account found. Please complete sign in with the verification code.");
+                    return;
+                }
+
+                setError(clerkMessage);
             }
         }
 
         setLoading(false);
-    }, [identifier, redirectTarget, signIn, signUp, signInLoaded, signUpLoaded, setActive]);
+    }, [identifier, postAuthRedirect, resolveFinalAuthRedirect, signIn, signUp, signInLoaded, signUpLoaded, setActive]);
 
     // ── Step 2a: Verify OTP (Email - Clerk) ──
     const handleEmailOTPSubmit = useCallback(async () => {
@@ -282,7 +304,7 @@ export default function UnifiedAuthPage() {
                                 path: window.location.pathname,
                             });
                         }
-                        const target = resolvePostAuthRedirect();
+                        const target = resolveFinalAuthRedirect();
                         console.log("[AUTH-REDIRECT] signup complete, navigating to:", target);
                         await setActive!({ session: sessionId });
                         window.location.href = target;
@@ -314,7 +336,7 @@ export default function UnifiedAuthPage() {
                                     path: window.location.pathname,
                                 });
                             }
-                            const target = resolvePostAuthRedirect();
+                            const target = resolveFinalAuthRedirect();
                             console.log("[AUTH-REDIRECT] signup-ticket complete, navigating to:", target);
                             await setActive!({ session: ticketResult.createdSessionId });
                             window.location.href = target;
@@ -344,7 +366,7 @@ export default function UnifiedAuthPage() {
                                 path: window.location.pathname,
                             });
                         }
-                        const target = resolvePostAuthRedirect();
+                        const target = resolveFinalAuthRedirect();
                         console.log("[AUTH-REDIRECT] signin complete, navigating to:", target);
                         await setActive!({ session: sessionId });
                         window.location.href = target;
@@ -384,7 +406,7 @@ export default function UnifiedAuthPage() {
                                     path: window.location.pathname,
                                 });
                             }
-                            const target = resolvePostAuthRedirect();
+                            const target = resolveFinalAuthRedirect();
                             console.log("[AUTH-REDIRECT] signin-ticket complete, navigating to:", target);
                             await setActive!({ session: ticketResult.createdSessionId });
                             window.location.href = target;
@@ -403,7 +425,7 @@ export default function UnifiedAuthPage() {
         } finally {
             setLoading(false);
         }
-    }, [code, identifier, isNewUser, redirectTarget, signIn, signUp, signInLoaded, signUpLoaded, setActive]);
+    }, [code, identifier, isNewUser, postAuthRedirect, resolveFinalAuthRedirect, signIn, signUp, signInLoaded, signUpLoaded, setActive]);
 
     // ── Step 2b: Verify OTP (Phone - MSG91 → Clerk sign-in token) ──
     const handlePhoneOTPSubmit = useCallback(async () => {
@@ -444,7 +466,7 @@ export default function UnifiedAuthPage() {
                                 });
                             }
                         }
-                        const target = resolvePostAuthRedirect();
+                        const target = resolveFinalAuthRedirect();
                         console.log("[AUTH-REDIRECT] phone-verify complete, navigating to:", target);
                         await setActive!({ session: result.createdSessionId });
                         window.location.href = target;
@@ -462,7 +484,7 @@ export default function UnifiedAuthPage() {
         } finally {
             setLoading(false);
         }
-    }, [code, identifier, redirectTarget, signIn, setActive]);
+    }, [code, identifier, postAuthRedirect, resolveFinalAuthRedirect, signIn, setActive]);
 
     // ── Google OAuth ──
     const handleGoogleAuth = useCallback(async () => {

@@ -10,7 +10,12 @@ export function getSafeRedirectPath(value: string | null | undefined): string {
             return DEFAULT_POST_AUTH_REDIRECT;
         }
 
-        if (path === "/auth" || path.startsWith("/auth/")) {
+        if (
+            path === "/auth" ||
+            path.startsWith("/auth/") ||
+            path === "/onboarding" ||
+            path.startsWith("/onboarding?")
+        ) {
             return DEFAULT_POST_AUTH_REDIRECT;
         }
 
