@@ -1,16 +1,23 @@
 import { processAbandonedCartDrip, processContentPreferenceDigests, processWeeklyReminders } from "./cron-jobs";
 
-let isStarted = false;
+const globalForCron = globalThis as unknown as { isStarted?: boolean };
 
 /**
  * Starts the internal background timer for cron jobs.
  * Uses a guard so it only runs once per Node process even in dev mode.
  */
 export function startCronScheduler() {
-    if (isStarted) {
+    // Disable background cron scheduler in development mode by default to prevent DB connection timeout clutter.
+    // If you need to test cron jobs locally, set ENABLE_CRON_IN_DEV=true in your environment/.env file.
+    if (process.env.NODE_ENV === "development" && !process.env.ENABLE_CRON_IN_DEV) {
+        console.log("[CRON-SCHEDULER] Background timers disabled in development mode.");
         return;
     }
-    isStarted = true;
+
+    if (globalForCron.isStarted) {
+        return;
+    }
+    globalForCron.isStarted = true;
     
     console.log("[CRON-SCHEDULER] Starting background timers...");
 

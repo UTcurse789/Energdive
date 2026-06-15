@@ -20,6 +20,11 @@ const QUICK_LINKS = [
     { name: "Editorials", href: "/editorial" },
     { name: "Editorial Collaboration", href: "/editorial-collaboration" },
     { name: "Reports", href: "/reports" },
+<<<<<<< HEAD
+=======
+    { name: "Insights Exchange", href: "/energdive-insights-exchange" },
+    { name: "Knowledge Base", href: "/knowledge-base" },
+>>>>>>> UT-Branch
     { name: "Videos", href: "/videos" },
     { name: "Events", href: "/events" },
 ];

@@ -1,7 +1,18 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { Share2, Check, Facebook, Twitter, Linkedin, Link as LinkIcon } from "lucide-react";
+import {
+    Share2,
+    Check,
+    Facebook,
+    Twitter,
+    Linkedin,
+    Link as LinkIcon,
+    Mail,
+    MessageCircle,
+    Send,
+    Smartphone,
+} from "lucide-react";
 import posthog from "posthog-js";
 
 interface ShareButtonProps {
@@ -18,7 +29,12 @@ interface ShareButtonProps {
 export function ShareButton({ title, text, url, className = "", iconClassName = "w-4 h-4", textClassName = "", hideTextIcon = false, dropUp = false }: ShareButtonProps) {
     const [isOpen, setIsOpen] = useState(false);
     const [copied, setCopied] = useState(false);
+    const [canNativeShare, setCanNativeShare] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        setCanNativeShare(typeof navigator !== "undefined" && typeof navigator.share === "function");
+    }, []);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -113,6 +129,80 @@ export function ShareButton({ title, text, url, className = "", iconClassName = 
         setIsOpen(false);
     };
 
+    const handleExtendedShare = (
+        e: React.MouseEvent<HTMLButtonElement>,
+        platform: "whatsapp" | "telegram" | "email"
+    ) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const currentUrl = url || window.location.href;
+        const currentTitle = title || text || "";
+        const encodedUrl = encodeURIComponent(currentUrl);
+        const encodedTitle = encodeURIComponent(currentTitle);
+        const encodedBody = encodeURIComponent(`${currentTitle ? `${currentTitle}\n\n` : ""}${currentUrl}`);
+
+        let shareLink = "";
+
+        if (platform === "whatsapp") {
+            shareLink = `https://api.whatsapp.com/send?text=${encodeURIComponent(
+                currentTitle ? `${currentTitle} ${currentUrl}` : currentUrl
+            )}`;
+        } else if (platform === "telegram") {
+            shareLink = `https://t.me/share/url?url=${encodedUrl}&text=${encodedTitle}`;
+        } else if (platform === "email") {
+            shareLink = `mailto:?subject=${encodedTitle || encodeURIComponent("Shared from ENERGDIVE")}&body=${encodedBody}`;
+        }
+
+        if (shareLink) {
+            posthog.capture("content_shared", {
+                platform,
+                url: currentUrl,
+                title: currentTitle,
+            });
+
+            if (platform === "email") {
+                window.location.href = shareLink;
+            } else {
+                window.open(shareLink, "_blank", "noopener,noreferrer");
+            }
+        }
+
+        setIsOpen(false);
+    };
+
+    const handleNativeShare = async (e: React.MouseEvent<HTMLButtonElement>) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        if (!canNativeShare) {
+            return;
+        }
+
+        const currentUrl = url || window.location.href;
+        const currentTitle = title || text || "";
+
+        try {
+            await navigator.share({
+                title: currentTitle || "ENERGDIVE",
+                text: text || currentTitle,
+                url: currentUrl,
+            });
+
+            posthog.capture("content_shared", {
+                platform: "native_share",
+                url: currentUrl,
+                title: currentTitle,
+            });
+        } catch (error) {
+            if ((error as Error)?.name !== "AbortError") {
+                console.error("Native share failed", error);
+            }
+        } finally {
+            setIsOpen(false);
+        }
+    };
+
     return (
         <div className="relative inline-block" ref={menuRef} onClick={e => e.stopPropagation()}>
             <button
@@ -125,31 +215,61 @@ export function ShareButton({ title, text, url, className = "", iconClassName = 
             </button>
 
             {isOpen && (
-                <div className={`absolute ${dropUp ? 'bottom-full mb-2' : 'top-full mt-2'} w-48 rounded-md shadow-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 z-50 overflow-hidden flex flex-col p-1 gap-1 -translate-x-1/2 left-1/2 md:translate-x-0 md:left-auto md:right-0`}>
+                <div className={`absolute ${dropUp ? 'bottom-full mb-2' : 'top-full mt-2'} w-48 rounded-xl shadow-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 z-50 overflow-hidden flex flex-col p-1 gap-1 -translate-x-1/2 left-1/2 md:translate-x-0 md:left-auto md:right-0`}>
+                    {canNativeShare ? (
+                        <button
+                            onClick={handleNativeShare}
+                            className="flex items-center gap-2.5 px-3 py-2 text-[13px] font-medium text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors w-full text-left"
+                        >
+                            <Smartphone className="w-4 h-4 text-[#0b7c6c]" />
+                            Share via apps
+                        </button>
+                    ) : null}
                     <button
                         onClick={(e) => handleSocialShare(e, 'facebook')}
-                        className="flex items-center gap-3 px-3 py-2 text-sm text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-colors w-full text-left"
+                        className="flex items-center gap-2.5 px-3 py-2 text-[13px] font-medium text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors w-full text-left"
                     >
                         <Facebook className="w-4 h-4 text-[#1877F2]" />
                         Facebook
                     </button>
                     <button
                         onClick={(e) => handleSocialShare(e, 'twitter')}
-                        className="flex items-center gap-3 px-3 py-2 text-sm text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-colors w-full text-left"
+                        className="flex items-center gap-2.5 px-3 py-2 text-[13px] font-medium text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors w-full text-left"
                     >
                         <Twitter className="w-4 h-4" style={{ color: "#1DA1F2" }} />
                         Twitter (X)
                     </button>
                     <button
                         onClick={(e) => handleSocialShare(e, 'linkedin')}
-                        className="flex items-center gap-3 px-3 py-2 text-sm text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-colors w-full text-left"
+                        className="flex items-center gap-2.5 px-3 py-2 text-[13px] font-medium text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors w-full text-left"
                     >
                         <Linkedin className="w-4 h-4 text-[#0A66C2]" />
                         LinkedIn
                     </button>
                     <button
+                        onClick={(e) => handleExtendedShare(e, 'whatsapp')}
+                        className="flex items-center gap-2.5 px-3 py-2 text-[13px] font-medium text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors w-full text-left"
+                    >
+                        <MessageCircle className="w-4 h-4 text-[#25D366]" />
+                        WhatsApp
+                    </button>
+                    <button
+                        onClick={(e) => handleExtendedShare(e, 'telegram')}
+                        className="flex items-center gap-2.5 px-3 py-2 text-[13px] font-medium text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors w-full text-left"
+                    >
+                        <Send className="w-4 h-4 text-[#229ED9]" />
+                        Telegram
+                    </button>
+                    <button
+                        onClick={(e) => handleExtendedShare(e, 'email')}
+                        className="flex items-center gap-2.5 px-3 py-2 text-[13px] font-medium text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors w-full text-left"
+                    >
+                        <Mail className="w-4 h-4 text-[#334155]" />
+                        Email
+                    </button>
+                    <button
                         onClick={handleCopy}
-                        className="flex items-center gap-3 px-3 py-2 text-sm text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-colors w-full text-left focus:outline-none"
+                        className="flex items-center gap-2.5 px-3 py-2 text-[13px] font-medium text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors w-full text-left focus:outline-none"
                     >
                         {copied ? <Check className="w-4 h-4 text-green-500" /> : <LinkIcon className="w-4 h-4" />}
                         {copied ? "Copied!" : "Copy Link"}

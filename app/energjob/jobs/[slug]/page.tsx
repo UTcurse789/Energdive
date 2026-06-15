@@ -98,7 +98,7 @@ function CompanyMark({
       <div
         className={`${size} shrink-0 overflow-hidden rounded-[22px] border border-[#d7e3ea] bg-white shadow-[0_6px_18px_rgba(20,63,82,0.08)]`}
       >
-        <img src={logoUrl} alt={name} className="h-full w-full object-cover object-center" />
+        <img src={logoUrl} alt={name} className="h-full w-full object-contain p-1" />
       </div>
     );
   }
@@ -537,15 +537,6 @@ export default async function EnergJobDetailPage({
                   </div>
 
                   <div className="mt-5 space-y-3 text-sm text-[#24344b]">
-                    {job.recruiterEmail ? (
-                      <a
-                        href={`mailto:${job.recruiterEmail}`}
-                        className="flex items-center gap-2 transition-colors hover:text-[#09B697]"
-                      >
-                        <Mail className="h-4 w-4" />
-                        {job.recruiterEmail}
-                      </a>
-                    ) : null}
                     {job.companyAddress ? (
                       <div className="flex items-start gap-2">
                         <MapPin className="mt-0.5 h-4 w-4 shrink-0" />

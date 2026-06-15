@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Building2, CalendarDays, Filter, UserRound } from "lucide-react";
+import { ArrowRight, Building2, CalendarDays, Filter, UserRound } from "lucide-react";
 import { formatSubmissionDate, truncateText } from "@/lib/paper-submissions";
 import Link from "next/link";
 
@@ -60,7 +60,7 @@ export default function KnowledgeBaseArchiveGrid({ papers }) {
     );
 
     return (
-        <div className="mt-5">
+        <div className="mt-1">
             <div className="rounded-[26px] border border-slate-200/90 bg-white/92 px-4 py-3 shadow-[0_16px_34px_rgba(15,23,42,0.05)] backdrop-blur sm:px-5 sm:py-4">
                 <div className="flex flex-col gap-3 xl:flex-row xl:items-center">
                     <div className="flex items-center gap-3 xl:w-[190px] xl:flex-none">
@@ -130,41 +130,42 @@ export default function KnowledgeBaseArchiveGrid({ papers }) {
                     {filteredPapers.map((paper) => (
                         <article
                             key={paper.id}
-                            className="flex h-full flex-col rounded-[30px] border border-slate-200/90 bg-white/96 p-5 shadow-[0_18px_40px_rgba(15,23,42,0.06)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_24px_54px_rgba(15,23,42,0.09)] sm:p-6"
+                            className="flex h-full flex-col border border-zinc-200 bg-white p-5 shadow-[0_14px_36px_rgba(15,23,42,0.05)] transition-all duration-200 hover:-translate-y-0.5 hover:border-emerald-600/60 hover:shadow-[0_24px_54px_rgba(15,23,42,0.09)]"
                         >
                             <div className="flex items-center justify-between gap-3">
-                                <span className="inline-flex items-center rounded-full border border-emerald-900/10 bg-emerald-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-800">
+                                <span className="inline-flex items-center border border-emerald-900/10 bg-emerald-50 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-800">
                                     {paper.primarySector}
                                 </span>
-                                <span className="text-xs font-medium text-slate-500">
+                                <span className="text-xs font-medium text-zinc-500">
                                     {formatSubmissionDate(paper.submittedDate)}
                                 </span>
                             </div>
 
-                            <h3 className="mt-5 break-words text-3xl font-bold leading-tight text-slate-950">
-                                {truncateText(paper.title || "Untitled paper", 50)}
+                            <h3 className="mt-4 break-words text-lg font-black leading-tight text-zinc-950">
+                                {truncateText(paper.title || "Untitled paper", 60)}
                             </h3>
 
-                            <p className="mt-4 text-sm leading-7 text-slate-600">
-                                {truncateText(paper.abstract, 170) || "Abstract not available."}
+                            <p className="mt-3 flex-1 break-words text-[13px] leading-6 text-zinc-600">
+                                {truncateText(paper.abstract, 140) || "Abstract not available."}
                             </p>
 
-                            <div className="mt-6 grid gap-3 border-t border-slate-200/80 pt-5">
+                            <div className="mt-4 grid grid-cols-3 gap-3 border-t border-zinc-200/80 pt-4">
                                 <MetaRow icon={UserRound} label="Author" value={paper.authorName || "Not provided"} />
-                                <MetaRow icon={Building2} label="University / Institution" value={paper.affiliation || "Not provided"} />
+                                <MetaRow icon={Building2} label="University" value={paper.affiliation || "Not provided"} />
                                 <MetaRow
                                     icon={CalendarDays}
-                                    label="Archive Date"
+                                    label="Date"
                                     value={formatSubmissionDate(paper.submittedDate)}
                                 />
                             </div>
 
-                            <div className="mt-6 pt-5 border-t border-slate-200/80">
+                            <div className="mt-4 border-t border-zinc-200/80 pt-4">
                                 <Link
                                     href={`/knowledge-base/abstract/${slugify(paper.title || "untitled-paper")}`}
-                                    className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-50 text-emerald-800 px-5 py-3 text-sm font-semibold transition-all hover:bg-emerald-100"
+                                    className="inline-flex w-full items-center justify-center gap-2 bg-zinc-950 px-5 py-2.5 text-xs font-bold uppercase tracking-[0.12em] text-white transition-colors hover:bg-emerald-700"
                                 >
                                     Read more
+                                    <ArrowRight className="h-3.5 w-3.5" />
                                 </Link>
                             </div>
                         </article>
@@ -209,12 +210,12 @@ function FilterSelect({ label, value, onChange, options, placeholder, compact = 
 
 function MetaRow({ icon: Icon, label, value }) {
     return (
-        <div className="rounded-[22px] border border-slate-200/80 bg-[#faf8f2] px-4 py-3">
-            <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
-                <Icon className="h-3.5 w-3.5 text-emerald-800" />
-                {label}
+        <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.15em] text-slate-500">
+                <Icon className="h-3 w-3 text-emerald-700" />
+                {label === "University / Institution" ? "University" : label}
             </div>
-            <p className="mt-2 text-sm font-medium leading-6 text-slate-900">
+            <p className="text-sm font-medium text-slate-900 line-clamp-1">
                 {value}
             </p>
         </div>

@@ -58,7 +58,7 @@ export default async function EnergJobPage() {
               Hire a Talent?
             </Link>
             <Link
-              href="/energjob/jobs"
+              href="/energyjobs"
               className="inline-flex min-w-[220px] items-center justify-center rounded-[18px] border border-black/12 bg-white px-8 py-4 text-base font-bold text-[#1a1a1a] transition-colors hover:border-[#09B697]/35 hover:text-[#09B697]"
             >
               Find your next job

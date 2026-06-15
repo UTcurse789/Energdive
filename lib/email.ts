@@ -729,6 +729,111 @@ export async function sendEnergJobApplicationRecruiterEmail(
     });
 }
 
+export interface AbstractSubmissionAdminNotificationPayload {
+    title: string;
+    authorName: string;
+    authorEmail: string;
+    coAuthor?: string;
+    institution?: string;
+    profession?: string;
+    sectors?: string[];
+    abstractText: string;
+    pdfFileName?: string;
+    pdfBase64?: string; // Base64 encoded content
+    pdfUrl?: string; // Clickable download/view link
+}
+
+export async function sendAbstractSubmissionAdminNotification(
+    payload: AbstractSubmissionAdminNotificationPayload
+): Promise<void> {
+    const adminEmails = ["utkarsh@encis.in", "sankalp@itenmedia.in"];
+    const subject = `New Abstract Submission: ${payload.title}`;
+
+    const htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>${escapeHtml(subject)}</title>
+</head>
+<body style="font-family: Arial, sans-serif; background-color: #f9f9f9; padding: 20px;">
+    <div style="background-color: #ffffff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <h2 style="color: #333;">New Abstract Submitted</h2>
+        <p>A new abstract has been submitted to the ENERGDIVE Insights Exchange.</p>
+        
+        <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+            <tr>
+                <td style="padding: 8px; border-bottom: 1px solid #ddd; font-weight: bold; width: 150px;">Title</td>
+                <td style="padding: 8px; border-bottom: 1px solid #ddd;">${escapeHtml(payload.title || "")}</td>
+            </tr>
+            <tr>
+                <td style="padding: 8px; border-bottom: 1px solid #ddd; font-weight: bold;">Author Name</td>
+                <td style="padding: 8px; border-bottom: 1px solid #ddd;">${escapeHtml(payload.authorName || "")}</td>
+            </tr>
+            <tr>
+                <td style="padding: 8px; border-bottom: 1px solid #ddd; font-weight: bold;">Author Email</td>
+                <td style="padding: 8px; border-bottom: 1px solid #ddd;"><a href="mailto:${escapeHtml(payload.authorEmail || "")}">${escapeHtml(payload.authorEmail || "")}</a></td>
+            </tr>
+            ${payload.coAuthor ? `
+            <tr>
+                <td style="padding: 8px; border-bottom: 1px solid #ddd; font-weight: bold;">Co-Author</td>
+                <td style="padding: 8px; border-bottom: 1px solid #ddd;">${escapeHtml(payload.coAuthor)}</td>
+            </tr>
+            ` : ""}
+            ${payload.institution ? `
+            <tr>
+                <td style="padding: 8px; border-bottom: 1px solid #ddd; font-weight: bold;">Institution/Company</td>
+                <td style="padding: 8px; border-bottom: 1px solid #ddd;">${escapeHtml(payload.institution)}</td>
+            </tr>
+            ` : ""}
+            ${payload.profession ? `
+            <tr>
+                <td style="padding: 8px; border-bottom: 1px solid #ddd; font-weight: bold;">Designation</td>
+                <td style="padding: 8px; border-bottom: 1px solid #ddd;">${escapeHtml(payload.profession)}</td>
+            </tr>
+            ` : ""}
+        </table>
+
+        <div style="margin-top: 20px;">
+            <h3 style="color: #333; margin-bottom: 10px;">Abstract Description</h3>
+            <div style="background-color: #f4f4f4; padding: 15px; border-radius: 4px; color: #555; white-space: pre-wrap;">${escapeHtml(payload.abstractText || "No description provided.")}</div>
+        </div>
+
+        <p style="margin-top: 25px; margin-bottom: 15px;">
+            ${payload.pdfUrl ? `
+            <strong style="display: block; margin-bottom: 8px; color: #333;">Submitted PDF Document:</strong>
+            <a href="${payload.pdfUrl}" target="_blank" style="display: inline-block; background-color: #00A651; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 14px; box-shadow: 0 4px 10px rgba(0, 166, 81, 0.25);">View / Download PDF</a>
+            ` : payload.pdfBase64 ? `
+            <span style="color: #666;">The submitted PDF document is attached to this email.</span>
+            ` : `
+            <span style="color: #666; font-style: italic;">No PDF document was attached to this submission.</span>
+            `}
+        </p>
+    </div>
+</body>
+</html>`;
+
+    const attachment = payload.pdfBase64 && payload.pdfFileName ? [
+        { name: payload.pdfFileName, content: payload.pdfBase64 }
+    ] : undefined;
+
+    // Send to all admins
+    for (const email of adminEmails) {
+        try {
+            await sendEmail({
+                to: email,
+                subject,
+                htmlContent,
+                attachment,
+                tags: ["abstract-submission", "admin-notification"]
+            });
+        } catch (error) {
+            console.error(`[EMAIL] Failed to send abstract notification to ${email}:`, error);
+        }
+    }
+}
+
 /**
  * Send a welcome email to a newly onboarded user.
  */
@@ -1829,7 +1934,7 @@ export async function sendAbstractAcceptedEmail(
                     </tr>
                     <tr>
                         <td style="background-color:#F9FAFB;padding:24px 40px;text-align:center;border-top:1px solid #F3F4F6;">
-                            <p style="margin:0 0 8px;color:#111827;font-size:13px;font-weight:700;">ENERGDive Intelligence</p>
+                            <p style="margin:0 0 8px;color:#111827;font-size:13px;font-weight:700;">ENERGDIVE Intelligence</p>
                             <p style="margin:0;color:#9CA3AF;font-size:11px;">&copy; ${new Date().getFullYear()} ENERGDIVE. All rights reserved.</p>
                         </td>
                     </tr>

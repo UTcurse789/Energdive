@@ -79,6 +79,7 @@ export const jobCreateSchema = z.object({
   jobStatus: nullableString.optional(),
   openings: nullableInt.optional(),
   recruiterId: nullableInt.optional(),
+  externalApplyUrl: nullableString.optional(),
 });
 
 export const applicationCreateSchema = z.object({

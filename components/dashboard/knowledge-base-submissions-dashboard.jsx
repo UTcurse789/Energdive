@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ArrowRight, FileCheck2, FileText, FolderOpenDot, Repeat2 } from "lucide-react";
+import { ArrowRight, FileCheck2, FileText, FolderOpenDot, Repeat2, UploadCloud } from "lucide-react";
 import PaperStatusBadge from "@/components/paper-submission/paper-status-badge";
 import KnowledgeBaseAbstractForm from "@/components/paper-submission/KnowledgeBaseAbstractForm";
 import KnowledgeBaseFinalPaperForm from "@/components/paper-submission/KnowledgeBaseFinalPaperForm";
@@ -118,7 +118,7 @@ export default function KnowledgeBaseSubmissionsDashboard({
                     </p>
                 </div>
             ) : (
-                <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+                <div className="flex flex-col gap-5">
                     {filteredAbstracts.map((abstract) => {
                         const actionKey = `${lane}:${abstract.documentId || abstract.id}`;
                         const isExpanded = inlineAction === actionKey;
@@ -126,14 +126,14 @@ export default function KnowledgeBaseSubmissionsDashboard({
                         return (
                             <article
                                 key={abstract.id}
-                                className={isExpanded ? "md:col-span-2 xl:col-span-3" : ""}
+                                className="w-full"
                             >
                                 <div
-                                    className="flex min-h-[260px] flex-col rounded-[24px] border p-5 transition-shadow hover:shadow-[0_12px_40px_rgba(0,0,0,0.18)]"
+                                    className="flex flex-col rounded-[24px] border p-5 transition-shadow hover:shadow-[0_12px_40px_rgba(0,0,0,0.18)]"
                                     style={{ background: "var(--dash-card)", borderColor: "var(--dash-border)" }}
                                 >
                                     <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                                        <div className="space-y-3">
+                                        <div className="space-y-3 min-w-0 flex-1">
                                             <div className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em]" style={{ background: "var(--dash-accent-dim)", color: "var(--dash-accent)" }}>
                                                 <FileText className="h-3.5 w-3.5" />
                                                 {abstract.primarySector}
@@ -154,6 +154,11 @@ export default function KnowledgeBaseSubmissionsDashboard({
                                                     <PaperStatusBadge status="accepted" />
                                                 </>
                                             )}
+                                            {lane === "submissions" && abstract.finalPaperSubmissions?.length > 0 && (
+                                                <span className="mt-1 text-[9px] text-slate-500">
+                                                    {abstract.finalPaperSubmissions.length} version{abstract.finalPaperSubmissions.length !== 1 ? "s" : ""} submitted
+                                                </span>
+                                            )}
                                         </div>
                                     </div>
 
@@ -163,8 +168,8 @@ export default function KnowledgeBaseSubmissionsDashboard({
                                             style={{ background: "var(--dash-surface-2)", color: "var(--dash-text-muted)" }}
                                         >
                                             <p className="font-semibold text-xs uppercase tracking-wider mb-1" style={{ color: "var(--dash-text-dim)" }}>Abstract Summary</p>
-                                            <p className="line-clamp-4 break-words [overflow-wrap:anywhere]">
-                                                {abstract.abstract.length > 280 ? `${abstract.abstract.slice(0, 280)}...` : abstract.abstract}
+                                            <p className="line-clamp-2 break-words [overflow-wrap:anywhere]">
+                                                {abstract.abstract.length > 140 ? `${abstract.abstract.slice(0, 140)}...` : abstract.abstract}
                                             </p>
                                         </div>
                                     )}
@@ -194,6 +199,19 @@ export default function KnowledgeBaseSubmissionsDashboard({
                                             <ArrowRight className="h-3.5 w-3.5" />
                                         </button>
                                     )}
+
+                                    {lane === "submissions" && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setInlineAction(isExpanded ? null : actionKey)}
+                                            className="mt-5 inline-flex items-center justify-center gap-2 self-start rounded-xl px-4 py-2.5 text-xs font-bold transition-all"
+                                            style={{ background: "var(--dash-accent)", color: "#0A0A0B" }}
+                                        >
+                                            <UploadCloud className="h-3.5 w-3.5" />
+                                            Submit New Version
+                                            <ArrowRight className="h-3.5 w-3.5" />
+                                        </button>
+                                    )}
                                 </div>
 
                                 {isExpanded && lane === "final-paper" && (
@@ -204,6 +222,18 @@ export default function KnowledgeBaseSubmissionsDashboard({
                                             returnHref={`/dashboard/my-submissions?view=final-paper`}
                                             secondarySuccessHref="/dashboard/my-submissions?view=final-paper"
                                             secondarySuccessLabel="Back to Final paper"
+                                        />
+                                    </div>
+                                )}
+
+                                {isExpanded && lane === "submissions" && (
+                                    <div className="mt-5 rounded-[24px] border p-5" style={{ background: "var(--dash-card)", borderColor: "var(--dash-border)" }}>
+                                        <KnowledgeBaseFinalPaperForm
+                                            abstract={abstract}
+                                            variant="dashboard"
+                                            returnHref="/dashboard/my-submissions?view=submissions"
+                                            secondarySuccessHref="/dashboard/my-submissions?view=submissions"
+                                            secondarySuccessLabel="Back to Submissions"
                                         />
                                     </div>
                                 )}

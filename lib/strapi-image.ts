@@ -22,16 +22,18 @@ const STRAPI_BASE =
  */
 export function strapiImageUrl(
     url: string | null | undefined,
-    fallback: string = "/placeholder.jpg"
+    fallback: string = "/placeholder.jpg",
+    customBase?: string
 ): string {
     if (!url || !url.trim()) return fallback;
 
     let trimmed = url.trim();
+    const effectiveBase = customBase || STRAPI_BASE;
 
     // Aggressive cleanup: if for some reason STRAPI_BASE was prepended
     // to an ALREADY absolute CDN url, strip the STRAPI_BASE prefix off.
     // Example: https://cms.energdive.comhttps://cdn.energdive.com -> https://cdn.energdive.com
-    const baseNoTrailing = STRAPI_BASE.endsWith('/') ? STRAPI_BASE.slice(0, -1) : STRAPI_BASE;
+    const baseNoTrailing = effectiveBase.endsWith('/') ? effectiveBase.slice(0, -1) : effectiveBase;
     if (trimmed.startsWith(baseNoTrailing + "http")) {
         trimmed = trimmed.replace(baseNoTrailing, "");
     } else if (trimmed.startsWith(baseNoTrailing + "//")) {
@@ -58,7 +60,8 @@ export function strapiImageUrl(
  */
 export function strapiMediaUrl(
     media: any,
-    fallback: string = "/placeholder.jpg"
+    fallback: string = "/placeholder.jpg",
+    customBase?: string
 ): string {
     if (!media) return fallback;
 
@@ -74,5 +77,5 @@ export function strapiMediaUrl(
         attrs?.url ||
         null;
 
-    return strapiImageUrl(path, fallback);
+    return strapiImageUrl(path, fallback, customBase);
 }

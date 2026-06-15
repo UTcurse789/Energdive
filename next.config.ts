@@ -125,6 +125,27 @@ const nextConfig: NextConfig = {
         destination: '/knowledge-base/submit/abstract',
         permanent: true,
       },
+      // Redirect old /energjob routes to new /energyjobs routes
+      {
+        source: '/energjob',
+        destination: '/energyjobs',
+        permanent: true,
+      },
+      {
+        source: '/energjob/jobs',
+        destination: '/energyjobs',
+        permanent: true,
+      },
+      {
+        source: '/energjob/jobs/:slug',
+        destination: '/energyjobs/:slug',
+        permanent: true,
+      },
+      {
+        source: '/energjob/applications/:token',
+        destination: '/energyjobs/applications/:token',
+        permanent: true,
+      },
     ];
   },
 
