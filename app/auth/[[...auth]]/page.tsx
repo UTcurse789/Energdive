@@ -39,6 +39,16 @@ const getBrowserRedirectParam = (): string | null => {
     return new URLSearchParams(window.location.search).get("redirect_url");
 };
 
+const getPostLoginFallbackPath = (target: string): string => {
+    const safeTarget = getSafeRedirectPath(target);
+
+    if (safeTarget === "/onboarding") {
+        return "/dashboard";
+    }
+
+    return safeTarget;
+};
+
 export default function UnifiedAuthPage() {
     const { signIn, isLoaded: signInLoaded, setActive } = useSignIn();
     const { signUp, isLoaded: signUpLoaded } = useSignUp();
@@ -130,12 +140,12 @@ export default function UnifiedAuthPage() {
         return "email";
     }, [identifier]);
 
-    // If already signed in, redirect (hard navigation to beat Clerk's internal redirect)
+    // If already signed in, never send the user back into onboarding from /auth.
     useEffect(() => {
         if (isSignedIn) {
-            window.location.replace(redirectTarget);
+            window.location.replace(getPostLoginFallbackPath(postAuthRedirect));
         }
-    }, [isSignedIn, redirectTarget]);
+    }, [isSignedIn, postAuthRedirect]);
 
     // ── Step 1: Submit identifier ──
     const handleSubmit = useCallback(async () => {
@@ -279,7 +289,7 @@ export default function UnifiedAuthPage() {
                         return;
                     }
                     setStep("complete");
-                    setTimeout(() => window.location.replace(redirectTarget), 300);
+                    setTimeout(() => window.location.replace(getPostLoginFallbackPath(postAuthRedirect)), 300);
                 } else if (result.status === "missing_requirements") {
                     // Email verified but CAPTCHA/other requirement blocked completion
                     // Fallback: use backend to create user + sign-in token (bypasses CAPTCHA)
@@ -311,7 +321,7 @@ export default function UnifiedAuthPage() {
                             return;
                         }
                         setStep("complete");
-                        setTimeout(() => window.location.replace(redirectTarget), 300);
+                        setTimeout(() => window.location.replace(getPostLoginFallbackPath(postAuthRedirect)), 300);
                     } else {
                         setError(data.error || "Could not complete sign-up. Please try again.");
                     }
@@ -341,7 +351,7 @@ export default function UnifiedAuthPage() {
                         return;
                     }
                     setStep("complete");
-                    setTimeout(() => window.location.replace(redirectTarget), 300);
+                    setTimeout(() => window.location.replace(getPostLoginFallbackPath(postAuthRedirect)), 300);
                 } else {
                     setError(`Verification status: ${result.status}. Please try again.`);
                 }
@@ -381,7 +391,7 @@ export default function UnifiedAuthPage() {
                             return;
                         }
                         setStep("complete");
-                        setTimeout(() => window.location.replace(redirectTarget), 300);
+                        setTimeout(() => window.location.replace(getPostLoginFallbackPath(postAuthRedirect)), 300);
                         return;
                     }
                 } catch (backendErr) {
@@ -442,7 +452,7 @@ export default function UnifiedAuthPage() {
                     }
                     setIsNewUser(data.isNewUser);
                     setStep("complete");
-                    setTimeout(() => window.location.replace(redirectTarget), 300);
+                    setTimeout(() => window.location.replace(getPostLoginFallbackPath(postAuthRedirect)), 300);
                 }
             } else {
                 setError(data.error || "Verification failed. Please try again.");
