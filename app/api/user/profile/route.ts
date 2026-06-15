@@ -1,6 +1,6 @@
-import { auth } from "@clerk/nextjs/server";
+import { auth, currentUser } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
-import { getUserProfile, hasUserDownloads } from "@/lib/queries";
+import { ensureUserProfileRow, getUserProfile, hasUserDownloads } from "@/lib/queries";
 
 /**
  * GET /api/user/profile
@@ -16,13 +16,65 @@ export async function GET() {
             );
         }
 
-        const profile = await getUserProfile(userId);
+        const clerkUser = await currentUser();
+        const email =
+            clerkUser?.primaryEmailAddress?.emailAddress ||
+            clerkUser?.emailAddresses?.[0]?.emailAddress ||
+            "";
+        const phone = typeof clerkUser?.publicMetadata?.phone === "string"
+            ? clerkUser.publicMetadata.phone
+            : null;
 
-        if (!profile) {
-            return NextResponse.json({ exists: false });
+        let profile = await getUserProfile(userId);
+
+        if (!profile && email) {
+            try {
+                await ensureUserProfileRow({
+                    clerkId: userId,
+                    email,
+                    firstName: clerkUser?.firstName || null,
+                    lastName: clerkUser?.lastName || null,
+                    phone,
+                });
+                profile = await getUserProfile(userId);
+            } catch (error) {
+                console.error("[USER_PROFILE] Failed to ensure user profile row:", error);
+            }
         }
 
-        const hasDownloads = await hasUserDownloads(userId);
+        const hasDownloads = profile ? await hasUserDownloads(userId) : false;
+
+        if (!profile) {
+            return NextResponse.json({
+                exists: true,
+                user: {
+                    id: 0,
+                    clerk_id: userId,
+                    email,
+                    first_name: clerkUser?.firstName || null,
+                    last_name: clerkUser?.lastName || null,
+                    phone,
+                    country: null,
+                    state: null,
+                    job_title: null,
+                    organization: null,
+                    onboarding_completed: false,
+                    has_submitted_abstract: false,
+                    created_at: new Date().toISOString(),
+                    preferred_frequency: null,
+                    preferred_formats: [],
+                    content_digest_opted_out: false,
+                    industry_id: null,
+                    industry_name: null,
+                    sub_industry_id: null,
+                    sub_industry_name: null,
+                    communities: [],
+                    membership_id: null,
+                    verification_status: null,
+                    hasDownloads,
+                }
+            });
+        }
 
         return NextResponse.json({
             exists: true,

@@ -56,6 +56,14 @@ export interface UserProfile {
     verification_status: string | null;
 }
 
+export interface EnsureUserProfileRowPayload {
+    clerkId: string;
+    email: string;
+    firstName?: string | null;
+    lastName?: string | null;
+    phone?: string | null;
+}
+
 /**
  * Atomic onboarding: upserts user, writes mappings, marks complete.
  * Runs in a single transaction — all or nothing.
@@ -223,6 +231,96 @@ export async function getUserProfile(
     } catch (error) {
         console.error('getUserProfile failed:', error);
         return null;
+    }
+}
+
+export async function ensureUserProfileRow(
+    payload: EnsureUserProfileRowPayload
+): Promise<void> {
+    const email = payload.email.trim().toLowerCase();
+    if (!email) return;
+
+    const client = await getClient();
+
+    try {
+        await client.query("BEGIN");
+
+        const existingByClerkId = await client.query(
+            `SELECT id FROM users WHERE clerk_id = $1 LIMIT 1`,
+            [payload.clerkId]
+        );
+
+        if (existingByClerkId.rows.length > 0) {
+            await client.query(
+                `UPDATE users
+                 SET email      = $2,
+                     first_name = COALESCE(first_name, $3),
+                     last_name  = COALESCE(last_name, $4),
+                     phone      = COALESCE(phone, $5),
+                     updated_at = NOW()
+                 WHERE id = $1`,
+                [
+                    existingByClerkId.rows[0].id,
+                    email,
+                    payload.firstName || null,
+                    payload.lastName || null,
+                    payload.phone || null,
+                ]
+            );
+        } else {
+            const candidateByEmail = await client.query(
+                `SELECT id FROM users
+                 WHERE LOWER(email) = LOWER($1)
+                 ORDER BY
+                   CASE WHEN clerk_id IS NULL THEN 0 ELSE 1 END,
+                   updated_at DESC NULLS LAST,
+                   id DESC
+                 LIMIT 1`,
+                [email]
+            );
+
+            if (candidateByEmail.rows.length > 0) {
+                await client.query(
+                    `UPDATE users
+                     SET clerk_id   = $2,
+                         email      = $3,
+                         first_name = COALESCE(first_name, $4),
+                         last_name  = COALESCE(last_name, $5),
+                         phone      = COALESCE(phone, $6),
+                         updated_at = NOW()
+                     WHERE id = $1`,
+                    [
+                        candidateByEmail.rows[0].id,
+                        payload.clerkId,
+                        email,
+                        payload.firstName || null,
+                        payload.lastName || null,
+                        payload.phone || null,
+                    ]
+                );
+            } else {
+                await client.query(
+                    `INSERT INTO users (
+                        clerk_id, email, first_name, last_name, phone, onboarding_completed, created_at
+                    ) VALUES ($1, $2, $3, $4, $5, false, NOW())
+                    ON CONFLICT (clerk_id) DO NOTHING`,
+                    [
+                        payload.clerkId,
+                        email,
+                        payload.firstName || null,
+                        payload.lastName || null,
+                        payload.phone || null,
+                    ]
+                );
+            }
+        }
+
+        await client.query("COMMIT");
+    } catch (error) {
+        await client.query("ROLLBACK");
+        throw error;
+    } finally {
+        client.release();
     }
 }
 
