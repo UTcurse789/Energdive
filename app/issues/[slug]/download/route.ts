@@ -122,13 +122,15 @@ export async function GET(
     { params }: { params: Promise<{ slug: string }> }
 ) {
     const { slug } = await params;
-    const requestUrl = new URL(request.url);
     const { userId } = await auth();
 
     if (!userId) {
-        const returnTo = `${requestUrl.pathname}${requestUrl.search}`;
-        const redirectUrl = `/auth?redirect_url=${encodeURIComponent(returnTo)}`;
-        return NextResponse.redirect(new URL(redirectUrl, request.url));
+        const forwardedHost = request.headers.get("x-forwarded-host") || request.headers.get("host") || "localhost:3000";
+        const forwardedProto = request.headers.get("x-forwarded-proto") || "https";
+        const origin = `${forwardedProto}://${forwardedHost}`;
+        const returnTo = `/issues/${slug}/download`;
+        const redirectUrl = `${origin}/auth?redirect_url=${encodeURIComponent(returnTo)}`;
+        return NextResponse.redirect(redirectUrl);
     }
 
     const issue = await fetchIssue(slug);
