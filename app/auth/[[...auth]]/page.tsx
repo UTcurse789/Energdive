@@ -721,6 +721,12 @@ export default function UnifiedAuthPage() {
                                     </motion.p>
                                 )}
 
+                                {/* Clerk mounts Smart CAPTCHA here for custom sign-up flows. */}
+                                <div
+                                    id="clerk-captcha"
+                                    className="mb-4 flex justify-center overflow-hidden"
+                                />
+
                                 {/* Submit */}
                                 <button
                                     onClick={handleSubmit}

@@ -1,8 +1,14 @@
 import type { Metadata } from "next";
 import { auth, currentUser } from "@clerk/nextjs/server";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { ensureUserProfileRow, getUserProfile, hasUserDownloads } from "@/lib/queries";
 import DashboardShell from "@/components/dashboard/dashboard-shell";
+import {
+    DEFAULT_POST_AUTH_REDIRECT,
+    POST_AUTH_REDIRECT_COOKIE,
+    getSafeRedirectFromStoredValue,
+} from "@/lib/post-auth-redirect";
 
 export const metadata: Metadata = {
     title: {
@@ -32,9 +38,35 @@ export default async function DashboardLayout({
         ? clerkUser.publicMetadata.phone
         : null;
 
-    let profile = await getUserProfile(userId);
+    const profile = await getUserProfile(userId);
 
-    if (!profile && email) {
+    if (!profile) {
+        const cookieStore = await cookies();
+        const storedReturnTo = getSafeRedirectFromStoredValue(
+            cookieStore.get(POST_AUTH_REDIRECT_COOKIE)?.value
+        );
+        const returnTo = storedReturnTo !== DEFAULT_POST_AUTH_REDIRECT
+            ? storedReturnTo
+            : "/dashboard";
+
+        redirect(`/onboarding?return_to=${encodeURIComponent(returnTo)}`);
+    }
+
+    if (!profile.onboarding_completed) {
+        const cookieStore = await cookies();
+        const storedReturnTo = getSafeRedirectFromStoredValue(
+            cookieStore.get(POST_AUTH_REDIRECT_COOKIE)?.value
+        );
+        const returnTo = storedReturnTo !== DEFAULT_POST_AUTH_REDIRECT
+            ? storedReturnTo
+            : "/dashboard";
+
+        redirect(`/onboarding?return_to=${encodeURIComponent(returnTo)}`);
+    }
+
+    let resolvedProfile = profile;
+
+    if (email) {
         try {
             await ensureUserProfileRow({
                 clerkId: userId,
@@ -43,41 +75,19 @@ export default async function DashboardLayout({
                 lastName: clerkUser?.lastName || null,
                 phone,
             });
-            profile = await getUserProfile(userId);
+            const refreshedProfile = await getUserProfile(userId);
+            if (refreshedProfile) {
+                resolvedProfile = refreshedProfile;
+            }
         } catch (error) {
             console.error("[DASHBOARD_LAYOUT] Failed to ensure user profile row:", error);
         }
     }
 
-    const downloadsExist = profile ? await hasUserDownloads(userId) : false;
-    const initialProfile = profile || {
-        id: 0,
-        clerk_id: userId,
-        email,
-        first_name: clerkUser?.firstName || null,
-        last_name: clerkUser?.lastName || null,
-        phone,
-        country: null,
-        state: null,
-        job_title: null,
-        organization: null,
-        onboarding_completed: false,
-        has_submitted_abstract: false,
-        created_at: new Date().toISOString(),
-        preferred_frequency: null,
-        preferred_formats: [],
-        content_digest_opted_out: false,
-        industry_id: null,
-        industry_name: null,
-        sub_industry_id: null,
-        sub_industry_name: null,
-        communities: [],
-        membership_id: null,
-        verification_status: null,
-    };
+    const downloadsExist = await hasUserDownloads(userId);
 
     return (
-        <DashboardShell initialProfile={{ ...initialProfile, hasDownloads: downloadsExist }}>
+        <DashboardShell initialProfile={{ ...resolvedProfile, hasDownloads: downloadsExist }}>
             {children}
         </DashboardShell>
     );
