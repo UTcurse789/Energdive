@@ -26,8 +26,8 @@ function IssueArticleThumbnail({
     const [isPortrait, setIsPortrait] = React.useState(preferPortrait);
 
     const wrapperClassName = isPortrait
-        ? "block w-full max-w-[220px] self-start sm:w-[140px] md:w-[160px] sm:max-w-none"
-        : "block w-full max-w-[280px] self-start sm:w-[220px] md:w-[240px] sm:max-w-none";
+        ? "block w-full max-w-[190px] self-start sm:w-[120px] md:w-[140px] sm:max-w-none"
+        : "block w-full max-w-[240px] self-start sm:w-[190px] md:w-[210px] sm:max-w-none";
 
     const frameClassName = isPortrait
         ? "relative w-full aspect-[4/5] overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm"
@@ -38,8 +38,8 @@ function IssueArticleThumbnail({
         : "object-cover transition-transform duration-700 group-hover:scale-105";
 
     const sizes = isPortrait
-        ? "(max-width: 640px) 220px, (max-width: 768px) 140px, 160px"
-        : "(max-width: 640px) 280px, (max-width: 768px) 220px, 240px";
+        ? "(max-width: 640px) 190px, (max-width: 768px) 120px, 140px"
+        : "(max-width: 640px) 240px, (max-width: 768px) 190px, 210px";
 
     return (
         <Link
@@ -68,7 +68,7 @@ export function IssueDetailClient({ issue }: IssueDetailClientProps) {
         <main className="min-h-screen bg-white text-black font-serif selection:bg-red-500/30">
             <ScrollProgress />
 
-            <div className="mx-auto max-w-[1200px] px-6 sm:px-8 lg:px-12 py-16 md:py-24">
+            <div className="mx-auto max-w-[1200px] px-6 sm:px-8 lg:px-12 py-8 md:py-12">
 
                 {/* 2-Column Grid Layout */}
                 <div className="flex flex-col lg:flex-row gap-16 xl:gap-24 relative">
@@ -92,41 +92,41 @@ export function IssueDetailClient({ issue }: IssueDetailClientProps) {
                         </div>
 
                         {/* Sections & Articles */}
-                        <div className="space-y-16">
+                        <div className="space-y-12">
                             {issue.sections.map((section, idx) => {
                                 const sectionPrefersPortrait = PORTRAIT_SECTION_TITLES.has(section.title);
 
                                 return (
                                     <div key={idx}>
                                         {/* Section Title (Red, Italic, Serif) */}
-                                        <h2 className="text-2xl sm:text-[28px] italic text-[#00A651] mb-6 font-serif">
+                                        <h2 className="text-xl sm:text-[24px] italic text-[#00A651] mb-5 font-serif">
                                             {section.title}
                                         </h2>
 
                                         {/* Divider */}
-                                        <div className="border-b border-gray-200 mb-8" />
+                                        <div className="border-b border-gray-200 mb-6" />
 
                                         {/* Articles List */}
-                                        <div className="space-y-8">
+                                        <div className="space-y-6">
                                             {section.articles.map((article, aIdx) => (
                                                 <React.Fragment key={article.id}>
 
-                                                    <article className="group grid gap-6 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start sm:gap-8">
+                                                    <article className="group grid gap-5 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start sm:gap-7">
 
                                                         {/* Article Info (Left Side) - Now title goes inside link area properly linked to title & excerpt */}
                                                         <div className="flex-1 min-w-0">
                                                             <Link href={article.href ?? "#"} className="block group-hover:opacity-80 transition-opacity">
-                                                                <h3 className="text-[22px] sm:text-[26px] leading-[1.25] text-[#1a1a1a] mb-2 font-serif">
+                                                                <h3 className="text-[20px] sm:text-[23px] leading-[1.22] text-[#1a1a1a] mb-2 font-serif">
                                                                     {article.title}
                                                                 </h3>
                                                                 {article.excerpt && (
-                                                                    <p className="text-gray-600 text-sm sm:text-[15px] font-sans mb-3 line-clamp-2 leading-relaxed">
+                                                                    <p className="text-gray-600 text-sm font-sans mb-3 line-clamp-2 leading-relaxed">
                                                                         {article.excerpt}
                                                                     </p>
                                                                 )}
                                                             </Link>
                                                             {article.author && (
-                                                                <p className="text-[#1a1a1a] text-[15px] font-serif mt-3">
+                                                                <p className="text-[#1a1a1a] text-sm font-serif mt-3">
                                                                     {article.author.name}
                                                                 </p>
                                                             )}
@@ -145,7 +145,7 @@ export function IssueDetailClient({ issue }: IssueDetailClientProps) {
 
                                                     {/* Article Divider */}
                                                     {aIdx < section.articles.length - 1 && (
-                                                        <div className="border-b border-gray-100 my-8" />
+                                                        <div className="border-b border-gray-100 my-6" />
                                                     )}
 
                                                 </React.Fragment>
@@ -159,8 +159,8 @@ export function IssueDetailClient({ issue }: IssueDetailClientProps) {
                     </div>
 
                     {/* Right Column: Sticky Cover (30%) */}
-                    <div className="hidden lg:block w-[320px] xl:w-[380px] flex-shrink-0">
-                        <div className="sticky top-[100px]">
+                    <div className="hidden lg:block w-[280px] xl:w-[320px] flex-shrink-0">
+                        <div className="sticky top-[120px] pb-10">
 
                             {/* Magazine Cover */}
                             <div className="relative w-full aspect-[3/4] shadow-[0_10px_30px_rgba(0,0,0,0.15)] bg-white flex items-center justify-center mb-8 border border-gray-200 p-2">
@@ -169,7 +169,7 @@ export function IssueDetailClient({ issue }: IssueDetailClientProps) {
                                         src={issue.coverImage}
                                         alt={`${issue.month} ${issue.year} Cover`}
                                         fill
-                                        sizes="(max-width: 1280px) 320px, 380px"
+                                        sizes="(max-width: 1280px) 280px, 320px"
                                         className="object-contain"
                                         priority
                                     />
@@ -183,11 +183,23 @@ export function IssueDetailClient({ issue }: IssueDetailClientProps) {
                                 </Link>
                             </div>
 
+                            {/* {issue.pdfUrl && (
+                                <div className="border-t border-gray-200 pt-4 mb-5 px-1 font-serif text-[16px] text-gray-600">
+                                    <span>Download:</span>
+                                    <a
+                                        href={`/issues/${issue.slug}/download`}
+                                        className="ml-2 underline underline-offset-4 transition-colors hover:text-black"
+                                    >
+                                        PDF
+                                    </a>
+                                </div>
+                            )} */}
+
                             {/* CTA Buttons */}
-                            <div className="flex flex-col gap-3">
+                            <div className="flex flex-col gap-2.5">
                                 <Link
                                     href="/subscribe"
-                                    className="block w-full text-center py-3 px-6 bg-[#00A651] text-white font-sans font-semibold text-[15px] rounded-lg hover:bg-[#008c44] transition-colors duration-200 tracking-wide"
+                                    className="block w-full rounded-md bg-[#00A651] px-4 py-2.5 text-center font-sans text-[13px] font-semibold tracking-wide text-white transition-colors duration-200 hover:bg-[#008c44]"
                                 >
                                     Subscribe ENERGDIVE Magazine
                                 </Link>
@@ -195,7 +207,7 @@ export function IssueDetailClient({ issue }: IssueDetailClientProps) {
                                     href="https://www.energdive.com/advertise-with-us"
                                     target="_blank"
                                     rel="noopener"
-                                    className="block w-full text-center py-3 px-6 border-2 border-[#00A651] text-[#00A651] font-sans font-semibold text-[15px] rounded-lg hover:bg-[#00A651] hover:text-white transition-colors duration-200 tracking-wide"
+                                    className="block w-full rounded-md border border-[#00A651] px-4 py-2.5 text-center font-sans text-[13px] font-semibold tracking-wide text-[#00A651] transition-colors duration-200 hover:bg-[#00A651] hover:text-white"
                                 >
                                     Advertisement Enquiry
                                 </a>

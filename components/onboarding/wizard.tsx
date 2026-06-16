@@ -9,7 +9,6 @@ import StepInterestsPreferences, { type InterestsPreferencesData } from "./step-
 import {
     POST_AUTH_REDIRECT_STORAGE_KEY,
     POST_AUTH_REDIRECT_COOKIE,
-    getSafeRedirectFromStoredValue,
     getSafeRedirectPath,
 } from "@/lib/post-auth-redirect";
 
@@ -112,11 +111,10 @@ export default function OnboardingWizard({ returnTo = "/dashboard" }: Onboarding
             // roundtrips where the URL param gets lost through /dashboard → /onboarding).
             let finalRedirect = getSafeRedirectPath(returnTo || "/dashboard");
             if (finalRedirect === "/dashboard") {
-                const storedRedirect = getSafeRedirectFromStoredValue(
-                    sessionStorage.getItem(POST_AUTH_REDIRECT_STORAGE_KEY)
-                );
-                if (storedRedirect && storedRedirect !== "/dashboard") {
-                    finalRedirect = storedRedirect;
+                const storedRedirect = sessionStorage.getItem(POST_AUTH_REDIRECT_STORAGE_KEY);
+                const safeStoredRedirect = getSafeRedirectPath(storedRedirect);
+                if (safeStoredRedirect !== "/dashboard") {
+                    finalRedirect = safeStoredRedirect;
                 }
             }
 
