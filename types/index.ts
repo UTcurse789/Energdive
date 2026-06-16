@@ -106,6 +106,8 @@ export interface Issue {
     volume?: string;
     Issue?: string;
     coverImage: string;
+    pdfUrl?: string;
+    pdfName?: string;
     sections: Section[];
 }
 
