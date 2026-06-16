@@ -24,10 +24,9 @@ export async function GET() {
         const phone = typeof clerkUser?.publicMetadata?.phone === "string"
             ? clerkUser.publicMetadata.phone
             : null;
+        const clerkOnboardingCompleted = clerkUser?.publicMetadata?.onboarding_completed === true;
 
-        let profile = await getUserProfile(userId);
-
-        if (!profile && email) {
+        if (email) {
             try {
                 await ensureUserProfileRow({
                     clerkId: userId,
@@ -35,12 +34,14 @@ export async function GET() {
                     firstName: clerkUser?.firstName || null,
                     lastName: clerkUser?.lastName || null,
                     phone,
+                    onboardingCompleted: clerkOnboardingCompleted,
                 });
-                profile = await getUserProfile(userId);
             } catch (error) {
                 console.error("[USER_PROFILE] Failed to ensure user profile row:", error);
             }
         }
+
+        const profile = await getUserProfile(userId);
 
         const hasDownloads = profile ? await hasUserDownloads(userId) : false;
 
@@ -58,7 +59,7 @@ export async function GET() {
                     state: null,
                     job_title: null,
                     organization: null,
-                    onboarding_completed: false,
+                    onboarding_completed: clerkOnboardingCompleted,
                     has_submitted_abstract: false,
                     created_at: new Date().toISOString(),
                     preferred_frequency: null,

@@ -6,7 +6,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import StepProfile, { type ProfileData } from "./step-profile";
 import StepInterestsPreferences, { type InterestsPreferencesData } from "./step-interests-preferences";
 
-import { POST_AUTH_REDIRECT_STORAGE_KEY, POST_AUTH_REDIRECT_COOKIE } from "@/lib/post-auth-redirect";
+import {
+    POST_AUTH_REDIRECT_STORAGE_KEY,
+    POST_AUTH_REDIRECT_COOKIE,
+    getSafeRedirectFromStoredValue,
+    getSafeRedirectPath,
+} from "@/lib/post-auth-redirect";
 
 const TOTAL_STEPS = 2;
 
@@ -105,9 +110,11 @@ export default function OnboardingWizard({ returnTo = "/dashboard" }: Onboarding
             // Determine final redirect: use returnTo from server, or fall back to
             // the redirect stored in sessionStorage by the auth page (survives OAuth
             // roundtrips where the URL param gets lost through /dashboard → /onboarding).
-            let finalRedirect = returnTo || "/dashboard";
+            let finalRedirect = getSafeRedirectPath(returnTo || "/dashboard");
             if (finalRedirect === "/dashboard") {
-                const storedRedirect = sessionStorage.getItem(POST_AUTH_REDIRECT_STORAGE_KEY);
+                const storedRedirect = getSafeRedirectFromStoredValue(
+                    sessionStorage.getItem(POST_AUTH_REDIRECT_STORAGE_KEY)
+                );
                 if (storedRedirect && storedRedirect !== "/dashboard") {
                     finalRedirect = storedRedirect;
                 }
