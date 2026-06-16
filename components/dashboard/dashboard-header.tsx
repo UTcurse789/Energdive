@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-    Home, LayoutGrid, CreditCard, Calendar, Settings, Bookmark
+    Home, LayoutGrid, CreditCard, Calendar, Settings, Bookmark, LibraryBig
 } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
 import { CustomUserMenu } from "@/components/layout/CustomUserMenu";
@@ -13,6 +13,13 @@ import { useDashboard } from "./dashboard-shell";
 const NAV_ITEMS = [
     { label: "ENERGDIVE", href: "/", icon: Home },
     { label: "My Feed", href: "/dashboard", icon: LayoutGrid },
+    {
+        label: "Knowledge Base",
+        href: "/dashboard/my-submissions",
+        fallbackHref: "/dashboard/my-downloads",
+        icon: LibraryBig,
+        activeHrefs: ["/dashboard/my-submissions", "/dashboard/my-downloads"],
+    },
     { label: "Saved", href: "/dashboard/saved", icon: Bookmark },
     { label: "Subscriptions", href: "/dashboard/subscriptions", icon: CreditCard },
     { label: "Events", href: "/dashboard/events", icon: Calendar },
@@ -115,11 +122,15 @@ export function DashboardHeader() {
                 {/* Rest of nav items centered */}
                 <div className="flex items-center gap-1 mx-auto">
                     {visibleNavItems.slice(1).map((item) => {
-                        const href = item.href;
+                        const href =
+                            item.label === "Knowledge Base" && !profile.has_submitted_abstract && profile.hasDownloads
+                                ? item.fallbackHref ?? item.href
+                                : item.href;
                         const isActive =
-                            item.href === "/dashboard"
+                            item.activeHrefs?.some((activeHref: string) => pathname.startsWith(activeHref)) ??
+                            (item.href === "/dashboard"
                                 ? pathname === "/dashboard"
-                                : pathname.startsWith(item.href);
+                                : pathname.startsWith(item.href));
                         const Icon = item.icon;
                         return (
                             <Link

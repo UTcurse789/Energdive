@@ -151,7 +151,7 @@ export async function GET(
             },
             {
                 title: `${issue.title} Issue PDF`,
-                url: `/issues/${slug}`,
+                url: `/issues/${slug}/download`,
             }
         );
     } catch (error) {

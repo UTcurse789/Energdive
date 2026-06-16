@@ -183,7 +183,7 @@ export function IssueDetailClient({ issue }: IssueDetailClientProps) {
                                 </Link>
                             </div>
 
-                            {/* {issue.pdfUrl && (
+                            {issue.pdfUrl && (
                                 <div className="border-t border-gray-200 pt-4 mb-5 px-1 font-serif text-[16px] text-gray-600">
                                     <span>Download:</span>
                                     <a
@@ -193,7 +193,7 @@ export function IssueDetailClient({ issue }: IssueDetailClientProps) {
                                         PDF
                                     </a>
                                 </div>
-                            )} */}
+                            )}
 
                             {/* CTA Buttons */}
                             <div className="flex flex-col gap-2.5">
