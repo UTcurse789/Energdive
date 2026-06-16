@@ -4,8 +4,9 @@ import IssueDetailClient from "@/components/issue-detail-client";
 import { Issue, Section } from "@/types";
 import { getRoutePrefix, extractContentTypeName } from "@/lib/content-routes";
 import { getCanonicalUrl } from "@/lib/seo";
+import { strapiImageUrl, strapiMediaUrl } from "@/lib/strapi-image";
 
-const STRAPI_URL = "https://cms.energdive.com";
+const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL || "https://cms.energdive.com";
 
 /* ── 12 ordered content sections ── */
 // altTypeMatch: when content_tag is unavailable, also try matching type_of_content by this value
@@ -114,7 +115,7 @@ function extractTypeOfContentName(typeOfContent: any): string | null {
     return typeOfContent.name ?? typeOfContent.Name ?? typeOfContent.data?.attributes?.name ?? null;
 }
 
-const POPULATE_PARAMS = [
+const BASE_POPULATE_PARAMS = [
     "populate[0]=CoverImage",
     "populate[1]=contents",
     "populate[2]=contents.type_of_content",
@@ -124,6 +125,39 @@ const POPULATE_PARAMS = [
     "populate[6]=contents.content_tag",
 ].join("&");
 
+const PDF_POPULATE_PARAM = "populate[7]=issue_Epdf";
+
+function getPopulateParams(includeIssuePdf = true) {
+    return includeIssuePdf
+        ? `${BASE_POPULATE_PARAMS}&${PDF_POPULATE_PARAM}`
+        : BASE_POPULATE_PARAMS;
+}
+
+async function fetchIssuesWithFallback(includeIssuePdf = true): Promise<Response> {
+    const res = await fetch(`${STRAPI_URL}/api/issues?${getPopulateParams(includeIssuePdf)}`, {
+        next: { revalidate: 120 },
+    });
+
+    if (!res.ok && includeIssuePdf && res.status === 400) {
+        return fetchIssuesWithFallback(false);
+    }
+
+    return res;
+}
+
+async function fetchIssueDetailWithFallback(id: number | string, includeIssuePdf = true): Promise<Response> {
+    const res = await fetch(
+        `${STRAPI_URL}/api/issues/${id}?${getPopulateParams(includeIssuePdf)}`,
+        { next: { revalidate: 3600 } }
+    );
+
+    if (!res.ok && includeIssuePdf && res.status === 400) {
+        return fetchIssueDetailWithFallback(id, false);
+    }
+
+    return res;
+}
+
 async function getIssue(slug: string) {
     const parsed = parseSlug(slug);
     if (!parsed) return null;
@@ -131,9 +165,7 @@ async function getIssue(slug: string) {
     const { month, year } = parsed;
 
     // First fetch: list
-    const res = await fetch(`${STRAPI_URL}/api/issues?${POPULATE_PARAMS}`, {
-        next: { revalidate: 120 },
-    });
+    const res = await fetchIssuesWithFallback();
 
     if (!res.ok) return null;
 
@@ -147,10 +179,7 @@ async function getIssue(slug: string) {
     if (!item) return null;
 
     // Second fetch: detail (USE ID, NOT documentId)
-    const detailRes = await fetch(
-        `${STRAPI_URL}/api/issues/${item.id}?${POPULATE_PARAMS}`,
-        { next: { revalidate: 3600 } }
-    );
+    const detailRes = await fetchIssueDetailWithFallback(item.id);
 
     if (!detailRes.ok) return mapIssue(item, slug);
 
@@ -224,9 +253,7 @@ function mapArticle(c: any) {
         c.featuredImage?.[0]?.url ??
         c.featuredImage?.url ??
         null;
-    const image = rawImage
-        ? rawImage.startsWith("http") ? rawImage : STRAPI_URL + rawImage
-        : null;
+    const image = rawImage ? strapiImageUrl(rawImage) : null;
 
     // Build correct route from type_of_content
     const route = getContentRoute(c.type_of_content, c.content_tag);
@@ -277,14 +304,11 @@ function mapArticle(c: any) {
 }
 
 function mapIssue(item: any, slug: string): Issue {
-    const rawCover =
-        item.CoverImage?.[0]?.url ??
-        item.CoverImage?.url ??
-        null;
-
-    const coverImage = rawCover
-        ? rawCover.startsWith("http") ? rawCover : STRAPI_URL + rawCover
-        : "/Energdive-Logo.png";
+    const coverImage = strapiMediaUrl(item.CoverImage, "/Energdive-Logo.png");
+    const pdfUrl = strapiMediaUrl(item.issue_Epdf, "");
+    const pdfSource = Array.isArray(item.issue_Epdf) ? item.issue_Epdf[0] : item.issue_Epdf;
+    const pdfData = pdfSource?.data ?? pdfSource;
+    const pdfAttrs = pdfData?.attributes ?? pdfData;
 
     // Group articles into 12 ordered sections
     const sectionBuckets: Record<string, any[]> = {};
@@ -333,6 +357,8 @@ function mapIssue(item: any, slug: string): Issue {
         volume: item.Volume,
         Issue: item.IssueNumber,
         coverImage,
+        pdfUrl: pdfUrl || undefined,
+        pdfName: pdfAttrs?.name || undefined,
         sections,
     };
 }

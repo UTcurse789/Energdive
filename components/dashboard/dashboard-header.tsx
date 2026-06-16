@@ -127,7 +127,7 @@ export function DashboardHeader() {
                                 ? item.fallbackHref ?? item.href
                                 : item.href;
                         const isActive =
-                            item.activeHrefs?.some((activeHref) => pathname.startsWith(activeHref)) ??
+                            item.activeHrefs?.some((activeHref: string) => pathname.startsWith(activeHref)) ??
                             (item.href === "/dashboard"
                                 ? pathname === "/dashboard"
                                 : pathname.startsWith(item.href));
