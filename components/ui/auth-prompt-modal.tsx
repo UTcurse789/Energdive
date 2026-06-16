@@ -11,12 +11,94 @@ import { usePostHog } from "@posthog/react";
 
 const DISMISSAL_COOLDOWN_MS = 60 * 60 * 1000; // 1 hour
 const POPUP_DELAY_MS = 5 * 1000; // 5 seconds
+const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL || "https://cms.energdive.com";
+
+interface CurrentIssue {
+    title: string;
+    subTitle: string;
+    month: string;
+    year: string;
+    volume: string;
+    issueNumber: string;
+    coverImage: string;
+    slug: string;
+}
 
 export default function AuthPromptModal() {
     const { isLoaded, isSignedIn } = useAuth();
     const [show, setShow] = useState(false);
+    const [currentIssue, setCurrentIssue] = useState<CurrentIssue | null>(null);
     const pathname = usePathname();
     const posthog = usePostHog();
+
+    // Fetch current/latest issue
+    useEffect(() => {
+        async function fetchCurrentIssue() {
+            try {
+                const res = await fetch(
+                    `${STRAPI_URL}/api/issues?populate=CoverImage&pagination[pageSize]=100`,
+                    { cache: "no-store" }
+                );
+                if (!res.ok) return;
+                const json = await res.json();
+                if (!json.data || !Array.isArray(json.data)) return;
+
+                const monthOrder: Record<string, number> = {
+                    january: 1, february: 2, fbruary: 2, march: 3, april: 4, may: 5, june: 6,
+                    july: 7, august: 8, september: 9, october: 10, november: 11, december: 12,
+                };
+
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const mapped = json.data.map((item: any) => {
+                    const d = item.attributes || item;
+                    const month = String(d.Month || d.month || "").trim();
+                    const year = String(d.Year || d.year || "").trim();
+                    const coverImg = d.CoverImage?.[0]?.url || d.CoverImage?.url || "/Energdive-Logo.png";
+                    const finalCoverImage = coverImg.startsWith("http") ? coverImg : `${STRAPI_URL}${coverImg}`;
+                    const isCurrent = d.is_current_issue === true || d.is_current_issue === "true";
+
+                    return {
+                        title: d.Title || `${month} ${year}`,
+                        subTitle: String(d.sub_title || d.subTitle || ""),
+                        month,
+                        year,
+                        volume: String(d.Volume || ""),
+                        issueNumber: String(d.IssueNumber || d.Number || ""),
+                        coverImage: finalCoverImage,
+                        slug: d.slug || `${month.toLowerCase()}-${year}`,
+                        isCurrent,
+                        monthIdx: monthOrder[month.toLowerCase()] || 0,
+                        yearNum: parseInt(year, 10) || 0,
+                    };
+                });
+
+                // Sort: current issue first, then latest by year/month
+                mapped.sort((a: { isCurrent: boolean; yearNum: number; monthIdx: number }, b: { isCurrent: boolean; yearNum: number; monthIdx: number }) => {
+                    if (a.isCurrent !== b.isCurrent) return a.isCurrent ? -1 : 1;
+                    if (a.yearNum !== b.yearNum) return b.yearNum - a.yearNum;
+                    return b.monthIdx - a.monthIdx;
+                });
+
+                if (mapped.length > 0) {
+                    const top = mapped[0];
+                    setCurrentIssue({
+                        title: top.title,
+                        subTitle: top.subTitle,
+                        month: top.month,
+                        year: top.year,
+                        volume: top.volume,
+                        issueNumber: top.issueNumber,
+                        coverImage: top.coverImage,
+                        slug: top.slug,
+                    });
+                }
+            } catch (err) {
+                console.error("[AuthPromptModal] Failed to fetch current issue", err);
+            }
+        }
+
+        fetchCurrentIssue();
+    }, []);
 
     useEffect(() => {
         // Only run on the client, and only if auth is loaded and user is NOT signed in
@@ -34,7 +116,7 @@ export default function AuthPromptModal() {
             }
         }
 
-        // Set a timer to show the popup after 7 seconds
+        // Set a timer to show the popup after 5 seconds
         const timer = setTimeout(() => {
             setShow(true);
         }, POPUP_DELAY_MS);
@@ -46,6 +128,14 @@ export default function AuthPromptModal() {
         setShow(false);
         localStorage.setItem("auth_prompt_dismissed_at", Date.now().toString());
     };
+
+    const coverImage = currentIssue?.coverImage || "/image.png";
+    const issueLabel = currentIssue
+        ? `${currentIssue.month} ${currentIssue.year}`
+        : "";
+    const volumeLabel = currentIssue?.volume && currentIssue?.issueNumber
+        ? `Volume ${currentIssue.volume}, Issue ${currentIssue.issueNumber.replace(/number/i, "").trim()}`
+        : "";
 
     return (
         <AnimatePresence>
@@ -77,28 +167,52 @@ export default function AuthPromptModal() {
                             <X className="w-5 h-5" />
                         </button>
 
-                        {/* Image Section (Left on Desktop, Top on Mobile) */}
-                        <div className="relative w-full h-48 md:h-auto md:w-5/12 shrink-0 bg-zinc-900">
-                            <Image
-                                src="/image.png"
-                                alt="Energy Insights"
-                                fill
-                                style={{ objectFit: "cover" }}
-                                sizes="(max-width: 768px) 100vw, 400px"
-                                priority
-                            />
-                            {/* Gradient overlay to blend image into text a bit */}
-                            <div className="absolute inset-0 bg-linear-to-t md:bg-linear-to-r from-zinc-900/40 to-transparent" />
+                        {/* Image Section — Current Issue Cover */}
+                        <div className="relative w-full h-56 md:h-auto md:w-5/12 shrink-0 bg-zinc-100 flex items-center justify-center p-4 md:p-6">
+                            <div className="relative w-full h-full max-w-[240px] md:max-w-none aspect-[3/4]">
+                                <Image
+                                    src={coverImage}
+                                    alt={currentIssue ? `${issueLabel} Cover` : "Energy Insights"}
+                                    fill
+                                    style={{ objectFit: "contain" }}
+                                    sizes="(max-width: 768px) 240px, 320px"
+                                    priority
+                                />
+                            </div>
                         </div>
 
-                        {/* Content Section (Right on Desktop, Bottom on Mobile) */}
+                        {/* Content Section */}
                         <div className="p-8 md:p-12 flex flex-col justify-center flex-1 bg-white">
-                            <h2 className="text-2xl md:text-3xl font-bold text-zinc-900 font-serif leading-tight mb-4">
-                                Unlock Premium Energy Insights
-                            </h2>
-                            <p className="text-zinc-600 leading-relaxed mb-8">
-                                Connect with the strategic energy intelligence platform. Register or log in to access exclusive articles, data analysis, and reports from ENERGDIVE.
-                            </p>
+                            {/* Dynamic issue info */}
+                            {currentIssue ? (
+                                <>
+                                    {volumeLabel && (
+                                        <p className="text-xs uppercase tracking-widest text-zinc-400 font-sans mb-2">
+                                            {volumeLabel}
+                                        </p>
+                                    )}
+                                    <h2 className="text-2xl md:text-3xl font-bold text-zinc-900 font-serif leading-tight mb-2">
+                                        {issueLabel}
+                                    </h2>
+                                    {currentIssue.subTitle && (
+                                        <p className="text-lg md:text-xl text-zinc-700 font-serif italic leading-snug mb-4">
+                                            {currentIssue.subTitle}
+                                        </p>
+                                    )}
+                                    <p className="text-zinc-500 text-sm leading-relaxed mb-8">
+                                        Sign in to read full articles, download the issue PDF, and access exclusive energy intelligence from ENERGDIVE.
+                                    </p>
+                                </>
+                            ) : (
+                                <>
+                                    <h2 className="text-2xl md:text-3xl font-bold text-zinc-900 font-serif leading-tight mb-4">
+                                        Unlock Premium Energy Insights
+                                    </h2>
+                                    <p className="text-zinc-600 leading-relaxed mb-8">
+                                        Connect with the strategic energy intelligence platform. Register or log in to access exclusive articles, data analysis, and reports from ENERGDIVE.
+                                    </p>
+                                </>
+                            )}
 
                             <div className="flex flex-col gap-4">
                                 {/* Primary CTA */}
