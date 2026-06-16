@@ -3,7 +3,10 @@
 import { AuthenticateWithRedirectCallback, useAuth } from "@clerk/nextjs";
 import { usePostHog } from "@posthog/react";
 import { useEffect, useRef, useState } from "react";
-import { POST_AUTH_REDIRECT_STORAGE_KEY } from "@/lib/post-auth-redirect";
+import {
+    POST_AUTH_REDIRECT_STORAGE_KEY,
+    getSafeRedirectFromStoredValue,
+} from "@/lib/post-auth-redirect";
 
 export default function SSOCallbackPage() {
     const { isLoaded, isSignedIn } = useAuth();
@@ -14,7 +17,9 @@ export default function SSOCallbackPage() {
             return "/dashboard";
         }
 
-        return sessionStorage.getItem(POST_AUTH_REDIRECT_STORAGE_KEY) || "/dashboard";
+        return getSafeRedirectFromStoredValue(
+            sessionStorage.getItem(POST_AUTH_REDIRECT_STORAGE_KEY)
+        );
     });
 
     useEffect(() => {

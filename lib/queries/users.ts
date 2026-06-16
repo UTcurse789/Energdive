@@ -62,6 +62,7 @@ export interface EnsureUserProfileRowPayload {
     firstName?: string | null;
     lastName?: string | null;
     phone?: string | null;
+    onboardingCompleted?: boolean;
 }
 
 /**
@@ -239,6 +240,7 @@ export async function ensureUserProfileRow(
 ): Promise<void> {
     const email = payload.email.trim().toLowerCase();
     if (!email) return;
+    const onboardingCompleted = payload.onboardingCompleted === true;
 
     const client = await getClient();
 
@@ -257,6 +259,10 @@ export async function ensureUserProfileRow(
                      first_name = COALESCE(first_name, $3),
                      last_name  = COALESCE(last_name, $4),
                      phone      = COALESCE(phone, $5),
+                     onboarding_completed = CASE
+                         WHEN $6 THEN true
+                         ELSE onboarding_completed
+                     END,
                      updated_at = NOW()
                  WHERE id = $1`,
                 [
@@ -265,6 +271,7 @@ export async function ensureUserProfileRow(
                     payload.firstName || null,
                     payload.lastName || null,
                     payload.phone || null,
+                    onboardingCompleted,
                 ]
             );
         } else {
@@ -287,6 +294,10 @@ export async function ensureUserProfileRow(
                          first_name = COALESCE(first_name, $4),
                          last_name  = COALESCE(last_name, $5),
                          phone      = COALESCE(phone, $6),
+                         onboarding_completed = CASE
+                             WHEN $7 THEN true
+                             ELSE onboarding_completed
+                         END,
                          updated_at = NOW()
                      WHERE id = $1`,
                     [
@@ -296,13 +307,14 @@ export async function ensureUserProfileRow(
                         payload.firstName || null,
                         payload.lastName || null,
                         payload.phone || null,
+                        onboardingCompleted,
                     ]
                 );
             } else {
                 await client.query(
                     `INSERT INTO users (
                         clerk_id, email, first_name, last_name, phone, onboarding_completed, created_at
-                    ) VALUES ($1, $2, $3, $4, $5, false, NOW())
+                    ) VALUES ($1, $2, $3, $4, $5, $6, NOW())
                     ON CONFLICT (clerk_id) DO NOTHING`,
                     [
                         payload.clerkId,
@@ -310,6 +322,7 @@ export async function ensureUserProfileRow(
                         payload.firstName || null,
                         payload.lastName || null,
                         payload.phone || null,
+                        onboardingCompleted,
                     ]
                 );
             }
