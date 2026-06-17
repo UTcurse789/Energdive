@@ -83,6 +83,9 @@ async function fetchIssue(slug: string) {
     try {
         res = await fetch(`${STRAPI_URL}/api/issues?populate[0]=issue_Epdf&pagination[pageSize]=100`, {
             cache: "no-store",
+            headers: {
+                ...(STRAPI_TOKEN ? { Authorization: `Bearer ${STRAPI_TOKEN}` } : {}),
+            },
         });
     } catch (error) {
         console.error("[ISSUE_PDF_DOWNLOAD] Failed to fetch issues from Strapi", error);
@@ -122,7 +125,6 @@ export async function GET(
     { params }: { params: Promise<{ slug: string }> }
 ) {
     const { slug } = await params;
-    const requestUrl = new URL(request.url);
     const { userId } = await auth();
 
     if (!userId) {
