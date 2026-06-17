@@ -89,13 +89,8 @@ export default function UnifiedAuthPage() {
 
         // Persist to sessionStorage and a regular cookie so the server can
         // recover the intended return path if Clerk lands on /dashboard first.
-        if (resolved !== DEFAULT_POST_AUTH_REDIRECT) {
-            sessionStorage.setItem(POST_AUTH_REDIRECT_STORAGE_KEY, resolved);
-            document.cookie = `${POST_AUTH_REDIRECT_COOKIE}=${encodeURIComponent(resolved)}; path=/; max-age=86400; SameSite=Lax`;
-        } else {
-            sessionStorage.removeItem(POST_AUTH_REDIRECT_STORAGE_KEY);
-            document.cookie = `${POST_AUTH_REDIRECT_COOKIE}=; path=/; max-age=0; SameSite=Lax`;
-        }
+        sessionStorage.setItem(POST_AUTH_REDIRECT_STORAGE_KEY, resolved);
+        document.cookie = `${POST_AUTH_REDIRECT_COOKIE}=${encodeURIComponent(resolved)}; path=/; max-age=86400; SameSite=Lax`;
     }, [resolvePostAuthRedirect]);
 
     // Track registration started when the auth page mounts
