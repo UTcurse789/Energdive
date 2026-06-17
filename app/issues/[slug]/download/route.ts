@@ -58,7 +58,7 @@ function extractPdfMeta(pdf: unknown) {
     const attrs = data as { url?: unknown; name?: unknown };
     if (typeof attrs.url !== "string" || !attrs.url) return null;
 
-    const url = attrs.url.startsWith("http") ? attrs.url : `${STRAPI_URL}${attrs.url}`;
+    const url = attrs.url.startsWith("http") ? attrs.url : ${STRAPI_URL}${attrs.url};
     const name = typeof attrs.name === "string" && attrs.name.trim() ? attrs.name.trim() : "issue.pdf";
 
     return { url, name };
@@ -72,7 +72,7 @@ function safeFilename(value: string) {
         .replace(/^-+|-+$/g, "")
         .slice(0, 120);
 
-    return `${normalized || fallback.replace(/\.pdf$/i, "")}.pdf`;
+    return ${normalized || fallback.replace(/\.pdf$/i, "")}.pdf;
 }
 
 async function fetchIssue(slug: string) {
@@ -81,7 +81,7 @@ async function fetchIssue(slug: string) {
 
     let res: Response;
     try {
-        res = await fetch(`${STRAPI_URL}/api/issues?populate[0]=issue_Epdf&pagination[pageSize]=100`, {
+        res = await fetch(${STRAPI_URL}/api/issues?populate[0]=issue_Epdf&pagination[pageSize]=100, {
             cache: "no-store",
         });
     } catch (error) {
@@ -111,7 +111,7 @@ async function fetchIssue(slug: string) {
 
     if (!item) return null;
 
-    const title = item.Title || `${item.Month || parsed.month} ${item.Year || parsed.year}`;
+    const title = item.Title || ${item.Month || parsed.month} ${item.Year || parsed.year};
     const pdf = extractPdfMeta(item.issue_Epdf);
 
     return { title, pdf };
@@ -126,8 +126,8 @@ export async function GET(
     const { userId } = await auth();
 
     if (!userId) {
-        const returnTo = `${requestUrl.pathname}${requestUrl.search}`;
-        const redirectUrl = `/auth?redirect_url=${encodeURIComponent(returnTo)}`;
+        const returnTo = ${requestUrl.pathname}${requestUrl.search};
+        const redirectUrl = /auth?redirect_url=${encodeURIComponent(returnTo)};
         return NextResponse.redirect(new URL(redirectUrl, request.url));
     }
 
@@ -150,8 +150,8 @@ export async function GET(
                 lastName: user?.lastName || null,
             },
             {
-                title: `${issue.title} Issue PDF`,
-                url: `/issues/${slug}`,
+                title: ${issue.title} Issue PDF,
+                url: /issues/${slug},
             }
         );
     } catch (error) {
@@ -175,7 +175,7 @@ export async function GET(
     return new NextResponse(pdfResponse.body, {
         headers: {
             "Content-Type": pdfResponse.headers.get("content-type") || "application/pdf",
-            "Content-Disposition": `attachment; filename="${filename}"`,
+            "Content-Disposition": attachment; filename="${filename}",
             "Cache-Control": "no-store",
         },
     });

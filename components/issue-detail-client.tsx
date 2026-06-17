@@ -3,6 +3,7 @@
 import React from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useUser } from "@clerk/nextjs";
 import { Issue } from "@/types";
 import { ScrollProgress } from "@/components/ui/scroll-progress";
 
@@ -60,6 +61,82 @@ function IssueArticleThumbnail({
                 />
             </div>
         </Link>
+    );
+}
+
+function PdfDownloadLink({ slug }: { slug: string }) {
+    const { isSignedIn, isLoaded } = useUser();
+    const [showTooltip, setShowTooltip] = React.useState(false);
+    const tooltipRef = React.useRef<HTMLDivElement>(null);
+
+    React.useEffect(() => {
+        if (!showTooltip) return;
+        const handleClickOutside = (e: MouseEvent) => {
+            if (tooltipRef.current && !tooltipRef.current.contains(e.target as Node)) {
+                setShowTooltip(false);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, [showTooltip]);
+
+    const isLoggedIn = isLoaded && isSignedIn === true;
+
+    return (
+        <div className="border-t border-gray-200 pt-4 mb-5 px-1 font-serif text-[16px] text-gray-600 relative" ref={tooltipRef}>
+            <span>Download:</span>
+            {isLoggedIn ? (
+                <a
+                    href={`/issues/${slug}/download`}
+                    className="ml-2 underline underline-offset-4 transition-colors hover:text-black"
+                >
+                    PDF
+                </a>
+            ) : (
+                <button
+                    type="button"
+                    onClick={() => setShowTooltip(true)}
+                    className="ml-2 underline underline-offset-4 transition-colors hover:text-black cursor-pointer bg-transparent border-none p-0 font-serif text-[16px] text-gray-600"
+                >
+                    PDF
+                </button>
+            )}
+
+            {showTooltip && (
+                <div
+                    className="absolute left-1/2 -translate-x-1/2 mt-3 z-50"
+                    style={{ animation: "fadeInUp 0.2s ease-out" }}
+                >
+                    <div className="relative bg-white border border-gray-300 rounded-lg shadow-lg px-6 py-4 text-center whitespace-nowrap">
+                        {/* Arrow */}
+                        <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-3.5 h-3.5 bg-white border-l border-t border-gray-300 rotate-45" />
+                        <p className="text-[15px] text-gray-700 font-serif">
+                            To unlock downloads,{" "}
+                            <Link
+                                href={`/auth?redirect_url=${encodeURIComponent(`/issues/${slug}/download`)}`}
+                                className="text-gray-800 underline underline-offset-2 hover:text-black font-medium"
+                            >
+                                Sign In
+                            </Link>
+                            .
+                        </p>
+                    </div>
+                </div>
+            )}
+
+            <style jsx>{`
+                @keyframes fadeInUp {
+                    from {
+                        opacity: 0;
+                        transform: translate(-50%, 4px);
+                    }
+                    to {
+                        opacity: 1;
+                        transform: translate(-50%, 0);
+                    }
+                }
+            `}</style>
+        </div>
     );
 }
 
@@ -183,17 +260,9 @@ export function IssueDetailClient({ issue }: IssueDetailClientProps) {
                                 </Link>
                             </div>
 
-                            {/* {issue.pdfUrl && (
-                                <div className="border-t border-gray-200 pt-4 mb-5 px-1 font-serif text-[16px] text-gray-600">
-                                    <span>Download:</span>
-                                    <a
-                                        href={`/issues/${issue.slug}/download`}
-                                        className="ml-2 underline underline-offset-4 transition-colors hover:text-black"
-                                    >
-                                        PDF
-                                    </a>
-                                </div>
-                            )} */}
+                            {issue.pdfUrl && (
+                                <PdfDownloadLink slug={issue.slug} />
+                            )}
 
                             {/* CTA Buttons */}
                             <div className="flex flex-col gap-2.5">
