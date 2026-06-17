@@ -23,6 +23,10 @@ export function getSafeRedirectPath(value: string | null | undefined): string {
             return DEFAULT_POST_AUTH_REDIRECT;
         }
 
+        if (path === "/onboarding" || path.startsWith("/onboarding/") || path.startsWith("/onboarding?")) {
+            return DEFAULT_POST_AUTH_REDIRECT;
+        }
+
         return path;
     };
 
