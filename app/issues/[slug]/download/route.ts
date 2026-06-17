@@ -58,7 +58,7 @@ function extractPdfMeta(pdf: unknown) {
     const attrs = data as { url?: unknown; name?: unknown };
     if (typeof attrs.url !== "string" || !attrs.url) return null;
 
-    const url = attrs.url.startsWith("http") ? attrs.url : ${STRAPI_URL}${attrs.url};
+    const url = attrs.url.startsWith("http") ? attrs.url : `${STRAPI_URL}${attrs.url}`;
     const name = typeof attrs.name === "string" && attrs.name.trim() ? attrs.name.trim() : "issue.pdf";
 
     return { url, name };
@@ -72,7 +72,7 @@ function safeFilename(value: string) {
         .replace(/^-+|-+$/g, "")
         .slice(0, 120);
 
-    return ${normalized || fallback.replace(/\.pdf$/i, "")}.pdf;
+    return `${normalized || fallback.replace(/\.pdf$/i, "")}.pdf`;
 }
 
 async function fetchIssue(slug: string) {
@@ -81,8 +81,12 @@ async function fetchIssue(slug: string) {
 
     let res: Response;
     try {
-        res = await fetch(${STRAPI_URL}/api/issues?populate[0]=issue_Epdf&pagination[pageSize]=100, {
+        const STRAPI_TOKEN = process.env.STRAPI_API_TOKEN || "";
+        res = await fetch(`${STRAPI_URL}/api/issues?populate[0]=issue_Epdf&pagination[pageSize]=100`, {
             cache: "no-store",
+            headers: {
+                ...(STRAPI_TOKEN ? { Authorization: `Bearer ${STRAPI_TOKEN}` } : {}),
+            },
         });
     } catch (error) {
         console.error("[ISSUE_PDF_DOWNLOAD] Failed to fetch issues from Strapi", error);
@@ -111,7 +115,7 @@ async function fetchIssue(slug: string) {
 
     if (!item) return null;
 
-    const title = item.Title || ${item.Month || parsed.month} ${item.Year || parsed.year};
+    const title = item.Title || `${item.Month || parsed.month} ${item.Year || parsed.year}`;
     const pdf = extractPdfMeta(item.issue_Epdf);
 
     return { title, pdf };
@@ -122,13 +126,15 @@ export async function GET(
     { params }: { params: Promise<{ slug: string }> }
 ) {
     const { slug } = await params;
-    const requestUrl = new URL(request.url);
     const { userId } = await auth();
 
     if (!userId) {
-        const returnTo = ${requestUrl.pathname}${requestUrl.search};
-        const redirectUrl = /auth?redirect_url=${encodeURIComponent(returnTo)};
-        return NextResponse.redirect(new URL(redirectUrl, request.url));
+        const forwardedHost = request.headers.get("x-forwarded-host") || request.headers.get("host") || "localhost:3000";
+        const forwardedProto = request.headers.get("x-forwarded-proto") || "https";
+        const origin = `${forwardedProto}://${forwardedHost}`;
+        const returnTo = `/issues/${slug}/download`;
+        const redirectUrl = `${origin}/auth?redirect_url=${encodeURIComponent(returnTo)}`;
+        return NextResponse.redirect(redirectUrl);
     }
 
     const issue = await fetchIssue(slug);
@@ -150,8 +156,8 @@ export async function GET(
                 lastName: user?.lastName || null,
             },
             {
-                title: ${issue.title} Issue PDF,
-                url: /issues/${slug},
+                title: `${issue.title} Issue PDF`,
+                url: `/issues/${slug}/download`,
             }
         );
     } catch (error) {
@@ -175,7 +181,7 @@ export async function GET(
     return new NextResponse(pdfResponse.body, {
         headers: {
             "Content-Type": pdfResponse.headers.get("content-type") || "application/pdf",
-            "Content-Disposition": attachment; filename="${filename}",
+            "Content-Disposition": `attachment; filename="${filename}"`,
             "Cache-Control": "no-store",
         },
     });
