@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { saveArticleForUser } from "@/lib/queries/saved-articles";
 
 const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL || "https://cms.energdive.com";
+const STRAPI_TOKEN = process.env.STRAPI_API_TOKEN || "";
 
 export const dynamic = "force-dynamic";
 
@@ -125,6 +126,7 @@ export async function GET(
     { params }: { params: Promise<{ slug: string }> }
 ) {
     const { slug } = await params;
+    const requestUrl = new URL(request.url);
     const { userId } = await auth();
 
     if (!userId) {
