@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { saveArticleForUser } from "@/lib/queries/saved-articles";
 
 const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL || "https://cms.energdive.com";
+const STRAPI_TOKEN = process.env.STRAPI_API_TOKEN || "";
 
 export const dynamic = "force-dynamic";
 
@@ -83,6 +84,9 @@ async function fetchIssue(slug: string) {
     try {
         res = await fetch(`${STRAPI_URL}/api/issues?populate[0]=issue_Epdf&pagination[pageSize]=100`, {
             cache: "no-store",
+            headers: {
+                ...(STRAPI_TOKEN ? { Authorization: `Bearer ${STRAPI_TOKEN}` } : {}),
+            },
         });
     } catch (error) {
         console.error("[ISSUE_PDF_DOWNLOAD] Failed to fetch issues from Strapi", error);

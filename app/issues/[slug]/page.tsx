@@ -134,8 +134,12 @@ function getPopulateParams(includeIssuePdf = true) {
 }
 
 async function fetchIssuesWithFallback(includeIssuePdf = true): Promise<Response> {
+    const STRAPI_TOKEN = process.env.STRAPI_API_TOKEN || "";
     const res = await fetch(`${STRAPI_URL}/api/issues?${getPopulateParams(includeIssuePdf)}`, {
         next: { revalidate: 120 },
+        headers: {
+            ...(STRAPI_TOKEN ? { Authorization: `Bearer ${STRAPI_TOKEN}` } : {}),
+        },
     });
 
     if (!res.ok && includeIssuePdf && res.status === 400) {
@@ -146,9 +150,15 @@ async function fetchIssuesWithFallback(includeIssuePdf = true): Promise<Response
 }
 
 async function fetchIssueDetailWithFallback(id: number | string, includeIssuePdf = true): Promise<Response> {
+    const STRAPI_TOKEN = process.env.STRAPI_API_TOKEN || "";
     const res = await fetch(
         `${STRAPI_URL}/api/issues/${id}?${getPopulateParams(includeIssuePdf)}`,
-        { next: { revalidate: 3600 } }
+        { 
+            next: { revalidate: 3600 },
+            headers: {
+                ...(STRAPI_TOKEN ? { Authorization: `Bearer ${STRAPI_TOKEN}` } : {}),
+            },
+        }
     );
 
     if (!res.ok && includeIssuePdf && res.status === 400) {

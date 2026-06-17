@@ -38,7 +38,10 @@ export function CustomUserMenu() {
     if (!user) return null;
 
     const avatarUrl = user.imageUrl;
-    const fullName = user.fullName || user.firstName || "User";
+    const clerkFullName = user.fullName || [user.firstName, user.lastName].filter(Boolean).join(" ");
+    const metaName = typeof user.publicMetadata?.display_name === "string" ? user.publicMetadata.display_name : null;
+    const emailPrefix = (user.primaryEmailAddress?.emailAddress || "").split("@")[0];
+    const fullName = clerkFullName || metaName || emailPrefix || "User";
     const email = user.primaryEmailAddress?.emailAddress || "";
 
     return (

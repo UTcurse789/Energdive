@@ -56,8 +56,9 @@ export async function POST(req: Request) {
         const firstName = evt.data.first_name || "";
         const lastName = evt.data.last_name || "";
 
+        let client;
         try {
-            const client = await getClient();
+            client = await getClient();
             await client.query("BEGIN");
             // Insert basic user, but don't set onboarding_completed to true
             await client.query(
@@ -69,11 +70,18 @@ export async function POST(req: Request) {
                 [id, email, firstName, lastName]
             );
             await client.query("COMMIT");
-            client.release();
             console.log(`[Webhook] Created user in DB: ${id}`);
         } catch (error) {
+            if (client) {
+                try {
+                    await client.query("ROLLBACK");
+                } catch (rollbackErr) {
+                    console.error("[Webhook] Rollback failed:", rollbackErr);
+                }
+            }
             console.error("[Webhook] Error inserting user:", error);
-            // Don't fail the webhook, log it
+        } finally {
+            if (client) client.release();
         }
     }
 
@@ -82,29 +90,33 @@ export async function POST(req: Request) {
         const firstName = evt.data.first_name || "";
         const lastName = evt.data.last_name || "";
 
+        let client;
         try {
-            const client = await getClient();
+            client = await getClient();
             await client.query(
                 `UPDATE users 
                  SET email = $2, first_name = $3, last_name = $4
                  WHERE clerk_id = $1`,
                 [id, email, firstName, lastName]
             );
-            client.release();
             console.log(`[Webhook] Updated user in DB: ${id}`);
         } catch (error) {
             console.error("[Webhook] Error updating user:", error);
+        } finally {
+            if (client) client.release();
         }
     }
 
     if (eventType === "user.deleted") {
+        let client;
         try {
-            const client = await getClient();
+            client = await getClient();
             await client.query(`DELETE FROM users WHERE clerk_id = $1`, [id]);
-            client.release();
             console.log(`[Webhook] Deleted user in DB: ${id}`);
         } catch (error) {
             console.error("[Webhook] Error deleting user:", error);
+        } finally {
+            if (client) client.release();
         }
     }
 

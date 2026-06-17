@@ -1,89 +1,186 @@
 "use client";
 
-import { AuthenticateWithRedirectCallback, useAuth } from "@clerk/nextjs";
-import { usePostHog } from "@posthog/react";
+import { useClerk, useAuth } from "@clerk/nextjs";
 import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import {
     POST_AUTH_REDIRECT_STORAGE_KEY,
     getSafeRedirectFromStoredValue,
 } from "@/lib/post-auth-redirect";
 
+/**
+ * Ultra-fast, premium SSO callback page.
+ *
+ * Approach:
+ * 1. Resolve the redirect URL immediately (from sessionStorage)
+ * 2. Let Clerk process the OAuth exchange via handleRedirectCallback
+ * 3. Redirect immediately once auth is ready — no extra page loads
+ * 4. Show a premium branded transition while processing
+ */
+
+const STATUS_MESSAGES = [
+    "Verifying your credentials…",
+    "Preparing your workspace…",
+    "Almost there…",
+];
+
 export default function SSOCallbackPage() {
+    const { handleRedirectCallback } = useClerk();
     const { isLoaded, isSignedIn } = useAuth();
-    const posthog = usePostHog();
-    const hasCapturedLogin = useRef(false);
-    const [redirectUrl] = useState<string>(() => {
-        if (typeof window === "undefined") {
-            return "/dashboard";
-        }
+    const hasHandled = useRef(false);
+    const [statusIndex, setStatusIndex] = useState(0);
 
-        return getSafeRedirectFromStoredValue(
-            sessionStorage.getItem(POST_AUTH_REDIRECT_STORAGE_KEY)
-        );
-    });
+    // Resolve redirect URL once at mount — no state needed
+    const redirectUrl = useRef<string>(
+        typeof window !== "undefined"
+            ? getSafeRedirectFromStoredValue(
+                  sessionStorage.getItem(POST_AUTH_REDIRECT_STORAGE_KEY)
+              )
+            : "/"
+    );
 
+    // Process the OAuth callback as soon as Clerk is loaded
     useEffect(() => {
-        if (!isLoaded || !isSignedIn || !posthog || hasCapturedLogin.current) {
-            return;
-        }
+        if (hasHandled.current) return;
+        hasHandled.current = true;
 
-        hasCapturedLogin.current = true;
-        posthog.capture("login_completed", {
-            timestamp: new Date().toISOString(),
-            path: window.location.pathname,
-        });
-    }, [isLoaded, isSignedIn, posthog]);
+        const processCallback = async () => {
+            try {
+                await handleRedirectCallback({
+                    afterSignInUrl: redirectUrl.current,
+                    afterSignUpUrl: redirectUrl.current,
+                });
+            } catch (err) {
+                console.error("[SSO Callback] Error:", err);
+                // Fallback: if handleRedirectCallback fails, wait for auth state
+            }
+        };
+
+        processCallback();
+    }, [handleRedirectCallback]);
+
+    // Safety net: if auth completes but handleRedirectCallback didn't navigate
+    useEffect(() => {
+        if (isLoaded && isSignedIn) {
+            // Fire PostHog event asynchronously (don't block redirect)
+            try {
+                const posthog = (window as any).posthog;
+                if (posthog?.capture) {
+                    posthog.capture("login_completed", {
+                        timestamp: new Date().toISOString(),
+                        path: "/auth/sso-callback",
+                    });
+                }
+            } catch {}
+
+            // Clean up stored redirect
+            sessionStorage.removeItem(POST_AUTH_REDIRECT_STORAGE_KEY);
+
+            // Navigate immediately
+            window.location.replace(redirectUrl.current);
+        }
+    }, [isLoaded, isSignedIn]);
+
+    // Cycle through status messages for visual polish
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setStatusIndex((prev) =>
+                prev < STATUS_MESSAGES.length - 1 ? prev + 1 : prev
+            );
+        }, 1800);
+        return () => clearInterval(interval);
+    }, []);
 
     return (
         <div className="min-h-screen flex flex-col items-center justify-center bg-white relative overflow-hidden">
-            {/* Subtle radial gradient backdrop */}
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_40%,rgba(16,185,129,0.06)_0%,transparent_70%)]" />
+            {/* Subtle radial glow background */}
+            <div
+                className="absolute inset-0 pointer-events-none"
+                style={{
+                    background:
+                        "radial-gradient(ellipse 600px 400px at 50% 40%, rgba(0,166,81,0.06) 0%, transparent 70%)",
+                }}
+            />
 
-            {/* Loader card */}
-            <div className="relative z-10 flex flex-col items-center gap-6">
-                {/* Animated spinner ring */}
-                <div className="relative w-16 h-16">
-                    {/* Outer ring */}
-                    <div
-                        className="absolute inset-0 rounded-full border-[2.5px] border-zinc-100"
+            {/* Main content */}
+            <div className="relative z-10 flex flex-col items-center">
+                {/* Logo with pulse */}
+                <div className="mb-8 animate-pulse">
+                    <Image
+                        src="/logo - energclub-energdive.png"
+                        alt="Energdive"
+                        width={200}
+                        height={50}
+                        priority
+                        className="w-auto h-10 object-contain"
                     />
+                </div>
+
+                {/* Progress spinner */}
+                <div className="relative w-12 h-12 mb-6">
+                    {/* Track */}
+                    <div className="absolute inset-0 rounded-full border-[2.5px] border-zinc-100" />
                     {/* Spinning arc */}
                     <div
-                        className="absolute inset-0 rounded-full border-[2.5px] border-transparent border-t-emerald-500 animate-spin"
-                        style={{ animationDuration: "0.9s" }}
+                        className="absolute inset-0 rounded-full border-[2.5px] border-transparent border-t-[#00A651] animate-spin"
+                        style={{ animationDuration: "0.7s" }}
                     />
-                    {/* Inner dot */}
-                    <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                    </div>
+                    {/* Inner glow dot */}
+                    <div className="absolute inset-[10px] rounded-full bg-[#00A651]/5" />
                 </div>
 
-                {/* Text */}
-                <div className="text-center space-y-1.5">
-                    <p className="text-[15px] font-semibold text-zinc-800 tracking-tight">
-                        Signing you in…
+                {/* Status text with crossfade */}
+                <div className="h-6 relative flex items-center justify-center">
+                    <p
+                        key={statusIndex}
+                        className="text-sm font-medium text-zinc-500 animate-fade-in-status"
+                    >
+                        {STATUS_MESSAGES[statusIndex]}
                     </p>
-                    <p className="text-[13px] text-zinc-400">
-                        Please wait while we verify your credentials
-                    </p>
+                </div>
+
+                {/* Subtle linear progress bar */}
+                <div className="mt-6 w-48 h-[3px] bg-zinc-100 rounded-full overflow-hidden">
+                    <div
+                        className="h-full rounded-full"
+                        style={{
+                            background: "linear-gradient(90deg, #00A651, #0AB996)",
+                            animation: "sso-progress 2.5s ease-in-out infinite",
+                        }}
+                    />
                 </div>
             </div>
 
-            {/* Security badge */}
-            <div className="absolute bottom-8 flex items-center gap-2 z-10">
-                <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
-                <span className="text-[10px] uppercase tracking-[0.35em] text-zinc-400 font-semibold">
-                    Encrypted &amp; Secure
-                </span>
-            </div>
-
-            {/* Hidden Clerk callback handler */}
-            <div className="sr-only">
-                <AuthenticateWithRedirectCallback
-                    signInForceRedirectUrl={redirectUrl}
-                    signUpForceRedirectUrl={redirectUrl}
-                />
-            </div>
+            {/* Inline keyframes */}
+            <style jsx>{`
+                @keyframes sso-progress {
+                    0% {
+                        width: 0%;
+                        margin-left: 0%;
+                    }
+                    50% {
+                        width: 70%;
+                        margin-left: 15%;
+                    }
+                    100% {
+                        width: 0%;
+                        margin-left: 100%;
+                    }
+                }
+                .animate-fade-in-status {
+                    animation: fadeInStatus 0.5s ease-out;
+                }
+                @keyframes fadeInStatus {
+                    from {
+                        opacity: 0;
+                        transform: translateY(4px);
+                    }
+                    to {
+                        opacity: 1;
+                        transform: translateY(0);
+                    }
+                }
+            `}</style>
         </div>
     );
 }

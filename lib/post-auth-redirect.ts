@@ -1,4 +1,4 @@
-export const DEFAULT_POST_AUTH_REDIRECT = "/dashboard";
+export const DEFAULT_POST_AUTH_REDIRECT = "/";
 export const POST_AUTH_REDIRECT_STORAGE_KEY = "energdive_post_auth_redirect";
 export const POST_AUTH_REDIRECT_COOKIE = "energdive_post_auth_redirect";
 
@@ -16,6 +16,10 @@ export function getSafeRedirectPath(value: string | null | undefined): string {
             path === "/onboarding" ||
             path.startsWith("/onboarding?")
         ) {
+            return DEFAULT_POST_AUTH_REDIRECT;
+        }
+
+        if (path === "/onboarding" || path.startsWith("/onboarding/") || path.startsWith("/onboarding?")) {
             return DEFAULT_POST_AUTH_REDIRECT;
         }
 

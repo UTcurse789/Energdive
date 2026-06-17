@@ -1,14 +1,8 @@
 import type { Metadata } from "next";
 import { auth, currentUser } from "@clerk/nextjs/server";
-import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { ensureUserProfileRow, getUserProfile, hasUserDownloads } from "@/lib/queries";
 import DashboardShell from "@/components/dashboard/dashboard-shell";
-import {
-    DEFAULT_POST_AUTH_REDIRECT,
-    POST_AUTH_REDIRECT_COOKIE,
-    getSafeRedirectFromStoredValue,
-} from "@/lib/post-auth-redirect";
 
 export const metadata: Metadata = {
     title: {
@@ -97,29 +91,41 @@ export default async function DashboardLayout({
         });
     }
 
-    if (!effectiveProfile?.onboarding_completed) {
-        console.warn("[DASHBOARD_LAYOUT] Redirecting user back to onboarding", {
-            userId,
-            email,
-            hasDbProfile: Boolean(resolvedProfile),
-            dbOnboardingCompleted: resolvedProfile?.onboarding_completed ?? null,
-            clerkOnboardingCompleted,
-        });
-        const cookieStore = await cookies();
-        const storedReturnTo = getSafeRedirectFromStoredValue(
-            cookieStore.get(POST_AUTH_REDIRECT_COOKIE)?.value
-        );
-        const returnTo = storedReturnTo !== DEFAULT_POST_AUTH_REDIRECT
-            ? storedReturnTo
-            : "/dashboard";
+    // Onboarding enforcement is now handled client-side by the OnboardingModal
+    // popup in the root layout. No server-side redirect needed here.
+    // Provide a fallback profile so the shell can render while the modal is active.
+    const fallbackProfile = {
+        id: 0,
+        clerk_id: userId,
+        email,
+        first_name: clerkUser?.firstName || null,
+        last_name: clerkUser?.lastName || null,
+        phone,
+        country: null,
+        state: null,
+        job_title: null,
+        organization: null,
+        onboarding_completed: false,
+        has_submitted_abstract: false,
+        created_at: new Date().toISOString(),
+        preferred_frequency: "daily",
+        preferred_formats: [] as string[],
+        content_digest_opted_out: false,
+        industry_id: null,
+        industry_name: null,
+        sub_industry_id: null,
+        sub_industry_name: null,
+        communities: [],
+        membership_id: null,
+        verification_status: null,
+    };
 
-        redirect(`/onboarding?return_to=${encodeURIComponent(returnTo)}`);
-    }
+    const profileForShell = effectiveProfile || fallbackProfile;
 
     const downloadsExist = await hasUserDownloads(userId);
 
     return (
-        <DashboardShell initialProfile={{ ...effectiveProfile, hasDownloads: downloadsExist }}>
+        <DashboardShell initialProfile={{ ...profileForShell, hasDownloads: downloadsExist }}>
             {children}
         </DashboardShell>
     );
