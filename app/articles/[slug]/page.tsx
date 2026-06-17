@@ -20,7 +20,6 @@ import { AuthorBioBox } from "@/components/article/AuthorBioBox";
 import { ArticleNewsletterCTA } from "@/components/article/ArticleNewsletterCTA";
 import { ArticleStickyShare } from "@/components/article/ArticleStickyShare";
 import { SaveArticleButton } from "@/components/article/SaveArticleButton";
-import { ArticlePremiumSpotlight } from "@/components/onboarding/article-premium-spotlight";
 
 const STRAPI = "https://cms.energdive.com";
 
@@ -217,9 +216,6 @@ export default async function ArticlePage(props: any) {
 
             <main className="pt-20 pb-24">
                 <ArticleStickyShare title={article.title} url={canonicalUrl} />
-                <ArticlePremiumSpotlight
-                    loginHref={`/auth?redirect_url=${encodeURIComponent(canonicalUrl)}`}
-                />
                 {/* ─── Breadcrumb ─── */}
                 <div className="mx-auto w-full max-w-[1300px] px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12 mb-6 sm:mb-8">
                     <nav className="flex items-center gap-1.5 text-xs text-gray-400 font-sans">

@@ -54,8 +54,8 @@ import { UtmTracker } from "@/components/UtmTracker";
 import { Suspense } from "react";
 import ConsentAwareGTM from "@/components/ConsentAwareGTM";
 import CookieConsent from "@/components/CookieConsent";
-import { PlatformOnboarding } from "@/components/onboarding/platform-onboarding";
 import AuthPromptModal from "@/components/ui/auth-prompt-modal";
+import OnboardingModal from "@/components/onboarding/onboarding-modal";
 import { PostHogProvider } from "./providers";
 import { PostHogIdentify } from "@/components/PostHogIdentify";
 
@@ -118,8 +118,8 @@ export default function RootLayout({
               <UtmTracker />
             </Suspense>
             <PostHogIdentify />
-            <PlatformOnboarding />
             <AuthPromptModal />
+            <OnboardingModal />
             <SiteLayout>
               {children}
             </SiteLayout>

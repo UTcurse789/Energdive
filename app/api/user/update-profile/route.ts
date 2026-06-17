@@ -1,4 +1,4 @@
-import { auth } from "@clerk/nextjs/server";
+import { auth, clerkClient } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { updateUserProfile } from "@/lib/queries/users";
 import syncUserToBrevo from "@/lib/brevoSync";
@@ -33,6 +33,19 @@ export async function POST(req: Request) {
             preferredFormats: body.preferredFormats,
             contentDigestOptedOut: body.contentDigestOptedOut,
         });
+
+        // Sync name changes back to Clerk so session data stays in sync
+        if (body.firstName || body.lastName) {
+            try {
+                const updateData: Record<string, string> = {};
+                if (body.firstName) updateData.firstName = body.firstName;
+                if (body.lastName) updateData.lastName = body.lastName;
+                await (await clerkClient()).users.updateUser(userId, updateData);
+                console.log("✅ Clerk user name synced:", updateData);
+            } catch (clerkErr) {
+                console.error("❌ Clerk name sync failed (non-fatal):", clerkErr);
+            }
+        }
 
         // Sync updated profile to Brevo
         try {

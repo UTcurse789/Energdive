@@ -17,11 +17,9 @@ const brandGreen = "#00A651";
 const QUICK_LINKS = [
     { name: "News", href: "/news" },
     { name: "Opinions", href: "/opinion" },
-    { name: "Editorials", href: "/editorial" },
-    { name: "Editorial Collaboration", href: "/editorial-collaboration" },
+    // { name: "Editorials", href: "/editorial" },
+    // { name: "Editorial Collaboration", href: "/editorial-collaboration" },
     { name: "Reports", href: "/reports" },
-    { name: "Insights Exchange", href: "/energdive-insights-exchange" },
-    { name: "Knowledge Base", href: "/knowledge-base" },
     { name: "Videos", href: "/videos" },
     { name: "Events", href: "/events" },
 ];

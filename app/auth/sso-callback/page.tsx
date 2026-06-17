@@ -1,84 +1,84 @@
 "use client";
 
-import { AuthenticateWithRedirectCallback, useAuth } from "@clerk/nextjs";
-import { usePostHog } from "@posthog/react";
-import { useEffect, useRef, useState } from "react";
-import { POST_AUTH_REDIRECT_STORAGE_KEY } from "@/lib/post-auth-redirect";
+import { useClerk, useAuth } from "@clerk/nextjs";
+import { useEffect, useRef } from "react";
+import {
+    POST_AUTH_REDIRECT_STORAGE_KEY,
+    getSafeRedirectFromStoredValue,
+} from "@/lib/post-auth-redirect";
 
+/**
+ * Ultra-fast SSO callback page.
+ * 
+ * Approach:
+ * 1. Resolve the redirect URL immediately (from sessionStorage)
+ * 2. Let Clerk process the OAuth exchange via handleRedirectCallback
+ * 3. Redirect immediately once auth is ready — no extra page loads
+ */
 export default function SSOCallbackPage() {
+    const { handleRedirectCallback } = useClerk();
     const { isLoaded, isSignedIn } = useAuth();
-    const posthog = usePostHog();
-    const hasCapturedLogin = useRef(false);
-    const [redirectUrl] = useState<string>(() => {
-        if (typeof window === "undefined") {
-            return "/dashboard";
-        }
+    const hasHandled = useRef(false);
 
-        return sessionStorage.getItem(POST_AUTH_REDIRECT_STORAGE_KEY) || "/dashboard";
-    });
+    // Resolve redirect URL once at mount — no state needed
+    const redirectUrl = useRef<string>(
+        typeof window !== "undefined"
+            ? getSafeRedirectFromStoredValue(
+                  sessionStorage.getItem(POST_AUTH_REDIRECT_STORAGE_KEY)
+              )
+            : "/"
+    );
 
+    // Process the OAuth callback as soon as Clerk is loaded
     useEffect(() => {
-        if (!isLoaded || !isSignedIn || !posthog || hasCapturedLogin.current) {
-            return;
-        }
+        if (hasHandled.current) return;
+        hasHandled.current = true;
 
-        hasCapturedLogin.current = true;
-        posthog.capture("login_completed", {
-            timestamp: new Date().toISOString(),
-            path: window.location.pathname,
-        });
-    }, [isLoaded, isSignedIn, posthog]);
+        const processCallback = async () => {
+            try {
+                await handleRedirectCallback({
+                    afterSignInUrl: redirectUrl.current,
+                    afterSignUpUrl: redirectUrl.current,
+                });
+            } catch (err) {
+                console.error("[SSO Callback] Error:", err);
+                // Fallback: if handleRedirectCallback fails, wait for auth state
+            }
+        };
+
+        processCallback();
+    }, [handleRedirectCallback]);
+
+    // Safety net: if auth completes but handleRedirectCallback didn't navigate
+    useEffect(() => {
+        if (isLoaded && isSignedIn) {
+            // Fire PostHog event asynchronously (don't block redirect)
+            try {
+                const posthog = (window as any).posthog;
+                if (posthog?.capture) {
+                    posthog.capture("login_completed", {
+                        timestamp: new Date().toISOString(),
+                        path: "/auth/sso-callback",
+                    });
+                }
+            } catch {}
+
+            // Navigate immediately
+            window.location.replace(redirectUrl.current);
+        }
+    }, [isLoaded, isSignedIn]);
 
     return (
-        <div className="min-h-screen flex flex-col items-center justify-center bg-white relative overflow-hidden">
-            {/* Subtle radial gradient backdrop */}
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_40%,rgba(16,185,129,0.06)_0%,transparent_70%)]" />
-
-            {/* Loader card */}
-            <div className="relative z-10 flex flex-col items-center gap-6">
-                {/* Animated spinner ring */}
-                <div className="relative w-16 h-16">
-                    {/* Outer ring */}
-                    <div
-                        className="absolute inset-0 rounded-full border-[2.5px] border-zinc-100"
-                    />
-                    {/* Spinning arc */}
-                    <div
-                        className="absolute inset-0 rounded-full border-[2.5px] border-transparent border-t-emerald-500 animate-spin"
-                        style={{ animationDuration: "0.9s" }}
-                    />
-                    {/* Inner dot */}
-                    <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                    </div>
-                </div>
-
-                {/* Text */}
-                <div className="text-center space-y-1.5">
-                    <p className="text-[15px] font-semibold text-zinc-800 tracking-tight">
-                        Signing you in…
-                    </p>
-                    <p className="text-[13px] text-zinc-400">
-                        Please wait while we verify your credentials
-                    </p>
-                </div>
-            </div>
-
-            {/* Security badge */}
-            <div className="absolute bottom-8 flex items-center gap-2 z-10">
-                <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
-                <span className="text-[10px] uppercase tracking-[0.35em] text-zinc-400 font-semibold">
-                    Encrypted &amp; Secure
-                </span>
-            </div>
-
-            {/* Hidden Clerk callback handler */}
-            <div className="sr-only">
-                <AuthenticateWithRedirectCallback
-                    signInForceRedirectUrl={redirectUrl}
-                    signUpForceRedirectUrl={redirectUrl}
+        <div className="min-h-screen flex flex-col items-center justify-center bg-white">
+            {/* Minimal spinner — no extra DOM, no animations library */}
+            <div className="relative w-12 h-12 mb-4">
+                <div className="absolute inset-0 rounded-full border-[2px] border-zinc-100" />
+                <div
+                    className="absolute inset-0 rounded-full border-[2px] border-transparent border-t-emerald-500 animate-spin"
+                    style={{ animationDuration: "0.8s" }}
                 />
             </div>
+            <p className="text-sm font-medium text-zinc-600">Signing you in…</p>
         </div>
     );
 }

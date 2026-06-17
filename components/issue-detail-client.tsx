@@ -236,7 +236,7 @@ export function IssueDetailClient({ issue }: IssueDetailClientProps) {
                     </div>
 
                     {/* Right Column: Sticky Cover (30%) */}
-                    <div className="hidden lg:block w-[220px] xl:w-[250px] flex-shrink-0">
+                    <div className="hidden lg:block w-[280px] xl:w-[320px] flex-shrink-0">
                         <div className="sticky top-[120px] pb-10">
 
                             {/* Magazine Cover */}

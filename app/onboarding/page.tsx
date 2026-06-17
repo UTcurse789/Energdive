@@ -43,10 +43,10 @@
 
 import Image from "next/image";
 import OnboardingWizard from "@/components/onboarding/wizard";
-import { auth } from "@clerk/nextjs/server";
+import { auth, currentUser } from "@clerk/nextjs/server";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { getUserProfile } from "@/lib/queries";
+import { ensureUserProfileRow, getUserProfile } from "@/lib/queries";
 import OnboardingBackground from "@/components/onboarding/onboarding-bg";
 import {
     DEFAULT_POST_AUTH_REDIRECT,
@@ -68,9 +68,15 @@ export default async function OnboardingPage({
         redirect("/auth");
     }
 
-    // DB check — the authoritative source of truth for onboarding completion.
-    // This avoids a redirect loop when Clerk metadata is ahead of the DB row.
-    const profile = await getUserProfile(userId);
+    const clerkUser = await currentUser();
+    const email =
+        clerkUser?.primaryEmailAddress?.emailAddress ||
+        clerkUser?.emailAddresses?.[0]?.emailAddress ||
+        "";
+    const phone = typeof clerkUser?.publicMetadata?.phone === "string"
+        ? clerkUser.publicMetadata.phone
+        : null;
+    const clerkOnboardingCompleted = clerkUser?.publicMetadata?.onboarding_completed === true;
     const resolvedSearchParams = searchParams ? await searchParams : undefined;
     const cookieStore = await cookies();
     const returnToFromQuery = typeof resolvedSearchParams?.return_to === "string"
@@ -81,8 +87,32 @@ export default async function OnboardingPage({
     );
     const returnTo = returnToFromQuery ||
         (returnToFromCookie !== DEFAULT_POST_AUTH_REDIRECT ? returnToFromCookie : null) ||
-        "/dashboard";
-    if (profile?.onboarding_completed) {
+        "/";
+
+    if (email) {
+        try {
+            await ensureUserProfileRow({
+                clerkId: userId,
+                email,
+                firstName: clerkUser?.firstName || null,
+                lastName: clerkUser?.lastName || null,
+                phone,
+                onboardingCompleted: clerkOnboardingCompleted,
+            });
+        } catch (error) {
+            console.error("[ONBOARDING_PAGE] Failed to ensure user profile row:", error);
+        }
+    }
+
+    const profile = await getUserProfile(userId);
+    if (profile?.onboarding_completed || clerkOnboardingCompleted) {
+        console.warn("[ONBOARDING_PAGE] Redirecting completed user away from onboarding", {
+            userId,
+            email,
+            dbOnboardingCompleted: profile?.onboarding_completed ?? null,
+            clerkOnboardingCompleted,
+            returnTo,
+        });
         redirect(returnTo);
     }
 

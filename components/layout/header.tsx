@@ -189,6 +189,10 @@ export function Header() {
 
     const handleLoginClick = () => {
         closeAll();
+        // Store current page so user returns here after auth/onboarding
+        if (typeof window !== 'undefined') {
+            sessionStorage.setItem('energdive_post_auth_redirect', pathname);
+        }
         if (posthog) {
             posthog.capture('login_clicked', { timestamp: new Date().toISOString(), path: window.location.pathname });
         }
@@ -423,11 +427,6 @@ export function Header() {
                         {/* RIGHT NAV */}
                         <div className="relative flex items-center gap-x-3 md:gap-x-5 xl:gap-x-7 flex-1 justify-end">
                             <nav className="hidden sm:flex items-center gap-x-3 md:gap-x-5 xl:gap-x-7">
-                                <Link href="/energyjobs" className="inline-flex items-center gap-2 rounded-[16px] border-2 border-dashed border-[#00A651]/70 px-3 py-1.5 text-[12px] xl:text-[13px] font-bold uppercase tracking-[1px] whitespace-nowrap transition-colors hover:border-[#00A651] hover:bg-[#00A651]/[0.04]" onClick={closeMenus}>
-                                    <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-[#00A651]" />
-                                    ENERGYJOBS
-                                    <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-[#00A651]" />
-                                </Link>
                                 <Link href="/energclub" target="_blank" className="text-[12px] xl:text-[13px] font-bold uppercase tracking-[1px] hover:opacity-70 whitespace-nowrap" onClick={closeMenus}>ENERGCLUB</Link>
                                 <Link href="/subscribe" style={{ color: brandGreen }} className="text-[12px] xl:text-[13px] font-bold uppercase tracking-[1px] hover:opacity-70 whitespace-nowrap" onClick={closeMenus}>SUBSCRIBE</Link>
                             </nav>
@@ -438,7 +437,7 @@ export function Header() {
                                 </SignedIn>
                                 <SignedOut>
                                     <motion.div className="relative" onMouseEnter={() => setIsLoginHovered(true)} onMouseLeave={() => setIsLoginHovered(false)}>
-                                        <Link href="/auth" className="block border-[1.5px] border-black px-3 py-1 md:px-6 md:py-2 text-[10px] md:text-[12px] font-bold uppercase tracking-wider hover:bg-black hover:text-white transition-all overflow-hidden whitespace-nowrap" onClick={handleLoginClick}>
+                                        <Link href={`/auth?redirect_url=${encodeURIComponent(pathname)}`} className="block border-[1.5px] border-black px-3 py-1 md:px-6 md:py-2 text-[10px] md:text-[12px] font-bold uppercase tracking-wider hover:bg-black hover:text-white transition-all overflow-hidden whitespace-nowrap" onClick={handleLoginClick}>
                                             LOGIN
                                             <AnimatePresence>
                                                 {isLoginHovered && (
@@ -1286,11 +1285,11 @@ export function Header() {
 
                                 {/* Bottom links - visible on mobile only */}
                                 <div className="border-t border-gray-100 mt-2 pt-2">
-                                    <Link href="/energyjobs" onClick={closeAll} className="mx-6 my-3 inline-flex w-fit items-center gap-2 rounded-[16px] border-2 border-dashed border-[#00A651]/70 px-4 py-3 text-[13px] font-bold uppercase tracking-[1px] transition-colors hover:bg-gray-50">
+                                    {/* <Link href="/energjob" onClick={closeAll} className="mx-6 my-3 inline-flex w-fit items-center gap-2 rounded-[16px] border-2 border-dashed border-[#00A651]/70 px-4 py-3 text-[13px] font-bold uppercase tracking-[1px] transition-colors hover:bg-gray-50">
                                         <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-[#00A651]" />
                                         ENERGYJOBS
                                         <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-[#00A651]" />
-                                    </Link>
+                                    </Link> */}
                                     <Link href="/energclub" onClick={closeAll} className="px-6 py-4 text-[13px] font-bold uppercase tracking-[1px] hover:bg-gray-50 transition-colors block">
                                         ENERGCLUB
                                     </Link>
@@ -1303,7 +1302,7 @@ export function Header() {
                                 <div className="px-6 py-4 border-t border-gray-100">
                                     <SignedOut>
                                         <Link
-                                            href="/auth"
+                                            href={`/auth?redirect_url=${encodeURIComponent(pathname)}`}
                                             onClick={handleLoginClick}
                                             className="block w-full text-center border-[1.5px] border-black px-6 py-3 text-[12px] font-bold uppercase tracking-wider hover:bg-black hover:text-white transition-all"
                                         >

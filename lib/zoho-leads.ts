@@ -12,12 +12,15 @@ export interface ZohoLeadData {
     Company?: string;
     Designation?: string;
     Lead_Source?: string;
+    Show?: string;
     Industry?: string;
     Industry_Sub_Category?: string;
     Community?: string[];
     Sub_Community?: string[];
     Community_Portal?: string[];
     Invite_Source?: string;
+    Membership_ID?: string;
+    Description?: string;
     City?: string;
     Country?: string;
     Owner?: string;
@@ -179,12 +182,15 @@ export async function upsertZohoLead(
             Company: enrichedData.Company || null,
             Designation: enrichedData.Designation || null,
             Lead_Source: enrichedData.Lead_Source || null,
+            Show: enrichedData.Show || null,
             Industry: enrichedData.Industry || null,
             Industry_Sub_Category: enrichedData.Industry_Sub_Category || null,
             Community: toZohoArray(enrichedData.Community),
             Sub_Community: toZohoArray(enrichedData.Sub_Community),
             Community_Portal: toZohoArray(enrichedData.Community_Portal),
             Invite_Source: enrichedData.Invite_Source || null,
+            Membership_ID: enrichedData.Membership_ID || null,
+            Description: enrichedData.Description || null,
             City: enrichedData.City || null,
             Country: enrichedData.Country || null,
             Source: enrichedData.UTM_Source || null,
@@ -335,12 +341,15 @@ export async function createZohoLead(
             Company: enrichedData.Company || null,
             Designation: enrichedData.Designation || null,
             Lead_Source: enrichedData.Lead_Source || null,
+            Show: enrichedData.Show || null,
             Industry: enrichedData.Industry || null,
             Industry_Sub_Category: enrichedData.Industry_Sub_Category || null,
             Community: toZohoArray(enrichedData.Community),
             Sub_Community: toZohoArray(enrichedData.Sub_Community),
             Community_Portal: toZohoArray(enrichedData.Community_Portal),
             Invite_Source: enrichedData.Invite_Source || null,
+            Membership_ID: enrichedData.Membership_ID || null,
+            Description: enrichedData.Description || null,
             City: enrichedData.City || null,
             Country: enrichedData.Country || null,
             Source: enrichedData.UTM_Source || null,
