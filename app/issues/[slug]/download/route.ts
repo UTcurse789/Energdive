@@ -81,7 +81,6 @@ async function fetchIssue(slug: string) {
 
     let res: Response;
     try {
-        const STRAPI_TOKEN = process.env.STRAPI_API_TOKEN || "";
         res = await fetch(`${STRAPI_URL}/api/issues?populate[0]=issue_Epdf&pagination[pageSize]=100`, {
             cache: "no-store",
             headers: {
@@ -129,12 +128,9 @@ export async function GET(
     const { userId } = await auth();
 
     if (!userId) {
-        const forwardedHost = request.headers.get("x-forwarded-host") || request.headers.get("host") || "localhost:3000";
-        const forwardedProto = request.headers.get("x-forwarded-proto") || "https";
-        const origin = `${forwardedProto}://${forwardedHost}`;
-        const returnTo = `/issues/${slug}/download`;
-        const redirectUrl = `${origin}/auth?redirect_url=${encodeURIComponent(returnTo)}`;
-        return NextResponse.redirect(redirectUrl);
+        const returnTo = `${requestUrl.pathname}${requestUrl.search}`;
+        const redirectUrl = `/auth?redirect_url=${encodeURIComponent(returnTo)}`;
+        return NextResponse.redirect(new URL(redirectUrl, request.url));
     }
 
     const issue = await fetchIssue(slug);
@@ -157,7 +153,7 @@ export async function GET(
             },
             {
                 title: `${issue.title} Issue PDF`,
-                url: `/issues/${slug}/download`,
+                url: `/issues/${slug}`,
             }
         );
     } catch (error) {
