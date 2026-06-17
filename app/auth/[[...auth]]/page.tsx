@@ -43,7 +43,7 @@ const getPostLoginFallbackPath = (target: string): string => {
     const safeTarget = getSafeRedirectPath(target);
 
     if (safeTarget === "/onboarding") {
-        return "/dashboard";
+        return "/";
     }
 
     return safeTarget;
@@ -63,6 +63,8 @@ export default function UnifiedAuthPage() {
     const [error, setError] = useState("");
     const [info, setInfo] = useState("");
     const [resolvedPostAuthRedirect, setResolvedPostAuthRedirect] = useState<string | null>(null);
+    const [userFirstName, setUserFirstName] = useState("");
+    const [existingUserOnboarded, setExistingUserOnboarded] = useState(false);
 
     const posthog = usePostHog();
     const postAuthRedirect = resolvedPostAuthRedirect ?? DEFAULT_POST_AUTH_REDIRECT;
@@ -136,6 +138,16 @@ export default function UnifiedAuthPage() {
         [resolvePostAuthRedirect]
     );
 
+    /** Route user through onboarding if needed, otherwise go directly to target */
+    /** Always redirect to target — the OnboardingModal in root layout
+     *  will show the onboarding form as a popup if needed. */
+    const navigatePostAuth = useCallback(
+        (target: string, _forceOnboarding?: boolean) => {
+            window.location.href = target;
+        },
+        [],
+    );
+
     // Auto-detect input type
     const inputMode: InputMode = useMemo(() => {
         const trimmed = identifier.trim();
@@ -145,7 +157,10 @@ export default function UnifiedAuthPage() {
         return "email";
     }, [identifier]);
 
-    // If already signed in, never send the user back into onboarding from /auth.
+    // If already signed in, redirect away from /auth.
+    // Don't use navigatePostAuth here — existingUserOnboarded might still be
+    // at its default (false) since handleSubmit never ran. The target page's
+    // layout (e.g. dashboard/layout.tsx) will enforce onboarding if needed.
     useEffect(() => {
         if (isSignedIn) {
             window.location.replace(getPostLoginFallbackPath(postAuthRedirect));
@@ -166,119 +181,147 @@ export default function UnifiedAuthPage() {
             });
         }
 
-        const isPhone = isPhoneInput(identifier.trim());
-
-        if (isPhone) {
-            // ── PHONE PATH: Use MSG91 ──
-            const phone = formatPhoneForAPI(identifier.trim());
+        try {
+            // Query our local database to check if user exists and get their first name
+            let exists = false;
+            let dbFirstName = "";
             try {
-                const res = await fetch("/api/otp/send", {
+                console.log("[AUTH] Checking user in DB for identifier:", identifier.trim());
+                const checkRes = await fetch("/api/auth/check-user", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ phone }),
+                    body: JSON.stringify({ identifier: identifier.trim() }),
                 });
-                const data = await res.json();
-
-                if (data.success) {
-                    setStep("otp-phone");
-                    setInfo(`We sent a verification code to ${phone}`);
-                } else {
-                    setError(data.error || "Failed to send OTP. Please try again.");
+                const checkData = await checkRes.json();
+                console.log("[AUTH] DB check-user response:", checkData);
+                if (checkData.exists) {
+                    exists = true;
+                    dbFirstName = checkData.firstName || "";
+                    setExistingUserOnboarded(checkData.onboardingCompleted === true);
                 }
-            } catch {
-                setError("Network error. Please try again.");
+            } catch (err) {
+                console.error("[AUTH] Error in check-user DB query:", err);
             }
-        } else {
-            // ── EMAIL PATH: Use Clerk ──
-            const emailValue = identifier.trim();
-            try {
-                const result = await signIn!.create({
-                    identifier: emailValue,
-                });
 
-                if (result.status === "needs_first_factor") {
-                    const emailFactor = (result.supportedFirstFactors as any[])?.find(
-                        (f) => f.strategy === "email_code"
-                    );
-                    if (emailFactor) {
-                        await signIn!.prepareFirstFactor({
-                            strategy: "email_code",
-                            emailAddressId: emailFactor.emailAddressId,
-                        });
-                        setInfo("We sent a verification code to your email.");
+            console.log("[AUTH] Setting isNewUser:", !exists, "| userFirstName:", dbFirstName);
+            setIsNewUser(!exists);
+            setUserFirstName(dbFirstName);
+
+            const isPhone = isPhoneInput(identifier.trim());
+
+            if (isPhone) {
+                // ── PHONE PATH: Use MSG91 ──
+                const phone = formatPhoneForAPI(identifier.trim());
+                try {
+                    const res = await fetch("/api/otp/send", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ phone }),
+                    });
+                    const data = await res.json();
+
+                    if (data.success) {
+                        setStep("otp-phone");
+                        setInfo(`We sent a verification code to ${phone}`);
+                    } else {
+                        setError(data.error || "Failed to send OTP. Please try again.");
                     }
-                    setIsNewUser(false);
-                    setStep("otp-signin");
-                } else if (result.status === "complete") {
-                    if (result.createdSessionId) {
-                        if (posthog) {
-                            posthog.capture("login_completed", {
-                                timestamp: new Date().toISOString(),
-                                path: window.location.pathname,
-                            });
-                        }
-                        const target = resolveFinalAuthRedirect();
-                        console.log("[AUTH-REDIRECT] handleSubmit complete, navigating to:", target);
-                        await setActive!({ session: result.createdSessionId });
-                        window.location.href = target;
-                        return;
-                    }
-                    setStep("complete");
-                    window.location.href = getPostLoginFallbackPath(postAuthRedirect);
+                } catch {
+                    setError("Network error. Please try again.");
                 }
-            } catch (err: any) {
-                const clerkError = err?.errors?.[0];
-                const clerkCode = clerkError?.code;
-                const clerkMessage =
-                    clerkError?.longMessage ||
-                    clerkError?.message ||
-                    err?.message ||
-                    "Something went wrong. Please try again.";
+            } else {
+                // ── EMAIL PATH: Use Clerk ──
+                const emailValue = identifier.trim();
+                try {
+                    const result = await signIn!.create({
+                        identifier: emailValue,
+                    });
 
-                if (
-                    clerkCode === "form_identifier_not_found" ||
-                    clerkCode === "identifier_not_found"
-                ) {
-                    setIsNewUser(true);
-                    try {
-                        await signUp!.create({ emailAddress: emailValue });
-                        await signUp!.prepareEmailAddressVerification({
-                            strategy: "email_code",
-                        });
-                        setStep("otp-signup");
-                        setInfo("We sent a verification code to your email.");
-                        return;
-                    } catch (signUpErr: any) {
-                        const signUpCode = signUpErr?.errors?.[0]?.code;
-
-                        if (signUpCode === "form_identifier_exists") {
-                            setIsNewUser(false);
-                            setError("This account already exists. Please try signing in again.");
+                    if (result.status === "needs_first_factor") {
+                        const emailFactor = (result.supportedFirstFactors as any[])?.find(
+                            (f) => f.strategy === "email_code"
+                        );
+                        if (emailFactor) {
+                            await signIn!.prepareFirstFactor({
+                                strategy: "email_code",
+                                emailAddressId: emailFactor.emailAddressId,
+                            });
+                            setInfo("We sent a verification code to your email.");
+                        }
+                        console.log("[AUTH] Existing Clerk user found, keeping isNewUser=false, step→otp-signin");
+                        setIsNewUser(false);
+                        setStep("otp-signin");
+                    } else if (result.status === "complete") {
+                        if (result.createdSessionId) {
+                            if (posthog) {
+                                posthog.capture("login_completed", {
+                                    timestamp: new Date().toISOString(),
+                                    path: window.location.pathname,
+                                });
+                            }
+                            const target = resolveFinalAuthRedirect();
+                            console.log("[AUTH-REDIRECT] handleSubmit complete, navigating to:", target);
+                            await setActive!({ session: result.createdSessionId });
+                            navigatePostAuth(target);
                             return;
                         }
+                        setStep("complete");
+                        navigatePostAuth(getPostLoginFallbackPath(postAuthRedirect));
+                    }
+                } catch (err: any) {
+                    const clerkError = err?.errors?.[0];
+                    const clerkCode = clerkError?.code;
+                    const clerkMessage =
+                        clerkError?.longMessage ||
+                        clerkError?.message ||
+                        err?.message ||
+                        "Something went wrong. Please try again.";
 
-                        setError(
-                            signUpErr?.errors?.[0]?.longMessage ||
-                            signUpErr?.errors?.[0]?.message ||
-                            signUpErr?.message ||
-                            "Could not create account. Please try again."
-                        );
+                    if (
+                        clerkCode === "form_identifier_not_found" ||
+                        clerkCode === "identifier_not_found"
+                    ) {
+                        setIsNewUser(true);
+                        try {
+                            await signUp!.create({ emailAddress: emailValue });
+                            await signUp!.prepareEmailAddressVerification({
+                                strategy: "email_code",
+                            });
+                            setStep("otp-signup");
+                            setInfo("We sent a verification code to your email.");
+                            return;
+                        } catch (signUpErr: any) {
+                            const signUpCode = signUpErr?.errors?.[0]?.code;
+
+                            if (signUpCode === "form_identifier_exists") {
+                                setIsNewUser(false);
+                                setError("This account already exists. Please try signing in again.");
+                                return;
+                            }
+
+                            setError(
+                                signUpErr?.errors?.[0]?.longMessage ||
+                                signUpErr?.errors?.[0]?.message ||
+                                signUpErr?.message ||
+                                "Could not create account. Please try again."
+                            );
+                            return;
+                        }
+                    }
+
+                    if (clerkCode === "form_identifier_exists") {
+                        setIsNewUser(false);
+                        setError("Account found. Please complete sign in with the verification code.");
                         return;
                     }
-                }
 
-                if (clerkCode === "form_identifier_exists") {
-                    setIsNewUser(false);
-                    setError("Account found. Please complete sign in with the verification code.");
-                    return;
+                    setError(clerkMessage);
                 }
-
-                setError(clerkMessage);
             }
+        } finally {
+            setLoading(false);
         }
-
-        setLoading(false);
-    }, [identifier, postAuthRedirect, resolveFinalAuthRedirect, signIn, signUp, signInLoaded, signUpLoaded, setActive]);
+    }, [identifier, postAuthRedirect, navigatePostAuth, resolveFinalAuthRedirect, signIn, signUp, signInLoaded, signUpLoaded, setActive]);
 
     // ── Step 2a: Verify OTP (Email - Clerk) ──
     const handleEmailOTPSubmit = useCallback(async () => {
@@ -307,11 +350,11 @@ export default function UnifiedAuthPage() {
                         const target = resolveFinalAuthRedirect();
                         console.log("[AUTH-REDIRECT] signup complete, navigating to:", target);
                         await setActive!({ session: sessionId });
-                        window.location.href = target;
+                        navigatePostAuth(target, true);
                         return;
                     }
                     setStep("complete");
-                    setTimeout(() => window.location.replace(getPostLoginFallbackPath(postAuthRedirect)), 300);
+                    setTimeout(() => navigatePostAuth(getPostLoginFallbackPath(postAuthRedirect), true), 300);
                 } else if (result.status === "missing_requirements") {
                     // Email verified but CAPTCHA/other requirement blocked completion
                     // Fallback: use backend to create user + sign-in token (bypasses CAPTCHA)
@@ -339,11 +382,11 @@ export default function UnifiedAuthPage() {
                             const target = resolveFinalAuthRedirect();
                             console.log("[AUTH-REDIRECT] signup-ticket complete, navigating to:", target);
                             await setActive!({ session: ticketResult.createdSessionId });
-                            window.location.href = target;
+                            navigatePostAuth(target, true);
                             return;
                         }
                         setStep("complete");
-                        setTimeout(() => window.location.replace(getPostLoginFallbackPath(postAuthRedirect)), 300);
+                        setTimeout(() => navigatePostAuth(getPostLoginFallbackPath(postAuthRedirect), true), 300);
                     } else {
                         setError(data.error || "Could not complete sign-up. Please try again.");
                     }
@@ -369,11 +412,11 @@ export default function UnifiedAuthPage() {
                         const target = resolveFinalAuthRedirect();
                         console.log("[AUTH-REDIRECT] signin complete, navigating to:", target);
                         await setActive!({ session: sessionId });
-                        window.location.href = target;
+                        navigatePostAuth(target);
                         return;
                     }
                     setStep("complete");
-                    setTimeout(() => window.location.replace(getPostLoginFallbackPath(postAuthRedirect)), 300);
+                    setTimeout(() => navigatePostAuth(getPostLoginFallbackPath(postAuthRedirect)), 300);
                 } else {
                     setError(`Verification status: ${result.status}. Please try again.`);
                 }
@@ -409,11 +452,11 @@ export default function UnifiedAuthPage() {
                             const target = resolveFinalAuthRedirect();
                             console.log("[AUTH-REDIRECT] signin-ticket complete, navigating to:", target);
                             await setActive!({ session: ticketResult.createdSessionId });
-                            window.location.href = target;
+                            navigatePostAuth(target);
                             return;
                         }
                         setStep("complete");
-                        setTimeout(() => window.location.replace(getPostLoginFallbackPath(postAuthRedirect)), 300);
+                        setTimeout(() => navigatePostAuth(getPostLoginFallbackPath(postAuthRedirect)), 300);
                         return;
                     }
                 } catch (backendErr) {
@@ -425,7 +468,7 @@ export default function UnifiedAuthPage() {
         } finally {
             setLoading(false);
         }
-    }, [code, identifier, isNewUser, postAuthRedirect, resolveFinalAuthRedirect, signIn, signUp, signInLoaded, signUpLoaded, setActive]);
+    }, [code, identifier, isNewUser, postAuthRedirect, navigatePostAuth, resolveFinalAuthRedirect, signIn, signUp, signInLoaded, signUpLoaded, setActive]);
 
     // ── Step 2b: Verify OTP (Phone - MSG91 → Clerk sign-in token) ──
     const handlePhoneOTPSubmit = useCallback(async () => {
@@ -469,12 +512,12 @@ export default function UnifiedAuthPage() {
                         const target = resolveFinalAuthRedirect();
                         console.log("[AUTH-REDIRECT] phone-verify complete, navigating to:", target);
                         await setActive!({ session: result.createdSessionId });
-                        window.location.href = target;
+                        navigatePostAuth(target, data.isNewUser);
                         return;
                     }
                     setIsNewUser(data.isNewUser);
                     setStep("complete");
-                    setTimeout(() => window.location.replace(getPostLoginFallbackPath(postAuthRedirect)), 300);
+                    setTimeout(() => navigatePostAuth(getPostLoginFallbackPath(postAuthRedirect), data.isNewUser), 300);
                 }
             } else {
                 setError(data.error || "Verification failed. Please try again.");
@@ -484,7 +527,7 @@ export default function UnifiedAuthPage() {
         } finally {
             setLoading(false);
         }
-    }, [code, identifier, postAuthRedirect, resolveFinalAuthRedirect, signIn, setActive]);
+    }, [code, identifier, postAuthRedirect, navigatePostAuth, resolveFinalAuthRedirect, signIn, setActive]);
 
     // ── Google OAuth ──
     const handleGoogleAuth = useCallback(async () => {
@@ -751,18 +794,28 @@ export default function UnifiedAuthPage() {
                                 exit={{ opacity: 0, x: -10 }}
                                 transition={{ duration: 0.25 }}
                             >
-                                {/* Info Banner */}
-                                {info && (
+                                {/* Info Banner / Welcome Message */}
+                                {!isNewUser ? (
                                     <motion.div
                                         initial={{ opacity: 0, y: -4 }}
                                         animate={{ opacity: 1, y: 0 }}
-                                        className={`p-3 rounded-xl text-sm mb-4 ${isNewUser || step === "otp-phone"
-                                            ? "bg-emerald-50 text-emerald-700 border border-emerald-100"
-                                            : "bg-zinc-50 text-zinc-600 border border-zinc-100"
-                                            }`}
+                                        className="p-3 rounded-xl text-sm mb-4 bg-emerald-50 text-emerald-800 border border-emerald-100 font-medium"
                                     >
-                                        {info}
+                                        Hey, welcome {userFirstName || "back"}! 👋 Here is your OTP for login:
                                     </motion.div>
+                                ) : (
+                                    info && (
+                                        <motion.div
+                                            initial={{ opacity: 0, y: -4 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            className={`p-3 rounded-xl text-sm mb-4 ${isNewUser || step === "otp-phone"
+                                                ? "bg-emerald-50 text-emerald-700 border border-emerald-100"
+                                                : "bg-zinc-50 text-zinc-600 border border-zinc-100"
+                                                }`}
+                                        >
+                                            {info}
+                                        </motion.div>
+                                    )
                                 )}
 
                                 {/* Identifier display */}

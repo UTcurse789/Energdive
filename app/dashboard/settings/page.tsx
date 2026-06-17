@@ -6,8 +6,10 @@ import { useDashboard } from "@/components/dashboard/dashboard-shell";
 import { DIGEST_FREQUENCY_OPTIONS, DIGEST_FORMAT_OPTIONS } from "@/lib/digest-preferences";
 import {
     Loader2, Check, AlertCircle, Shield, Briefcase, Globe,
-    Pencil, ChevronDown, Users, Layers,
+    Pencil, ChevronDown, Users, Layers, MapPin, Phone,
 } from "lucide-react";
+import { COUNTRIES } from "@/data/countries";
+import { STATES_BY_COUNTRY } from "@/data/states";
 
 /* ── Types ──────────────────────────────────────────────────────── */
 interface Industry { id: number; name: string; }
@@ -28,6 +30,10 @@ export default function SettingsPage() {
     /* Profile fields */
     const [firstName, setFirstName] = useState("");
     const [lastName, setLastName] = useState("");
+    const [phone, setPhone] = useState("");
+    const [dialCode, setDialCode] = useState("+91");
+    const [country, setCountry] = useState("");
+    const [state, setState] = useState("");
     const [jobTitle, setJobTitle] = useState("");
     const [organization, setOrganization] = useState("");
     const [isSaving, setIsSaving] = useState(false);
@@ -56,11 +62,31 @@ export default function SettingsPage() {
             setLastName(profile.last_name || "");
             setJobTitle(profile.job_title || "");
             setOrganization(profile.organization || "");
+            setCountry(profile.country || "");
+            setState(profile.state || "");
             setSelectedIndustryId(profile.industry_id || 0);
             setSelectedSubIndustryId(profile.sub_industry_id || 0);
             setPreferredFrequency(profile.preferred_frequency || "daily");
             setPreferredFormats(profile.preferred_formats || []);
             setDigestEnabled(!profile.content_digest_opted_out);
+
+            // Parse phone: separate dial code from number
+            const rawPhone = profile.phone || "";
+            if (rawPhone) {
+                const matchedCountry = COUNTRIES.find((c) => rawPhone.startsWith(c.dial_code));
+                if (matchedCountry) {
+                    setDialCode(matchedCountry.dial_code);
+                    setPhone(rawPhone.slice(matchedCountry.dial_code.length));
+                } else {
+                    setPhone(rawPhone);
+                }
+            }
+
+            // Set dial code from country
+            if (profile.country) {
+                const matchedCountry = COUNTRIES.find((c) => c.name === profile.country);
+                if (matchedCountry) setDialCode(matchedCountry.dial_code);
+            }
         }
     }, [profile]);
 
@@ -97,6 +123,9 @@ export default function SettingsPage() {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     firstName, lastName, jobTitle, organization,
+                    phone: phone.trim() ? `${dialCode}${phone.trim().replace(/^0+/, '')}` : undefined,
+                    country: country || undefined,
+                    state: state || undefined,
                     industryId: selectedIndustryId || undefined,
                     subIndustryId: selectedSubIndustryId || undefined,
                 }),
@@ -264,6 +293,66 @@ export default function SettingsPage() {
                             </div>
                             <DarkInput label="Current Role" value={jobTitle} onChange={setJobTitle} placeholder="e.g. Energy Analyst" />
                             <DarkInput label="Company" value={organization} onChange={setOrganization} placeholder="e.g. ONGC" />
+
+                            {/* Phone with dial code */}
+                            <div className="md:col-span-2">
+                                <label className="text-[10px] font-bold uppercase tracking-wider block mb-1.5" style={{ color: "var(--dash-text-muted)" }}>Phone Number</label>
+                                <div className="flex">
+                                    <select
+                                        value={dialCode}
+                                        onChange={(e) => setDialCode(e.target.value)}
+                                        className="h-11 w-[90px] shrink-0 rounded-l-lg px-2 text-sm font-medium outline-none transition-all"
+                                        style={{ background: "var(--dash-surface-2)", border: "1px solid var(--dash-border)", borderRight: "none", color: "var(--dash-text)" }}
+                                    >
+                                        {COUNTRIES.map((c) => (
+                                            <option key={c.code} value={c.dial_code}>{c.dial_code}</option>
+                                        ))}
+                                    </select>
+                                    <input
+                                        type="tel"
+                                        value={phone}
+                                        onChange={(e) => setPhone(e.target.value)}
+                                        placeholder="9876543210"
+                                        className="w-full h-11 rounded-r-lg px-4 text-sm outline-none transition-all"
+                                        style={{ background: "var(--dash-surface-2)", border: "1px solid var(--dash-border)", color: "var(--dash-text)" }}
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Country & State */}
+                            <div>
+                                <label className="text-[10px] font-bold uppercase tracking-wider block mb-1.5" style={{ color: "var(--dash-text-muted)" }}>Country</label>
+                                <select
+                                    value={country}
+                                    onChange={(e) => {
+                                        setCountry(e.target.value);
+                                        setState("");
+                                        const matched = COUNTRIES.find((c) => c.name === e.target.value);
+                                        if (matched) setDialCode(matched.dial_code);
+                                    }}
+                                    className="w-full h-11 rounded-lg px-4 text-sm outline-none transition-all"
+                                    style={{ background: "var(--dash-surface-2)", border: "1px solid var(--dash-border)", color: "var(--dash-text)" }}
+                                >
+                                    <option value="">Select country</option>
+                                    {COUNTRIES.map((c) => (
+                                        <option key={c.code} value={c.name}>{c.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div>
+                                <label className="text-[10px] font-bold uppercase tracking-wider block mb-1.5" style={{ color: "var(--dash-text-muted)" }}>State / Region</label>
+                                <select
+                                    value={state}
+                                    onChange={(e) => setState(e.target.value)}
+                                    className="w-full h-11 rounded-lg px-4 text-sm outline-none transition-all"
+                                    style={{ background: "var(--dash-surface-2)", border: "1px solid var(--dash-border)", color: "var(--dash-text)" }}
+                                >
+                                    <option value="">Select state</option>
+                                    {(STATES_BY_COUNTRY[country] || []).map((s) => (
+                                        <option key={s} value={s}>{s}</option>
+                                    ))}
+                                </select>
+                            </div>
                             {/* Membership ID — read-only, full width */}
                             <div className="md:col-span-2">
                                 <label className="text-[10px] font-bold uppercase tracking-wider block mb-1.5" style={{ color: "#0AB996" }}>

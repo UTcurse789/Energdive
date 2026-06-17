@@ -55,6 +55,7 @@ import { Suspense } from "react";
 import ConsentAwareGTM from "@/components/ConsentAwareGTM";
 import CookieConsent from "@/components/CookieConsent";
 import AuthPromptModal from "@/components/ui/auth-prompt-modal";
+import OnboardingModal from "@/components/onboarding/onboarding-modal";
 import { PostHogProvider } from "./providers";
 import { PostHogIdentify } from "@/components/PostHogIdentify";
 
@@ -118,6 +119,7 @@ export default function RootLayout({
             </Suspense>
             <PostHogIdentify />
             <AuthPromptModal />
+            <OnboardingModal />
             <SiteLayout>
               {children}
             </SiteLayout>

@@ -337,6 +337,49 @@ export async function ensureUserProfileRow(
     }
 }
 
+// ─── Delete User Account ─────────────────────────────────────────
+/**
+ * Permanently deletes a user and all related data from the database.
+ * Runs in a transaction to ensure atomicity.
+ */
+export async function deleteUserAccount(clerkId: string): Promise<boolean> {
+    const client = await getClient();
+
+    try {
+        await client.query("BEGIN");
+
+        // 1. Get the user's internal ID
+        const userResult = await client.query(
+            `SELECT id FROM users WHERE clerk_id = $1`,
+            [clerkId]
+        );
+
+        if (userResult.rows.length === 0) {
+            await client.query("ROLLBACK");
+            return false;
+        }
+
+        const userId = userResult.rows[0].id;
+
+        // 2. Delete from junction tables
+        await client.query(`DELETE FROM user_industries WHERE user_id = $1`, [userId]);
+        await client.query(`DELETE FROM user_communities WHERE user_id = $1`, [userId]);
+
+        // 3. Delete the user row
+        await client.query(`DELETE FROM users WHERE id = $1`, [userId]);
+
+        await client.query("COMMIT");
+        console.log(`[DELETE_USER] Successfully deleted user ${clerkId} (DB id: ${userId})`);
+        return true;
+    } catch (err) {
+        await client.query("ROLLBACK");
+        console.error(`[DELETE_USER] Failed to delete user ${clerkId}:`, err);
+        throw err;
+    } finally {
+        client.release();
+    }
+}
+
 // ─── Update Profile ──────────────────────────────────────────────
 export interface UpdateProfilePayload {
     clerkId: string;

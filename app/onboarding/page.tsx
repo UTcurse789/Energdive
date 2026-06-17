@@ -87,7 +87,7 @@ export default async function OnboardingPage({
     );
     const returnTo = returnToFromQuery ||
         (returnToFromCookie !== DEFAULT_POST_AUTH_REDIRECT ? returnToFromCookie : null) ||
-        "/dashboard";
+        "/";
 
     if (email) {
         try {
