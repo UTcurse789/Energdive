@@ -5,6 +5,7 @@ import { deleteUserAccount } from "@/lib/queries/users";
 /**
  * POST /api/user/delete-account
  * Permanently deletes the user from DB and Clerk.
+ * Accepts an optional deletion reason for feedback logging.
  */
 export async function POST(req: Request) {
     try {
@@ -22,6 +23,14 @@ export async function POST(req: Request) {
                 { status: 400 }
             );
         }
+
+        // Log deletion reason for feedback (before deleting user data)
+        const reason = typeof body.reason === "string" ? body.reason.trim() : "Not provided";
+        const otherReason = typeof body.otherReason === "string" ? body.otherReason.trim() : "";
+        const reasonDisplay = reason === "Other (please specify)" && otherReason
+            ? `Other: ${otherReason}`
+            : reason;
+        console.log(`[DELETE_ACCOUNT] User ${userId} requested deletion. Reason: ${reasonDisplay}`);
 
         // 1. Delete from our database
         const dbDeleted = await deleteUserAccount(userId);

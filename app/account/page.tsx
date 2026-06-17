@@ -3,9 +3,19 @@
 import { useUser, useClerk } from "@clerk/nextjs";
 import { Header } from "@/components/layout/header";
 import { useState, useEffect, useRef } from "react";
-import { User, Mail, Shield, Link2, LogOut, ChevronRight, Check, Loader2, Trash2, AlertTriangle, X, Camera, Eye } from "lucide-react";
+import { User, Mail, Shield, Link2, LogOut, ChevronRight, Check, Loader2, Trash2, AlertTriangle, X, Camera, Eye, ChevronDown } from "lucide-react";
 import Link from "next/link";
 import ImageCropModal from "@/components/account/image-crop-modal";
+
+const DELETION_REASONS = [
+    "I no longer use this service",
+    "It is too expensive / not worth it",
+    "I'm receiving too many emails",
+    "I found a better alternative",
+    "Privacy concerns",
+    "Technical issues / bugs",
+    "Other (please specify)",
+];
 
 export default function AccountPage() {
     const { user, isLoaded } = useUser();
@@ -21,6 +31,10 @@ export default function AccountPage() {
     const [deleteConfirmText, setDeleteConfirmText] = useState("");
     const [deleting, setDeleting] = useState(false);
     const [deleteError, setDeleteError] = useState("");
+    const [deleteReason, setDeleteReason] = useState("");
+    const [deleteOtherReason, setDeleteOtherReason] = useState("");
+    const [reasonDropdownOpen, setReasonDropdownOpen] = useState(false);
+    const reasonDropdownRef = useRef<HTMLDivElement>(null);
 
     /* Image upload state */
     const [uploadingImage, setUploadingImage] = useState(false);
@@ -35,6 +49,19 @@ export default function AccountPage() {
             setLastName(user.lastName || "");
         }
     }, [isLoaded, user]);
+
+    // Close reason dropdown on outside click
+    useEffect(() => {
+        function handleClickOutside(e: MouseEvent) {
+            if (reasonDropdownRef.current && !reasonDropdownRef.current.contains(e.target as Node)) {
+                setReasonDropdownOpen(false);
+            }
+        }
+        if (reasonDropdownOpen) {
+            document.addEventListener("mousedown", handleClickOutside);
+        }
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, [reasonDropdownOpen]);
 
     if (!isLoaded) {
         return (
@@ -144,8 +171,13 @@ export default function AccountPage() {
         setSaving(false);
     };
 
+    const isDeleteReady =
+        deleteConfirmText === "DELETE" &&
+        deleteReason !== "" &&
+        (deleteReason !== "Other (please specify)" || deleteOtherReason.trim() !== "");
+
     const handleDeleteAccount = async () => {
-        if (deleteConfirmText !== "DELETE") return;
+        if (!isDeleteReady) return;
         setDeleting(true);
         setDeleteError("");
 
@@ -153,7 +185,11 @@ export default function AccountPage() {
             const res = await fetch("/api/user/delete-account", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ confirmation: "DELETE" }),
+                body: JSON.stringify({
+                    confirmation: "DELETE",
+                    reason: deleteReason,
+                    otherReason: deleteReason === "Other (please specify)" ? deleteOtherReason.trim() : undefined,
+                }),
             });
             const data = await res.json();
 
@@ -169,6 +205,15 @@ export default function AccountPage() {
         } finally {
             setDeleting(false);
         }
+    };
+
+    const openDeleteModal = () => {
+        setShowDeleteModal(true);
+        setDeleteConfirmText("");
+        setDeleteError("");
+        setDeleteReason("");
+        setDeleteOtherReason("");
+        setReasonDropdownOpen(false);
     };
 
     return (
@@ -217,9 +262,9 @@ export default function AccountPage() {
                                 <div className="p-2">
                                     <button
                                         onClick={() => setActiveTab("profile")}
-                                        className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                                        className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
                                             activeTab === "profile"
-                                                ? "bg-[#00A651]/10 text-[#00A651]"
+                                                ? "bg-[#00A651]/10 text-[#00A651] shadow-sm"
                                                 : "text-gray-600 hover:bg-gray-50"
                                         }`}
                                     >
@@ -228,9 +273,9 @@ export default function AccountPage() {
                                     </button>
                                     <button
                                         onClick={() => setActiveTab("security")}
-                                        className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                                        className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
                                             activeTab === "security"
-                                                ? "bg-[#00A651]/10 text-[#00A651]"
+                                                ? "bg-[#00A651]/10 text-[#00A651] shadow-sm"
                                                 : "text-gray-600 hover:bg-gray-50"
                                         }`}
                                     >
@@ -466,7 +511,7 @@ export default function AccountPage() {
                                                         <p className="text-xs text-red-400 mt-0.5">Permanently delete your account and all data</p>
                                                     </div>
                                                     <button
-                                                        onClick={() => { setShowDeleteModal(true); setDeleteConfirmText(""); setDeleteError(""); }}
+                                                        onClick={openDeleteModal}
                                                         className="text-xs font-bold text-red-600 border border-red-200 px-4 py-2 rounded-lg hover:bg-red-100 transition-colors"
                                                     >
                                                         Delete
@@ -519,6 +564,77 @@ export default function AccountPage() {
                                 </p>
                             </div>
 
+                            {/* Reason Dropdown */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Reason for deletion <span className="text-red-500">*</span>
+                                </label>
+                                <div className="relative" ref={reasonDropdownRef}>
+                                    <button
+                                        type="button"
+                                        onClick={() => setReasonDropdownOpen(!reasonDropdownOpen)}
+                                        disabled={deleting}
+                                        className={`w-full flex items-center justify-between px-4 py-3 border rounded-lg text-sm transition-all duration-200 disabled:opacity-50 ${
+                                            deleteReason
+                                                ? "border-gray-300 text-gray-900"
+                                                : "border-gray-200 text-gray-400"
+                                        } ${reasonDropdownOpen ? "ring-2 ring-red-200 border-red-300" : "hover:border-gray-300"}`}
+                                    >
+                                        <span className={deleteReason ? "text-gray-900" : "text-gray-400"}>
+                                            {deleteReason || "Select a reason…"}
+                                        </span>
+                                        <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${reasonDropdownOpen ? "rotate-180" : ""}`} />
+                                    </button>
+
+                                    {/* Dropdown Options */}
+                                    {reasonDropdownOpen && (
+                                        <div className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
+                                            {DELETION_REASONS.map((reason) => (
+                                                <button
+                                                    key={reason}
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setDeleteReason(reason);
+                                                        setReasonDropdownOpen(false);
+                                                        if (reason !== "Other (please specify)") {
+                                                            setDeleteOtherReason("");
+                                                        }
+                                                    }}
+                                                    className={`w-full text-left px-4 py-2.5 text-sm transition-colors flex items-center justify-between ${
+                                                        deleteReason === reason
+                                                            ? "bg-red-50 text-red-700 font-medium"
+                                                            : "text-gray-700 hover:bg-gray-50"
+                                                    }`}
+                                                >
+                                                    <span>{reason}</span>
+                                                    {deleteReason === reason && (
+                                                        <Check className="w-4 h-4 text-red-600" />
+                                                    )}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Other Reason Text Area (conditionally shown) */}
+                            {deleteReason === "Other (please specify)" && (
+                                <div className="overflow-hidden transition-all duration-300">
+                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                                        Please describe your reason
+                                    </label>
+                                    <textarea
+                                        value={deleteOtherReason}
+                                        onChange={(e) => setDeleteOtherReason(e.target.value)}
+                                        placeholder="Tell us why you're leaving…"
+                                        disabled={deleting}
+                                        rows={3}
+                                        className="w-full px-4 py-3 border border-gray-200 rounded-lg text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-red-200 focus:border-red-300 transition-all disabled:opacity-50 resize-none"
+                                    />
+                                </div>
+                            )}
+
+                            {/* Confirmation Input */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">
                                     Type <span className="font-mono font-bold text-red-600 bg-red-50 px-1.5 py-0.5 rounded">DELETE</span> to confirm
@@ -550,7 +666,7 @@ export default function AccountPage() {
                             </button>
                             <button
                                 onClick={handleDeleteAccount}
-                                disabled={deleteConfirmText !== "DELETE" || deleting}
+                                disabled={!isDeleteReady || deleting}
                                 className="flex items-center gap-2 px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white text-sm font-bold rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                             >
                                 {deleting ? (

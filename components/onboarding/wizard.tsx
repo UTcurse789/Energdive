@@ -96,6 +96,26 @@ const onboardingSchema = z.object({
 
 type OnboardingFormData = z.infer<typeof onboardingSchema>;
 
+function cleanSubCommunityName(subName: string, communityName: string): string {
+    const separators = ["-", " - ", " ", ": ", "/"];
+    for (const sep of separators) {
+        const prefix = communityName + sep;
+        if (subName.toLowerCase().startsWith(prefix.toLowerCase())) {
+            return subName.slice(prefix.length);
+        }
+    }
+    const firstWord = communityName.split(/\s+/)[0];
+    if (firstWord && firstWord.length > 2) {
+        for (const sep of separators) {
+            const prefix = firstWord + sep;
+            if (subName.toLowerCase().startsWith(prefix.toLowerCase())) {
+                return subName.slice(prefix.length);
+            }
+        }
+    }
+    return subName;
+}
+
 /* ─────────────────────────────────────────────────────────────── */
 /*  Component                                                     */
 /* ─────────────────────────────────────────────────────────────── */
@@ -115,8 +135,10 @@ export default function OnboardingWizard({ returnTo = "/", mode = "page", onComp
     const [industries, setIndustries] = useState<Industry[]>([]);
     const [loading, setLoading] = useState(true);
 
-    /* Selection state (not directly in RHF for toggle UX) */
-    const [selectedCommunities, setSelectedCommunities] = useState<Map<number, Set<number>>>(new Map());
+    /* Selection state (not directly in RHF for single select dropdowns) */
+    const [selectedCommunityId, setSelectedCommunityId] = useState<number | null>(null);
+    const [selectedSubCommunityId, setSelectedSubCommunityId] = useState<number | null>(null);
+    const [selectedSelections, setSelectedSelections] = useState<{ communityId: number; subCommunityId: number }[]>([]);
     const [selectedFormats, setSelectedFormats] = useState<Set<string>>(new Set(FORMATS));
 
     /* Consent – pre-ticked */
@@ -175,6 +197,17 @@ export default function OnboardingWizard({ returnTo = "/", mode = "page", onComp
         () => industries.find((i) => i.id === selectedIndustryId)?.sub_industries || [],
         [industries, selectedIndustryId],
     );
+    const currentSubCommunities = useMemo(
+        () => communities.find((c) => c.id === selectedCommunityId)?.sub_communities || [],
+        [communities, selectedCommunityId],
+    );
+
+    const formSelections = watch("communitySelections");
+    useEffect(() => {
+        if (formSelections && JSON.stringify(formSelections) !== JSON.stringify(selectedSelections)) {
+            setSelectedSelections(formSelections);
+        }
+    }, [formSelections, selectedSelections]);
 
     /* ── Sync Clerk user data into form ──────────────────────── */
     useEffect(() => {
@@ -280,46 +313,36 @@ export default function OnboardingWizard({ returnTo = "/", mode = "page", onComp
     }, []);
 
     /* ── Helpers: sync community selections → RHF ────────────── */
-    const syncCommunitySelections = useCallback(
-        (map: Map<number, Set<number>>) => {
-            const selections: { communityId: number; subCommunityId: number }[] = [];
-            map.forEach((subIds, communityId) => {
-                subIds.forEach((subCommunityId) => {
-                    selections.push({ communityId, subCommunityId });
-                });
-            });
-            setValue("communitySelections", selections, { shouldValidate: true });
-        },
-        [setValue],
-    );
-
-    const toggleCommunity = (communityId: number) => {
-        setSelectedCommunities((prev) => {
-            const next = new Map(prev);
-            if (next.has(communityId)) {
-                next.delete(communityId);
-            } else {
-                next.set(communityId, new Set());
-            }
-            syncCommunitySelections(next);
-            return next;
-        });
+    const handleCommunityChange = (communityId: number | null) => {
+        setSelectedCommunityId(communityId);
+        setSelectedSubCommunityId(null);
     };
 
-    const toggleSubCommunity = (communityId: number, subCommunityId: number) => {
-        setSelectedCommunities((prev) => {
-            const next = new Map(prev);
-            const current = next.get(communityId) || new Set<number>();
-            const updated = new Set(current);
-            if (updated.has(subCommunityId)) {
-                updated.delete(subCommunityId);
-            } else {
-                updated.add(subCommunityId);
-            }
-            next.set(communityId, updated);
-            syncCommunitySelections(next);
-            return next;
-        });
+    const addSelection = (communityId: number, subCommunityId: number) => {
+        const exists = selectedSelections.some(
+            (s) => s.communityId === communityId && s.subCommunityId === subCommunityId
+        );
+        if (exists) return;
+
+        const next = [...selectedSelections, { communityId, subCommunityId }];
+        setSelectedSelections(next);
+        setValue("communitySelections", next, { shouldValidate: true });
+        clearErrors("communitySelections");
+    };
+
+    const removeSelection = (communityId: number, subCommunityId: number) => {
+        const next = selectedSelections.filter(
+            (s) => !(s.communityId === communityId && s.subCommunityId === subCommunityId)
+        );
+        setSelectedSelections(next);
+        setValue("communitySelections", next, { shouldValidate: true });
+    };
+
+    const handleSubCommunityChange = (subCommunityId: number | null) => {
+        if (selectedCommunityId && subCommunityId) {
+            addSelection(selectedCommunityId, subCommunityId);
+            setSelectedSubCommunityId(null);
+        }
     };
 
     const toggleFormat = (format: string) => {
@@ -639,26 +662,23 @@ export default function OnboardingWizard({ returnTo = "/", mode = "page", onComp
                     </p>
                 </div>
 
-                {/* Communities & Sub-communities (Dropdowns) */}
-                <div className={mode === "modal" ? "space-y-3" : "space-y-4"}>
-                    {/* Community Dropdown */}
+                {/* Communities & Sub-communities Dropdowns (Parallel layout) */}
+                <div className={mode === "modal" ? "grid gap-3 md:grid-cols-2" : "grid gap-4 md:grid-cols-2"}>
                     <div className="space-y-1">
                         <label className="block text-sm font-medium text-zinc-700">Community</label>
                         <div className="relative">
                             <select
                                 aria-label="Select a community"
-                                value=""
+                                value={selectedCommunityId || ""}
                                 onChange={(e) => {
-                                    const communityId = Number(e.target.value);
-                                    if (communityId && !selectedCommunities.has(communityId)) {
-                                        toggleCommunity(communityId);
-                                    }
+                                    const val = e.target.value;
+                                    handleCommunityChange(val ? Number(val) : null);
                                 }}
                                 className="w-full px-4 py-2.5 border border-zinc-200 rounded-lg focus:ring-2 focus:ring-[#0AB996] focus:border-transparent outline-none transition-all bg-white appearance-none pr-10"
                             >
                                 <option value="">Select a community</option>
                                 {communities.map((c) => (
-                                    <option key={c.id} value={c.id} disabled={selectedCommunities.has(c.id)}>
+                                    <option key={c.id} value={c.id}>
                                         {c.name}
                                     </option>
                                 ))}
@@ -667,106 +687,61 @@ export default function OnboardingWizard({ returnTo = "/", mode = "page", onComp
                         </div>
                     </div>
 
-                    {/* Selected Communities Tags */}
-                    {selectedCommunities.size > 0 && (
-                        <div className="flex flex-wrap gap-2">
-                            {Array.from(selectedCommunities.keys()).map((communityId) => {
-                                const community = communities.find((c) => c.id === communityId);
-                                if (!community) return null;
-                                return (
-                                    <span
-                                        key={communityId}
-                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium bg-[#0AB996]/10 border border-[#0AB996] text-[#0AB996]"
-                                    >
-                                        {community.name}
-                                        <button
-                                            type="button"
-                                            onClick={() => toggleCommunity(communityId)}
-                                            className="hover:text-red-500 transition-colors"
-                                            aria-label={`Remove ${community.name}`}
-                                        >
-                                            ×
-                                        </button>
-                                    </span>
-                                );
-                            })}
-                        </div>
-                    )}
-
-                    {/* Sub-Community Dropdowns for each selected community */}
-                    {Array.from(selectedCommunities.entries()).map(([communityId, subCommunitySet]) => {
-                        const community = communities.find((c) => c.id === communityId);
-                        if (!community || community.sub_communities.length === 0) return null;
-
-                        return (
-                            <motion.div
-                                key={communityId}
-                                initial={{ opacity: 0, height: 0 }}
-                                animate={{ opacity: 1, height: "auto" }}
-                                exit={{ opacity: 0, height: 0 }}
-                                className="space-y-2"
+                    <div className="space-y-1">
+                        <label className="block text-sm font-medium text-zinc-700">Sub-community</label>
+                        <div className="relative">
+                            <select
+                                aria-label="Select sub-community"
+                                value={selectedSubCommunityId || ""}
+                                disabled={!selectedCommunityId}
+                                onChange={(e) => {
+                                    const val = e.target.value;
+                                    handleSubCommunityChange(val ? Number(val) : null);
+                                }}
+                                className="w-full px-4 py-2.5 border border-zinc-200 rounded-lg focus:ring-2 focus:ring-[#0AB996] focus:border-transparent outline-none transition-all bg-white disabled:bg-zinc-100 disabled:text-zinc-400 appearance-none pr-10"
                             >
-                                <div className="space-y-1">
-                                    <label className="block text-sm font-medium text-zinc-500">
-                                        Sub-community for{" "}
-                                        <span className="text-[#0AB996]">{community.name}</span>
-                                    </label>
-                                    <div className="relative">
-                                        <select
-                                            aria-label={`Select sub-community for ${community.name}`}
-                                            value=""
-                                            onChange={(e) => {
-                                                const subId = Number(e.target.value);
-                                                if (subId) {
-                                                    toggleSubCommunity(communityId, subId);
-                                                }
-                                            }}
-                                            className="w-full px-4 py-2.5 border border-zinc-200 rounded-lg focus:ring-2 focus:ring-[#0AB996] focus:border-transparent outline-none transition-all bg-white appearance-none pr-10"
-                                        >
-                                            <option value="">Select sub-community</option>
-                                            {community.sub_communities.map((sub) => (
-                                                <option key={sub.id} value={sub.id} disabled={subCommunitySet.has(sub.id)}>
-                                                    {sub.name}
-                                                </option>
-                                            ))}
-                                        </select>
-                                        <ChevronDown className="absolute right-3 top-3 w-4 h-4 text-zinc-400 pointer-events-none" />
-                                    </div>
-                                </div>
-
-                                {/* Selected sub-community tags */}
-                                {subCommunitySet.size > 0 && (
-                                    <div className="flex flex-wrap gap-1.5 pl-1">
-                                        {Array.from(subCommunitySet).map((subId) => {
-                                            const sub = community.sub_communities.find((s) => s.id === subId);
-                                            if (!sub) return null;
-                                            return (
-                                                <span
-                                                    key={subId}
-                                                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-[#0AB996]/10 border border-[#0AB996]/40 text-[#0AB996]"
-                                                >
-                                                    {sub.name}
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => toggleSubCommunity(communityId, subId)}
-                                                        className="hover:text-red-500 transition-colors"
-                                                        aria-label={`Remove ${sub.name}`}
-                                                    >
-                                                        ×
-                                                    </button>
-                                                </span>
-                                            );
-                                        })}
-                                    </div>
-                                )}
-                            </motion.div>
-                        );
-                    })}
-
-                    {errors.communitySelections && (
-                        <p className="text-red-500 text-xs">{errors.communitySelections.message}</p>
-                    )}
+                                <option value="">Select sub-community</option>
+                                {currentSubCommunities.map((sub) => (
+                                    <option key={sub.id} value={sub.id}>
+                                        {sub.name}
+                                    </option>
+                                ))}
+                            </select>
+                            <ChevronDown className="absolute right-3 top-3 w-4 h-4 text-zinc-400 pointer-events-none" />
+                        </div>
+                    </div>
                 </div>
+
+                {/* Selected Selections Tags */}
+                {selectedSelections.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-2">
+                        {selectedSelections.map((sel) => {
+                            const comm = communities.find((c) => c.id === sel.communityId);
+                            const sub = comm?.sub_communities.find((s) => s.id === sel.subCommunityId);
+                            if (!comm || !sub) return null;
+                            return (
+                                <span
+                                    key={`${sel.communityId}-${sel.subCommunityId}`}
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium bg-[#0AB996]/10 border border-[#0AB996] text-[#0AB996]"
+                                >
+                                    {comm.name} - {sub.name}
+                                    <button
+                                        type="button"
+                                        onClick={() => removeSelection(sel.communityId, sel.subCommunityId)}
+                                        className="hover:text-red-500 font-bold transition-colors ml-0.5 text-base leading-none"
+                                        aria-label={`Remove ${comm.name} - ${sub.name}`}
+                                    >
+                                        ×
+                                    </button>
+                                </span>
+                            );
+                        })}
+                    </div>
+                )}
+
+                {errors.communitySelections && (
+                    <p className="text-red-500 text-xs mt-1">{errors.communitySelections.message}</p>
+                )}
 
                 {/* ════════════════════════════════════════════════════════ */}
                 {/*  Section 6 – Industry                                  */}
