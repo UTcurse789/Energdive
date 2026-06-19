@@ -14,22 +14,9 @@ import {
     getSafeRedirectPath,
 } from "@/lib/post-auth-redirect";
 
-type AuthStep = "identifier" | "otp-signin" | "otp-signup" | "otp-phone" | "complete";
-type InputMode = "email" | "phone";
+type AuthStep = "identifier" | "otp-signin" | "otp-signup" | "complete";
 
 // ── Helpers ──
-const isPhoneInput = (value: string): boolean => {
-    const cleaned = value.replace(/[\s\-()]/g, "");
-    return /^\+?\d{7,15}$/.test(cleaned);
-};
-
-const formatPhoneForAPI = (phone: string): string => {
-    const cleaned = phone.replace(/[\s\-()]/g, "");
-    // Default to +91 (India) if no country code
-    if (cleaned.startsWith("+")) return cleaned;
-    if (cleaned.startsWith("91") && cleaned.length >= 12) return `+${cleaned}`;
-    return `+91${cleaned}`;
-};
 
 const getBrowserRedirectParam = (): string | null => {
     if (typeof window === "undefined") {
@@ -143,14 +130,7 @@ export default function UnifiedAuthPage() {
         [],
     );
 
-    // Auto-detect input type
-    const inputMode: InputMode = useMemo(() => {
-        const trimmed = identifier.trim();
-        if (!trimmed) return "email";
-        const cleaned = trimmed.replace(/[\s\-()]/g, "");
-        if (/^\+?\d+$/.test(cleaned) && cleaned.length >= 4) return "phone";
-        return "email";
-    }, [identifier]);
+
 
     // If already signed in, redirect away from /auth.
     // Don't use navigatePostAuth here — existingUserOnboarded might still be
@@ -202,29 +182,7 @@ export default function UnifiedAuthPage() {
             setIsNewUser(!exists);
             setUserFirstName(dbFirstName);
 
-            const isPhone = isPhoneInput(identifier.trim());
-
-            if (isPhone) {
-                // ── PHONE PATH: Use MSG91 ──
-                const phone = formatPhoneForAPI(identifier.trim());
-                try {
-                    const res = await fetch("/api/otp/send", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ phone }),
-                    });
-                    const data = await res.json();
-
-                    if (data.success) {
-                        setStep("otp-phone");
-                        setInfo(`We sent a verification code to ${phone}`);
-                    } else {
-                        setError(data.error || "Failed to send OTP. Please try again.");
-                    }
-                } catch {
-                    setError("Network error. Please try again.");
-                }
-            } else {
+            {
                 // ── EMAIL PATH: Use Clerk ──
                 const emailValue = identifier.trim();
                 try {
@@ -465,64 +423,7 @@ export default function UnifiedAuthPage() {
         }
     }, [code, identifier, isNewUser, postAuthRedirect, navigatePostAuth, resolveFinalAuthRedirect, signIn, signUp, signInLoaded, signUpLoaded, setActive]);
 
-    // ── Step 2b: Verify OTP (Phone - MSG91 → Clerk sign-in token) ──
-    const handlePhoneOTPSubmit = useCallback(async () => {
-        if (!code.trim()) return;
-        setLoading(true);
-        setError("");
 
-        const phone = formatPhoneForAPI(identifier.trim());
-
-        try {
-            // Call our backend that verifies MSG91 OTP + creates/finds Clerk user + returns sign-in token
-            const res = await fetch("/api/auth/phone-verify", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ phone, otp: code.trim() }),
-            });
-            const data = await res.json();
-
-            if (data.success && data.token) {
-                // Use the sign-in token to complete Clerk session
-                const result = await signIn!.create({
-                    strategy: "ticket",
-                    ticket: data.token,
-                });
-
-                if (result.status === "complete") {
-                    if (result.createdSessionId) {
-                        if (posthog) {
-                            if (data.isNewUser) {
-                                posthog.capture("registration_completed", {
-                                    timestamp: new Date().toISOString(),
-                                    path: window.location.pathname,
-                                });
-                            } else {
-                                posthog.capture("login_completed", {
-                                    timestamp: new Date().toISOString(),
-                                    path: window.location.pathname,
-                                });
-                            }
-                        }
-                        const target = resolveFinalAuthRedirect();
-                        console.log("[AUTH-REDIRECT] phone-verify complete, navigating to:", target);
-                        await setActive!({ session: result.createdSessionId });
-                        navigatePostAuth(target, data.isNewUser);
-                        return;
-                    }
-                    setIsNewUser(data.isNewUser);
-                    setStep("complete");
-                    setTimeout(() => navigatePostAuth(getPostLoginFallbackPath(postAuthRedirect), data.isNewUser), 300);
-                }
-            } else {
-                setError(data.error || "Verification failed. Please try again.");
-            }
-        } catch (err: any) {
-            setError("Verification failed. Please try again.");
-        } finally {
-            setLoading(false);
-        }
-    }, [code, identifier, postAuthRedirect, navigatePostAuth, resolveFinalAuthRedirect, signIn, setActive]);
 
     // ── Google OAuth ──
     const handleGoogleAuth = useCallback(async () => {
@@ -559,46 +460,26 @@ export default function UnifiedAuthPage() {
         setError("");
         setInfo("");
 
-        if (step === "otp-phone") {
-            // Resend via MSG91
-            const phone = formatPhoneForAPI(identifier.trim());
-            try {
-                const res = await fetch("/api/otp/send", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ phone }),
+        // Resend via Clerk
+        try {
+            if (isNewUser) {
+                await signUp!.prepareEmailAddressVerification({
+                    strategy: "email_code",
                 });
-                const data = await res.json();
-                if (data.success) {
-                    setInfo("A new code has been sent.");
-                } else {
-                    setError("Failed to resend code.");
-                }
-            } catch {
-                setError("Failed to resend code.");
+            } else {
+                const emailFactor = (signIn!.supportedFirstFactors as any[])?.find(
+                    (f) => f.strategy === "email_code"
+                );
+                await signIn!.prepareFirstFactor({
+                    strategy: "email_code",
+                    emailAddressId: emailFactor?.emailAddressId,
+                });
             }
-        } else {
-            // Resend via Clerk
-            try {
-                if (isNewUser) {
-                    await signUp!.prepareEmailAddressVerification({
-                        strategy: "email_code",
-                    });
-                } else {
-                    const emailFactor = (signIn!.supportedFirstFactors as any[])?.find(
-                        (f) => f.strategy === "email_code"
-                    );
-                    await signIn!.prepareFirstFactor({
-                        strategy: "email_code",
-                        emailAddressId: emailFactor?.emailAddressId,
-                    });
-                }
-                setInfo("A new code has been sent.");
-            } catch {
-                setError("Failed to resend code.");
-            }
+            setInfo("A new code has been sent.");
+        } catch {
+            setError("Failed to resend code.");
         }
-    }, [step, identifier, isNewUser, signIn, signUp]);
+    }, [isNewUser, signIn, signUp]);
 
     // ── Go back ──
     const handleBack = () => {
@@ -609,7 +490,7 @@ export default function UnifiedAuthPage() {
         setIsNewUser(false);
     };
 
-    const isOTPStep = step === "otp-signin" || step === "otp-signup" || step === "otp-phone";
+    const isOTPStep = step === "otp-signin" || step === "otp-signup";
 
     // Early return if signed in (must be after all hooks)
     if (isSignedIn) return null;
@@ -711,14 +592,14 @@ export default function UnifiedAuthPage() {
                                     <div className="flex-1 h-px bg-zinc-200/80" />
                                 </div>
 
-                                {/* Email / Phone Input */}
+                                {/* Email Input */}
                                 <div className="space-y-1.5 mb-4">
                                     <label className="text-[13px] font-medium text-zinc-600">
-                                        Email or phone number
+                                        Email address
                                     </label>
                                     <div className="relative">
                                         <input
-                                            type="text"
+                                            type="email"
                                             value={identifier}
                                             onChange={(e) => {
                                                 setIdentifier(e.target.value);
@@ -727,23 +608,19 @@ export default function UnifiedAuthPage() {
                                             onKeyDown={(e) =>
                                                 e.key === "Enter" && handleSubmit()
                                             }
-                                            placeholder="Enter email ID or mobile number"
+                                            placeholder="Enter your email address"
                                             className="w-full h-11 px-4 pr-10 rounded-xl border border-zinc-200 bg-zinc-50/50 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all duration-200"
                                             autoFocus
                                         />
-                                        {/* Input type indicator */}
-                                        <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                                            {inputMode === "phone" ? (
-                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                    <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z" />
-                                                </svg>
-                                            ) : identifier.trim() ? (
+                                        {/* Email icon indicator */}
+                                        {identifier.trim() && (
+                                            <div className="absolute right-3 top-1/2 -translate-y-1/2">
                                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                                     <rect x="2" y="4" width="20" height="16" rx="2" />
                                                     <path d="m22 7-8.97 5.7a1.94 1.94 0 01-2.06 0L2 7" />
                                                 </svg>
-                                            ) : null}
-                                        </div>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
 
@@ -803,7 +680,7 @@ export default function UnifiedAuthPage() {
                                         <motion.div
                                             initial={{ opacity: 0, y: -4 }}
                                             animate={{ opacity: 1, y: 0 }}
-                                            className={`p-3 rounded-xl text-sm mb-4 ${isNewUser || step === "otp-phone"
+                                            className={`p-3 rounded-xl text-sm mb-4 ${isNewUser
                                                 ? "bg-emerald-50 text-emerald-700 border border-emerald-100"
                                                 : "bg-zinc-50 text-zinc-600 border border-zinc-100"
                                                 }`}
@@ -818,9 +695,7 @@ export default function UnifiedAuthPage() {
                                     <span className="text-sm text-zinc-500">
                                         Sending to{" "}
                                         <span className="font-medium text-zinc-700">
-                                            {step === "otp-phone"
-                                                ? formatPhoneForAPI(identifier.trim())
-                                                : identifier}
+                                            {identifier}
                                         </span>
                                     </span>
                                     <button
@@ -846,15 +721,12 @@ export default function UnifiedAuthPage() {
                                             setError("");
                                         }}
                                         onKeyDown={(e) =>
-                                            e.key === "Enter" &&
-                                            (step === "otp-phone"
-                                                ? handlePhoneOTPSubmit()
-                                                : handleEmailOTPSubmit())
+                                            e.key === "Enter" && handleEmailOTPSubmit()
                                         }
-                                        placeholder={step === "otp-phone" ? "Enter 4-digit code" : "Enter 6-digit code"}
+                                        placeholder="Enter 6-digit code"
                                         className="w-full h-11 px-4 rounded-xl border border-zinc-200 bg-zinc-50/50 text-sm text-zinc-900 text-center tracking-[0.5em] font-mono placeholder:tracking-normal placeholder:font-sans placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all duration-200"
                                         autoFocus
-                                        maxLength={step === "otp-phone" ? 4 : 6}
+                                        maxLength={6}
                                         inputMode="numeric"
                                     />
                                 </div>
@@ -872,14 +744,10 @@ export default function UnifiedAuthPage() {
 
                                 {/* Verify Button */}
                                 <button
-                                    onClick={
-                                        step === "otp-phone"
-                                            ? handlePhoneOTPSubmit
-                                            : handleEmailOTPSubmit
-                                    }
+                                    onClick={handleEmailOTPSubmit}
                                     disabled={
                                         loading ||
-                                        code.length < (step === "otp-phone" ? 4 : 6)
+                                        code.length < 6
                                     }
                                     className="w-full h-11 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold shadow-md shadow-emerald-600/20 transition-all duration-200 hover:shadow-lg active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                                 >

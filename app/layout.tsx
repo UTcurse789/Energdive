@@ -53,7 +53,6 @@ import SiteLayout from "@/components/layout/site-layout";
 import { UtmTracker } from "@/components/UtmTracker";
 import { Suspense } from "react";
 import ConsentAwareGTM from "@/components/ConsentAwareGTM";
-import CookieConsent from "@/components/CookieConsent";
 import AuthPromptModal from "@/components/ui/auth-prompt-modal";
 import OnboardingModal from "@/components/onboarding/onboarding-modal";
 import { PostHogProvider } from "./providers";
@@ -103,14 +102,14 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <ClerkProvider>
-      <html lang="en" className={`${sans.variable} ${serif.variable}`}>
-        <head>
-          <link rel="preconnect" href="https://cms.energdive.com" />
-          <link rel="preconnect" href="https://cdn.energdive.com" />
-          <link rel="preconnect" href="https://clerk.energdive.com" />
-        </head>
-        <body className="antialiased font-sans" suppressHydrationWarning>
+    <html lang="en" className={`${sans.variable} ${serif.variable}`}>
+      <head>
+        <link rel="preconnect" href="https://cms.energdive.com" />
+        <link rel="preconnect" href="https://cdn.energdive.com" />
+        <link rel="preconnect" href="https://clerk.energdive.com" />
+      </head>
+      <body className="antialiased font-sans" suppressHydrationWarning>
+        <ClerkProvider>
           <PostHogProvider>
             {/* GTM — only loads after cookie consent is accepted */}
             <ConsentAwareGTM gtmId="GTM-5P4C363M" />
@@ -123,10 +122,9 @@ export default function RootLayout({
             <SiteLayout>
               {children}
             </SiteLayout>
-            <CookieConsent />
           </PostHogProvider>
-        </body>
-      </html>
-    </ClerkProvider>
+        </ClerkProvider>
+      </body>
+    </html>
   );
 }
