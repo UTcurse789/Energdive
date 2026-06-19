@@ -12,37 +12,11 @@ interface ConsentAwareGTMProps {
  * and injects the GTM script + noscript iframe dynamically.
  */
 export default function ConsentAwareGTM({ gtmId }: ConsentAwareGTMProps) {
-    const [hasConsent, setHasConsent] = useState(false);
+    const [hasConsent, setHasConsent] = useState(true);
 
     useEffect(() => {
-        // Check immediately on mount
-        const consent = localStorage.getItem("cookie_consent");
-        if (consent === "accepted") {
-            setHasConsent(true);
-            return;
-        }
-
-        // Listen for storage changes (when CookieConsent sets the value)
-        function onStorage(e: StorageEvent) {
-            if (e.key === "cookie_consent" && e.newValue === "accepted") {
-                setHasConsent(true);
-            }
-        }
-
-        // Also poll briefly in case the change comes from the same tab
-        // (StorageEvent only fires across tabs)
-        const interval = setInterval(() => {
-            if (localStorage.getItem("cookie_consent") === "accepted") {
-                setHasConsent(true);
-                clearInterval(interval);
-            }
-        }, 500);
-
-        window.addEventListener("storage", onStorage);
-        return () => {
-            window.removeEventListener("storage", onStorage);
-            clearInterval(interval);
-        };
+        // No longer need to check cookie consent as the banner has been removed.
+        setHasConsent(true);
     }, []);
 
     useEffect(() => {
