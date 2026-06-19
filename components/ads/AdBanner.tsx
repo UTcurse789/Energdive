@@ -35,10 +35,10 @@ interface Ad {
 function getImageUrl(media: StrapiMedia | undefined | null): string | null {
     if (!media) return null;
     const url =
+        media.url ||
         media.formats?.large?.url ||
         media.formats?.medium?.url ||
-        media.formats?.small?.url ||
-        media.url;
+        media.formats?.small?.url;
     if (!url) return null;
     return strapiImageUrl(url);
 }
@@ -136,6 +136,12 @@ const EXACT_VERTICAL_SIZE = {
     height: 600,
 } as const;
 
+const CAROUSEL_PLACEMENTS = new Set([
+    "home_featured_partner",
+]);
+
+const AD_CAROUSEL_INTERVAL_MS = 5000;
+
 /**
  * Client-side ad banner component.
  * Used in client components (header, sector pages, etc.)
@@ -151,6 +157,7 @@ export function AdBanner({
     height,
 }: AdBannerProps) {
     const [selectedAds, setSelectedAds] = useState<Ad[]>([]);
+    const [activeAdIndex, setActiveAdIndex] = useState(0);
 
     useEffect(() => {
         async function fetchAd() {
@@ -230,6 +237,16 @@ export function AdBanner({
         fetchAd();
     }, [placement, sectorSlug, variant, maxItems]);
 
+    useEffect(() => {
+        if (!CAROUSEL_PLACEMENTS.has(placement) || selectedAds.length <= 1) return;
+
+        const intervalId = window.setInterval(() => {
+            setActiveAdIndex((currentIndex) => (currentIndex + 1) % selectedAds.length);
+        }, AD_CAROUSEL_INTERVAL_MS);
+
+        return () => window.clearInterval(intervalId);
+    }, [placement, selectedAds.length]);
+
     if (selectedAds.length === 0) {
         return null;
     }
@@ -240,6 +257,34 @@ export function AdBanner({
                 <TrackedAdWrapper ad={selectedAds[0]}>
                     {renderAd(selectedAds[0], 0)}
                 </TrackedAdWrapper>
+            );
+        }
+
+        if (CAROUSEL_PLACEMENTS.has(placement)) {
+            const visibleAdIndex = selectedAds[activeAdIndex] ? activeAdIndex : 0;
+            const activeAd = selectedAds[visibleAdIndex];
+
+            return (
+                <div className="w-full">
+                    <TrackedAdWrapper key={`${activeAd.id}-${visibleAdIndex}`} ad={activeAd}>
+                        {renderAd(activeAd, visibleAdIndex)}
+                    </TrackedAdWrapper>
+                    <div className="mt-3 flex justify-center gap-1.5" aria-label="Partner ads">
+                        {selectedAds.map((ad, index) => (
+                            <button
+                                key={`${ad.id}-dot`}
+                                type="button"
+                                aria-label={`Show partner ad ${index + 1}`}
+                                aria-current={index === visibleAdIndex}
+                                onClick={() => setActiveAdIndex(index)}
+                                className={`h-1.5 rounded-full transition-all duration-300 ${index === visibleAdIndex
+                                    ? "w-6 bg-[#09B697]"
+                                    : "w-1.5 bg-gray-300 hover:bg-gray-400"
+                                    }`}
+                            />
+                        ))}
+                    </div>
+                </div>
             );
         }
 
@@ -467,14 +512,12 @@ function VerticalBannerAd({
 }) {
     const creative = ad.creative?.[0];
     const imageUrl = getImageUrl(creative);
-    const logoMedia = ad.logo?.[0];
-    const logoUrl = getImageUrl(logoMedia);
 
     if (!imageUrl) return null;
 
     const inner = (
         <div
-            className={`relative overflow-hidden border border-gray-100/60 bg-white shadow-sm hover:shadow-xl transition-all duration-500 group shrink-0 ${className} rounded-none`}
+            className={`relative overflow-hidden border border-gray-100/60 bg-white shadow-sm shrink-0 ${className} rounded-none`}
             style={{ width, height }}
         >
             <div className="relative h-full w-full">
@@ -485,19 +528,8 @@ function VerticalBannerAd({
                     sizes={`${width}px`}
                     loading="lazy"
                     unoptimized
-                    className="object-cover transition-transform duration-700 group-hover:scale-[1.02]"
+                    className="object-contain"
                 />
-                <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/60 to-transparent" />
-            </div>
-            <div className="absolute bottom-0 inset-x-0 p-4 flex items-center gap-3">
-                {logoUrl && (
-                    <div className="relative w-8 h-8 shrink-0 rounded-full overflow-hidden bg-white/90 shadow-sm ring-1 ring-white/30">
-                        <Image src={logoUrl} alt={ad.partner_name || ""} fill unoptimized className="object-contain p-0.5" />
-                    </div>
-                )}
-                <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-white truncate">{ad.partner_name || ad.title}</p>
-                </div>
             </div>
         </div>
     );
