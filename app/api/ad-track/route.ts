@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse, after } from "next/server";
 import { query } from "@/lib/db";
 
+const AD_TRACKING_ENABLED =
+  process.env.NODE_ENV === "production" ||
+  process.env.AD_TRACKING_ENABLED === "true" ||
+  process.env.NEXT_PUBLIC_AD_TRACKING_ENABLED === "true";
+
 function classifyDevice(ua: string): "Mobile" | "Tablet" | "Desktop" {
   if (!ua) return "Desktop";
   const lower = ua.toLowerCase();
@@ -70,7 +75,7 @@ function isDuplicate(adDocumentId: string, ip: string, eventType: string): boole
 }
 
 function rememberImpression(adDocumentId: string, ip: string, eventType: string) {
-  if (eventType !== "impression") return null;
+  if (eventType !== "impression") return;
 
   const key = buildImpressionKey(adDocumentId, ip);
   recentImpressions.set(key, Date.now());
@@ -82,14 +87,6 @@ function rememberImpression(adDocumentId: string, ip: string, eventType: string)
         recentImpressions.delete(currentKey);
       }
     }
-  }
-
-  return key;
-}
-
-function forgetImpression(key: string | null) {
-  if (key) {
-    recentImpressions.delete(key);
   }
 }
 
@@ -119,6 +116,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    if (!AD_TRACKING_ENABLED) {
+      return NextResponse.json({ ok: true, skipped: "tracking_disabled" });
+    }
+
     const ip = getClientIp(req);
     const ua = req.headers.get("user-agent") || "";
 
@@ -126,7 +127,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true, deduped: true });
     }
 
-    const dedupeKey = rememberImpression(adDocumentId, ip, eventType);
+    rememberImpression(adDocumentId, ip, eventType);
     const deviceType = classifyDevice(ua);
 
     after(async () => {
@@ -139,7 +140,6 @@ export async function POST(req: NextRequest) {
           [adDocumentId, eventType, ip, ua, deviceType, referrer || null]
         );
       } catch (error) {
-        forgetImpression(dedupeKey);
         console.error("[ad-track] Failed to persist event:", error);
         return;
       }

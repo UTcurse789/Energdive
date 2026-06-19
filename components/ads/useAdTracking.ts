@@ -3,6 +3,11 @@
 import { useEffect, useRef, useCallback } from "react";
 
 const TRACK_ENDPOINT = "/api/ad-track";
+const AD_TRACKING_ENABLED =
+  process.env.NODE_ENV === "production" ||
+  process.env.NEXT_PUBLIC_AD_TRACKING_ENABLED === "true";
+
+const pageViewImpressions = new Set<string>();
 
 /**
  * Lightweight hook for ad impression & click tracking.
@@ -16,7 +21,10 @@ export function useAdTracking(adDocumentId: string | undefined) {
   // Fire impression once on mount
   useEffect(() => {
     if (!adDocumentId || impressionFired.current) return;
+    if (!AD_TRACKING_ENABLED || pageViewImpressions.has(adDocumentId)) return;
+
     impressionFired.current = true;
+    pageViewImpressions.add(adDocumentId);
 
     // Use sendBeacon for non-blocking fire-and-forget
     const payload = JSON.stringify({
@@ -42,7 +50,7 @@ export function useAdTracking(adDocumentId: string | undefined) {
 
   // Click tracker — fire-and-forget, non-blocking
   const trackClick = useCallback(() => {
-    if (!adDocumentId) return;
+    if (!AD_TRACKING_ENABLED || !adDocumentId) return;
 
     const payload = JSON.stringify({
       adDocumentId,
