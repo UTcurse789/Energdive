@@ -51,13 +51,21 @@ export async function getUserDownloads(clerkId: string): Promise<UserDownload[]>
  * Check if a user has any downloads (lightweight EXISTS check).
  */
 export async function hasUserDownloads(clerkId: string): Promise<boolean> {
-    const res = await query(
-        `SELECT EXISTS(
-            SELECT 1 FROM user_downloads ud
-            JOIN users u ON ud.user_id = u.id
-            WHERE u.clerk_id = $1
-        ) AS has_downloads`,
-        [clerkId]
-    );
-    return res.rows[0]?.has_downloads === true;
+    try {
+        const res = await query(
+            `SELECT EXISTS(
+                SELECT 1 FROM user_downloads ud
+                JOIN users u ON ud.user_id = u.id
+                WHERE u.clerk_id = $1
+            ) AS has_downloads`,
+            [clerkId]
+        );
+        return res.rows[0]?.has_downloads === true;
+    } catch (error) {
+        console.error("[hasUserDownloads] Falling back to false", {
+            clerkId,
+            error,
+        });
+        return false;
+    }
 }

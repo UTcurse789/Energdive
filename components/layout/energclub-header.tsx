@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { ArrowLeft, Lock } from "lucide-react";
 import Image from "next/image";
 import { SignedIn, SignedOut } from "@clerk/nextjs";
@@ -9,6 +10,7 @@ import { usePostHog } from "@posthog/react";
 
 export function EnergClubHeader() {
     const posthog = usePostHog();
+    const pathname = usePathname();
     return (
         <header className="fixed top-0 inset-x-0 z-50 bg-black/90 backdrop-blur-md border-b border-[#E5B866]/20 transition-all duration-300">
             <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-8 lg:px-16 h-[70px] sm:h-[85px] lg:h-[100px] flex items-center justify-between">
@@ -48,7 +50,10 @@ export function EnergClubHeader() {
                     </SignedIn>
 
                     <SignedOut>
-                        <Link href="/auth" onClick={() => {
+                        <Link href={`/auth?redirect_url=${encodeURIComponent(pathname)}`} onClick={() => {
+                            if (typeof window !== 'undefined') {
+                                sessionStorage.setItem('energdive_post_auth_redirect', pathname);
+                            }
                             if (posthog) posthog.capture('login_clicked', { timestamp: new Date().toISOString(), path: window.location.pathname });
                         }}>
                             <button className="flex items-center gap-2 bg-gradient-to-r from-[#E5B866] to-[#FFE0B2] text-black px-4 sm:px-6 py-2 sm:py-2.5 rounded-full font-bold uppercase tracking-widest text-[10px] sm:text-xs hover:shadow-[0_0_20px_rgba(229,184,102,0.5)] transition-all transform hover:-translate-y-0.5 whitespace-nowrap">

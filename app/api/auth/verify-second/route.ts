@@ -90,7 +90,7 @@ export async function POST(req: Request) {
                         userId,
                         phoneNumber: e164Phone,
                         verified: true,
-                        primary: true,
+                        primary: false,
                     });
                     console.log(`[VERIFY_SECOND] Created phone in Clerk: ${e164Phone} (id: ${newPhone.id})`);
                 } catch (phoneErr: any) {
@@ -164,20 +164,8 @@ export async function POST(req: Request) {
                 });
                 console.log(`[VERIFY_SECOND] Set ${email} as primary + verified`);
 
-                // 3. Delete the old dummy email(s)
-                for (const existingEmail of clerkUser.emailAddresses) {
-                    if (
-                        existingEmail.emailAddress.endsWith("@phone.energdive.com") &&
-                        existingEmail.id !== newEmail.id
-                    ) {
-                        try {
-                            await clerk.emailAddresses.deleteEmailAddress(existingEmail.id);
-                            console.log(`[VERIFY_SECOND] Deleted dummy email: ${existingEmail.emailAddress}`);
-                        } catch (delErr: any) {
-                            console.warn(`[VERIFY_SECOND] Could not delete dummy email: ${delErr.message}`);
-                        }
-                    }
-                }
+                // 3. Skip deleting the old dummy email(s) immediately to prevent Clerk from revoking active session
+                console.log("[VERIFY_SECOND] Skipped deleting dummy email(s) to maintain session integrity");
 
                 // 4. Update metadata
                 await clerk.users.updateUser(userId, {

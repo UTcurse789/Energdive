@@ -56,6 +56,15 @@ export interface UserProfile {
     verification_status: string | null;
 }
 
+export interface EnsureUserProfileRowPayload {
+    clerkId: string;
+    email: string;
+    firstName?: string | null;
+    lastName?: string | null;
+    phone?: string | null;
+    onboardingCompleted?: boolean;
+}
+
 /**
  * Atomic onboarding: upserts user, writes mappings, marks complete.
  * Runs in a single transaction — all or nothing.
@@ -226,6 +235,151 @@ export async function getUserProfile(
     }
 }
 
+export async function ensureUserProfileRow(
+    payload: EnsureUserProfileRowPayload
+): Promise<void> {
+    const email = payload.email.trim().toLowerCase();
+    if (!email) return;
+    const onboardingCompleted = payload.onboardingCompleted === true;
+
+    const client = await getClient();
+
+    try {
+        await client.query("BEGIN");
+
+        const existingByClerkId = await client.query(
+            `SELECT id FROM users WHERE clerk_id = $1 LIMIT 1`,
+            [payload.clerkId]
+        );
+
+        if (existingByClerkId.rows.length > 0) {
+            await client.query(
+                `UPDATE users
+                 SET email      = $2,
+                     first_name = COALESCE(first_name, $3),
+                     last_name  = COALESCE(last_name, $4),
+                     phone      = COALESCE(phone, $5),
+                     onboarding_completed = CASE
+                         WHEN $6 THEN true
+                         ELSE onboarding_completed
+                     END,
+                     updated_at = NOW()
+                 WHERE id = $1`,
+                [
+                    existingByClerkId.rows[0].id,
+                    email,
+                    payload.firstName || null,
+                    payload.lastName || null,
+                    payload.phone || null,
+                    onboardingCompleted,
+                ]
+            );
+        } else {
+            const candidateByEmail = await client.query(
+                `SELECT id FROM users
+                 WHERE LOWER(email) = LOWER($1)
+                 ORDER BY
+                   CASE WHEN clerk_id IS NULL THEN 0 ELSE 1 END,
+                   updated_at DESC NULLS LAST,
+                   id DESC
+                 LIMIT 1`,
+                [email]
+            );
+
+            if (candidateByEmail.rows.length > 0) {
+                await client.query(
+                    `UPDATE users
+                     SET clerk_id   = $2,
+                         email      = $3,
+                         first_name = COALESCE(first_name, $4),
+                         last_name  = COALESCE(last_name, $5),
+                         phone      = COALESCE(phone, $6),
+                         onboarding_completed = CASE
+                             WHEN $7 THEN true
+                             ELSE onboarding_completed
+                         END,
+                         updated_at = NOW()
+                     WHERE id = $1`,
+                    [
+                        candidateByEmail.rows[0].id,
+                        payload.clerkId,
+                        email,
+                        payload.firstName || null,
+                        payload.lastName || null,
+                        payload.phone || null,
+                        onboardingCompleted,
+                    ]
+                );
+            } else {
+                await client.query(
+                    `INSERT INTO users (
+                        clerk_id, email, first_name, last_name, phone, onboarding_completed, created_at
+                    ) VALUES ($1, $2, $3, $4, $5, $6, NOW())
+                    ON CONFLICT (clerk_id) DO NOTHING`,
+                    [
+                        payload.clerkId,
+                        email,
+                        payload.firstName || null,
+                        payload.lastName || null,
+                        payload.phone || null,
+                        onboardingCompleted,
+                    ]
+                );
+            }
+        }
+
+        await client.query("COMMIT");
+    } catch (error) {
+        await client.query("ROLLBACK");
+        throw error;
+    } finally {
+        client.release();
+    }
+}
+
+// ─── Delete User Account ─────────────────────────────────────────
+/**
+ * Permanently deletes a user and all related data from the database.
+ * Runs in a transaction to ensure atomicity.
+ */
+export async function deleteUserAccount(clerkId: string): Promise<boolean> {
+    const client = await getClient();
+
+    try {
+        await client.query("BEGIN");
+
+        // 1. Get the user's internal ID
+        const userResult = await client.query(
+            `SELECT id FROM users WHERE clerk_id = $1`,
+            [clerkId]
+        );
+
+        if (userResult.rows.length === 0) {
+            await client.query("ROLLBACK");
+            return false;
+        }
+
+        const userId = userResult.rows[0].id;
+
+        // 2. Delete from junction tables
+        await client.query(`DELETE FROM user_industries WHERE user_id = $1`, [userId]);
+        await client.query(`DELETE FROM user_communities WHERE user_id = $1`, [userId]);
+
+        // 3. Delete the user row
+        await client.query(`DELETE FROM users WHERE id = $1`, [userId]);
+
+        await client.query("COMMIT");
+        console.log(`[DELETE_USER] Successfully deleted user ${clerkId} (DB id: ${userId})`);
+        return true;
+    } catch (err) {
+        await client.query("ROLLBACK");
+        console.error(`[DELETE_USER] Failed to delete user ${clerkId}:`, err);
+        throw err;
+    } finally {
+        client.release();
+    }
+}
+
 // ─── Update Profile ──────────────────────────────────────────────
 export interface UpdateProfilePayload {
     clerkId: string;
@@ -382,24 +536,8 @@ export async function provisionUser(payload: ProvisionPayload): Promise<number> 
             `INSERT INTO users (
                 clerk_id, email, first_name, last_name, salutation, phone,
                 country, state, job_title, organization,
-                onboarding_completed, magic_token, magic_token_expires_at,
-<<<<<<< HEAD
                 source, crm_lead_id, created_at
             ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10, true, $11, $12, $13, $14, NOW())
-=======
-<<<<<<< HEAD
-                source, crm_lead_id, created_at
-            ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10, true, $11, $12, $13, $14, NOW())
-=======
-<<<<<<< HEAD
-                source, created_at
-            ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10, true, $11, $12, $13, NOW())
-=======
-                source, crm_lead_id, created_at
-            ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10, true, $11, $12, $13, $14, NOW())
->>>>>>> 6501694 (zoho auth login for other sources)
->>>>>>> UT-Branch
->>>>>>> 797f86253c135ffa4dc21f8882c11140a40e33a0
             ON CONFLICT (clerk_id) DO UPDATE SET
                 email                  = EXCLUDED.email,
                 first_name             = EXCLUDED.first_name,
@@ -413,22 +551,8 @@ export async function provisionUser(payload: ProvisionPayload): Promise<number> 
                 onboarding_completed   = true,
                 magic_token            = EXCLUDED.magic_token,
                 magic_token_expires_at = EXCLUDED.magic_token_expires_at,
-<<<<<<< HEAD
                 source                 = COALESCE(EXCLUDED.source, users.source),
                 crm_lead_id            = COALESCE(EXCLUDED.crm_lead_id, users.crm_lead_id)
-=======
-<<<<<<< HEAD
-                source                 = COALESCE(EXCLUDED.source, users.source),
-                crm_lead_id            = COALESCE(EXCLUDED.crm_lead_id, users.crm_lead_id)
-=======
-<<<<<<< HEAD
-                source                 = COALESCE(EXCLUDED.source, users.source)
-=======
-                source                 = COALESCE(EXCLUDED.source, users.source),
-                crm_lead_id            = COALESCE(EXCLUDED.crm_lead_id, users.crm_lead_id)
->>>>>>> 6501694 (zoho auth login for other sources)
->>>>>>> UT-Branch
->>>>>>> 797f86253c135ffa4dc21f8882c11140a40e33a0
             RETURNING id`,
             [
                 payload.clerkId,

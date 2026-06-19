@@ -189,6 +189,10 @@ export function Header() {
 
     const handleLoginClick = () => {
         closeAll();
+        // Store current page so user returns here after auth/onboarding
+        if (typeof window !== 'undefined') {
+            sessionStorage.setItem('energdive_post_auth_redirect', pathname);
+        }
         if (posthog) {
             posthog.capture('login_clicked', { timestamp: new Date().toISOString(), path: window.location.pathname });
         }
@@ -433,7 +437,7 @@ export function Header() {
                                 </SignedIn>
                                 <SignedOut>
                                     <motion.div className="relative" onMouseEnter={() => setIsLoginHovered(true)} onMouseLeave={() => setIsLoginHovered(false)}>
-                                        <Link href="/auth" className="block border-[1.5px] border-black px-3 py-1 md:px-6 md:py-2 text-[10px] md:text-[12px] font-bold uppercase tracking-wider hover:bg-black hover:text-white transition-all overflow-hidden whitespace-nowrap" onClick={handleLoginClick}>
+                                        <Link href={`/auth?redirect_url=${encodeURIComponent(pathname)}`} className="block border-[1.5px] border-black px-3 py-1 md:px-6 md:py-2 text-[10px] md:text-[12px] font-bold uppercase tracking-wider hover:bg-black hover:text-white transition-all overflow-hidden whitespace-nowrap" onClick={handleLoginClick}>
                                             LOGIN
                                             <AnimatePresence>
                                                 {isLoginHovered && (
@@ -1298,7 +1302,7 @@ export function Header() {
                                 <div className="px-6 py-4 border-t border-gray-100">
                                     <SignedOut>
                                         <Link
-                                            href="/auth"
+                                            href={`/auth?redirect_url=${encodeURIComponent(pathname)}`}
                                             onClick={handleLoginClick}
                                             className="block w-full text-center border-[1.5px] border-black px-6 py-3 text-[12px] font-bold uppercase tracking-wider hover:bg-black hover:text-white transition-all"
                                         >
