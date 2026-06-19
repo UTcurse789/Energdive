@@ -741,7 +741,7 @@ export function Header() {
                                             Events <ChevronRight size={14} />
                                         </Link>
 
-                                        <Link
+                                        {/* <Link
                                             href="/energdive-insights-exchange"
                                             onClick={closeMenus}
                                             className={cn(
@@ -753,7 +753,7 @@ export function Header() {
                                             onMouseEnter={() => setHoveredMoreItem("insights-exchange")}
                                         >
                                             Insights Exchange <ChevronRight size={14} />
-                                        </Link>
+                                        </Link> */}
 
                                         <Link
                                             href="/about"
@@ -896,7 +896,7 @@ export function Header() {
                                     )}
 
                                     {/* Insights Exchange hover content */}
-                                    {hoveredMoreItem === "insights-exchange" && (
+                                    {/* {hoveredMoreItem === "insights-exchange" && (
                                         <div className="flex items-start gap-12 h-full">
                                             <div className="flex-1">
                                                 <h4 className="text-[12px] font-bold uppercase text-gray-400 border-b pb-3 mb-6 tracking-widest">ENERGDIVE Insights Exchange</h4>
@@ -916,7 +916,7 @@ export function Header() {
                                                 </div>
                                             </div>
                                         </div>
-                                    )}
+                                    )} */}
 
                                     {/* About hover content — BRIEF OVERVIEW */}
                                     {hoveredMoreItem === "about" && (
