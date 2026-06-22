@@ -10,14 +10,19 @@ export async function GET() {
             return NextResponse.json({ onboardingCompleted: false, signedIn: false });
         }
 
+        const clerkUser = await currentUser();
+        const email =
+            clerkUser?.primaryEmailAddress?.emailAddress ||
+            clerkUser?.emailAddresses?.[0]?.emailAddress ||
+            "";
+
         // Check DB first
-        const profile = await getUserProfile(userId);
+        const profile = await getUserProfile(userId, email);
         if (profile?.onboarding_completed) {
             return NextResponse.json({ onboardingCompleted: true, signedIn: true });
         }
 
         // Fallback: check Clerk metadata
-        const clerkUser = await currentUser();
         const clerkOnboardingCompleted = clerkUser?.publicMetadata?.onboarding_completed === true;
 
         return NextResponse.json({
