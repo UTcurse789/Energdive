@@ -41,7 +41,7 @@ export async function GET() {
             }
         }
 
-        const profile = await getUserProfile(userId);
+        const profile = await getUserProfile(userId, email);
 
         const hasDownloads = profile ? await hasUserDownloads(userId) : false;
 
