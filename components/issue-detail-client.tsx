@@ -3,6 +3,7 @@
 import React from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useSearchParams, useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import { Issue } from "@/types";
 import { ScrollProgress } from "@/components/ui/scroll-progress";
@@ -66,24 +67,11 @@ function IssueArticleThumbnail({
 
 function PdfDownloadLink({ slug }: { slug: string }) {
     const { isSignedIn, isLoaded } = useUser();
-    const [showTooltip, setShowTooltip] = React.useState(false);
-    const tooltipRef = React.useRef<HTMLDivElement>(null);
-
-    React.useEffect(() => {
-        if (!showTooltip) return;
-        const handleClickOutside = (e: MouseEvent) => {
-            if (tooltipRef.current && !tooltipRef.current.contains(e.target as Node)) {
-                setShowTooltip(false);
-            }
-        };
-        document.addEventListener("mousedown", handleClickOutside);
-        return () => document.removeEventListener("mousedown", handleClickOutside);
-    }, [showTooltip]);
 
     const isLoggedIn = isLoaded && isSignedIn === true;
 
     return (
-        <div className="border-t border-gray-200 pt-4 mb-5 px-1 font-serif text-[16px] text-gray-600 relative" ref={tooltipRef}>
+        <div className="border-t border-gray-200 pt-4 mb-5 px-1 font-serif text-[16px] text-gray-600 relative">
             <span>Download:</span>
             {isLoggedIn ? (
                 <a
@@ -93,56 +81,56 @@ function PdfDownloadLink({ slug }: { slug: string }) {
                     PDF
                 </a>
             ) : (
-                <button
-                    type="button"
-                    onClick={() => setShowTooltip(true)}
-                    className="ml-2 underline underline-offset-4 transition-colors hover:text-black cursor-pointer bg-transparent border-none p-0 font-serif text-[16px] text-gray-600"
+                <Link
+                    href={`/auth?redirect_url=${encodeURIComponent(`/issues/${slug}?download=true`)}`}
+                    className="ml-2 underline underline-offset-4 transition-colors hover:text-black"
                 >
                     PDF
-                </button>
+                </Link>
             )}
-
-            {showTooltip && (
-                <div
-                    className="absolute left-1/2 -translate-x-1/2 mt-3 z-50"
-                    style={{ animation: "fadeInUp 0.2s ease-out" }}
-                >
-                    <div className="relative bg-white border border-gray-300 rounded-lg shadow-lg px-6 py-4 text-center whitespace-nowrap">
-                        {/* Arrow */}
-                        <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-3.5 h-3.5 bg-white border-l border-t border-gray-300 rotate-45" />
-                        <p className="text-[15px] text-gray-700 font-serif">
-                            To unlock downloads,{" "}
-                            <Link
-                                href={`/auth?redirect_url=${encodeURIComponent(`/issues/${slug}/download`)}`}
-                                className="text-gray-800 underline underline-offset-2 hover:text-black font-medium"
-                            >
-                                Sign In
-                            </Link>
-                            .
-                        </p>
-                    </div>
-                </div>
-            )}
-
-            <style jsx>{`
-                @keyframes fadeInUp {
-                    from {
-                        opacity: 0;
-                        transform: translate(-50%, 4px);
-                    }
-                    to {
-                        opacity: 1;
-                        transform: translate(-50%, 0);
-                    }
-                }
-            `}</style>
         </div>
     );
+}
+
+/**
+ * Detects ?download=true in the URL and auto-triggers the PDF download
+ * once the user is authenticated and onboarding is completed.
+ */
+function AutoDownloadTrigger({ slug }: { slug: string }) {
+    const searchParams = useSearchParams();
+    const router = useRouter();
+    const { user, isSignedIn, isLoaded } = useUser();
+    const hasTriggered = React.useRef(false);
+
+    React.useEffect(() => {
+        if (!isLoaded || hasTriggered.current) return;
+        if (searchParams.get("download") !== "true") return;
+
+        if (isSignedIn) {
+            const onboardingCompleted = user?.publicMetadata?.onboarding_completed === true;
+            if (onboardingCompleted) {
+                hasTriggered.current = true;
+                // Clean the URL (remove ?download=true) to prevent re-triggering on refresh
+                window.history.replaceState({}, "", `/issues/${slug}`);
+                // Navigate to the download route handler — auth session is now established
+                window.location.href = `/issues/${slug}/download`;
+            } else {
+                console.log("[AutoDownloadTrigger] User is signed in but onboarding is not completed yet. Waiting...");
+            }
+        } else {
+            // Not signed in — redirect to auth with download intent
+            hasTriggered.current = true;
+            router.push(`/auth?redirect_url=${encodeURIComponent(`/issues/${slug}?download=true`)}`);
+        }
+    }, [isLoaded, isSignedIn, user, searchParams, slug, router]);
+
+    return null;
 }
 
 export function IssueDetailClient({ issue }: IssueDetailClientProps) {
     return (
         <main className="min-h-screen bg-white text-black font-serif selection:bg-red-500/30">
+            <AutoDownloadTrigger slug={issue.slug} />
             <ScrollProgress />
 
             <div className="mx-auto max-w-[1200px] px-6 sm:px-8 lg:px-12 py-8 md:py-12">
