@@ -10,6 +10,7 @@ export interface ZohoLeadData {
     Phone?: string;
     Mobile?: string;
     Company?: string;
+    Title?: string;
     Designation?: string;
     Lead_Source?: string;
     Show?: string;
@@ -180,7 +181,8 @@ export async function upsertZohoLead(
             Phone: enrichedData.Phone || null,
             Mobile: enrichedData.Mobile || enrichedData.Phone || null,
             Company: enrichedData.Company || null,
-            Designation: enrichedData.Designation || null,
+            Title: enrichedData.Title || enrichedData.Designation || null,
+            Designation: enrichedData.Designation || enrichedData.Title || null,
             Lead_Source: enrichedData.Lead_Source || null,
             Show: enrichedData.Show || null,
             Industry: enrichedData.Industry || null,
@@ -339,7 +341,8 @@ export async function createZohoLead(
             Phone: enrichedData.Phone || null,
             Mobile: enrichedData.Mobile || enrichedData.Phone || null,
             Company: enrichedData.Company || null,
-            Designation: enrichedData.Designation || null,
+            Title: enrichedData.Title || enrichedData.Designation || null,
+            Designation: enrichedData.Designation || enrichedData.Title || null,
             Lead_Source: enrichedData.Lead_Source || null,
             Show: enrichedData.Show || null,
             Industry: enrichedData.Industry || null,
@@ -480,6 +483,7 @@ export async function createZohoDuplicateLead(
             Phone: payload.phone || null,
             Mobile: payload.phone || null,
             Company: payload.company || null,
+            Title: payload.jobTitle || null,
             Designation: payload.jobTitle || null,
             Lead_Source: "ENDV Portal CRM Lead",
             Industry: payload.industry || null,
