@@ -1,0 +1,1867 @@
+"use client";
+
+import { useAuth } from "@clerk/nextjs";
+import { AnimatePresence, motion } from "framer-motion";
+import {
+  ArrowDownAZ,
+  ArrowUpRight,
+  BookOpen,
+  Building2,
+  CheckCircle2,
+  ChevronRight,
+  Download,
+  Eye,
+  FileDown,
+  Filter,
+  Globe2,
+  Layers3,
+  LockKeyhole,
+  Mail,
+  MapPin,
+  RotateCcw,
+  Search,
+  ShieldCheck,
+  Users,
+  X,
+} from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
+import { Skeleton } from "@/components/ui/skeleton";
+import { strapiImageUrl } from "@/lib/strapi-image";
+import { Clock } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Button } from "@/components/ui/buttons";
+import { Checkbox } from "@/components/ui/checkbox";
+import { cn } from "@/lib/utils";
+
+import {
+  EVENTS,
+  REGION_OPTIONS,
+  RESOURCE_TYPE_OPTIONS,
+  RESOURCES,
+  SECTOR_OPTIONS,
+  SORT_OPTIONS,
+  YEAR_OPTIONS,
+} from "./mock-data";
+import type {
+  EnergyEvent,
+  EventResource,
+  FileType,
+  ResourceFilters,
+  ResourceType,
+  SortOption,
+} from "./types";
+
+type FeaturedEventItem = {
+  id: string;
+  title: string;
+  slug: string;
+  location: string;
+  imageUrl: string;
+  occurrence?: string;
+};
+
+function normalizeFeaturedEvent(item: Record<string, unknown>): FeaturedEventItem | null {
+  const id = String(item.id ?? item.slug ?? "").trim();
+  const title = String(item.title ?? "").trim();
+  const slug = String(item.slug ?? id).trim();
+  const imageUrl = String(item.imageUrl ?? "").trim();
+
+  if (!id || !title || !imageUrl) return null;
+
+  return {
+    id,
+    title,
+    slug,
+    location: String(item.location ?? item.venue ?? "").trim(),
+    imageUrl,
+    occurrence: String(item.occurrence ?? "event").trim(),
+  };
+}
+
+const DEFAULT_FILTERS: ResourceFilters = {
+  events: [],
+  types: [],
+  sectors: [],
+  years: [],
+  regions: [],
+  sort: "Latest First",
+};
+
+const RESOURCE_TYPE_STYLES: Record<ResourceType, string> = {
+  "Event Brochure": "bg-emerald-50 text-emerald-700 border-emerald-200",
+  "Post Show Report": "bg-blue-50 text-blue-700 border-blue-200",
+  Whitepaper: "bg-violet-50 text-violet-700 border-violet-200",
+  "Industry Report": "bg-amber-50 text-amber-700 border-amber-200",
+  Presentation: "bg-sky-50 text-sky-700 border-sky-200",
+  "Media Kit": "bg-zinc-100 text-zinc-700 border-zinc-200",
+  "Sponsor Prospectus": "bg-rose-50 text-rose-700 border-rose-200",
+};
+
+const FILE_TYPE_STYLES: Record<FileType, string> = {
+  PDF: "bg-red-50 text-red-700 border-red-100",
+  PPT: "bg-orange-50 text-orange-700 border-orange-100",
+  ZIP: "bg-slate-100 text-slate-700 border-slate-200",
+};
+
+const COVER_PALETTES = [
+  "from-zinc-950 via-emerald-950 to-emerald-700",
+  "from-slate-950 via-blue-950 to-cyan-700",
+  "from-neutral-950 via-zinc-800 to-amber-700",
+  "from-stone-950 via-teal-950 to-lime-700",
+  "from-zinc-950 via-indigo-950 to-sky-700",
+  "from-neutral-950 via-rose-950 to-orange-700",
+];
+
+function formatNumber(value: number) {
+  return new Intl.NumberFormat("en", {
+    notation: value >= 10000 ? "compact" : "standard",
+    maximumFractionDigits: 1,
+  }).format(value);
+}
+
+function hashIndex(value: string, length: number) {
+  return Math.abs(
+    value.split("").reduce((sum, char) => sum + char.charCodeAt(0), 0)
+  ) % length;
+}
+
+function countBy<T extends string | number>(
+  values: EventResource[],
+  getKey: (resource: EventResource) => T | T[]
+) {
+  return values.reduce<Record<string, number>>((acc, resource) => {
+    const rawKeys = getKey(resource);
+    const keys = Array.isArray(rawKeys) ? rawKeys : [rawKeys];
+    keys.forEach((key) => {
+      acc[String(key)] = (acc[String(key)] ?? 0) + 1;
+    });
+    return acc;
+  }, {});
+}
+
+function getEvent(eventId: string) {
+  return EVENTS.find((event) => event.id === eventId);
+}
+
+function buildDownloadText(resource: EventResource) {
+  return [
+    "ENERGDIVE Event Resource Center",
+    `Resource: ${resource.title}`,
+    `Event: ${resource.eventName}`,
+    `Type: ${resource.resource_type}`,
+    `Year: ${resource.year}`,
+    `Sectors: ${resource.sector.join(", ")}`,
+    "",
+    "This is a frontend-only mock download generated for UI validation.",
+    `Future file_url: ${resource.file_url}`,
+  ].join("\n");
+}
+
+export function EventResourceCenter() {
+  const { isLoaded, isSignedIn } = useAuth();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filters, setFilters] = useState<ResourceFilters>(DEFAULT_FILTERS);
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const [selectedResource, setSelectedResource] = useState<EventResource | null>(
+    null
+  );
+  const [pendingDownload, setPendingDownload] = useState<EventResource | null>(
+    null
+  );
+  const [accessModalOpen, setAccessModalOpen] = useState(false);
+  const [accessMode, setAccessMode] = useState<"login" | "register" | "success">(
+    "login"
+  );
+  const [mockAuthenticated, setMockAuthenticated] = useState(false);
+  const [downloadNotice, setDownloadNotice] = useState<string | null>(null);
+  const [featuredEvents, setFeaturedEvents] = useState<FeaturedEventItem[]>([]);
+
+  const canDownload = mockAuthenticated || (isLoaded && isSignedIn);
+
+  useEffect(() => {
+    const shouldLock =
+      mobileFiltersOpen || selectedResource !== null || accessModalOpen;
+    if (!shouldLock) return;
+
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previous;
+    };
+  }, [accessModalOpen, mobileFiltersOpen, selectedResource]);
+
+  useEffect(() => {
+    if (!downloadNotice) return;
+    const timer = window.setTimeout(() => setDownloadNotice(null), 3600);
+    return () => window.clearTimeout(timer);
+  }, [downloadNotice]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function fetchFeaturedEvents() {
+      try {
+        const response = await fetch("/api/public/events?occurrence=upcoming", {
+          cache: "no-store",
+        });
+        const payload = response.ok ? await response.json() : { events: [] };
+        if (cancelled) return;
+
+        const rawEvents: unknown[] = Array.isArray(payload.events)
+          ? payload.events
+          : [];
+        const seen = new Set<string>();
+        const realEvents = rawEvents
+          .filter((event): event is Record<string, unknown> => {
+            return Boolean(event) && typeof event === "object";
+          })
+          .map((event) => normalizeFeaturedEvent(event))
+          .filter((event): event is FeaturedEventItem => Boolean(event))
+          .filter((event) => event.occurrence?.toLowerCase() === "upcoming")
+          .filter((event) => {
+            const key = event.slug || event.id;
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+          });
+
+        if (realEvents.length > 0) {
+          setFeaturedEvents(realEvents);
+        } else {
+          setFeaturedEvents([]);
+        }
+      } catch {
+        if (!cancelled) {
+          setFeaturedEvents([]);
+        }
+      }
+    }
+
+    fetchFeaturedEvents();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const filterCounts = useMemo(
+    () => ({
+      events: countBy(RESOURCES, (resource) => resource.event_id),
+      types: countBy(RESOURCES, (resource) => resource.resource_type),
+      sectors: countBy(RESOURCES, (resource) => resource.sector),
+      years: countBy(RESOURCES, (resource) => resource.year),
+      regions: countBy(RESOURCES, (resource) => resource.region),
+    }),
+    []
+  );
+
+  const filteredResources = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+
+    const matching = RESOURCES.filter((resource) => {
+      const matchesSearch =
+        !query ||
+        [
+          resource.title,
+          resource.eventName,
+          resource.resource_type,
+          resource.description,
+          resource.region,
+          resource.fileType,
+          resource.thumbnail,
+          ...resource.sector,
+        ]
+          .join(" ")
+          .toLowerCase()
+          .includes(query);
+
+      const matchesEvent =
+        filters.events.length === 0 ||
+        filters.events.includes(resource.event_id);
+      const matchesType =
+        filters.types.length === 0 ||
+        filters.types.includes(resource.resource_type);
+      const matchesSector =
+        filters.sectors.length === 0 ||
+        resource.sector.some((sector) => filters.sectors.includes(sector));
+      const matchesYear =
+        filters.years.length === 0 || filters.years.includes(resource.year);
+      const matchesRegion =
+        filters.regions.length === 0 || filters.regions.includes(resource.region);
+
+      return (
+        matchesSearch &&
+        matchesEvent &&
+        matchesType &&
+        matchesSector &&
+        matchesYear &&
+        matchesRegion
+      );
+    });
+
+    return matching.sort((a, b) => {
+      if (filters.sort === "Most Downloaded") return b.downloads - a.downloads;
+      if (filters.sort === "Popular") return b.popularity - a.popularity;
+      if (filters.sort === "Event Name") {
+        return `${a.eventName}${a.title}`.localeCompare(
+          `${b.eventName}${b.title}`
+        );
+      }
+      return (
+        new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
+      );
+    });
+  }, [filters, searchQuery]);
+
+  const activeFilterCount =
+    filters.events.length +
+    filters.types.length +
+    filters.sectors.length +
+    filters.years.length +
+    filters.regions.length;
+
+  const hasActiveCriteria = activeFilterCount > 0 || searchQuery.trim().length > 0;
+
+  function setSort(sort: SortOption) {
+    setFilters((current) => ({ ...current, sort }));
+  }
+
+  function toggleFilter(
+    key: Exclude<keyof ResourceFilters, "sort">,
+    value: string | number
+  ) {
+    setFilters((current) => {
+      const selected = current[key] as Array<string | number>;
+      const next = selected.includes(value)
+        ? selected.filter((item) => item !== value)
+        : [...selected, value];
+
+      return {
+        ...current,
+        [key]: next,
+      } as ResourceFilters;
+    });
+  }
+
+  function resetFilters() {
+    setFilters(DEFAULT_FILTERS);
+    setSearchQuery("");
+  }
+
+  function startMockDownload(resource: EventResource) {
+    const blob = new Blob([buildDownloadText(resource)], {
+      type: "text/plain;charset=utf-8",
+    });
+    const objectUrl = window.URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = objectUrl;
+    anchor.download = resource.fileName;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    window.URL.revokeObjectURL(objectUrl);
+    setDownloadNotice(`${resource.fileName} download started`);
+  }
+
+  function requestDownload(resource: EventResource) {
+    setPendingDownload(resource);
+    if (canDownload) {
+      startMockDownload(resource);
+      return;
+    }
+
+    setAccessMode("login");
+    setAccessModalOpen(true);
+  }
+
+  function completeMockAccess() {
+    setAccessMode("success");
+    setMockAuthenticated(true);
+    window.setTimeout(() => {
+      if (pendingDownload) startMockDownload(pendingDownload);
+      setAccessModalOpen(false);
+      setAccessMode("login");
+    }, 1000);
+  }
+
+  return (
+    <div className="min-h-screen bg-[#f6f8f7] text-zinc-950 dark:bg-zinc-950 dark:text-zinc-50">
+      <HeroSection />
+
+      <FeaturedEventsSection
+        events={featuredEvents}
+      />
+
+      <section className="border-t border-zinc-200/80 bg-white py-6 dark:border-zinc-800 dark:bg-zinc-950 lg:py-8">
+        <div className="container mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-8">
+          <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-[#00A651]">
+                Resource Library
+              </p>
+              <h2 className="mt-1.5 text-2xl font-black tracking-tight text-zinc-950 dark:text-white sm:text-3xl">
+                Browse event assets and market intelligence
+              </h2>
+            </div>
+            <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center lg:w-auto">
+              <label className="sr-only" htmlFor="resource-library-search">
+                Search resources
+              </label>
+              <div className="relative w-full sm:w-80">
+                <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+                <input
+                  id="resource-library-search"
+                  type="search"
+                  value={searchQuery}
+                  onChange={(event) => setSearchQuery(event.target.value)}
+                  placeholder="Search resources..."
+                  className="h-10 w-full rounded-md border border-zinc-200 bg-white pl-10 pr-3 text-sm font-semibold text-zinc-900 outline-none transition placeholder:text-zinc-400 focus:border-[#00A651] focus:ring-2 focus:ring-[#00A651]/15 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={() => setMobileFiltersOpen(true)}
+                className="inline-flex h-10 items-center gap-2 rounded-md border border-zinc-200 bg-white px-3.5 text-sm font-bold text-zinc-800 shadow-sm transition hover:border-zinc-300 lg:hidden dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100"
+              >
+                <Filter className="h-4 w-4" />
+                Filters
+                {activeFilterCount > 0 && (
+                  <span className="grid h-5 min-w-5 place-items-center rounded-full bg-[#00A651] px-1.5 text-[10px] text-white">
+                    {activeFilterCount}
+                  </span>
+                )}
+              </button>
+              <div className="lg:hidden">
+                <SortSelect value={filters.sort} onChange={setSort} compact />
+              </div>
+            </div>
+          </div>
+
+          <div className="grid items-start gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
+            <aside className="hidden lg:block">
+              <FilterPanel
+                counts={filterCounts}
+                filters={filters}
+                resultCount={filteredResources.length}
+                totalCount={RESOURCES.length}
+                onReset={resetFilters}
+                onSortChange={setSort}
+                onToggle={toggleFilter}
+              />
+            </aside>
+
+            <div className="min-w-0">
+              <ResultsHeader
+                filters={filters}
+                resultCount={filteredResources.length}
+                searchQuery={searchQuery}
+                totalCount={RESOURCES.length}
+                onReset={resetFilters}
+              />
+
+              {!hasActiveCriteria ? (
+                <ReportsGrid />
+              ) : filteredResources.length > 0 ? (
+                <ResourceGrid
+                  resources={filteredResources}
+                  onDownload={requestDownload}
+                  onPreview={setSelectedResource}
+                />
+              ) : (
+                <EmptyState
+                  filters={filters}
+                  hasActiveCriteria={hasActiveCriteria}
+                  searchQuery={searchQuery}
+                  onReset={resetFilters}
+                />
+              )}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <PreviewDrawer
+        resource={selectedResource}
+        onClose={() => setSelectedResource(null)}
+        onDownload={requestDownload}
+        onSelectResource={setSelectedResource}
+      />
+
+      <MobileFilterDrawer
+        counts={filterCounts}
+        filters={filters}
+        open={mobileFiltersOpen}
+        resultCount={filteredResources.length}
+        totalCount={RESOURCES.length}
+        onClose={() => setMobileFiltersOpen(false)}
+        onReset={resetFilters}
+        onSortChange={setSort}
+        onToggle={toggleFilter}
+      />
+
+      <AccessModal
+        mode={accessMode}
+        open={accessModalOpen}
+        resource={pendingDownload}
+        onClose={() => setAccessModalOpen(false)}
+        onModeChange={setAccessMode}
+        onSubmit={completeMockAccess}
+      />
+
+      <AnimatePresence>
+        {downloadNotice && (
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 16 }}
+            className="fixed bottom-5 right-5 z-[70] max-w-[calc(100vw-2rem)] rounded-lg border border-emerald-200 bg-white px-4 py-3 text-sm font-semibold text-zinc-900 shadow-2xl shadow-emerald-950/10 dark:border-emerald-900 dark:bg-zinc-900 dark:text-zinc-100"
+          >
+            <span className="inline-flex items-center gap-2">
+              <CheckCircle2 className="h-4 w-4 text-[#00A651]" />
+              {downloadNotice}
+            </span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+function HeroSection() {
+  return (
+    <section className="relative isolate overflow-hidden bg-zinc-950 text-white">
+      <div className="absolute inset-0 -z-10">
+        <Image
+          src="/hero-banner-bg.jpg"
+          alt=""
+          fill
+          priority
+          sizes="100vw"
+          className="object-cover opacity-30 saturate-75"
+        />
+        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(9,9,11,0.96)_0%,rgba(9,9,11,0.82)_48%,rgba(9,9,11,0.5)_100%)]" />
+        <div className="absolute inset-x-0 bottom-0 h-px bg-white/10" />
+      </div>
+
+      <div className="container mx-auto flex min-h-[360px] max-w-[1440px] items-center px-4 py-14 sm:min-h-[400px] sm:px-6 sm:py-16 lg:min-h-[440px] lg:px-8 lg:py-20">
+        <div className="max-w-5xl">
+          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[11px] font-black uppercase tracking-[0.18em] text-emerald-200 backdrop-blur">
+            <ShieldCheck className="h-3.5 w-3.5" />
+            Premium Event Intelligence
+          </div>
+
+          <h1 className="max-w-4xl text-4xl font-black leading-[1.02] tracking-tight sm:text-5xl lg:text-6xl">
+            Energy Industry Resource Center
+          </h1>
+
+          <p className="mt-4 max-w-3xl text-base leading-7 text-zinc-200 sm:text-lg">
+            Browse event brochures, post-show reports, whitepapers,
+            presentations, and industry insights from leading energy events
+            worldwide.
+          </p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function FeaturedEventsSection({ events }: { events: FeaturedEventItem[] }) {
+  if (events.length === 0) return null;
+
+  return (
+    <section className="bg-[#f6f8f7] py-5 dark:bg-zinc-950 lg:py-6">
+      <div className="container mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-8">
+        <div className="mb-4 flex items-end justify-between gap-4">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.18em] text-zinc-500 dark:text-zinc-400">
+              Featured Events
+            </p>
+            <h2 className="mt-1 text-xl font-black tracking-tight text-zinc-950 dark:text-white sm:text-2xl">
+              Global energy event libraries
+            </h2>
+          </div>
+          <ChevronRight className="hidden h-5 w-5 text-zinc-400 sm:block" />
+        </div>
+
+        <div className="no-scrollbar flex snap-x gap-3 overflow-x-auto pb-1">
+          {events.map((event) => {
+            return (
+              <Link
+                key={event.id}
+                href={event.slug ? `/events/${event.slug}` : "/events"}
+                className="group min-w-[252px] snap-start rounded-lg border border-zinc-200 bg-white p-4 text-left shadow-sm transition duration-300 hover:-translate-y-1 hover:border-[#00A651]/40 hover:shadow-xl hover:shadow-zinc-950/8 dark:border-zinc-800 dark:bg-zinc-900"
+              >
+                <div className="relative mb-4 flex aspect-[16/9] items-center justify-center overflow-hidden rounded-md border border-zinc-100 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950">
+                  <Image
+                    src={event.imageUrl}
+                    alt={event.title}
+                    fill
+                    sizes="252px"
+                    className="object-contain p-5 transition-transform duration-500 group-hover:scale-105"
+                  />
+                  <ArrowUpRight className="absolute right-3 top-3 h-4 w-4 text-zinc-400 transition group-hover:text-[#00A651]" />
+                </div>
+                <h3 className="line-clamp-2 min-h-10 text-base font-black leading-tight tracking-tight text-zinc-950 transition group-hover:text-[#00A651] dark:text-white">
+                  {event.title}
+                </h3>
+                <div className="mt-3 flex items-center justify-between gap-4 border-t border-zinc-100 pt-3 dark:border-zinc-800">
+                  <p className="flex min-w-0 items-center gap-2 text-xs font-medium text-zinc-500 dark:text-zinc-400">
+                    <MapPin className="h-4 w-4 shrink-0" />
+                    <span className="truncate">{event.location || "Event details"}</span>
+                  </p>
+                  <span className="shrink-0 text-[10px] font-black uppercase tracking-[0.14em] text-[#00A651]">
+                    {event.occurrence || "event"}
+                  </span>
+                </div>
+              </Link>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function FilterPanel({
+  counts,
+  filters,
+  resultCount,
+  totalCount,
+  onReset,
+  onSortChange,
+  onToggle,
+}: {
+  counts: {
+    events: Record<string, number>;
+    types: Record<string, number>;
+    sectors: Record<string, number>;
+    years: Record<string, number>;
+    regions: Record<string, number>;
+  };
+  filters: ResourceFilters;
+  resultCount: number;
+  totalCount: number;
+  onReset: () => void;
+  onSortChange: (sort: SortOption) => void;
+  onToggle: (
+    key: Exclude<keyof ResourceFilters, "sort">,
+    value: string | number
+  ) => void;
+}) {
+  return (
+    <div className="sticky top-32 rounded-lg border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+      <div className="border-b border-zinc-100 p-4 dark:border-zinc-800">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.18em] text-[#00A651]">
+              Filters
+            </p>
+            <p className="mt-1 text-sm font-semibold text-zinc-500 dark:text-zinc-400">
+              {resultCount} of {totalCount} resources
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onReset}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-zinc-200 text-zinc-500 transition hover:border-zinc-300 hover:text-zinc-950 dark:border-zinc-700 dark:hover:text-white"
+            title="Reset filters"
+          >
+            <RotateCcw className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+
+      <div className="max-h-[calc(100vh-14rem)] space-y-4 overflow-y-auto p-4 dashboard-scrollbar">
+        <SortControl value={filters.sort} onChange={onSortChange} />
+
+        <FilterGroup
+          title="Resource Type"
+          options={RESOURCE_TYPE_OPTIONS.map((type) => ({
+            label: type,
+            value: type,
+            count: counts.types[type] ?? 0,
+          }))}
+          selectedValues={filters.types}
+          onToggle={(value) => onToggle("types", value)}
+        />
+        <FilterGroup
+          title="Sector"
+          options={SECTOR_OPTIONS.map((sector) => ({
+            label: sector,
+            value: sector,
+            count: counts.sectors[sector] ?? 0,
+          }))}
+          selectedValues={filters.sectors}
+          onToggle={(value) => onToggle("sectors", value)}
+        />
+        <FilterGroup
+          title="Year"
+          options={YEAR_OPTIONS.map((year) => ({
+            label: String(year),
+            value: year,
+            count: counts.years[String(year)] ?? 0,
+          }))}
+          selectedValues={filters.years}
+          onToggle={(value) => onToggle("years", value)}
+        />
+
+      </div>
+    </div>
+  );
+}
+
+function MobileFilterDrawer({
+  counts,
+  filters,
+  open,
+  resultCount,
+  totalCount,
+  onClose,
+  onReset,
+  onSortChange,
+  onToggle,
+}: {
+  counts: {
+    events: Record<string, number>;
+    types: Record<string, number>;
+    sectors: Record<string, number>;
+    years: Record<string, number>;
+    regions: Record<string, number>;
+  };
+  filters: ResourceFilters;
+  open: boolean;
+  resultCount: number;
+  totalCount: number;
+  onClose: () => void;
+  onReset: () => void;
+  onSortChange: (sort: SortOption) => void;
+  onToggle: (
+    key: Exclude<keyof ResourceFilters, "sort">,
+    value: string | number
+  ) => void;
+}) {
+  return (
+    <AnimatePresence>
+      {open && (
+        <motion.div
+          className="fixed inset-0 z-50 lg:hidden"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+        >
+          <button
+            type="button"
+            aria-label="Close filters"
+            className="absolute inset-0 bg-zinc-950/50"
+            onClick={onClose}
+          />
+          <motion.aside
+            initial={{ y: "100%" }}
+            animate={{ y: 0 }}
+            exit={{ y: "100%" }}
+            transition={{ type: "spring", stiffness: 260, damping: 30 }}
+            className="absolute inset-x-0 bottom-0 max-h-[88vh] overflow-hidden rounded-t-2xl border border-zinc-200 bg-white shadow-2xl dark:border-zinc-800 dark:bg-zinc-900"
+          >
+            <div className="flex items-center justify-between border-b border-zinc-100 p-4 dark:border-zinc-800">
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-[#00A651]">
+                  Filters
+                </p>
+                <p className="mt-1 text-sm font-semibold text-zinc-500 dark:text-zinc-400">
+                  {resultCount} of {totalCount} resources
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={onClose}
+                className="grid h-10 w-10 place-items-center rounded-md border border-zinc-200 text-zinc-600 dark:border-zinc-700 dark:text-zinc-300"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="max-h-[calc(88vh-8rem)] overflow-y-auto p-4 dashboard-scrollbar">
+              <div className="space-y-4">
+                <SortControl value={filters.sort} onChange={onSortChange} />
+
+                <FilterGroup
+                  title="Resource Type"
+                  options={RESOURCE_TYPE_OPTIONS.map((type) => ({
+                    label: type,
+                    value: type,
+                    count: counts.types[type] ?? 0,
+                  }))}
+                  selectedValues={filters.types}
+                  onToggle={(value) => onToggle("types", value)}
+                />
+                <FilterGroup
+                  title="Sector"
+                  options={SECTOR_OPTIONS.map((sector) => ({
+                    label: sector,
+                    value: sector,
+                    count: counts.sectors[sector] ?? 0,
+                  }))}
+                  selectedValues={filters.sectors}
+                  onToggle={(value) => onToggle("sectors", value)}
+                />
+                <FilterGroup
+                  title="Year"
+                  options={YEAR_OPTIONS.map((year) => ({
+                    label: String(year),
+                    value: year,
+                    count: counts.years[String(year)] ?? 0,
+                  }))}
+                  selectedValues={filters.years}
+                  onToggle={(value) => onToggle("years", value)}
+                />
+
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-2.5 border-t border-zinc-100 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
+              <Button
+                type="button"
+                variant="outline"
+                className="h-10 rounded-md text-sm"
+                onClick={onReset}
+              >
+                <RotateCcw className="mr-2 h-4 w-4" />
+                Reset
+              </Button>
+              <Button
+                type="button"
+                className="h-10 rounded-md bg-[#00A651] text-sm text-white hover:bg-[#008b44]"
+                onClick={onClose}
+              >
+                Apply Filters
+              </Button>
+            </div>
+          </motion.aside>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
+
+function SortControl({
+  value,
+  onChange,
+}: {
+  value: SortOption;
+  onChange: (sort: SortOption) => void;
+}) {
+  return (
+    <div>
+      <label
+        htmlFor="resource-sort-panel"
+        className="mb-2 flex items-center gap-2 text-xs font-black uppercase tracking-[0.16em] text-zinc-500 dark:text-zinc-400"
+      >
+        <ArrowDownAZ className="h-4 w-4" />
+        Sort Options
+      </label>
+      <SortSelect value={value} onChange={onChange} id="resource-sort-panel" />
+    </div>
+  );
+}
+
+function SortSelect({
+  compact,
+  id,
+  value,
+  onChange,
+}: {
+  compact?: boolean;
+  id?: string;
+  value: SortOption;
+  onChange: (sort: SortOption) => void;
+}) {
+  return (
+    <select
+      id={id}
+      value={value}
+      onChange={(event) => onChange(event.target.value as SortOption)}
+      className={cn(
+        "h-10 w-full rounded-md border border-zinc-200 bg-white px-3 text-sm font-bold text-zinc-800 outline-none transition focus:border-[#00A651] focus:ring-2 focus:ring-[#00A651]/15 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100",
+        compact && "w-[170px]"
+      )}
+      aria-label="Sort resources"
+    >
+      {SORT_OPTIONS.map((option) => (
+        <option key={option} value={option}>
+          {option}
+        </option>
+      ))}
+    </select>
+  );
+}
+
+function FilterGroup({
+  title,
+  options,
+  selectedValues,
+  onToggle,
+}: {
+  title: string;
+  options: Array<{ label: string; value: string | number; count: number }>;
+  selectedValues: Array<string | number>;
+  onToggle: (value: string | number) => void;
+}) {
+  return (
+    <div>
+      <p className="mb-2 text-xs font-black uppercase tracking-[0.16em] text-zinc-500 dark:text-zinc-400">
+        {title}
+      </p>
+      <div className="space-y-1">
+        {options.map((option) => {
+          const checked = selectedValues.includes(option.value);
+          return (
+            <label
+              key={option.value}
+              className="group flex min-h-8 cursor-pointer items-center justify-between gap-3 rounded-md px-2 py-1 transition hover:bg-zinc-50 dark:hover:bg-zinc-800"
+            >
+              <span className="flex min-w-0 items-center gap-3">
+                <Checkbox
+                  checked={checked}
+                  onCheckedChange={() => onToggle(option.value)}
+                  className="h-4 w-4 rounded border-zinc-300 data-[state=checked]:border-[#00A651] data-[state=checked]:bg-[#00A651]"
+                />
+                <span
+                  className={cn(
+                    "truncate text-[13px] font-semibold text-zinc-700 dark:text-zinc-300",
+                    checked && "text-zinc-950 dark:text-white"
+                  )}
+                >
+                  {option.label}
+                </span>
+              </span>
+              <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-[11px] font-bold text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400">
+                {option.count}
+              </span>
+            </label>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function ResultsHeader({
+  filters,
+  resultCount,
+  searchQuery,
+  totalCount,
+  onReset,
+}: {
+  filters: ResourceFilters;
+  resultCount: number;
+  searchQuery: string;
+  totalCount: number;
+  onReset: () => void;
+}) {
+  const chips = [
+    ...filters.events.map((eventId) => getEvent(eventId)?.name ?? eventId),
+    ...filters.types,
+    ...filters.sectors,
+    ...filters.years.map(String),
+    ...filters.regions,
+  ];
+
+  return (
+    <div className="mb-4 rounded-lg border border-zinc-200 bg-[#fbfcfb] p-3.5 dark:border-zinc-800 dark:bg-zinc-900">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="text-sm font-bold text-zinc-950 dark:text-white">
+            Showing {resultCount} of {totalCount} resources
+          </p>
+          <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+            Sorted by {filters.sort}
+            {searchQuery.trim() && ` for "${searchQuery.trim()}"`}
+          </p>
+        </div>
+        {(chips.length > 0 || searchQuery.trim()) && (
+          <button
+            type="button"
+            onClick={onReset}
+            className="inline-flex h-9 items-center justify-center gap-2 rounded-md border border-zinc-200 bg-white px-3 text-sm font-bold text-zinc-700 transition hover:border-zinc-300 hover:text-zinc-950 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-200"
+          >
+            <RotateCcw className="h-4 w-4" />
+            Reset all
+          </button>
+        )}
+      </div>
+
+      {chips.length > 0 && (
+        <div className="mt-3 flex flex-wrap gap-2">
+          {chips.map((chip) => (
+            <span
+              key={chip}
+              className="rounded-full border border-zinc-200 bg-white px-3 py-1 text-xs font-bold text-zinc-600 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-300"
+            >
+              {chip}
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ResourceGrid({
+  resources,
+  onDownload,
+  onPreview,
+}: {
+  resources: EventResource[];
+  onDownload: (resource: EventResource) => void;
+  onPreview: (resource: EventResource) => void;
+}) {
+  return (
+    <motion.div
+      layout
+      className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3"
+    >
+      <AnimatePresence mode="popLayout">
+        {resources.map((resource) => (
+          <ResourceCard
+            key={resource.id}
+            resource={resource}
+            onDownload={onDownload}
+            onPreview={onPreview}
+          />
+        ))}
+      </AnimatePresence>
+    </motion.div>
+  );
+}
+
+function ResourceCard({
+  resource,
+  onDownload,
+  onPreview,
+}: {
+  resource: EventResource;
+  onDownload: (resource: EventResource) => void;
+  onPreview: (resource: EventResource) => void;
+}) {
+  const event = getEvent(resource.event_id);
+
+  return (
+    <motion.article
+      layout
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.98 }}
+      whileHover={{ y: -5 }}
+      transition={{ duration: 0.24 }}
+      className="group flex h-full flex-col overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-sm transition-shadow duration-300 hover:shadow-xl hover:shadow-zinc-950/10 dark:border-zinc-800 dark:bg-zinc-900"
+    >
+      <div className="p-3.5 pb-0">
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-3">
+            <EventLogo event={event} fallback={resource.eventLogo} size="sm" />
+            <div className="min-w-0">
+              <p className="truncate text-sm font-black text-zinc-950 dark:text-white">
+                {resource.eventName}
+              </p>
+              <p className="text-xs font-semibold text-zinc-500">
+                {resource.region} · {resource.year}
+              </p>
+            </div>
+          </div>
+          <span
+            className={cn(
+              "rounded-full border px-2.5 py-1 text-[11px] font-black",
+              FILE_TYPE_STYLES[resource.fileType]
+            )}
+          >
+            {resource.fileType}
+          </span>
+        </div>
+
+        <ResourceCover resource={resource} />
+      </div>
+
+      <div className="flex grow flex-col p-4">
+        <div className="mb-2.5">
+          <span
+            className={cn(
+              "inline-flex rounded-full border px-2.5 py-1 text-[11px] font-black",
+              RESOURCE_TYPE_STYLES[resource.resource_type]
+            )}
+          >
+            {resource.resource_type}
+          </span>
+        </div>
+
+        <h3 className="text-lg font-black leading-tight tracking-tight text-zinc-950 transition group-hover:text-[#007a3d] dark:text-white">
+          {resource.title}
+        </h3>
+        <p className="mt-2.5 line-clamp-2 text-sm leading-6 text-zinc-600 dark:text-zinc-400">
+          {resource.description}
+        </p>
+
+        <div className="mt-3 flex flex-wrap gap-1.5">
+          {resource.sector.slice(0, 3).map((sector) => (
+            <span
+              key={sector}
+              className="rounded-full bg-zinc-100 px-2.5 py-0.5 text-[11px] font-bold text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300"
+            >
+              {sector}
+            </span>
+          ))}
+        </div>
+
+        <div className="mt-4 grid grid-cols-2 gap-3 border-t border-zinc-100 pt-3 text-xs dark:border-zinc-800">
+          <Metric icon={Download} label="Downloads" value={formatNumber(resource.downloads)} />
+          <Metric icon={BookOpen} label="Length" value={`${resource.pages} pages`} />
+        </div>
+
+        <div className="mt-4 grid grid-cols-2 gap-2.5">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onPreview(resource)}
+            className="h-10 rounded-md text-sm"
+          >
+            <Eye className="mr-2 h-4 w-4" />
+            Preview
+          </Button>
+          <Button
+            type="button"
+            onClick={() => onDownload(resource)}
+            className="h-10 rounded-md bg-zinc-950 text-sm text-white hover:bg-[#00A651] dark:bg-white dark:text-zinc-950 dark:hover:bg-[#00A651] dark:hover:text-white"
+          >
+            <Download className="mr-2 h-4 w-4" />
+            Download
+          </Button>
+        </div>
+      </div>
+    </motion.article>
+  );
+}
+
+function Metric({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: typeof Download;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="flex items-center gap-2 text-zinc-500 dark:text-zinc-400">
+      <Icon className="h-4 w-4 text-[#00A651]" />
+      <span>
+        <span className="block font-bold text-zinc-900 dark:text-zinc-100">
+          {value}
+        </span>
+        <span className="block text-[11px] font-semibold">{label}</span>
+      </span>
+    </div>
+  );
+}
+
+function ResourceCover({
+  resource,
+  large,
+}: {
+  resource: EventResource;
+  large?: boolean;
+}) {
+  const palette = COVER_PALETTES[hashIndex(resource.id, COVER_PALETTES.length)];
+
+  return (
+    <div
+      className={cn(
+        "relative overflow-hidden rounded-md border border-white/10 bg-gradient-to-br text-white shadow-inner",
+        palette,
+        large ? "aspect-[5/3]" : "aspect-[16/10]"
+      )}
+    >
+      <div className="absolute inset-0 opacity-35">
+        <div className="absolute left-0 top-1/4 h-px w-full bg-white/30" />
+        <div className="absolute left-0 top-1/2 h-px w-full bg-white/20" />
+        <div className="absolute bottom-1/4 left-0 h-px w-full bg-white/20" />
+        <div className="absolute bottom-0 right-8 top-0 w-px bg-white/20" />
+        <div className="absolute bottom-0 right-20 top-0 w-px bg-white/10" />
+      </div>
+
+      <div className={cn("relative flex h-full flex-col justify-between", large ? "p-5" : "p-4")}>
+        <div className="flex items-start justify-between gap-4">
+          <span className="rounded-full border border-white/20 bg-white/10 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em]">
+            {resource.fileType}
+          </span>
+          <span className="text-right text-[11px] font-black uppercase tracking-[0.14em] text-white/70">
+            {resource.year}
+          </span>
+        </div>
+
+        <div>
+          <p className="mb-2 text-[11px] font-black uppercase tracking-[0.16em] text-emerald-100">
+            {resource.eventName}
+          </p>
+          <h4
+            className={cn(
+              "max-w-[90%] font-black leading-tight tracking-tight",
+              large ? "text-2xl sm:text-3xl" : "text-base"
+            )}
+          >
+            {resource.thumbnail}
+          </h4>
+          <div className={cn("flex items-center gap-2 text-[11px] font-bold text-white/70", large ? "mt-4" : "mt-3")}>
+            <span className="h-1.5 w-1.5 rounded-full bg-[#00A651]" />
+            ENERGDIVE RESOURCE
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function EventLogo({
+  event,
+  fallback = "ER",
+  size = "sm",
+}: {
+  event?: EnergyEvent;
+  fallback?: string;
+  size?: "sm" | "md" | "lg";
+}) {
+  const label = event?.logoLabel ?? fallback;
+  const bg = event?.brandColor ?? "#00A651";
+
+  return (
+    <span
+      className={cn(
+        "grid shrink-0 place-items-center rounded-md text-center font-black text-white shadow-sm",
+        size === "sm" && "h-10 w-10 text-xs",
+        size === "md" && "h-12 w-12 text-sm",
+        size === "lg" && "h-14 w-14 text-base"
+      )}
+      style={{ backgroundColor: bg }}
+      aria-label={`${event?.name ?? "Event"} logo`}
+    >
+      {label}
+    </span>
+  );
+}
+
+function PreviewDrawer({
+  resource,
+  onClose,
+  onDownload,
+  onSelectResource,
+}: {
+  resource: EventResource | null;
+  onClose: () => void;
+  onDownload: (resource: EventResource) => void;
+  onSelectResource: (resource: EventResource) => void;
+}) {
+  const relatedResources = resource
+    ? RESOURCES.filter(
+        (candidate) =>
+          candidate.event_id === resource.event_id && candidate.id !== resource.id
+      ).slice(0, 4)
+    : [];
+
+  const event = resource ? getEvent(resource.event_id) : undefined;
+
+  return (
+    <AnimatePresence>
+      {resource && (
+        <motion.div
+          className="fixed inset-0 z-[60]"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+        >
+          <button
+            type="button"
+            aria-label="Close preview"
+            className="absolute inset-0 bg-zinc-950/50 backdrop-blur-sm"
+            onClick={onClose}
+          />
+          <motion.aside
+            role="dialog"
+            aria-modal="true"
+            aria-label={`${resource.title} preview`}
+            initial={{ x: "100%" }}
+            animate={{ x: 0 }}
+            exit={{ x: "100%" }}
+            transition={{ type: "spring", stiffness: 260, damping: 30 }}
+            className="absolute right-0 top-0 flex h-full w-full max-w-2xl flex-col overflow-hidden bg-white shadow-2xl dark:bg-zinc-950 sm:border-l sm:border-zinc-200 sm:dark:border-zinc-800"
+          >
+            <div className="flex items-center justify-between border-b border-zinc-100 bg-white/95 p-4 backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/95">
+              <div className="flex min-w-0 items-center gap-3">
+                <EventLogo event={event} fallback={resource.eventLogo} />
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-black text-zinc-950 dark:text-white">
+                    {resource.eventName}
+                  </p>
+                  <p className="text-xs font-semibold text-zinc-500">
+                    {resource.resource_type}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={onClose}
+                className="grid h-10 w-10 place-items-center rounded-md border border-zinc-200 text-zinc-600 transition hover:border-zinc-300 hover:text-zinc-950 dark:border-zinc-700 dark:text-zinc-300 dark:hover:text-white"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto dashboard-scrollbar">
+              <div className="space-y-5 p-4 sm:p-5">
+                <ResourceCover resource={resource} large />
+
+                <section>
+                  <div className="mb-3 flex flex-wrap items-center gap-2">
+                    <span
+                      className={cn(
+                        "rounded-full border px-2.5 py-1 text-[11px] font-black",
+                        RESOURCE_TYPE_STYLES[resource.resource_type]
+                      )}
+                    >
+                      {resource.resource_type}
+                    </span>
+                    <span
+                      className={cn(
+                        "rounded-full border px-2.5 py-1 text-[11px] font-black",
+                        FILE_TYPE_STYLES[resource.fileType]
+                      )}
+                    >
+                      {resource.fileType}
+                    </span>
+                  </div>
+                  <h2 className="text-2xl font-black leading-tight tracking-tight text-zinc-950 dark:text-white sm:text-3xl">
+                    {resource.title}
+                  </h2>
+                  <p className="mt-3 text-sm leading-6 text-zinc-600 dark:text-zinc-400 sm:text-base sm:leading-7">
+                    {resource.description}
+                  </p>
+                </section>
+
+                <section className="rounded-lg border border-zinc-200 bg-[#fbfcfb] p-4 dark:border-zinc-800 dark:bg-zinc-900">
+                  <h3 className="mb-3 text-xs font-black uppercase tracking-[0.16em] text-zinc-500">
+                    Event Information
+                  </h3>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <DetailItem icon={Building2} label="Event" value={resource.eventName} />
+                    <DetailItem icon={MapPin} label="Location" value={event?.location ?? resource.region} />
+                    <DetailItem icon={Globe2} label="Region" value={resource.region} />
+                    <DetailItem icon={Users} label="Audience" value="Executives and decision makers" />
+                  </div>
+                </section>
+
+                <section>
+                  <h3 className="mb-3 text-xs font-black uppercase tracking-[0.16em] text-zinc-500">
+                    File Details
+                  </h3>
+                  <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+                    <FileDetail label="File type" value={resource.fileType} />
+                    <FileDetail label="File size" value={resource.fileSize} />
+                    <FileDetail label="Year" value={String(resource.year)} />
+                    <FileDetail label="Pages" value={String(resource.pages)} />
+                    <FileDetail label="Read time" value={resource.readTime} />
+                    <FileDetail
+                      label="Downloads"
+                      value={formatNumber(resource.downloads)}
+                    />
+                  </div>
+                </section>
+
+                <section>
+                  <h3 className="mb-3 text-xs font-black uppercase tracking-[0.16em] text-zinc-500">
+                    Sectors
+                  </h3>
+                  <div className="flex flex-wrap gap-1.5">
+                    {resource.sector.map((sector) => (
+                      <span
+                        key={sector}
+                        className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-bold text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
+                      >
+                        {sector}
+                      </span>
+                    ))}
+                  </div>
+                </section>
+
+                <section>
+                  <div className="mb-3 flex items-center justify-between gap-4">
+                    <h3 className="text-xs font-black uppercase tracking-[0.16em] text-zinc-500">
+                      More Resources From This Event
+                    </h3>
+                    <Layers3 className="h-4 w-4 text-zinc-400" />
+                  </div>
+                  <div className="space-y-2.5">
+                    {relatedResources.map((related) => (
+                      <button
+                        key={related.id}
+                        type="button"
+                        onClick={() => onSelectResource(related)}
+                        className="group flex w-full items-center justify-between gap-4 rounded-lg border border-zinc-200 bg-white p-3 text-left transition hover:border-zinc-300 hover:shadow-md dark:border-zinc-800 dark:bg-zinc-900"
+                      >
+                        <div className="min-w-0">
+                          <p className="text-xs font-black uppercase tracking-[0.14em] text-[#00A651]">
+                            {related.resource_type}
+                          </p>
+                          <p className="mt-1 truncate text-sm font-bold text-zinc-900 dark:text-white">
+                            {related.title}
+                          </p>
+                        </div>
+                        <ChevronRight className="h-4 w-4 shrink-0 text-zinc-400 transition group-hover:text-[#00A651]" />
+                      </button>
+                    ))}
+                  </div>
+                </section>
+              </div>
+            </div>
+
+            <div className="border-t border-zinc-100 bg-white p-3.5 dark:border-zinc-800 dark:bg-zinc-950">
+              <Button
+                type="button"
+                onClick={() => onDownload(resource)}
+                className="h-11 w-full rounded-md bg-[#00A651] text-sm font-black text-white hover:bg-[#008b44]"
+              >
+                <Download className="mr-2 h-4 w-4" />
+                Download Resource
+              </Button>
+            </div>
+          </motion.aside>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
+
+function DetailItem({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: typeof Building2;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="flex gap-3">
+      <Icon className="mt-0.5 h-4 w-4 shrink-0 text-[#00A651]" />
+      <div>
+        <p className="text-[11px] font-black uppercase tracking-[0.14em] text-zinc-400">
+          {label}
+        </p>
+        <p className="mt-1 text-sm font-bold text-zinc-900 dark:text-white">
+          {value}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function FileDetail({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
+      <p className="text-[11px] font-black uppercase tracking-[0.14em] text-zinc-400">
+        {label}
+      </p>
+      <p className="mt-2 text-base font-black text-zinc-950 dark:text-white">
+        {value}
+      </p>
+    </div>
+  );
+}
+
+function EmptyState({
+  filters,
+  hasActiveCriteria,
+  searchQuery,
+  onReset,
+}: {
+  filters: ResourceFilters;
+  hasActiveCriteria: boolean;
+  searchQuery: string;
+  onReset: () => void;
+}) {
+  const title = filters.events.includes("custom-event-list")
+    ? "No matching event."
+    : filters.types.includes("Post Show Report")
+      ? "No reports available."
+      : "No resources found.";
+
+  const description = hasActiveCriteria
+    ? "Try removing one or more filters, changing the search term, or returning to the full event library."
+    : "Resources will appear here once event assets are available.";
+
+  return (
+    <div className="rounded-lg border border-dashed border-zinc-300 bg-[#fbfcfb] p-6 text-center dark:border-zinc-700 dark:bg-zinc-900 sm:p-8">
+      <div className="mx-auto mb-5 flex h-24 w-24 items-center justify-center rounded-lg border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
+        <div className="relative h-16 w-14 rounded-md border border-zinc-300 bg-zinc-50 p-2 text-left dark:border-zinc-700 dark:bg-zinc-900">
+          <div className="h-2 w-8 rounded bg-[#00A651]" />
+          <div className="mt-3 h-1.5 w-10 rounded bg-zinc-300 dark:bg-zinc-700" />
+          <div className="mt-2 h-1.5 w-7 rounded bg-zinc-300 dark:bg-zinc-700" />
+          <Search className="absolute -bottom-3 -right-3 h-8 w-8 rounded-full border border-zinc-200 bg-white p-1.5 text-zinc-500 shadow-sm dark:border-zinc-800 dark:bg-zinc-950" />
+        </div>
+      </div>
+
+      <h3 className="text-xl font-black tracking-tight text-zinc-950 dark:text-white sm:text-2xl">
+        {title}
+      </h3>
+      <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-zinc-600 dark:text-zinc-400">
+        {description}
+        {searchQuery.trim() && (
+          <>
+            {" "}
+            Current search:{" "}
+            <span className="font-bold text-zinc-900 dark:text-zinc-100">
+              {searchQuery.trim()}
+            </span>
+            .
+          </>
+        )}
+      </p>
+      <Button
+        type="button"
+        onClick={onReset}
+        className="mt-5 rounded-md bg-zinc-950 text-white hover:bg-[#00A651] dark:bg-white dark:text-zinc-950 dark:hover:bg-[#00A651] dark:hover:text-white"
+      >
+        <RotateCcw className="mr-2 h-4 w-4" />
+        Reset Filters
+      </Button>
+    </div>
+  );
+}
+
+function AccessModal({
+  mode,
+  open,
+  resource,
+  onClose,
+  onModeChange,
+  onSubmit,
+}: {
+  mode: "login" | "register" | "success";
+  open: boolean;
+  resource: EventResource | null;
+  onClose: () => void;
+  onModeChange: (mode: "login" | "register" | "success") => void;
+  onSubmit: () => void;
+}) {
+  return (
+    <AnimatePresence>
+      {open && (
+        <motion.div
+          className="fixed inset-0 z-[80] grid place-items-center px-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+        >
+          <button
+            type="button"
+            aria-label="Close access modal"
+            className="absolute inset-0 bg-zinc-950/65 backdrop-blur-sm"
+            onClick={onClose}
+          />
+          <motion.div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Access Premium Industry Resources"
+            initial={{ opacity: 0, y: 18, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 18, scale: 0.98 }}
+            className="relative w-full max-w-lg overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-2xl dark:border-zinc-800 dark:bg-zinc-950"
+          >
+            <div className="border-b border-zinc-100 p-5 dark:border-zinc-800">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <div className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-md bg-zinc-950 text-white dark:bg-white dark:text-zinc-950">
+                    <LockKeyhole className="h-5 w-5" />
+                  </div>
+                  <h2 className="text-xl font-black tracking-tight text-zinc-950 dark:text-white sm:text-2xl">
+                    Access Premium Industry Resources
+                  </h2>
+                  <p className="mt-2 text-sm leading-6 text-zinc-600 dark:text-zinc-400">
+                    {resource
+                      ? `Sign in or register to download ${resource.fileName}.`
+                      : "Sign in or register to continue."}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="grid h-9 w-9 shrink-0 place-items-center rounded-md border border-zinc-200 text-zinc-500 dark:border-zinc-700"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+
+            {mode === "success" ? (
+              <div className="p-7 text-center">
+                <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-emerald-50 text-[#00A651]">
+                  <CheckCircle2 className="h-8 w-8" />
+                </div>
+                <h3 className="mt-5 text-2xl font-black text-zinc-950 dark:text-white">
+                  Your download is starting...
+                </h3>
+                <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
+                  Access approved for this frontend mock flow.
+                </p>
+              </div>
+            ) : (
+              <div className="p-5">
+                <div className="mb-4 grid grid-cols-2 rounded-md border border-zinc-200 bg-zinc-50 p-1 dark:border-zinc-800 dark:bg-zinc-900">
+                  {(["login", "register"] as const).map((tab) => (
+                    <button
+                      key={tab}
+                      type="button"
+                      onClick={() => onModeChange(tab)}
+                      className={cn(
+                        "h-10 rounded px-3 text-sm font-black capitalize transition",
+                        mode === tab
+                          ? "bg-white text-zinc-950 shadow-sm dark:bg-zinc-950 dark:text-white"
+                          : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
+                      )}
+                    >
+                      {tab}
+                    </button>
+                  ))}
+                </div>
+
+                <form
+                  className="space-y-3"
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    onSubmit();
+                  }}
+                >
+                  {mode === "register" && (
+                    <div>
+                      <label className="text-xs font-black uppercase tracking-[0.14em] text-zinc-500">
+                        Full Name
+                      </label>
+                      <input
+                        className="mt-1.5 h-10 w-full rounded-md border border-zinc-200 bg-white px-3 text-sm font-medium outline-none focus:border-[#00A651] focus:ring-2 focus:ring-[#00A651]/15 dark:border-zinc-800 dark:bg-zinc-900"
+                        placeholder="Aarav Mehta"
+                      />
+                    </div>
+                  )}
+                  <div>
+                    <label className="text-xs font-black uppercase tracking-[0.14em] text-zinc-500">
+                      Work Email
+                    </label>
+                    <input
+                      type="email"
+                      className="mt-1.5 h-10 w-full rounded-md border border-zinc-200 bg-white px-3 text-sm font-medium outline-none focus:border-[#00A651] focus:ring-2 focus:ring-[#00A651]/15 dark:border-zinc-800 dark:bg-zinc-900"
+                      placeholder="name@company.com"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-black uppercase tracking-[0.14em] text-zinc-500">
+                      Password
+                    </label>
+                    <input
+                      type="password"
+                      className="mt-1.5 h-10 w-full rounded-md border border-zinc-200 bg-white px-3 text-sm font-medium outline-none focus:border-[#00A651] focus:ring-2 focus:ring-[#00A651]/15 dark:border-zinc-800 dark:bg-zinc-900"
+                      placeholder="••••••••"
+                    />
+                  </div>
+                  {mode === "register" && (
+                    <div>
+                      <label className="text-xs font-black uppercase tracking-[0.14em] text-zinc-500">
+                        Company
+                      </label>
+                      <input
+                        className="mt-1.5 h-10 w-full rounded-md border border-zinc-200 bg-white px-3 text-sm font-medium outline-none focus:border-[#00A651] focus:ring-2 focus:ring-[#00A651]/15 dark:border-zinc-800 dark:bg-zinc-900"
+                        placeholder="Energia Global"
+                      />
+                    </div>
+                  )}
+                  <Button
+                    type="submit"
+                    className="h-11 w-full rounded-md bg-[#00A651] text-sm font-black text-white hover:bg-[#008b44]"
+                  >
+                    <FileDown className="mr-2 h-4 w-4" />
+                    {mode === "login"
+                      ? "Login and Download"
+                      : "Register and Download"}
+                  </Button>
+                </form>
+
+                <div className="my-4 flex items-center gap-3">
+                  <div className="h-px flex-1 bg-zinc-200 dark:bg-zinc-800" />
+                  <span className="text-xs font-bold uppercase tracking-[0.14em] text-zinc-400">
+                    Social Login
+                  </span>
+                  <div className="h-px flex-1 bg-zinc-200 dark:bg-zinc-800" />
+                </div>
+
+                <div className="grid gap-2.5 sm:grid-cols-3">
+                  {["Google", "LinkedIn", "Company SSO"].map((provider) => (
+                    <button
+                      key={provider}
+                      type="button"
+                      onClick={onSubmit}
+                      className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-zinc-200 bg-white px-3 text-sm font-bold text-zinc-700 transition hover:border-zinc-300 hover:text-zinc-950 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200"
+                    >
+                      <Mail className="h-4 w-4" />
+                      {provider}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
+
+const STRAPI = process.env.NEXT_PUBLIC_STRAPI_URL;
+
+type StrapiReportItem = {
+  id: number;
+  Title: string;
+  slug: string;
+  publishedAt?: string;
+  Date?: string;
+  Excerpt?: Array<{
+    children?: Array<{
+      text?: string;
+    }>;
+  }>;
+  FeaturedImage?: {
+    url?: string | null;
+  } | null;
+};
+
+type ReportSummary = {
+  id: number;
+  title: string;
+  slug: string;
+  date: string;
+  category: string;
+  excerpt: string;
+  image: string | null;
+};
+
+async function fetchReports(): Promise<StrapiReportItem[]> {
+  const res = await fetch(
+    `${STRAPI}/api/contents?filters[type_of_content][name][$eq]=Reports&populate=*&sort=Date:desc`,
+    { next: { revalidate: 3600 } }
+  );
+  const json = await res.json();
+  return json?.data ?? [];
+}
+
+function formatDate(dateStr: string) {
+  if (!dateStr) return "";
+  return new Date(dateStr).toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+function ReportsGrid() {
+  const [reports, setReports] = useState<ReportSummary[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchReports().then((data) => {
+      const formatted = data.map((item) => ({
+        id: item.id,
+        title: item.Title,
+        slug: item.slug,
+        date: item.publishedAt || item.Date || "",
+        category: "Reports",
+        excerpt: item?.Excerpt?.[0]?.children?.[0]?.text || "",
+        image: item?.FeaturedImage?.url ? strapiImageUrl(item.FeaturedImage.url) : null,
+      }));
+      setReports(formatted);
+      setLoading(false);
+    });
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mt-10">
+        {[...Array(6)].map((_, i) => (
+          <div key={i} className="space-y-8">
+            <Skeleton className="aspect-[3/4] w-full rounded-2xl" />
+            <div className="space-y-4">
+              <div className="flex gap-4">
+                <Skeleton className="h-4 w-20" />
+                <Skeleton className="h-4 w-20" />
+              </div>
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-16 w-full" />
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-8">
+      <motion.div
+        layout
+        className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-6 gap-y-10"
+      >
+        <AnimatePresence mode="popLayout">
+          {reports.map((report, index) => (
+            <Link
+              key={report.id}
+              href={`/reports/${report.slug}`}
+              className="group block outline-none"
+            >
+              <motion.div
+                layout
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
+                className="flex flex-col h-full"
+              >
+                <div className="relative aspect-[3/4] bg-zinc-100 overflow-hidden rounded-2xl mb-6 dark:bg-zinc-800">
+                  {report.image && (
+                    <Image
+                      src={report.image}
+                      alt={report.title}
+                      fill
+                      className="object-cover grayscale group-hover:grayscale-0 transition-all duration-700"
+                    />
+                  )}
+                  <div className="absolute bottom-4 right-4 bg-white p-3 rounded-full shadow-2xl translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300 dark:bg-zinc-950">
+                    <ArrowUpRight size={20} className="text-black dark:text-white" />
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3 mb-2 text-[10px] font-bold uppercase">
+                    <span className="text-[#00A651]">{report.category}</span>
+                    <span className="flex items-center gap-1 text-zinc-400">
+                      <Clock size={10} />
+                      {formatDate(report.date)}
+                    </span>
+                  </div>
+
+                  <h3 className="text-base md:text-lg font-bold font-serif leading-tight text-zinc-900 group-hover:text-[#00A651] transition-colors dark:text-white">
+                    {report.title}
+                  </h3>
+
+                  <p className="text-zinc-500 text-sm line-clamp-2 leading-relaxed dark:text-zinc-400">
+                    {report.excerpt}
+                  </p>
+                </div>
+              </motion.div>
+            </Link>
+          ))}
+        </AnimatePresence>
+      </motion.div>
+    </div>
+  );
+}

@@ -196,32 +196,32 @@ export const NEWS_PAGE_METADATA = buildExactPageMetadata({
 });
 
 export const REPORTS_PAGE_METADATA = buildExactPageMetadata({
-  title: "Energy Market Reports, Insights & Industry Analysis | ENERGDIVE",
+  title: "Energy Industry Resource Center | Event Brochures & Reports | ENERGDIVE",
   description:
-    "Access in-depth energy reports covering oil & gas, renewables, power markets, policy analysis, and sector data curated by ENERGDIVE for energy professionals.",
+    "Browse event brochures, post-show reports, whitepapers, presentations, media kits, and industry insights from leading energy events worldwide.",
   keywords:
-    "energy reports, energy industry reports, energy sector analysis, energy market intelligence, hse report, downstream report, industry reports, energy industry reports",
+    "energy event resources, event brochures, post show reports, energy whitepapers, energy presentations, sponsor prospectus, energy industry resource center, ADIPEC resources, India Energy Week resources, Gastech resources",
   author: "ENERGDIVE - Insights and Market Intelligence",
   publisher: "ENERGDIVE - Insights and Market Intelligence",
   generator: "ENERGDIVE - Insights and Market Intelligence",
-  classification: "Energy News & Current Affairs",
-  topic: "Energy Sector News | Oil & Gas, Power, Renewables, Policy & Markets",
+  classification: "Energy Events & Industry Resources",
+  topic: "Energy Event Resources | Brochures, Reports, Presentations & Whitepapers",
   audience:
     "Government bodies, policymakers, industry leaders, corporates, investors, researchers",
   canonical: "https://www.energdive.com/reports",
   openGraph: {
     locale: "en_IN",
-    title: "Energy Reports | Sector Analysis & Intelligence",
+    title: "Energy Industry Resource Center | ENERGDIVE",
     description:
-      "Access in-depth energy reports covering oil & gas, renewables, power markets, policy analysis, and sector data curated by ENERGDIVE for energy professionals.",
+      "Browse event brochures, post-show reports, whitepapers, presentations, media kits, and industry insights from leading energy events worldwide.",
     url: "https://www.energdive.com/reports",
     siteName: "ENERGDIVE - Insights and Market Intelligence",
     imageAlt: "ENERGDIVE - India's Energy Intelligence Platform",
   },
   twitter: {
-    title: "Energy Reports | Sector Analysis & Intelligence",
+    title: "Energy Industry Resource Center | ENERGDIVE",
     description:
-      "Access in-depth energy reports covering oil & gas, renewables, power markets, policy analysis, and sector data curated by ENERGDIVE for energy professionals.",
+      "Browse event brochures, post-show reports, whitepapers, presentations, media kits, and industry insights from leading energy events worldwide.",
     site: "@energdive",
   },
   languages: {
