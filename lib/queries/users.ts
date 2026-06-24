@@ -65,6 +65,155 @@ export interface EnsureUserProfileRowPayload {
     onboardingCompleted?: boolean;
 }
 
+interface UserCandidateRow {
+    id: number;
+}
+
+async function findBestUserByEmail(
+    client: Awaited<ReturnType<typeof getClient>>,
+    email: string,
+    clerkId: string
+): Promise<UserCandidateRow | null> {
+    const result = await client.query<UserCandidateRow>(
+        `SELECT u.id
+         FROM users u
+         WHERE LOWER(u.email) = LOWER($1)
+         ORDER BY
+           CASE WHEN u.membership_id IS NOT NULL THEN 1 ELSE 0 END DESC,
+           CASE WHEN u.verification_status = 'verified' THEN 1 ELSE 0 END DESC,
+           CASE WHEN COALESCE(u.onboarding_completed, false) THEN 1 ELSE 0 END DESC,
+           CASE WHEN EXISTS (SELECT 1 FROM user_communities uc WHERE uc.user_id = u.id) THEN 1 ELSE 0 END DESC,
+           CASE WHEN EXISTS (SELECT 1 FROM user_industries ui WHERE ui.user_id = u.id) THEN 1 ELSE 0 END DESC,
+           CASE WHEN NULLIF(BTRIM(COALESCE(u.job_title, '')), '') IS NOT NULL THEN 1 ELSE 0 END DESC,
+           CASE WHEN NULLIF(BTRIM(COALESCE(u.organization, '')), '') IS NOT NULL THEN 1 ELSE 0 END DESC,
+           CASE WHEN u.clerk_id = $2 THEN 1 ELSE 0 END DESC,
+           u.updated_at DESC NULLS LAST,
+           u.id DESC
+         LIMIT 1
+         FOR UPDATE`,
+        [email, clerkId]
+    );
+
+    return result.rows[0] || null;
+}
+
+async function hydrateUserFromDuplicate(
+    client: Awaited<ReturnType<typeof getClient>>,
+    targetUserId: number,
+    sourceUserId: number
+): Promise<void> {
+    if (targetUserId === sourceUserId) return;
+
+    const sourceResult = await client.query(
+        `SELECT *
+         FROM users
+         WHERE id = $1
+         LIMIT 1
+         FOR UPDATE`,
+        [sourceUserId]
+    );
+
+    const source = sourceResult.rows[0];
+    if (!source) return;
+
+    if (source.membership_id) {
+        const targetMembership = await client.query(
+            `SELECT membership_id FROM users WHERE id = $1 LIMIT 1`,
+            [targetUserId]
+        );
+
+        if (!targetMembership.rows[0]?.membership_id) {
+            await client.query(
+                `UPDATE users
+                 SET membership_id = NULL,
+                     membership_seq = NULL,
+                     updated_at = NOW()
+                 WHERE id = $1`,
+                [sourceUserId]
+            );
+        }
+    }
+
+    await client.query(
+        `UPDATE users target
+         SET
+           first_name = COALESCE(NULLIF(BTRIM(target.first_name), ''), NULLIF(BTRIM($2), ''), target.first_name),
+           last_name = COALESCE(NULLIF(BTRIM(target.last_name), ''), NULLIF(BTRIM($3), ''), target.last_name),
+           phone = COALESCE(NULLIF(BTRIM(target.phone), ''), NULLIF(BTRIM($4), ''), target.phone),
+           country = COALESCE(NULLIF(BTRIM(target.country), ''), NULLIF(BTRIM($5), ''), target.country),
+           state = COALESCE(NULLIF(BTRIM(target.state), ''), NULLIF(BTRIM($6), ''), target.state),
+           job_title = COALESCE(NULLIF(BTRIM(target.job_title), ''), NULLIF(BTRIM($7), ''), target.job_title),
+           organization = COALESCE(NULLIF(BTRIM(target.organization), ''), NULLIF(BTRIM($8), ''), target.organization),
+           preferred_frequency = COALESCE(NULLIF(BTRIM(target.preferred_frequency), ''), NULLIF(BTRIM($9), ''), target.preferred_frequency),
+           preferred_formats = CASE
+             WHEN COALESCE(array_length(target.preferred_formats, 1), 0) > 0 THEN target.preferred_formats
+             WHEN COALESCE(array_length($10::text[], 1), 0) > 0 THEN $10::text[]
+             ELSE target.preferred_formats
+           END,
+           content_digest_opted_out = COALESCE(target.content_digest_opted_out, $11),
+           onboarding_completed = COALESCE(target.onboarding_completed, false) OR COALESCE($12, false),
+           verification_status = CASE
+             WHEN target.verification_status = 'verified' OR $13 = 'verified' THEN 'verified'
+             ELSE COALESCE(target.verification_status, $13)
+           END,
+           membership_id = COALESCE(target.membership_id, $14),
+           membership_seq = COALESCE(target.membership_seq, $15),
+           source = COALESCE(NULLIF(BTRIM(target.source), ''), NULLIF(BTRIM($16), ''), target.source),
+           crm_lead_id = COALESCE(NULLIF(BTRIM(target.crm_lead_id), ''), NULLIF(BTRIM($17), ''), target.crm_lead_id),
+           crm_duplicate_lead_id = COALESCE(NULLIF(BTRIM(target.crm_duplicate_lead_id), ''), NULLIF(BTRIM($18), ''), target.crm_duplicate_lead_id),
+           crm_duplicate_id = COALESCE(NULLIF(BTRIM(target.crm_duplicate_id), ''), NULLIF(BTRIM($19), ''), target.crm_duplicate_id),
+           updated_at = NOW()
+         WHERE target.id = $1`,
+        [
+            targetUserId,
+            source.first_name,
+            source.last_name,
+            source.phone,
+            source.country,
+            source.state,
+            source.job_title,
+            source.organization,
+            source.preferred_frequency,
+            source.preferred_formats || [],
+            source.content_digest_opted_out,
+            source.onboarding_completed,
+            source.verification_status,
+            source.membership_id,
+            source.membership_seq,
+            source.source,
+            source.crm_lead_id,
+            source.crm_duplicate_lead_id,
+            source.crm_duplicate_id,
+        ]
+    );
+
+    await client.query(
+        `INSERT INTO user_industries (user_id, industry_id, sub_industry_id)
+         SELECT $1, source.industry_id, source.sub_industry_id
+         FROM user_industries source
+         WHERE source.user_id = $2
+           AND NOT EXISTS (
+             SELECT 1 FROM user_industries target WHERE target.user_id = $1
+           )`,
+        [targetUserId, sourceUserId]
+    );
+
+    await client.query(
+        `INSERT INTO user_communities (user_id, community_id, sub_community_id)
+         SELECT $1, source.community_id, source.sub_community_id
+         FROM user_communities source
+         WHERE source.user_id = $2
+           AND NOT EXISTS (
+             SELECT 1
+             FROM user_communities target
+             WHERE target.user_id = $1
+               AND target.community_id = source.community_id
+               AND COALESCE(target.sub_community_id, 0) = COALESCE(source.sub_community_id, 0)
+           )`,
+        [targetUserId, sourceUserId]
+    );
+}
+
 /**
  * Atomic onboarding: upserts user, writes mappings, marks complete.
  * Runs in a single transaction — all or nothing.
@@ -176,7 +325,8 @@ export async function saveOnboardingProfile(
  * Fetch full user profile with joined taxonomy names.
  */
 export async function getUserProfile(
-    clerkId: string
+    clerkId: string,
+    email?: string | null
 ): Promise<UserProfile | null> {
     try {
         // 1. User + industry join
@@ -198,8 +348,19 @@ export async function getUserProfile(
             LEFT JOIN user_industries ui ON u.id = ui.user_id
             LEFT JOIN industry ind       ON ui.industry_id = ind.id
             LEFT JOIN sub_industries si  ON ui.sub_industry_id = si.id
-            WHERE u.clerk_id = $1`,
-            [clerkId]
+            WHERE u.clerk_id = $1
+               OR ($2::text IS NOT NULL AND LOWER(u.email) = LOWER($2::text))
+            ORDER BY
+                CASE WHEN u.membership_id IS NOT NULL THEN 1 ELSE 0 END DESC,
+                CASE WHEN u.verification_status = 'verified' THEN 1 ELSE 0 END DESC,
+                CASE WHEN COALESCE(u.onboarding_completed, false) THEN 1 ELSE 0 END DESC,
+                CASE WHEN EXISTS (SELECT 1 FROM user_communities uc WHERE uc.user_id = u.id) THEN 1 ELSE 0 END DESC,
+                CASE WHEN EXISTS (SELECT 1 FROM user_industries ui2 WHERE ui2.user_id = u.id) THEN 1 ELSE 0 END DESC,
+                CASE WHEN u.clerk_id = $1 THEN 1 ELSE 0 END DESC,
+                u.updated_at DESC NULLS LAST,
+                u.id DESC
+            LIMIT 1`,
+            [clerkId, email || null]
         );
 
         console.log(`[getUserProfile] Query for ${clerkId} returned ${userResult.rows.length} rows`);
@@ -247,12 +408,18 @@ export async function ensureUserProfileRow(
     try {
         await client.query("BEGIN");
 
-        const existingByClerkId = await client.query(
-            `SELECT id FROM users WHERE clerk_id = $1 LIMIT 1`,
+        const existingByClerkId = await client.query<UserCandidateRow>(
+            `SELECT id FROM users WHERE clerk_id = $1 LIMIT 1 FOR UPDATE`,
             [payload.clerkId]
         );
 
+        const candidateByEmail = await findBestUserByEmail(client, email, payload.clerkId);
+
         if (existingByClerkId.rows.length > 0) {
+            if (candidateByEmail && candidateByEmail.id !== existingByClerkId.rows[0].id) {
+                await hydrateUserFromDuplicate(client, existingByClerkId.rows[0].id, candidateByEmail.id);
+            }
+
             await client.query(
                 `UPDATE users
                  SET email      = $2,
@@ -275,18 +442,7 @@ export async function ensureUserProfileRow(
                 ]
             );
         } else {
-            const candidateByEmail = await client.query(
-                `SELECT id FROM users
-                 WHERE LOWER(email) = LOWER($1)
-                 ORDER BY
-                   CASE WHEN clerk_id IS NULL THEN 0 ELSE 1 END,
-                   updated_at DESC NULLS LAST,
-                   id DESC
-                 LIMIT 1`,
-                [email]
-            );
-
-            if (candidateByEmail.rows.length > 0) {
+            if (candidateByEmail) {
                 await client.query(
                     `UPDATE users
                      SET clerk_id   = $2,
@@ -301,7 +457,7 @@ export async function ensureUserProfileRow(
                          updated_at = NOW()
                      WHERE id = $1`,
                     [
-                        candidateByEmail.rows[0].id,
+                        candidateByEmail.id,
                         payload.clerkId,
                         email,
                         payload.firstName || null,
@@ -536,6 +692,7 @@ export async function provisionUser(payload: ProvisionPayload): Promise<number> 
             `INSERT INTO users (
                 clerk_id, email, first_name, last_name, salutation, phone,
                 country, state, job_title, organization,
+                onboarding_completed, magic_token, magic_token_expires_at,
                 source, crm_lead_id, created_at
             ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10, true, $11, $12, $13, $14, NOW())
             ON CONFLICT (clerk_id) DO UPDATE SET

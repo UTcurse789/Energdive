@@ -104,7 +104,7 @@ export default async function OnboardingPage({
         }
     }
 
-    const profile = await getUserProfile(userId);
+    const profile = await getUserProfile(userId, email);
     if (profile?.onboarding_completed || clerkOnboardingCompleted) {
         console.warn("[ONBOARDING_PAGE] Redirecting completed user away from onboarding", {
             userId,
