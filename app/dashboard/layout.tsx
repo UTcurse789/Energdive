@@ -48,7 +48,7 @@ export default async function DashboardLayout({
         }
     }
 
-    const resolvedProfile = await getUserProfile(userId);
+    const resolvedProfile = await getUserProfile(userId, email);
     const effectiveProfile = resolvedProfile
         ? {
             ...resolvedProfile,

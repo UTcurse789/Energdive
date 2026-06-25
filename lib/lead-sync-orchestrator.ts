@@ -11,7 +11,7 @@
 
 import { query } from "./db";
 import syncUserToBrevo from "./brevoSync";
-import { createZohoLead, createZohoDuplicateLead, ZohoLeadData } from "./zoho-leads";
+import { createZohoLead, upsertZohoLead, createZohoDuplicateLead, ZohoLeadData } from "./zoho-leads";
 import { logEvent } from "./system-logger";
 
 export interface SyncResult {
@@ -174,6 +174,9 @@ export async function syncEnrichedLead(
                 name: `${fullUser.first_name || bodyData.firstName || ""} ${fullUser.last_name || bodyData.lastName || ""}`.trim(),
                 phone,
                 company: fullUser.organization || bodyData.organization || undefined,
+                jobTitle: fullUser.job_title || bodyData.jobTitle || undefined,
+                industry: fullUser.industries?.find(Boolean) || undefined,
+                subIndustry: fullUser.sub_industries?.find(Boolean) || undefined,
                 source: "Zoho Form Verified",
                 originalLeadId: fullUser.crm_lead_id || undefined,
                 membershipId: fullUser.membership_id || undefined,
@@ -234,8 +237,9 @@ export async function syncEnrichedLead(
             UTM_Content: utmData?.utm_content || undefined,
         };
 
-        log(`Creating NEW CRM lead for: ${syncEmail}`);
-        const zohoResult = await createZohoLead(leadData);
+        log(`Upserting CRM lead for: ${syncEmail}`);
+        const zoResult = await upsertZohoLead(leadData);
+        const zohoResult = { ...zoResult, action: zoResult.action as "created" | "updated" };
 
         await updateUserSyncState(clerkId, {
             crm_lead_id: zohoResult.id,

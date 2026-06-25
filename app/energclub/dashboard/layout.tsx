@@ -44,7 +44,7 @@ export default async function EnergClubDashboardLayout({
         }
     }
 
-    const profile = await getUserProfile(userId);
+    const profile = await getUserProfile(userId, email);
     const isOnboardingComplete = profile?.onboarding_completed || clerkOnboardingCompleted;
 
     if (!isOnboardingComplete) {

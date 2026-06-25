@@ -52,6 +52,7 @@ export default function UnifiedAuthPage() {
     const [resolvedPostAuthRedirect, setResolvedPostAuthRedirect] = useState<string | null>(null);
     const [userFirstName, setUserFirstName] = useState("");
     const [existingUserOnboarded, setExistingUserOnboarded] = useState(false);
+    const [mounted, setMounted] = useState(false);
 
     const posthog = usePostHog();
     const postAuthRedirect = resolvedPostAuthRedirect ?? DEFAULT_POST_AUTH_REDIRECT;
@@ -78,6 +79,7 @@ export default function UnifiedAuthPage() {
         // recover the intended return path if Clerk lands on /dashboard first.
         sessionStorage.setItem(POST_AUTH_REDIRECT_STORAGE_KEY, resolved);
         document.cookie = `${POST_AUTH_REDIRECT_COOKIE}=${encodeURIComponent(resolved)}; path=/; max-age=86400; SameSite=Lax`;
+        setMounted(true);
     }, [resolvePostAuthRedirect]);
 
     // Track registration started when the auth page mounts
@@ -137,10 +139,10 @@ export default function UnifiedAuthPage() {
     // at its default (false) since handleSubmit never ran. The target page's
     // layout (e.g. dashboard/layout.tsx) will enforce onboarding if needed.
     useEffect(() => {
-        if (isSignedIn) {
+        if (mounted && isSignedIn) {
             window.location.replace(getPostLoginFallbackPath(postAuthRedirect));
         }
-    }, [isSignedIn, postAuthRedirect]);
+    }, [mounted, isSignedIn, postAuthRedirect]);
 
     // ── Step 1: Submit identifier ──
     const handleSubmit = useCallback(async () => {
