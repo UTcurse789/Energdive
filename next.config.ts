@@ -125,6 +125,12 @@ const nextConfig: NextConfig = {
         destination: '/knowledge-base/submit/abstract',
         permanent: true,
       },
+      // Redirect non-hyphenated indias slug to correct india-s slug
+      {
+        source: '/opinion/from-megawatts-to-mindsets-indias-energy-transition-and-the-road-ahead',
+        destination: '/opinion/from-megawatts-to-mindsets-india-s-energy-transition-and-the-road-ahead',
+        permanent: true,
+      },
       // Redirect old /energjob routes to new /energyjobs routes
       {
         source: '/energjob',

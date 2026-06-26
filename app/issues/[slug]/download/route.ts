@@ -130,8 +130,12 @@ export async function GET(
     const { userId } = await auth();
 
     if (!userId) {
-        const returnTo = `${requestUrl.pathname}${requestUrl.search}`;
-        const redirectUrl = `/auth?redirect_url=${encodeURIComponent(returnTo)}`;
+        // Redirect to the issue *page* with ?download=true instead of directly
+        // to this route handler. Clerk's OAuth handshake needs to land on a
+        // real Next.js page to establish session cookies. The page will then
+        // trigger the download automatically once auth is confirmed.
+        const issuePage = `/issues/${slug}?download=true`;
+        const redirectUrl = `/auth?redirect_url=${encodeURIComponent(issuePage)}`;
         return NextResponse.redirect(new URL(redirectUrl, request.url));
     }
 
