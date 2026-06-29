@@ -102,7 +102,56 @@ export function ResourceDetailPage({
     anchor.click();
     anchor.remove();
     setDownloadNotice(`${resource.fileName} download started`);
+
+    // Save to dashboard saved articles
+    fetch("/api/user/saved-articles", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title: resource.title,
+        url: `/resource-center/${resource.slug}`,
+      }),
+    }).catch(() => {});
   }
+
+  // After auth redirect: auto-download pending resource
+  useEffect(() => {
+    if (!canDownload) return;
+
+    const pending = localStorage.getItem("rc_pending_download");
+    if (!pending) return;
+
+    localStorage.removeItem("rc_pending_download");
+    try {
+      const data = JSON.parse(pending) as {
+        slug: string;
+        title: string;
+        fileName: string;
+        file_url: string;
+      };
+      // Only auto-download if this is the same resource
+      if (data.slug === resource.slug && data.file_url) {
+        const anchor = document.createElement("a");
+        anchor.href = data.file_url;
+        anchor.download = data.fileName;
+        anchor.target = "_blank";
+        anchor.rel = "noopener noreferrer";
+        document.body.appendChild(anchor);
+        anchor.click();
+        anchor.remove();
+        setDownloadNotice(`${data.fileName} download started`);
+
+        fetch("/api/user/saved-articles", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title: data.title,
+            url: `/resource-center/${data.slug}`,
+          }),
+        }).catch(() => {});
+      }
+    } catch {}
+  }, [canDownload, resource.slug]);
 
   function requestDownload() {
     if (canDownload) {
@@ -110,6 +159,16 @@ export function ResourceDetailPage({
       return;
     }
 
+    // Store pending download for after auth
+    localStorage.setItem(
+      "rc_pending_download",
+      JSON.stringify({
+        slug: resource.slug,
+        title: resource.title,
+        fileName: resource.fileName,
+        file_url: resource.file_url,
+      })
+    );
     openAuthModal(`/resource-center/${resource.slug}`);
   }
 
