@@ -14,12 +14,15 @@ export type EnergyEvent = {
 
 export type EventResource = {
   id: string;
+  slug: string;
   event_id: string;
   resource_type: ResourceType;
   resourceTag: string;
   file_url: string;
   fileName: string;
   coverImageUrl: string | null;
+  coverImageWidth: number | null;
+  coverImageHeight: number | null;
   title: string;
   eventName: string;
   eventLogo: string;

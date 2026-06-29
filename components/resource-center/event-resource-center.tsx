@@ -4,14 +4,11 @@ import { useAuth } from "@clerk/nextjs";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowDownAZ,
-  Building2,
   CheckCircle2,
-  ChevronRight,
   Download,
   Eye,
   FileDown,
   Filter,
-  Layers3,
   LockKeyhole,
   Mail,
   RotateCcw,
@@ -20,6 +17,7 @@ import {
   X,
 } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/buttons";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -99,15 +97,6 @@ function getFileTypeStyle(type: FileType) {
   return FILE_TYPE_STYLES[type] ?? FILE_TYPE_STYLES.FILE;
 }
 
-function formatDate(value: string) {
-  if (!value) return "Not published";
-  return new Intl.DateTimeFormat("en", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  }).format(new Date(value));
-}
-
 function uniqueSorted<T extends string | number>(values: T[]) {
   return Array.from(new Set(values.filter(Boolean))).sort((a, b) =>
     String(a).localeCompare(String(b))
@@ -125,9 +114,6 @@ export function EventResourceCenter({
   const [searchQuery, setSearchQuery] = useState("");
   const [filters, setFilters] = useState<ResourceFilters>(DEFAULT_FILTERS);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
-  const [selectedResource, setSelectedResource] = useState<EventResource | null>(
-    null
-  );
   const [pendingDownload, setPendingDownload] = useState<EventResource | null>(
     null
   );
@@ -164,8 +150,7 @@ export function EventResourceCenter({
   );
 
   useEffect(() => {
-    const shouldLock =
-      mobileFiltersOpen || selectedResource !== null || accessModalOpen;
+    const shouldLock = mobileFiltersOpen || accessModalOpen;
     if (!shouldLock) return;
 
     const previous = document.body.style.overflow;
@@ -173,7 +158,7 @@ export function EventResourceCenter({
     return () => {
       document.body.style.overflow = previous;
     };
-  }, [accessModalOpen, mobileFiltersOpen, selectedResource]);
+  }, [accessModalOpen, mobileFiltersOpen]);
 
   useEffect(() => {
     if (!downloadNotice) return;
@@ -398,7 +383,6 @@ export function EventResourceCenter({
                   eventLookup={eventLookup}
                   resources={filteredResources}
                   onDownload={requestDownload}
-                  onPreview={setSelectedResource}
                 />
               ) : (
                 <EmptyState
@@ -412,15 +396,6 @@ export function EventResourceCenter({
           </div>
         </div>
       </section>
-
-      <PreviewDrawer
-        eventLookup={eventLookup}
-        resource={selectedResource}
-        resources={resources}
-        onClose={() => setSelectedResource(null)}
-        onDownload={requestDownload}
-        onSelectResource={setSelectedResource}
-      />
 
       <MobileFilterDrawer
         counts={filterCounts}
@@ -863,12 +838,10 @@ function ResourceGrid({
   eventLookup,
   resources,
   onDownload,
-  onPreview,
 }: {
   eventLookup: Record<string, EnergyEvent>;
   resources: EventResource[];
   onDownload: (resource: EventResource) => void;
-  onPreview: (resource: EventResource) => void;
 }) {
   const pageSize = 12;
   const [visibleCount, setVisibleCount] = useState(pageSize);
@@ -888,7 +861,6 @@ function ResourceGrid({
               event={eventLookup[resource.event_id]}
               resource={resource}
               onDownload={onDownload}
-              onPreview={onPreview}
             />
           ))}
         </AnimatePresence>
@@ -914,12 +886,10 @@ function ResourceCard({
   event,
   resource,
   onDownload,
-  onPreview,
 }: {
   event?: EnergyEvent;
   resource: EventResource;
   onDownload: (resource: EventResource) => void;
-  onPreview: (resource: EventResource) => void;
 }) {
   return (
     <motion.article
@@ -974,16 +944,14 @@ function ResourceCard({
         </h3>
 
         <div className="mt-auto grid grid-cols-2 gap-2 pt-4">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => onPreview(resource)}
-            className="h-9 rounded-md px-2 text-xs"
+          <Link
+            href={`/resource-center/${resource.slug}`}
+            className="inline-flex h-9 items-center justify-center rounded-md border border-input bg-transparent px-2 text-xs font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
             title="Preview"
           >
             <Eye className="h-3.5 w-3.5 xl:mr-1.5" />
             <span className="hidden xl:inline">Preview</span>
-          </Button>
+          </Link>
           <Button
             type="button"
             onClick={() => onDownload(resource)}
@@ -1097,245 +1065,6 @@ function EventLogo({
     >
       {label}
     </span>
-  );
-}
-
-function PreviewDrawer({
-  eventLookup,
-  resource,
-  resources,
-  onClose,
-  onDownload,
-  onSelectResource,
-}: {
-  eventLookup: Record<string, EnergyEvent>;
-  resource: EventResource | null;
-  resources: EventResource[];
-  onClose: () => void;
-  onDownload: (resource: EventResource) => void;
-  onSelectResource: (resource: EventResource) => void;
-}) {
-  const relatedResources = resource
-    ? resources.filter(
-        (candidate) =>
-          candidate.event_id === resource.event_id && candidate.id !== resource.id
-      ).slice(0, 4)
-    : [];
-
-  const event = resource ? eventLookup[resource.event_id] : undefined;
-
-  return (
-    <AnimatePresence>
-      {resource && (
-        <motion.div
-          className="fixed inset-0 z-[60]"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-        >
-          <button
-            type="button"
-            aria-label="Close preview"
-            className="absolute inset-0 bg-zinc-950/50 backdrop-blur-sm"
-            onClick={onClose}
-          />
-          <motion.aside
-            role="dialog"
-            aria-modal="true"
-            aria-label={`${resource.title} preview`}
-            initial={{ x: "100%" }}
-            animate={{ x: 0 }}
-            exit={{ x: "100%" }}
-            transition={{ type: "spring", stiffness: 260, damping: 30 }}
-            className="absolute right-0 top-0 flex h-full w-full max-w-2xl flex-col overflow-hidden bg-white shadow-2xl dark:bg-zinc-950 sm:border-l sm:border-zinc-200 sm:dark:border-zinc-800"
-          >
-            <div className="flex items-center justify-between border-b border-zinc-100 bg-white/95 p-4 backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/95">
-              <div className="flex min-w-0 items-center gap-3">
-                <EventLogo event={event} fallback={resource.eventLogo} />
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-black text-zinc-950 dark:text-white">
-                    {resource.eventName}
-                  </p>
-                  <p className="text-xs font-semibold text-zinc-500">
-                    {resource.resource_type}
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={onClose}
-                className="grid h-10 w-10 place-items-center rounded-md border border-zinc-200 text-zinc-600 transition hover:border-zinc-300 hover:text-zinc-950 dark:border-zinc-700 dark:text-zinc-300 dark:hover:text-white"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            <div className="flex-1 overflow-y-auto dashboard-scrollbar">
-              <div className="space-y-5 p-4 sm:p-5">
-                <ResourceCover resource={resource} large />
-
-                <section>
-                  <div className="mb-3 flex flex-wrap items-center gap-2">
-                    <span
-                      className={cn(
-                        "rounded-full border px-2.5 py-1 text-[11px] font-black",
-                        getResourceTypeStyle(resource.resource_type)
-                      )}
-                    >
-                      {resource.resource_type}
-                    </span>
-                    <span
-                      className={cn(
-                        "rounded-full border px-2.5 py-1 text-[11px] font-black",
-                        getFileTypeStyle(resource.fileType)
-                      )}
-                    >
-                      {resource.fileType}
-                    </span>
-                  </div>
-                  <h2 className="text-2xl font-black leading-tight tracking-tight text-zinc-950 dark:text-white sm:text-3xl">
-                    {resource.title}
-                  </h2>
-                  <p className="mt-3 text-sm leading-6 text-zinc-600 dark:text-zinc-400 sm:text-base sm:leading-7">
-                    {resource.description}
-                  </p>
-                </section>
-
-                <section className="rounded-lg border border-zinc-200 bg-[#fbfcfb] p-4 dark:border-zinc-800 dark:bg-zinc-900">
-                  <h3 className="mb-3 text-xs font-black uppercase tracking-[0.16em] text-zinc-500">
-                    Event Information
-                  </h3>
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <DetailItem icon={Building2} label="Event" value={resource.eventName} />
-                    <DetailItem icon={Layers3} label="Show" value={resource.showCode} />
-                    <DetailItem icon={FileDown} label="Resource Tag" value={resource.resourceTag} />
-                    <DetailItem
-                      icon={ShieldCheck}
-                      label="Featured"
-                      value={resource.featured ? "Yes" : "No"}
-                    />
-                  </div>
-                </section>
-
-                <section>
-                  <h3 className="mb-3 text-xs font-black uppercase tracking-[0.16em] text-zinc-500">
-                    File Details
-                  </h3>
-                  <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
-                    <FileDetail label="File type" value={resource.fileType} />
-                    <FileDetail label="File size" value={resource.fileSize} />
-                    <FileDetail label="Year" value={String(resource.year)} />
-                    <FileDetail
-                      label="Published"
-                      value={formatDate(resource.publishedAt)}
-                    />
-                    <FileDetail
-                      label="Promotional"
-                      value={resource.promotional ? "Yes" : "No"}
-                    />
-                  </div>
-                </section>
-
-                <section>
-                  <h3 className="mb-3 text-xs font-black uppercase tracking-[0.16em] text-zinc-500">
-                    Sectors
-                  </h3>
-                  <div className="flex flex-wrap gap-1.5">
-                    {resource.sector.map((sector) => (
-                      <span
-                        key={sector}
-                        className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-bold text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
-                      >
-                        {sector}
-                      </span>
-                    ))}
-                  </div>
-                </section>
-
-                {relatedResources.length > 0 && (
-                <section>
-                  <div className="mb-3 flex items-center justify-between gap-4">
-                    <h3 className="text-xs font-black uppercase tracking-[0.16em] text-zinc-500">
-                      More Resources From This Event
-                    </h3>
-                    <Layers3 className="h-4 w-4 text-zinc-400" />
-                  </div>
-                  <div className="space-y-2.5">
-                    {relatedResources.map((related) => (
-                      <button
-                        key={related.id}
-                        type="button"
-                        onClick={() => onSelectResource(related)}
-                        className="group flex w-full items-center justify-between gap-4 rounded-lg border border-zinc-200 bg-white p-3 text-left transition hover:border-zinc-300 hover:shadow-md dark:border-zinc-800 dark:bg-zinc-900"
-                      >
-                        <div className="min-w-0">
-                          <p className="text-xs font-black uppercase tracking-[0.14em] text-[#00A651]">
-                            {related.resource_type}
-                          </p>
-                          <p className="mt-1 truncate text-sm font-bold text-zinc-900 dark:text-white">
-                            {related.title}
-                          </p>
-                        </div>
-                        <ChevronRight className="h-4 w-4 shrink-0 text-zinc-400 transition group-hover:text-[#00A651]" />
-                      </button>
-                    ))}
-                  </div>
-                </section>
-                )}
-              </div>
-            </div>
-
-            <div className="border-t border-zinc-100 bg-white p-3.5 dark:border-zinc-800 dark:bg-zinc-950">
-              <Button
-                type="button"
-                onClick={() => onDownload(resource)}
-                className="h-11 w-full rounded-md bg-[#00A651] text-sm font-black text-white hover:bg-[#008b44]"
-              >
-                <Download className="mr-2 h-4 w-4" />
-                Download Resource
-              </Button>
-            </div>
-          </motion.aside>
-        </motion.div>
-      )}
-    </AnimatePresence>
-  );
-}
-
-function DetailItem({
-  icon: Icon,
-  label,
-  value,
-}: {
-  icon: typeof Building2;
-  label: string;
-  value: string;
-}) {
-  return (
-    <div className="flex gap-3">
-      <Icon className="mt-0.5 h-4 w-4 shrink-0 text-[#00A651]" />
-      <div>
-        <p className="text-[11px] font-black uppercase tracking-[0.14em] text-zinc-400">
-          {label}
-        </p>
-        <p className="mt-1 text-sm font-bold text-zinc-900 dark:text-white">
-          {value}
-        </p>
-      </div>
-    </div>
-  );
-}
-
-function FileDetail({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
-      <p className="text-[11px] font-black uppercase tracking-[0.14em] text-zinc-400">
-        {label}
-      </p>
-      <p className="mt-2 text-base font-black text-zinc-950 dark:text-white">
-        {value}
-      </p>
-    </div>
   );
 }
 
