@@ -421,6 +421,12 @@ export default function OnboardingWizard({ returnTo = "/", mode = "page", onComp
                 console.warn("Could not update Clerk profile name:", e);
             }
 
+            try {
+                await user?.reload();
+            } catch (e) {
+                console.warn("Could not reload Clerk user object:", e);
+            }
+
             // Clean up stored redirect
             sessionStorage.removeItem(POST_AUTH_REDIRECT_STORAGE_KEY);
             document.cookie = `${POST_AUTH_REDIRECT_COOKIE}=; path=/; max-age=0; SameSite=Lax`;

@@ -4,8 +4,6 @@ import { useAuth } from "@clerk/nextjs";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowDownAZ,
-  ArrowUpRight,
-  BookOpen,
   Building2,
   CheckCircle2,
   ChevronRight,
@@ -13,36 +11,20 @@ import {
   Eye,
   FileDown,
   Filter,
-  Globe2,
   Layers3,
   LockKeyhole,
   Mail,
-  MapPin,
   RotateCcw,
   Search,
   ShieldCheck,
-  Users,
   X,
 } from "lucide-react";
 import Image from "next/image";
-import Link from "next/link";
-import { Skeleton } from "@/components/ui/skeleton";
-import { strapiImageUrl } from "@/lib/strapi-image";
-import { Clock } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/buttons";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 
-import {
-  EVENTS,
-  REGION_OPTIONS,
-  RESOURCE_TYPE_OPTIONS,
-  RESOURCES,
-  SECTOR_OPTIONS,
-  SORT_OPTIONS,
-  YEAR_OPTIONS,
-} from "./mock-data";
 import type {
   EnergyEvent,
   EventResource,
@@ -52,43 +34,17 @@ import type {
   SortOption,
 } from "./types";
 
-type FeaturedEventItem = {
-  id: string;
-  title: string;
-  slug: string;
-  location: string;
-  imageUrl: string;
-  occurrence?: string;
-};
-
-function normalizeFeaturedEvent(item: Record<string, unknown>): FeaturedEventItem | null {
-  const id = String(item.id ?? item.slug ?? "").trim();
-  const title = String(item.title ?? "").trim();
-  const slug = String(item.slug ?? id).trim();
-  const imageUrl = String(item.imageUrl ?? "").trim();
-
-  if (!id || !title || !imageUrl) return null;
-
-  return {
-    id,
-    title,
-    slug,
-    location: String(item.location ?? item.venue ?? "").trim(),
-    imageUrl,
-    occurrence: String(item.occurrence ?? "event").trim(),
-  };
-}
-
 const DEFAULT_FILTERS: ResourceFilters = {
   events: [],
   types: [],
   sectors: [],
   years: [],
-  regions: [],
   sort: "Latest First",
 };
 
-const RESOURCE_TYPE_STYLES: Record<ResourceType, string> = {
+const SORT_OPTIONS: SortOption[] = ["Latest First", "Event Name", "Year"];
+
+const RESOURCE_TYPE_STYLES: Record<string, string> = {
   "Event Brochure": "bg-emerald-50 text-emerald-700 border-emerald-200",
   "Post Show Report": "bg-blue-50 text-blue-700 border-blue-200",
   Whitepaper: "bg-violet-50 text-violet-700 border-violet-200",
@@ -98,10 +54,11 @@ const RESOURCE_TYPE_STYLES: Record<ResourceType, string> = {
   "Sponsor Prospectus": "bg-rose-50 text-rose-700 border-rose-200",
 };
 
-const FILE_TYPE_STYLES: Record<FileType, string> = {
+const FILE_TYPE_STYLES: Record<string, string> = {
   PDF: "bg-red-50 text-red-700 border-red-100",
   PPT: "bg-orange-50 text-orange-700 border-orange-100",
   ZIP: "bg-slate-100 text-slate-700 border-slate-200",
+  FILE: "bg-zinc-100 text-zinc-700 border-zinc-200",
 };
 
 const COVER_PALETTES = [
@@ -113,13 +70,6 @@ const COVER_PALETTES = [
   "from-neutral-950 via-rose-950 to-orange-700",
 ];
 
-function formatNumber(value: number) {
-  return new Intl.NumberFormat("en", {
-    notation: value >= 10000 ? "compact" : "standard",
-    maximumFractionDigits: 1,
-  }).format(value);
-}
-
 function hashIndex(value: string, length: number) {
   return Math.abs(
     value.split("").reduce((sum, char) => sum + char.charCodeAt(0), 0)
@@ -128,37 +78,49 @@ function hashIndex(value: string, length: number) {
 
 function countBy<T extends string | number>(
   values: EventResource[],
-  getKey: (resource: EventResource) => T | T[]
+  getKey: (resource: EventResource) => T | T[] | null | undefined
 ) {
   return values.reduce<Record<string, number>>((acc, resource) => {
     const rawKeys = getKey(resource);
     const keys = Array.isArray(rawKeys) ? rawKeys : [rawKeys];
     keys.forEach((key) => {
+      if (key === null || key === undefined || key === "") return;
       acc[String(key)] = (acc[String(key)] ?? 0) + 1;
     });
     return acc;
   }, {});
 }
 
-function getEvent(eventId: string) {
-  return EVENTS.find((event) => event.id === eventId);
+function getResourceTypeStyle(type: ResourceType) {
+  return RESOURCE_TYPE_STYLES[type] ?? "bg-zinc-100 text-zinc-700 border-zinc-200";
 }
 
-function buildDownloadText(resource: EventResource) {
-  return [
-    "ENERGDIVE Event Resource Center",
-    `Resource: ${resource.title}`,
-    `Event: ${resource.eventName}`,
-    `Type: ${resource.resource_type}`,
-    `Year: ${resource.year}`,
-    `Sectors: ${resource.sector.join(", ")}`,
-    "",
-    "This is a frontend-only mock download generated for UI validation.",
-    `Future file_url: ${resource.file_url}`,
-  ].join("\n");
+function getFileTypeStyle(type: FileType) {
+  return FILE_TYPE_STYLES[type] ?? FILE_TYPE_STYLES.FILE;
 }
 
-export function EventResourceCenter() {
+function formatDate(value: string) {
+  if (!value) return "Not published";
+  return new Intl.DateTimeFormat("en", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  }).format(new Date(value));
+}
+
+function uniqueSorted<T extends string | number>(values: T[]) {
+  return Array.from(new Set(values.filter(Boolean))).sort((a, b) =>
+    String(a).localeCompare(String(b))
+  );
+}
+
+export function EventResourceCenter({
+  resources,
+  events,
+}: {
+  resources: EventResource[];
+  events: EnergyEvent[];
+}) {
   const { isLoaded, isSignedIn } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [filters, setFilters] = useState<ResourceFilters>(DEFAULT_FILTERS);
@@ -173,11 +135,33 @@ export function EventResourceCenter() {
   const [accessMode, setAccessMode] = useState<"login" | "register" | "success">(
     "login"
   );
-  const [mockAuthenticated, setMockAuthenticated] = useState(false);
+  const [hasLocalAccess, setHasLocalAccess] = useState(false);
   const [downloadNotice, setDownloadNotice] = useState<string | null>(null);
-  const [featuredEvents, setFeaturedEvents] = useState<FeaturedEventItem[]>([]);
 
-  const canDownload = mockAuthenticated || (isLoaded && isSignedIn);
+  const canDownload = hasLocalAccess || (isLoaded && isSignedIn);
+  const eventLookup = useMemo(
+    () =>
+      events.reduce<Record<string, EnergyEvent>>((acc, event) => {
+        acc[event.id] = event;
+        return acc;
+      }, {}),
+    [events]
+  );
+  const resourceTypeOptions = useMemo(
+    () => uniqueSorted(resources.map((resource) => resource.resource_type)),
+    [resources]
+  );
+  const sectorOptions = useMemo(
+    () => uniqueSorted(resources.flatMap((resource) => resource.sector)),
+    [resources]
+  );
+  const yearOptions = useMemo(
+    () =>
+      Array.from(new Set(resources.map((resource) => resource.year)))
+        .filter(Boolean)
+        .sort((a, b) => b - a),
+    [resources]
+  );
 
   useEffect(() => {
     const shouldLock =
@@ -197,69 +181,20 @@ export function EventResourceCenter() {
     return () => window.clearTimeout(timer);
   }, [downloadNotice]);
 
-  useEffect(() => {
-    let cancelled = false;
-
-    async function fetchFeaturedEvents() {
-      try {
-        const response = await fetch("/api/public/events?occurrence=upcoming", {
-          cache: "no-store",
-        });
-        const payload = response.ok ? await response.json() : { events: [] };
-        if (cancelled) return;
-
-        const rawEvents: unknown[] = Array.isArray(payload.events)
-          ? payload.events
-          : [];
-        const seen = new Set<string>();
-        const realEvents = rawEvents
-          .filter((event): event is Record<string, unknown> => {
-            return Boolean(event) && typeof event === "object";
-          })
-          .map((event) => normalizeFeaturedEvent(event))
-          .filter((event): event is FeaturedEventItem => Boolean(event))
-          .filter((event) => event.occurrence?.toLowerCase() === "upcoming")
-          .filter((event) => {
-            const key = event.slug || event.id;
-            if (seen.has(key)) return false;
-            seen.add(key);
-            return true;
-          });
-
-        if (realEvents.length > 0) {
-          setFeaturedEvents(realEvents);
-        } else {
-          setFeaturedEvents([]);
-        }
-      } catch {
-        if (!cancelled) {
-          setFeaturedEvents([]);
-        }
-      }
-    }
-
-    fetchFeaturedEvents();
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
   const filterCounts = useMemo(
     () => ({
-      events: countBy(RESOURCES, (resource) => resource.event_id),
-      types: countBy(RESOURCES, (resource) => resource.resource_type),
-      sectors: countBy(RESOURCES, (resource) => resource.sector),
-      years: countBy(RESOURCES, (resource) => resource.year),
-      regions: countBy(RESOURCES, (resource) => resource.region),
+      events: countBy(resources, (resource) => resource.event_id),
+      types: countBy(resources, (resource) => resource.resource_type),
+      sectors: countBy(resources, (resource) => resource.sector),
+      years: countBy(resources, (resource) => resource.year),
     }),
-    []
+    [resources]
   );
 
   const filteredResources = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
 
-    const matching = RESOURCES.filter((resource) => {
+    const matching = resources.filter((resource) => {
       const matchesSearch =
         !query ||
         [
@@ -267,9 +202,9 @@ export function EventResourceCenter() {
           resource.eventName,
           resource.resource_type,
           resource.description,
-          resource.region,
+          resource.resourceTag,
+          resource.showCode,
           resource.fileType,
-          resource.thumbnail,
           ...resource.sector,
         ]
           .join(" ")
@@ -287,41 +222,44 @@ export function EventResourceCenter() {
         resource.sector.some((sector) => filters.sectors.includes(sector));
       const matchesYear =
         filters.years.length === 0 || filters.years.includes(resource.year);
-      const matchesRegion =
-        filters.regions.length === 0 || filters.regions.includes(resource.region);
 
       return (
         matchesSearch &&
         matchesEvent &&
         matchesType &&
         matchesSector &&
-        matchesYear &&
-        matchesRegion
+        matchesYear
       );
     });
 
     return matching.sort((a, b) => {
-      if (filters.sort === "Most Downloaded") return b.downloads - a.downloads;
-      if (filters.sort === "Popular") return b.popularity - a.popularity;
       if (filters.sort === "Event Name") {
         return `${a.eventName}${a.title}`.localeCompare(
           `${b.eventName}${b.title}`
         );
       }
+      if (filters.sort === "Year") return b.year - a.year;
       return (
         new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
       );
     });
-  }, [filters, searchQuery]);
+  }, [filters, resources, searchQuery]);
 
   const activeFilterCount =
     filters.events.length +
     filters.types.length +
     filters.sectors.length +
-    filters.years.length +
-    filters.regions.length;
+    filters.years.length;
 
   const hasActiveCriteria = activeFilterCount > 0 || searchQuery.trim().length > 0;
+  const resourceGridKey = [
+    searchQuery.trim(),
+    filters.sort,
+    filters.events.join("|"),
+    filters.types.join("|"),
+    filters.sectors.join("|"),
+    filters.years.join("|"),
+  ].join("::");
 
   function setSort(sort: SortOption) {
     setFilters((current) => ({ ...current, sort }));
@@ -349,25 +287,27 @@ export function EventResourceCenter() {
     setSearchQuery("");
   }
 
-  function startMockDownload(resource: EventResource) {
-    const blob = new Blob([buildDownloadText(resource)], {
-      type: "text/plain;charset=utf-8",
-    });
-    const objectUrl = window.URL.createObjectURL(blob);
+  function startResourceDownload(resource: EventResource) {
+    if (!resource.file_url) {
+      setDownloadNotice("File is not available for this resource");
+      return;
+    }
+
     const anchor = document.createElement("a");
-    anchor.href = objectUrl;
+    anchor.href = resource.file_url;
     anchor.download = resource.fileName;
+    anchor.target = "_blank";
+    anchor.rel = "noopener noreferrer";
     document.body.appendChild(anchor);
     anchor.click();
     anchor.remove();
-    window.URL.revokeObjectURL(objectUrl);
     setDownloadNotice(`${resource.fileName} download started`);
   }
 
   function requestDownload(resource: EventResource) {
     setPendingDownload(resource);
     if (canDownload) {
-      startMockDownload(resource);
+      startResourceDownload(resource);
       return;
     }
 
@@ -375,11 +315,11 @@ export function EventResourceCenter() {
     setAccessModalOpen(true);
   }
 
-  function completeMockAccess() {
+  function completeAccess() {
     setAccessMode("success");
-    setMockAuthenticated(true);
+    setHasLocalAccess(true);
     window.setTimeout(() => {
-      if (pendingDownload) startMockDownload(pendingDownload);
+      if (pendingDownload) startResourceDownload(pendingDownload);
       setAccessModalOpen(false);
       setAccessMode("login");
     }, 1000);
@@ -389,19 +329,15 @@ export function EventResourceCenter() {
     <div className="min-h-screen bg-[#f6f8f7] text-zinc-950 dark:bg-zinc-950 dark:text-zinc-50">
       <HeroSection />
 
-      <FeaturedEventsSection
-        events={featuredEvents}
-      />
-
       <section className="border-t border-zinc-200/80 bg-white py-6 dark:border-zinc-800 dark:bg-zinc-950 lg:py-8">
-        <div className="container mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-8">
+        <div className="container mx-auto max-w-[1680px] px-4 sm:px-6 lg:px-6 xl:px-8">
           <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <p className="text-xs font-black uppercase tracking-[0.18em] text-[#00A651]">
                 Resource Library
               </p>
               <h2 className="mt-1.5 text-2xl font-black tracking-tight text-zinc-950 dark:text-white sm:text-3xl">
-                Browse event assets and market intelligence
+                Browse Resources & Market Intelligence
               </h2>
             </div>
             <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center lg:w-auto">
@@ -438,13 +374,17 @@ export function EventResourceCenter() {
             </div>
           </div>
 
-          <div className="grid items-start gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
-            <aside className="hidden lg:block">
+          <div className="grid items-start gap-4 lg:grid-cols-[240px_minmax(0,1fr)] xl:grid-cols-[260px_minmax(0,1fr)] xl:gap-5">
+            <aside className="hidden self-start lg:sticky lg:top-[128px] lg:block lg:h-[calc(100vh-148px)]">
               <FilterPanel
                 counts={filterCounts}
+                events={events}
                 filters={filters}
+                resourceTypeOptions={resourceTypeOptions}
                 resultCount={filteredResources.length}
-                totalCount={RESOURCES.length}
+                sectorOptions={sectorOptions}
+                totalCount={resources.length}
+                yearOptions={yearOptions}
                 onReset={resetFilters}
                 onSortChange={setSort}
                 onToggle={toggleFilter}
@@ -452,18 +392,10 @@ export function EventResourceCenter() {
             </aside>
 
             <div className="min-w-0">
-              <ResultsHeader
-                filters={filters}
-                resultCount={filteredResources.length}
-                searchQuery={searchQuery}
-                totalCount={RESOURCES.length}
-                onReset={resetFilters}
-              />
-
-              {!hasActiveCriteria ? (
-                <ReportsGrid />
-              ) : filteredResources.length > 0 ? (
+              {filteredResources.length > 0 ? (
                 <ResourceGrid
+                  key={resourceGridKey}
+                  eventLookup={eventLookup}
                   resources={filteredResources}
                   onDownload={requestDownload}
                   onPreview={setSelectedResource}
@@ -482,7 +414,9 @@ export function EventResourceCenter() {
       </section>
 
       <PreviewDrawer
+        eventLookup={eventLookup}
         resource={selectedResource}
+        resources={resources}
         onClose={() => setSelectedResource(null)}
         onDownload={requestDownload}
         onSelectResource={setSelectedResource}
@@ -490,10 +424,14 @@ export function EventResourceCenter() {
 
       <MobileFilterDrawer
         counts={filterCounts}
+        events={events}
         filters={filters}
         open={mobileFiltersOpen}
+        resourceTypeOptions={resourceTypeOptions}
         resultCount={filteredResources.length}
-        totalCount={RESOURCES.length}
+        sectorOptions={sectorOptions}
+        totalCount={resources.length}
+        yearOptions={yearOptions}
         onClose={() => setMobileFiltersOpen(false)}
         onReset={resetFilters}
         onSortChange={setSort}
@@ -506,7 +444,7 @@ export function EventResourceCenter() {
         resource={pendingDownload}
         onClose={() => setAccessModalOpen(false)}
         onModeChange={setAccessMode}
-        onSubmit={completeMockAccess}
+        onSubmit={completeAccess}
       />
 
       <AnimatePresence>
@@ -548,11 +486,11 @@ function HeroSection() {
         <div className="max-w-5xl">
           <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[11px] font-black uppercase tracking-[0.18em] text-emerald-200 backdrop-blur">
             <ShieldCheck className="h-3.5 w-3.5" />
-            Premium Event Intelligence
+            Resource Center
           </div>
 
           <h1 className="max-w-4xl text-4xl font-black leading-[1.02] tracking-tight sm:text-5xl lg:text-6xl">
-            Energy Industry Resource Center
+            ENERGDIVE Resource Center
           </h1>
 
           <p className="mt-4 max-w-3xl text-base leading-7 text-zinc-200 sm:text-lg">
@@ -566,68 +504,15 @@ function HeroSection() {
   );
 }
 
-function FeaturedEventsSection({ events }: { events: FeaturedEventItem[] }) {
-  if (events.length === 0) return null;
-
-  return (
-    <section className="bg-[#f6f8f7] py-5 dark:bg-zinc-950 lg:py-6">
-      <div className="container mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-8">
-        <div className="mb-4 flex items-end justify-between gap-4">
-          <div>
-            <p className="text-xs font-black uppercase tracking-[0.18em] text-zinc-500 dark:text-zinc-400">
-              Featured Events
-            </p>
-            <h2 className="mt-1 text-xl font-black tracking-tight text-zinc-950 dark:text-white sm:text-2xl">
-              Global energy event libraries
-            </h2>
-          </div>
-          <ChevronRight className="hidden h-5 w-5 text-zinc-400 sm:block" />
-        </div>
-
-        <div className="no-scrollbar flex snap-x gap-3 overflow-x-auto pb-1">
-          {events.map((event) => {
-            return (
-              <Link
-                key={event.id}
-                href={event.slug ? `/events/${event.slug}` : "/events"}
-                className="group min-w-[252px] snap-start rounded-lg border border-zinc-200 bg-white p-4 text-left shadow-sm transition duration-300 hover:-translate-y-1 hover:border-[#00A651]/40 hover:shadow-xl hover:shadow-zinc-950/8 dark:border-zinc-800 dark:bg-zinc-900"
-              >
-                <div className="relative mb-4 flex aspect-[16/9] items-center justify-center overflow-hidden rounded-md border border-zinc-100 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950">
-                  <Image
-                    src={event.imageUrl}
-                    alt={event.title}
-                    fill
-                    sizes="252px"
-                    className="object-contain p-5 transition-transform duration-500 group-hover:scale-105"
-                  />
-                  <ArrowUpRight className="absolute right-3 top-3 h-4 w-4 text-zinc-400 transition group-hover:text-[#00A651]" />
-                </div>
-                <h3 className="line-clamp-2 min-h-10 text-base font-black leading-tight tracking-tight text-zinc-950 transition group-hover:text-[#00A651] dark:text-white">
-                  {event.title}
-                </h3>
-                <div className="mt-3 flex items-center justify-between gap-4 border-t border-zinc-100 pt-3 dark:border-zinc-800">
-                  <p className="flex min-w-0 items-center gap-2 text-xs font-medium text-zinc-500 dark:text-zinc-400">
-                    <MapPin className="h-4 w-4 shrink-0" />
-                    <span className="truncate">{event.location || "Event details"}</span>
-                  </p>
-                  <span className="shrink-0 text-[10px] font-black uppercase tracking-[0.14em] text-[#00A651]">
-                    {event.occurrence || "event"}
-                  </span>
-                </div>
-              </Link>
-            );
-          })}
-        </div>
-      </div>
-    </section>
-  );
-}
-
 function FilterPanel({
   counts,
+  events,
   filters,
+  resourceTypeOptions,
   resultCount,
+  sectorOptions,
   totalCount,
+  yearOptions,
   onReset,
   onSortChange,
   onToggle,
@@ -637,11 +522,14 @@ function FilterPanel({
     types: Record<string, number>;
     sectors: Record<string, number>;
     years: Record<string, number>;
-    regions: Record<string, number>;
   };
+  events: EnergyEvent[];
   filters: ResourceFilters;
+  resourceTypeOptions: ResourceType[];
   resultCount: number;
+  sectorOptions: string[];
   totalCount: number;
+  yearOptions: number[];
   onReset: () => void;
   onSortChange: (sort: SortOption) => void;
   onToggle: (
@@ -650,7 +538,7 @@ function FilterPanel({
   ) => void;
 }) {
   return (
-    <div className="sticky top-32 rounded-lg border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+    <div className="flex h-full flex-col overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
       <div className="border-b border-zinc-100 p-4 dark:border-zinc-800">
         <div className="flex items-center justify-between gap-3">
           <div>
@@ -672,12 +560,22 @@ function FilterPanel({
         </div>
       </div>
 
-      <div className="max-h-[calc(100vh-14rem)] space-y-4 overflow-y-auto p-4 dashboard-scrollbar">
+      <div className="flex-1 space-y-4 overflow-y-auto p-4 dashboard-scrollbar">
         <SortControl value={filters.sort} onChange={onSortChange} />
 
         <FilterGroup
+          title="Event"
+          options={events.map((event) => ({
+            label: event.name,
+            value: event.id,
+            count: counts.events[event.id] ?? event.totalResources,
+          }))}
+          selectedValues={filters.events}
+          onToggle={(value) => onToggle("events", value)}
+        />
+        <FilterGroup
           title="Resource Type"
-          options={RESOURCE_TYPE_OPTIONS.map((type) => ({
+          options={resourceTypeOptions.map((type) => ({
             label: type,
             value: type,
             count: counts.types[type] ?? 0,
@@ -687,7 +585,7 @@ function FilterPanel({
         />
         <FilterGroup
           title="Sector"
-          options={SECTOR_OPTIONS.map((sector) => ({
+          options={sectorOptions.map((sector) => ({
             label: sector,
             value: sector,
             count: counts.sectors[sector] ?? 0,
@@ -697,7 +595,7 @@ function FilterPanel({
         />
         <FilterGroup
           title="Year"
-          options={YEAR_OPTIONS.map((year) => ({
+          options={yearOptions.map((year) => ({
             label: String(year),
             value: year,
             count: counts.years[String(year)] ?? 0,
@@ -713,10 +611,14 @@ function FilterPanel({
 
 function MobileFilterDrawer({
   counts,
+  events,
   filters,
   open,
+  resourceTypeOptions,
   resultCount,
+  sectorOptions,
   totalCount,
+  yearOptions,
   onClose,
   onReset,
   onSortChange,
@@ -727,12 +629,15 @@ function MobileFilterDrawer({
     types: Record<string, number>;
     sectors: Record<string, number>;
     years: Record<string, number>;
-    regions: Record<string, number>;
   };
+  events: EnergyEvent[];
   filters: ResourceFilters;
   open: boolean;
+  resourceTypeOptions: ResourceType[];
   resultCount: number;
+  sectorOptions: string[];
   totalCount: number;
+  yearOptions: number[];
   onClose: () => void;
   onReset: () => void;
   onSortChange: (sort: SortOption) => void;
@@ -785,8 +690,18 @@ function MobileFilterDrawer({
                 <SortControl value={filters.sort} onChange={onSortChange} />
 
                 <FilterGroup
+                  title="Event"
+                  options={events.map((event) => ({
+                    label: event.name,
+                    value: event.id,
+                    count: counts.events[event.id] ?? event.totalResources,
+                  }))}
+                  selectedValues={filters.events}
+                  onToggle={(value) => onToggle("events", value)}
+                />
+                <FilterGroup
                   title="Resource Type"
-                  options={RESOURCE_TYPE_OPTIONS.map((type) => ({
+                  options={resourceTypeOptions.map((type) => ({
                     label: type,
                     value: type,
                     count: counts.types[type] ?? 0,
@@ -796,7 +711,7 @@ function MobileFilterDrawer({
                 />
                 <FilterGroup
                   title="Sector"
-                  options={SECTOR_OPTIONS.map((sector) => ({
+                  options={sectorOptions.map((sector) => ({
                     label: sector,
                     value: sector,
                     count: counts.sectors[sector] ?? 0,
@@ -806,7 +721,7 @@ function MobileFilterDrawer({
                 />
                 <FilterGroup
                   title="Year"
-                  options={YEAR_OPTIONS.map((year) => ({
+                  options={yearOptions.map((year) => ({
                     label: String(year),
                     value: year,
                     count: counts.years[String(year)] ?? 0,
@@ -944,106 +859,68 @@ function FilterGroup({
   );
 }
 
-function ResultsHeader({
-  filters,
-  resultCount,
-  searchQuery,
-  totalCount,
-  onReset,
+function ResourceGrid({
+  eventLookup,
+  resources,
+  onDownload,
+  onPreview,
 }: {
-  filters: ResourceFilters;
-  resultCount: number;
-  searchQuery: string;
-  totalCount: number;
-  onReset: () => void;
+  eventLookup: Record<string, EnergyEvent>;
+  resources: EventResource[];
+  onDownload: (resource: EventResource) => void;
+  onPreview: (resource: EventResource) => void;
 }) {
-  const chips = [
-    ...filters.events.map((eventId) => getEvent(eventId)?.name ?? eventId),
-    ...filters.types,
-    ...filters.sectors,
-    ...filters.years.map(String),
-    ...filters.regions,
-  ];
+  const pageSize = 12;
+  const [visibleCount, setVisibleCount] = useState(pageSize);
+  const visibleResources = resources.slice(0, visibleCount);
+  const hasMore = visibleCount < resources.length;
 
   return (
-    <div className="mb-4 rounded-lg border border-zinc-200 bg-[#fbfcfb] p-3.5 dark:border-zinc-800 dark:bg-zinc-900">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <p className="text-sm font-bold text-zinc-950 dark:text-white">
-            Showing {resultCount} of {totalCount} resources
-          </p>
-          <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-            Sorted by {filters.sort}
-            {searchQuery.trim() && ` for "${searchQuery.trim()}"`}
-          </p>
-        </div>
-        {(chips.length > 0 || searchQuery.trim()) && (
-          <button
-            type="button"
-            onClick={onReset}
-            className="inline-flex h-9 items-center justify-center gap-2 rounded-md border border-zinc-200 bg-white px-3 text-sm font-bold text-zinc-700 transition hover:border-zinc-300 hover:text-zinc-950 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-200"
-          >
-            <RotateCcw className="h-4 w-4" />
-            Reset all
-          </button>
-        )}
-      </div>
-
-      {chips.length > 0 && (
-        <div className="mt-3 flex flex-wrap gap-2">
-          {chips.map((chip) => (
-            <span
-              key={chip}
-              className="rounded-full border border-zinc-200 bg-white px-3 py-1 text-xs font-bold text-zinc-600 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-300"
-            >
-              {chip}
-            </span>
+    <div>
+      <motion.div
+        layout
+        className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:gap-4"
+      >
+        <AnimatePresence mode="popLayout">
+          {visibleResources.map((resource) => (
+            <ResourceCard
+              key={resource.id}
+              event={eventLookup[resource.event_id]}
+              resource={resource}
+              onDownload={onDownload}
+              onPreview={onPreview}
+            />
           ))}
+        </AnimatePresence>
+      </motion.div>
+
+      {hasMore && (
+        <div className="mt-8 flex justify-center">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setVisibleCount((count) => count + pageSize)}
+            className="h-11 rounded-md border-zinc-300 bg-white px-8 text-sm font-black text-zinc-950 shadow-sm transition hover:border-[#00A651] hover:text-[#007a3d] dark:border-zinc-700 dark:bg-zinc-900 dark:text-white"
+          >
+            Load more resources
+          </Button>
         </div>
       )}
     </div>
   );
 }
 
-function ResourceGrid({
-  resources,
-  onDownload,
-  onPreview,
-}: {
-  resources: EventResource[];
-  onDownload: (resource: EventResource) => void;
-  onPreview: (resource: EventResource) => void;
-}) {
-  return (
-    <motion.div
-      layout
-      className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3"
-    >
-      <AnimatePresence mode="popLayout">
-        {resources.map((resource) => (
-          <ResourceCard
-            key={resource.id}
-            resource={resource}
-            onDownload={onDownload}
-            onPreview={onPreview}
-          />
-        ))}
-      </AnimatePresence>
-    </motion.div>
-  );
-}
-
 function ResourceCard({
+  event,
   resource,
   onDownload,
   onPreview,
 }: {
+  event?: EnergyEvent;
   resource: EventResource;
   onDownload: (resource: EventResource) => void;
   onPreview: (resource: EventResource) => void;
 }) {
-  const event = getEvent(resource.event_id);
-
   return (
     <motion.article
       layout
@@ -1052,25 +929,25 @@ function ResourceCard({
       exit={{ opacity: 0, scale: 0.98 }}
       whileHover={{ y: -5 }}
       transition={{ duration: 0.24 }}
-      className="group flex h-full flex-col overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-sm transition-shadow duration-300 hover:shadow-xl hover:shadow-zinc-950/10 dark:border-zinc-800 dark:bg-zinc-900"
+      className="group flex h-full min-w-0 flex-col overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-zinc-950/10 dark:border-zinc-800 dark:bg-zinc-900"
     >
-      <div className="p-3.5 pb-0">
-        <div className="mb-3 flex items-center justify-between gap-3">
-          <div className="flex min-w-0 items-center gap-3">
+      <div className="p-3 pb-0">
+        <div className="mb-2.5 flex items-center justify-between gap-2">
+          <div className="flex min-w-0 items-center gap-2">
             <EventLogo event={event} fallback={resource.eventLogo} size="sm" />
             <div className="min-w-0">
-              <p className="truncate text-sm font-black text-zinc-950 dark:text-white">
+              <p className="truncate text-[13px] font-black leading-tight text-zinc-950 dark:text-white">
                 {resource.eventName}
               </p>
-              <p className="text-xs font-semibold text-zinc-500">
-                {resource.region} · {resource.year}
+              <p className="truncate text-[11px] font-semibold text-zinc-500">
+                {resource.showCode} · {resource.year}
               </p>
             </div>
           </div>
           <span
             className={cn(
-              "rounded-full border px-2.5 py-1 text-[11px] font-black",
-              FILE_TYPE_STYLES[resource.fileType]
+              "shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-black",
+              getFileTypeStyle(resource.fileType)
             )}
           >
             {resource.fileType}
@@ -1080,84 +957,45 @@ function ResourceCard({
         <ResourceCover resource={resource} />
       </div>
 
-      <div className="flex grow flex-col p-4">
-        <div className="mb-2.5">
+      <div className="flex grow flex-col p-3">
+        <div className="mb-2">
           <span
             className={cn(
-              "inline-flex rounded-full border px-2.5 py-1 text-[11px] font-black",
-              RESOURCE_TYPE_STYLES[resource.resource_type]
+              "inline-flex max-w-full rounded-full border px-2 py-0.5 text-[10px] font-black",
+              getResourceTypeStyle(resource.resource_type)
             )}
           >
-            {resource.resource_type}
+            <span className="truncate">{resource.resource_type}</span>
           </span>
         </div>
 
-        <h3 className="text-lg font-black leading-tight tracking-tight text-zinc-950 transition group-hover:text-[#007a3d] dark:text-white">
+        <h3 className="line-clamp-2 min-h-[38px] text-[15px] font-black leading-[1.25] tracking-tight text-zinc-950 transition group-hover:text-[#007a3d] dark:text-white">
           {resource.title}
         </h3>
-        <p className="mt-2.5 line-clamp-2 text-sm leading-6 text-zinc-600 dark:text-zinc-400">
-          {resource.description}
-        </p>
 
-        <div className="mt-3 flex flex-wrap gap-1.5">
-          {resource.sector.slice(0, 3).map((sector) => (
-            <span
-              key={sector}
-              className="rounded-full bg-zinc-100 px-2.5 py-0.5 text-[11px] font-bold text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300"
-            >
-              {sector}
-            </span>
-          ))}
-        </div>
-
-        <div className="mt-4 grid grid-cols-2 gap-3 border-t border-zinc-100 pt-3 text-xs dark:border-zinc-800">
-          <Metric icon={Download} label="Downloads" value={formatNumber(resource.downloads)} />
-          <Metric icon={BookOpen} label="Length" value={`${resource.pages} pages`} />
-        </div>
-
-        <div className="mt-4 grid grid-cols-2 gap-2.5">
+        <div className="mt-auto grid grid-cols-2 gap-2 pt-4">
           <Button
             type="button"
             variant="outline"
             onClick={() => onPreview(resource)}
-            className="h-10 rounded-md text-sm"
+            className="h-9 rounded-md px-2 text-xs"
+            title="Preview"
           >
-            <Eye className="mr-2 h-4 w-4" />
-            Preview
+            <Eye className="h-3.5 w-3.5 xl:mr-1.5" />
+            <span className="hidden xl:inline">Preview</span>
           </Button>
           <Button
             type="button"
             onClick={() => onDownload(resource)}
-            className="h-10 rounded-md bg-zinc-950 text-sm text-white hover:bg-[#00A651] dark:bg-white dark:text-zinc-950 dark:hover:bg-[#00A651] dark:hover:text-white"
+            className="h-9 rounded-md bg-zinc-950 px-2 text-xs text-white hover:bg-[#00A651] dark:bg-white dark:text-zinc-950 dark:hover:bg-[#00A651] dark:hover:text-white"
+            title="Download"
           >
-            <Download className="mr-2 h-4 w-4" />
-            Download
+            <Download className="h-3.5 w-3.5 xl:mr-1.5" />
+            <span className="hidden xl:inline">Download</span>
           </Button>
         </div>
       </div>
     </motion.article>
-  );
-}
-
-function Metric({
-  icon: Icon,
-  label,
-  value,
-}: {
-  icon: typeof Download;
-  label: string;
-  value: string;
-}) {
-  return (
-    <div className="flex items-center gap-2 text-zinc-500 dark:text-zinc-400">
-      <Icon className="h-4 w-4 text-[#00A651]" />
-      <span>
-        <span className="block font-bold text-zinc-900 dark:text-zinc-100">
-          {value}
-        </span>
-        <span className="block text-[11px] font-semibold">{label}</span>
-      </span>
-    </div>
   );
 }
 
@@ -1178,6 +1016,22 @@ function ResourceCover({
         large ? "aspect-[5/3]" : "aspect-[16/10]"
       )}
     >
+      {resource.coverImageUrl && (
+        <Image
+          src={resource.coverImageUrl}
+          alt={resource.title}
+          fill
+          sizes={
+            large
+              ? "(max-width: 768px) 100vw, 640px"
+              : "(max-width: 1024px) 50vw, 25vw"
+          }
+          className="object-cover"
+        />
+      )}
+      {resource.coverImageUrl && (
+        <div className="absolute inset-0 bg-gradient-to-t from-zinc-950/85 via-zinc-950/25 to-zinc-950/10" />
+      )}
       <div className="absolute inset-0 opacity-35">
         <div className="absolute left-0 top-1/4 h-px w-full bg-white/30" />
         <div className="absolute left-0 top-1/2 h-px w-full bg-white/20" />
@@ -1186,9 +1040,9 @@ function ResourceCover({
         <div className="absolute bottom-0 right-20 top-0 w-px bg-white/10" />
       </div>
 
-      <div className={cn("relative flex h-full flex-col justify-between", large ? "p-5" : "p-4")}>
+      <div className={cn("relative flex h-full flex-col justify-between", large ? "p-5" : "p-3.5")}>
         <div className="flex items-start justify-between gap-4">
-          <span className="rounded-full border border-white/20 bg-white/10 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em]">
+          <span className="rounded-full border border-white/20 bg-white/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.14em]">
             {resource.fileType}
           </span>
           <span className="text-right text-[11px] font-black uppercase tracking-[0.14em] text-white/70">
@@ -1198,19 +1052,19 @@ function ResourceCover({
 
         <div>
           <p className="mb-2 text-[11px] font-black uppercase tracking-[0.16em] text-emerald-100">
-            {resource.eventName}
+            {resource.resourceTag}
           </p>
           <h4
             className={cn(
-              "max-w-[90%] font-black leading-tight tracking-tight",
-              large ? "text-2xl sm:text-3xl" : "text-base"
+              "line-clamp-2 max-w-[92%] font-black leading-tight tracking-tight",
+              large ? "text-2xl sm:text-3xl" : "text-sm"
             )}
           >
-            {resource.thumbnail}
+            {resource.title}
           </h4>
-          <div className={cn("flex items-center gap-2 text-[11px] font-bold text-white/70", large ? "mt-4" : "mt-3")}>
+          <div className={cn("flex items-center gap-2 text-[10px] font-bold text-white/70", large ? "mt-4" : "mt-2.5")}>
             <span className="h-1.5 w-1.5 rounded-full bg-[#00A651]" />
-            ENERGDIVE RESOURCE
+            {resource.eventName}
           </div>
         </div>
       </div>
@@ -1234,7 +1088,7 @@ function EventLogo({
     <span
       className={cn(
         "grid shrink-0 place-items-center rounded-md text-center font-black text-white shadow-sm",
-        size === "sm" && "h-10 w-10 text-xs",
+        size === "sm" && "h-9 w-9 text-[11px]",
         size === "md" && "h-12 w-12 text-sm",
         size === "lg" && "h-14 w-14 text-base"
       )}
@@ -1247,24 +1101,28 @@ function EventLogo({
 }
 
 function PreviewDrawer({
+  eventLookup,
   resource,
+  resources,
   onClose,
   onDownload,
   onSelectResource,
 }: {
+  eventLookup: Record<string, EnergyEvent>;
   resource: EventResource | null;
+  resources: EventResource[];
   onClose: () => void;
   onDownload: (resource: EventResource) => void;
   onSelectResource: (resource: EventResource) => void;
 }) {
   const relatedResources = resource
-    ? RESOURCES.filter(
+    ? resources.filter(
         (candidate) =>
           candidate.event_id === resource.event_id && candidate.id !== resource.id
       ).slice(0, 4)
     : [];
 
-  const event = resource ? getEvent(resource.event_id) : undefined;
+  const event = resource ? eventLookup[resource.event_id] : undefined;
 
   return (
     <AnimatePresence>
@@ -1321,7 +1179,7 @@ function PreviewDrawer({
                     <span
                       className={cn(
                         "rounded-full border px-2.5 py-1 text-[11px] font-black",
-                        RESOURCE_TYPE_STYLES[resource.resource_type]
+                        getResourceTypeStyle(resource.resource_type)
                       )}
                     >
                       {resource.resource_type}
@@ -1329,7 +1187,7 @@ function PreviewDrawer({
                     <span
                       className={cn(
                         "rounded-full border px-2.5 py-1 text-[11px] font-black",
-                        FILE_TYPE_STYLES[resource.fileType]
+                        getFileTypeStyle(resource.fileType)
                       )}
                     >
                       {resource.fileType}
@@ -1349,9 +1207,13 @@ function PreviewDrawer({
                   </h3>
                   <div className="grid gap-3 sm:grid-cols-2">
                     <DetailItem icon={Building2} label="Event" value={resource.eventName} />
-                    <DetailItem icon={MapPin} label="Location" value={event?.location ?? resource.region} />
-                    <DetailItem icon={Globe2} label="Region" value={resource.region} />
-                    <DetailItem icon={Users} label="Audience" value="Executives and decision makers" />
+                    <DetailItem icon={Layers3} label="Show" value={resource.showCode} />
+                    <DetailItem icon={FileDown} label="Resource Tag" value={resource.resourceTag} />
+                    <DetailItem
+                      icon={ShieldCheck}
+                      label="Featured"
+                      value={resource.featured ? "Yes" : "No"}
+                    />
                   </div>
                 </section>
 
@@ -1363,11 +1225,13 @@ function PreviewDrawer({
                     <FileDetail label="File type" value={resource.fileType} />
                     <FileDetail label="File size" value={resource.fileSize} />
                     <FileDetail label="Year" value={String(resource.year)} />
-                    <FileDetail label="Pages" value={String(resource.pages)} />
-                    <FileDetail label="Read time" value={resource.readTime} />
                     <FileDetail
-                      label="Downloads"
-                      value={formatNumber(resource.downloads)}
+                      label="Published"
+                      value={formatDate(resource.publishedAt)}
+                    />
+                    <FileDetail
+                      label="Promotional"
+                      value={resource.promotional ? "Yes" : "No"}
                     />
                   </div>
                 </section>
@@ -1388,6 +1252,7 @@ function PreviewDrawer({
                   </div>
                 </section>
 
+                {relatedResources.length > 0 && (
                 <section>
                   <div className="mb-3 flex items-center justify-between gap-4">
                     <h3 className="text-xs font-black uppercase tracking-[0.16em] text-zinc-500">
@@ -1416,6 +1281,7 @@ function PreviewDrawer({
                     ))}
                   </div>
                 </section>
+                )}
               </div>
             </div>
 
@@ -1484,8 +1350,8 @@ function EmptyState({
   searchQuery: string;
   onReset: () => void;
 }) {
-  const title = filters.events.includes("custom-event-list")
-    ? "No matching event."
+  const title = !hasActiveCriteria
+    ? "No resources available."
     : filters.types.includes("Post Show Report")
       ? "No reports available."
       : "No resources found.";
@@ -1606,7 +1472,7 @@ function AccessModal({
                   Your download is starting...
                 </h3>
                 <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
-                  Access approved for this frontend mock flow.
+                  Access approved. Your resource will download automatically.
                 </p>
               </div>
             ) : (
@@ -1716,152 +1582,5 @@ function AccessModal({
         </motion.div>
       )}
     </AnimatePresence>
-  );
-}
-
-const STRAPI = process.env.NEXT_PUBLIC_STRAPI_URL;
-
-type StrapiReportItem = {
-  id: number;
-  Title: string;
-  slug: string;
-  publishedAt?: string;
-  Date?: string;
-  Excerpt?: Array<{
-    children?: Array<{
-      text?: string;
-    }>;
-  }>;
-  FeaturedImage?: {
-    url?: string | null;
-  } | null;
-};
-
-type ReportSummary = {
-  id: number;
-  title: string;
-  slug: string;
-  date: string;
-  category: string;
-  excerpt: string;
-  image: string | null;
-};
-
-async function fetchReports(): Promise<StrapiReportItem[]> {
-  const res = await fetch(
-    `${STRAPI}/api/contents?filters[type_of_content][name][$eq]=Reports&populate=*&sort=Date:desc`,
-    { next: { revalidate: 3600 } }
-  );
-  const json = await res.json();
-  return json?.data ?? [];
-}
-
-function formatDate(dateStr: string) {
-  if (!dateStr) return "";
-  return new Date(dateStr).toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
-}
-
-function ReportsGrid() {
-  const [reports, setReports] = useState<ReportSummary[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetchReports().then((data) => {
-      const formatted = data.map((item) => ({
-        id: item.id,
-        title: item.Title,
-        slug: item.slug,
-        date: item.publishedAt || item.Date || "",
-        category: "Reports",
-        excerpt: item?.Excerpt?.[0]?.children?.[0]?.text || "",
-        image: item?.FeaturedImage?.url ? strapiImageUrl(item.FeaturedImage.url) : null,
-      }));
-      setReports(formatted);
-      setLoading(false);
-    });
-  }, []);
-
-  if (loading) {
-    return (
-      <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mt-10">
-        {[...Array(6)].map((_, i) => (
-          <div key={i} className="space-y-8">
-            <Skeleton className="aspect-[3/4] w-full rounded-2xl" />
-            <div className="space-y-4">
-              <div className="flex gap-4">
-                <Skeleton className="h-4 w-20" />
-                <Skeleton className="h-4 w-20" />
-              </div>
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-16 w-full" />
-            </div>
-          </div>
-        ))}
-      </div>
-    );
-  }
-
-  return (
-    <div className="mt-8">
-      <motion.div
-        layout
-        className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-6 gap-y-10"
-      >
-        <AnimatePresence mode="popLayout">
-          {reports.map((report, index) => (
-            <Link
-              key={report.id}
-              href={`/reports/${report.slug}`}
-              className="group block outline-none"
-            >
-              <motion.div
-                layout
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
-                className="flex flex-col h-full"
-              >
-                <div className="relative aspect-[3/4] bg-zinc-100 overflow-hidden rounded-2xl mb-6 dark:bg-zinc-800">
-                  {report.image && (
-                    <Image
-                      src={report.image}
-                      alt={report.title}
-                      fill
-                      className="object-cover grayscale group-hover:grayscale-0 transition-all duration-700"
-                    />
-                  )}
-                  <div className="absolute bottom-4 right-4 bg-white p-3 rounded-full shadow-2xl translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300 dark:bg-zinc-950">
-                    <ArrowUpRight size={20} className="text-black dark:text-white" />
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  <div className="flex items-center gap-3 mb-2 text-[10px] font-bold uppercase">
-                    <span className="text-[#00A651]">{report.category}</span>
-                    <span className="flex items-center gap-1 text-zinc-400">
-                      <Clock size={10} />
-                      {formatDate(report.date)}
-                    </span>
-                  </div>
-
-                  <h3 className="text-base md:text-lg font-bold font-serif leading-tight text-zinc-900 group-hover:text-[#00A651] transition-colors dark:text-white">
-                    {report.title}
-                  </h3>
-
-                  <p className="text-zinc-500 text-sm line-clamp-2 leading-relaxed dark:text-zinc-400">
-                    {report.excerpt}
-                  </p>
-                </div>
-              </motion.div>
-            </Link>
-          ))}
-        </AnimatePresence>
-      </motion.div>
-    </div>
   );
 }

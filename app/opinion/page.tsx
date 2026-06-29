@@ -23,7 +23,7 @@ const STRAPI = process.env.NEXT_PUBLIC_STRAPI_URL;
 
 async function fetchOpinions() {
   const res = await fetch(
-    `${STRAPI}/api/contents?filters[type_of_content][name][$eq]=Opinion&populate[FeaturedImage]=true&populate[content_tag]=true&populate[author][populate]=avatar&sort=Date:desc`,
+    `${STRAPI}/api/contents?filters[type_of_content][name][$eq]=Opinion&populate[FeaturedImage]=true&populate[content_tag]=true&populate[author][populate]=avatar&sort=Date:desc&pagination[pageSize]=100`,
     { cache: "no-store" } // Force fresh fetch to bust old cached response without content_tag
   );
 
