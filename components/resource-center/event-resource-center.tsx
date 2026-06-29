@@ -7,10 +7,7 @@ import {
   CheckCircle2,
   Download,
   Eye,
-  FileDown,
   Filter,
-  LockKeyhole,
-  Mail,
   RotateCcw,
   Search,
   ShieldCheck,
@@ -23,6 +20,7 @@ import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/buttons";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
+import { useAuthModal } from "@/hooks/use-auth-modal";
 
 import type {
   EnergyEvent,
@@ -125,21 +123,14 @@ export function EventResourceCenter({
   events: EnergyEvent[];
 }) {
   const { isLoaded, isSignedIn } = useAuth();
+  const { openAuthModal } = useAuthModal();
   const searchParams = useSearchParams();
   const [searchQuery, setSearchQuery] = useState("");
   const [filters, setFilters] = useState<ResourceFilters>(DEFAULT_FILTERS);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
-  const [pendingDownload, setPendingDownload] = useState<EventResource | null>(
-    null
-  );
-  const [accessModalOpen, setAccessModalOpen] = useState(false);
-  const [accessMode, setAccessMode] = useState<"login" | "register" | "success">(
-    "login"
-  );
-  const [hasLocalAccess, setHasLocalAccess] = useState(false);
   const [downloadNotice, setDownloadNotice] = useState<string | null>(null);
 
-  const canDownload = hasLocalAccess || (isLoaded && isSignedIn);
+  const canDownload = isLoaded && isSignedIn;
   const eventLookup = useMemo(
     () =>
       events.reduce<Record<string, EnergyEvent>>((acc, event) => {
@@ -173,15 +164,14 @@ export function EventResourceCenter({
   );
 
   useEffect(() => {
-    const shouldLock = mobileFiltersOpen || accessModalOpen;
-    if (!shouldLock) return;
+    if (!mobileFiltersOpen) return;
 
     const previous = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
       document.body.style.overflow = previous;
     };
-  }, [accessModalOpen, mobileFiltersOpen]);
+  }, [mobileFiltersOpen]);
 
   useEffect(() => {
     const typeParam = searchParams.get("type");
@@ -323,24 +313,12 @@ export function EventResourceCenter({
   }
 
   function requestDownload(resource: EventResource) {
-    setPendingDownload(resource);
     if (canDownload) {
       startResourceDownload(resource);
       return;
     }
 
-    setAccessMode("login");
-    setAccessModalOpen(true);
-  }
-
-  function completeAccess() {
-    setAccessMode("success");
-    setHasLocalAccess(true);
-    window.setTimeout(() => {
-      if (pendingDownload) startResourceDownload(pendingDownload);
-      setAccessModalOpen(false);
-      setAccessMode("login");
-    }, 1000);
+    openAuthModal("/resource-center");
   }
 
   return (
@@ -446,14 +424,7 @@ export function EventResourceCenter({
         onToggle={toggleFilter}
       />
 
-      <AccessModal
-        mode={accessMode}
-        open={accessModalOpen}
-        resource={pendingDownload}
-        onClose={() => setAccessModalOpen(false)}
-        onModeChange={setAccessMode}
-        onSubmit={completeAccess}
-      />
+
 
       <AnimatePresence>
         {downloadNotice && (
@@ -1154,188 +1125,3 @@ function EmptyState({
   );
 }
 
-function AccessModal({
-  mode,
-  open,
-  resource,
-  onClose,
-  onModeChange,
-  onSubmit,
-}: {
-  mode: "login" | "register" | "success";
-  open: boolean;
-  resource: EventResource | null;
-  onClose: () => void;
-  onModeChange: (mode: "login" | "register" | "success") => void;
-  onSubmit: () => void;
-}) {
-  return (
-    <AnimatePresence>
-      {open && (
-        <motion.div
-          className="fixed inset-0 z-[80] grid place-items-center px-4"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-        >
-          <button
-            type="button"
-            aria-label="Close access modal"
-            className="absolute inset-0 bg-zinc-950/65 backdrop-blur-sm"
-            onClick={onClose}
-          />
-          <motion.div
-            role="dialog"
-            aria-modal="true"
-            aria-label="Access Premium Industry Resources"
-            initial={{ opacity: 0, y: 18, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 18, scale: 0.98 }}
-            className="relative w-full max-w-lg overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-2xl dark:border-zinc-800 dark:bg-zinc-950"
-          >
-            <div className="border-b border-zinc-100 p-5 dark:border-zinc-800">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <div className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-md bg-zinc-950 text-white dark:bg-white dark:text-zinc-950">
-                    <LockKeyhole className="h-5 w-5" />
-                  </div>
-                  <h2 className="text-xl font-black tracking-tight text-zinc-950 dark:text-white sm:text-2xl">
-                    Access Premium Industry Resources
-                  </h2>
-                  <p className="mt-2 text-sm leading-6 text-zinc-600 dark:text-zinc-400">
-                    {resource
-                      ? `Sign in or register to download ${resource.fileName}.`
-                      : "Sign in or register to continue."}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="grid h-9 w-9 shrink-0 place-items-center rounded-md border border-zinc-200 text-zinc-500 dark:border-zinc-700"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
-
-            {mode === "success" ? (
-              <div className="p-7 text-center">
-                <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-emerald-50 text-[#00A651]">
-                  <CheckCircle2 className="h-8 w-8" />
-                </div>
-                <h3 className="mt-5 text-2xl font-black text-zinc-950 dark:text-white">
-                  Your download is starting...
-                </h3>
-                <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
-                  Access approved. Your resource will download automatically.
-                </p>
-              </div>
-            ) : (
-              <div className="p-5">
-                <div className="mb-4 grid grid-cols-2 rounded-md border border-zinc-200 bg-zinc-50 p-1 dark:border-zinc-800 dark:bg-zinc-900">
-                  {(["login", "register"] as const).map((tab) => (
-                    <button
-                      key={tab}
-                      type="button"
-                      onClick={() => onModeChange(tab)}
-                      className={cn(
-                        "h-10 rounded px-3 text-sm font-black capitalize transition",
-                        mode === tab
-                          ? "bg-white text-zinc-950 shadow-sm dark:bg-zinc-950 dark:text-white"
-                          : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
-                      )}
-                    >
-                      {tab}
-                    </button>
-                  ))}
-                </div>
-
-                <form
-                  className="space-y-3"
-                  onSubmit={(event) => {
-                    event.preventDefault();
-                    onSubmit();
-                  }}
-                >
-                  {mode === "register" && (
-                    <div>
-                      <label className="text-xs font-black uppercase tracking-[0.14em] text-zinc-500">
-                        Full Name
-                      </label>
-                      <input
-                        className="mt-1.5 h-10 w-full rounded-md border border-zinc-200 bg-white px-3 text-sm font-medium outline-none focus:border-[#00A651] focus:ring-2 focus:ring-[#00A651]/15 dark:border-zinc-800 dark:bg-zinc-900"
-                        placeholder="Aarav Mehta"
-                      />
-                    </div>
-                  )}
-                  <div>
-                    <label className="text-xs font-black uppercase tracking-[0.14em] text-zinc-500">
-                      Work Email
-                    </label>
-                    <input
-                      type="email"
-                      className="mt-1.5 h-10 w-full rounded-md border border-zinc-200 bg-white px-3 text-sm font-medium outline-none focus:border-[#00A651] focus:ring-2 focus:ring-[#00A651]/15 dark:border-zinc-800 dark:bg-zinc-900"
-                      placeholder="name@company.com"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs font-black uppercase tracking-[0.14em] text-zinc-500">
-                      Password
-                    </label>
-                    <input
-                      type="password"
-                      className="mt-1.5 h-10 w-full rounded-md border border-zinc-200 bg-white px-3 text-sm font-medium outline-none focus:border-[#00A651] focus:ring-2 focus:ring-[#00A651]/15 dark:border-zinc-800 dark:bg-zinc-900"
-                      placeholder="••••••••"
-                    />
-                  </div>
-                  {mode === "register" && (
-                    <div>
-                      <label className="text-xs font-black uppercase tracking-[0.14em] text-zinc-500">
-                        Company
-                      </label>
-                      <input
-                        className="mt-1.5 h-10 w-full rounded-md border border-zinc-200 bg-white px-3 text-sm font-medium outline-none focus:border-[#00A651] focus:ring-2 focus:ring-[#00A651]/15 dark:border-zinc-800 dark:bg-zinc-900"
-                        placeholder="Energia Global"
-                      />
-                    </div>
-                  )}
-                  <Button
-                    type="submit"
-                    className="h-11 w-full rounded-md bg-[#00A651] text-sm font-black text-white hover:bg-[#008b44]"
-                  >
-                    <FileDown className="mr-2 h-4 w-4" />
-                    {mode === "login"
-                      ? "Login and Download"
-                      : "Register and Download"}
-                  </Button>
-                </form>
-
-                <div className="my-4 flex items-center gap-3">
-                  <div className="h-px flex-1 bg-zinc-200 dark:bg-zinc-800" />
-                  <span className="text-xs font-bold uppercase tracking-[0.14em] text-zinc-400">
-                    Social Login
-                  </span>
-                  <div className="h-px flex-1 bg-zinc-200 dark:bg-zinc-800" />
-                </div>
-
-                <div className="grid gap-2.5 sm:grid-cols-3">
-                  {["Google", "LinkedIn", "Company SSO"].map((provider) => (
-                    <button
-                      key={provider}
-                      type="button"
-                      onClick={onSubmit}
-                      className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-zinc-200 bg-white px-3 text-sm font-bold text-zinc-700 transition hover:border-zinc-300 hover:text-zinc-950 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200"
-                    >
-                      <Mail className="h-4 w-4" />
-                      {provider}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
-  );
-}
