@@ -3,6 +3,7 @@ import { ArrowRight, LibraryBig } from "lucide-react";
 import KnowledgeBaseArchiveGrid from "@/components/paper-submission/knowledge-base-archive-grid";
 import { formatSubmissionDate } from "@/lib/paper-submissions";
 import { fetchPaperSubmissions } from "@/lib/paper-submissions-server";
+import { KnowledgeBaseStartSubmissionButton } from "@/components/knowledge-base/start-submission-button";
 
 export const metadata = {
     title: "Knowledge Base",
@@ -82,13 +83,7 @@ export default async function KnowledgeBasePage() {
                                         paper submission workflow.
                                     </p>
 
-                                    <Link
-                                        href="/knowledge-base/submit"
-                                        className="mt-8 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-500 px-5 py-3.5 text-sm font-semibold text-white transition-all hover:bg-emerald-600"
-                                    >
-                                        Start Submission
-                                        <ArrowRight className="h-4 w-4" />
-                                    </Link>
+                                    <KnowledgeBaseStartSubmissionButton />
                                 </div>
                             </div>
                         </aside>
