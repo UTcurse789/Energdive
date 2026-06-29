@@ -19,6 +19,7 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/buttons";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
@@ -42,14 +43,27 @@ const DEFAULT_FILTERS: ResourceFilters = {
 
 const SORT_OPTIONS: SortOption[] = ["Latest First", "Event Name", "Year"];
 
+const RESOURCE_TYPE_ORDER: string[] = [
+  "Magazine EPDF",
+  "Post Show Report",
+  "Paper Abstract",
+  "Whitepaper",
+  "Industry Report",
+  "Event Brochure",
+];
+
+const THEME_STYLE = "bg-[#00A651]/10 text-[#00A651] border-[#00A651]/20";
+
 const RESOURCE_TYPE_STYLES: Record<string, string> = {
-  "Event Brochure": "bg-emerald-50 text-emerald-700 border-emerald-200",
-  "Post Show Report": "bg-blue-50 text-blue-700 border-blue-200",
-  Whitepaper: "bg-violet-50 text-violet-700 border-violet-200",
-  "Industry Report": "bg-amber-50 text-amber-700 border-amber-200",
-  Presentation: "bg-sky-50 text-sky-700 border-sky-200",
-  "Media Kit": "bg-zinc-100 text-zinc-700 border-zinc-200",
-  "Sponsor Prospectus": "bg-rose-50 text-rose-700 border-rose-200",
+  "Magazine EPDF": THEME_STYLE,
+  "Post Show Report": THEME_STYLE,
+  "Paper Abstract": THEME_STYLE,
+  Whitepaper: THEME_STYLE,
+  "Industry Report": THEME_STYLE,
+  "Event Brochure": THEME_STYLE,
+  Presentation: THEME_STYLE,
+  "Media Kit": THEME_STYLE,
+  "Sponsor Prospectus": THEME_STYLE,
 };
 
 const FILE_TYPE_STYLES: Record<string, string> = {
@@ -111,6 +125,7 @@ export function EventResourceCenter({
   events: EnergyEvent[];
 }) {
   const { isLoaded, isSignedIn } = useAuth();
+  const searchParams = useSearchParams();
   const [searchQuery, setSearchQuery] = useState("");
   const [filters, setFilters] = useState<ResourceFilters>(DEFAULT_FILTERS);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
@@ -134,7 +149,15 @@ export function EventResourceCenter({
     [events]
   );
   const resourceTypeOptions = useMemo(
-    () => uniqueSorted(resources.map((resource) => resource.resource_type)),
+    () => {
+      const existing = new Set(resources.map((r) => r.resource_type));
+      // Fixed order first, then any types not in the list (alphabetically)
+      const ordered = RESOURCE_TYPE_ORDER.filter((t) => existing.has(t));
+      const extras = Array.from(existing)
+        .filter((t) => !RESOURCE_TYPE_ORDER.includes(t))
+        .sort();
+      return [...ordered, ...extras];
+    },
     [resources]
   );
   const sectorOptions = useMemo(
@@ -159,6 +182,16 @@ export function EventResourceCenter({
       document.body.style.overflow = previous;
     };
   }, [accessModalOpen, mobileFiltersOpen]);
+
+  useEffect(() => {
+    const typeParam = searchParams.get("type");
+    const sectorParam = searchParams.get("sector");
+    setFilters((current) => ({
+      ...current,
+      types: typeParam ? [typeParam] : [],
+      sectors: sectorParam ? [sectorParam] : [],
+    }));
+  }, [searchParams]);
 
   useEffect(() => {
     if (!downloadNotice) return;
@@ -904,7 +937,6 @@ function ResourceCard({
       <div className="p-3 pb-0">
         <div className="mb-2.5 flex items-center justify-between gap-2">
           <div className="flex min-w-0 items-center gap-2">
-            <EventLogo event={event} fallback={resource.eventLogo} size="sm" />
             <div className="min-w-0">
               <p className="truncate text-[13px] font-black leading-tight text-zinc-950 dark:text-white">
                 {resource.eventName}
@@ -914,14 +946,6 @@ function ResourceCard({
               </p>
             </div>
           </div>
-          <span
-            className={cn(
-              "shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-black",
-              getFileTypeStyle(resource.fileType)
-            )}
-          >
-            {resource.fileType}
-          </span>
         </div>
 
         <ResourceCover resource={resource} />
@@ -979,7 +1003,7 @@ function ResourceCover({
   return (
     <div
       className={cn(
-        "relative overflow-hidden rounded-md border border-white/10 bg-gradient-to-br text-white shadow-inner",
+        "relative overflow-hidden rounded-md bg-gradient-to-br text-white",
         palette,
         large ? "aspect-[5/3]" : "aspect-[16/10]"
       )}
@@ -997,45 +1021,47 @@ function ResourceCover({
           className="object-cover"
         />
       )}
-      {resource.coverImageUrl && (
-        <div className="absolute inset-0 bg-gradient-to-t from-zinc-950/85 via-zinc-950/25 to-zinc-950/10" />
-      )}
-      <div className="absolute inset-0 opacity-35">
-        <div className="absolute left-0 top-1/4 h-px w-full bg-white/30" />
-        <div className="absolute left-0 top-1/2 h-px w-full bg-white/20" />
-        <div className="absolute bottom-1/4 left-0 h-px w-full bg-white/20" />
-        <div className="absolute bottom-0 right-8 top-0 w-px bg-white/20" />
-        <div className="absolute bottom-0 right-20 top-0 w-px bg-white/10" />
-      </div>
 
-      <div className={cn("relative flex h-full flex-col justify-between", large ? "p-5" : "p-3.5")}>
-        <div className="flex items-start justify-between gap-4">
-          <span className="rounded-full border border-white/20 bg-white/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.14em]">
-            {resource.fileType}
-          </span>
-          <span className="text-right text-[11px] font-black uppercase tracking-[0.14em] text-white/70">
-            {resource.year}
-          </span>
-        </div>
-
-        <div>
-          <p className="mb-2 text-[11px] font-black uppercase tracking-[0.16em] text-emerald-100">
-            {resource.resourceTag}
-          </p>
-          <h4
-            className={cn(
-              "line-clamp-2 max-w-[92%] font-black leading-tight tracking-tight",
-              large ? "text-2xl sm:text-3xl" : "text-sm"
-            )}
-          >
-            {resource.title}
-          </h4>
-          <div className={cn("flex items-center gap-2 text-[10px] font-bold text-white/70", large ? "mt-4" : "mt-2.5")}>
-            <span className="h-1.5 w-1.5 rounded-full bg-[#00A651]" />
-            {resource.eventName}
+      {!resource.coverImageUrl && (
+        <>
+          <div className="absolute inset-0 opacity-35">
+            <div className="absolute left-0 top-1/4 h-px w-full bg-white/30" />
+            <div className="absolute left-0 top-1/2 h-px w-full bg-white/20" />
+            <div className="absolute bottom-1/4 left-0 h-px w-full bg-white/20" />
+            <div className="absolute bottom-0 right-8 top-0 w-px bg-white/20" />
+            <div className="absolute bottom-0 right-20 top-0 w-px bg-white/10" />
           </div>
-        </div>
-      </div>
+
+          <div className={cn("relative flex h-full flex-col justify-between", large ? "p-5" : "p-3.5")}>
+            <div className="flex items-start justify-between gap-4">
+              <span className="rounded-full border border-white/20 bg-white/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.14em]">
+                {resource.fileType}
+              </span>
+              <span className="text-right text-[11px] font-black uppercase tracking-[0.14em] text-white/70">
+                {resource.year}
+              </span>
+            </div>
+
+            <div>
+              <p className="mb-2 text-[11px] font-black uppercase tracking-[0.16em] text-emerald-100">
+                {resource.resourceTag}
+              </p>
+              <h4
+                className={cn(
+                  "line-clamp-2 max-w-[92%] font-black leading-tight tracking-tight",
+                  large ? "text-2xl sm:text-3xl" : "text-sm"
+                )}
+              >
+                {resource.title}
+              </h4>
+              <div className={cn("flex items-center gap-2 text-[10px] font-bold text-white/70", large ? "mt-4" : "mt-2.5")}>
+                <span className="h-1.5 w-1.5 rounded-full bg-[#00A651]" />
+                {resource.eventName}
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
