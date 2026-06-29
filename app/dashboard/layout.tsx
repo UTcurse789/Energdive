@@ -20,7 +20,7 @@ export default async function DashboardLayout({
     const { userId } = await auth();
 
     if (!userId) {
-        redirect("/auth");
+        redirect("/auth?redirect_url=%2Fdashboard");
     }
 
     const clerkUser = await currentUser();

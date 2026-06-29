@@ -3,19 +3,11 @@
 import { useUser, useClerk } from "@clerk/nextjs";
 import { Header } from "@/components/layout/header";
 import { useState, useEffect, useRef } from "react";
-import { User, Mail, Shield, Link2, LogOut, ChevronRight, Check, Loader2, Trash2, AlertTriangle, X, Camera, Eye, ChevronDown } from "lucide-react";
+import { User, Mail, Shield, Link2, LogOut, ChevronRight, Loader2, Trash2, AlertTriangle, X, Camera, Eye } from "lucide-react";
 import Link from "next/link";
 import ImageCropModal from "@/components/account/image-crop-modal";
 
-const DELETION_REASONS = [
-    "I no longer use this service",
-    "It is too expensive / not worth it",
-    "I'm receiving too many emails",
-    "I found a better alternative",
-    "Privacy concerns",
-    "Technical issues / bugs",
-    "Other (please specify)",
-];
+const DELETE_REASON_MIN_CHARS = 50;
 
 export default function AccountPage() {
     const { user, isLoaded } = useUser();
@@ -31,10 +23,7 @@ export default function AccountPage() {
     const [deleteConfirmText, setDeleteConfirmText] = useState("");
     const [deleting, setDeleting] = useState(false);
     const [deleteError, setDeleteError] = useState("");
-    const [deleteReason, setDeleteReason] = useState("");
-    const [deleteOtherReason, setDeleteOtherReason] = useState("");
-    const [reasonDropdownOpen, setReasonDropdownOpen] = useState(false);
-    const reasonDropdownRef = useRef<HTMLDivElement>(null);
+    const [deleteReasonText, setDeleteReasonText] = useState("");
 
     /* Image upload state */
     const [uploadingImage, setUploadingImage] = useState(false);
@@ -50,18 +39,7 @@ export default function AccountPage() {
         }
     }, [isLoaded, user]);
 
-    // Close reason dropdown on outside click
-    useEffect(() => {
-        function handleClickOutside(e: MouseEvent) {
-            if (reasonDropdownRef.current && !reasonDropdownRef.current.contains(e.target as Node)) {
-                setReasonDropdownOpen(false);
-            }
-        }
-        if (reasonDropdownOpen) {
-            document.addEventListener("mousedown", handleClickOutside);
-        }
-        return () => document.removeEventListener("mousedown", handleClickOutside);
-    }, [reasonDropdownOpen]);
+
 
     if (!isLoaded) {
         return (
@@ -173,8 +151,7 @@ export default function AccountPage() {
 
     const isDeleteReady =
         deleteConfirmText === "DELETE" &&
-        deleteReason !== "" &&
-        (deleteReason !== "Other (please specify)" || deleteOtherReason.trim() !== "");
+        deleteReasonText.trim().length >= DELETE_REASON_MIN_CHARS;
 
     const handleDeleteAccount = async () => {
         if (!isDeleteReady) return;
@@ -187,8 +164,7 @@ export default function AccountPage() {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     confirmation: "DELETE",
-                    reason: deleteReason,
-                    otherReason: deleteReason === "Other (please specify)" ? deleteOtherReason.trim() : undefined,
+                    reason: deleteReasonText.trim(),
                 }),
             });
             const data = await res.json();
@@ -211,9 +187,7 @@ export default function AccountPage() {
         setShowDeleteModal(true);
         setDeleteConfirmText("");
         setDeleteError("");
-        setDeleteReason("");
-        setDeleteOtherReason("");
-        setReasonDropdownOpen(false);
+        setDeleteReasonText("");
     };
 
     return (
@@ -564,75 +538,40 @@ export default function AccountPage() {
                                 </p>
                             </div>
 
-                            {/* Reason Dropdown */}
+                            {/* Reason Text Box */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Reason for deletion <span className="text-red-500">*</span>
+                                    Why are you deleting your account? <span className="text-red-500">*</span>
                                 </label>
-                                <div className="relative" ref={reasonDropdownRef}>
-                                    <button
-                                        type="button"
-                                        onClick={() => setReasonDropdownOpen(!reasonDropdownOpen)}
-                                        disabled={deleting}
-                                        className={`w-full flex items-center justify-between px-4 py-3 border rounded-lg text-sm transition-all duration-200 disabled:opacity-50 ${
-                                            deleteReason
-                                                ? "border-gray-300 text-gray-900"
-                                                : "border-gray-200 text-gray-400"
-                                        } ${reasonDropdownOpen ? "ring-2 ring-red-200 border-red-300" : "hover:border-gray-300"}`}
-                                    >
-                                        <span className={deleteReason ? "text-gray-900" : "text-gray-400"}>
-                                            {deleteReason || "Select a reason…"}
-                                        </span>
-                                        <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${reasonDropdownOpen ? "rotate-180" : ""}`} />
-                                    </button>
-
-                                    {/* Dropdown Options */}
-                                    {reasonDropdownOpen && (
-                                        <div className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
-                                            {DELETION_REASONS.map((reason) => (
-                                                <button
-                                                    key={reason}
-                                                    type="button"
-                                                    onClick={() => {
-                                                        setDeleteReason(reason);
-                                                        setReasonDropdownOpen(false);
-                                                        if (reason !== "Other (please specify)") {
-                                                            setDeleteOtherReason("");
-                                                        }
-                                                    }}
-                                                    className={`w-full text-left px-4 py-2.5 text-sm transition-colors flex items-center justify-between ${
-                                                        deleteReason === reason
-                                                            ? "bg-red-50 text-red-700 font-medium"
-                                                            : "text-gray-700 hover:bg-gray-50"
-                                                    }`}
-                                                >
-                                                    <span>{reason}</span>
-                                                    {deleteReason === reason && (
-                                                        <Check className="w-4 h-4 text-red-600" />
-                                                    )}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    )}
+                                <textarea
+                                    value={deleteReasonText}
+                                    onChange={(e) => setDeleteReasonText(e.target.value)}
+                                    placeholder="Please tell us why you're leaving — your feedback helps us improve…"
+                                    disabled={deleting}
+                                    rows={4}
+                                    className={`w-full px-4 py-3 border rounded-lg text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 transition-all disabled:opacity-50 resize-none ${
+                                        deleteReasonText.trim().length > 0 && deleteReasonText.trim().length < DELETE_REASON_MIN_CHARS
+                                            ? "border-red-300 focus:ring-red-200 focus:border-red-400"
+                                            : deleteReasonText.trim().length >= DELETE_REASON_MIN_CHARS
+                                                ? "border-green-300 focus:ring-green-200 focus:border-green-400"
+                                                : "border-gray-200 focus:ring-red-200 focus:border-red-300"
+                                    }`}
+                                />
+                                <div className="flex items-center justify-between mt-1.5">
+                                    <p className="text-xs text-gray-400">
+                                        Minimum {DELETE_REASON_MIN_CHARS} characters required
+                                    </p>
+                                    <p className={`text-xs font-medium tabular-nums ${
+                                        deleteReasonText.trim().length >= DELETE_REASON_MIN_CHARS
+                                            ? "text-green-600"
+                                            : deleteReasonText.trim().length > 0
+                                                ? "text-red-500"
+                                                : "text-gray-400"
+                                    }`}>
+                                        {deleteReasonText.trim().length}/{DELETE_REASON_MIN_CHARS}
+                                    </p>
                                 </div>
                             </div>
-
-                            {/* Other Reason Text Area (conditionally shown) */}
-                            {deleteReason === "Other (please specify)" && (
-                                <div className="overflow-hidden transition-all duration-300">
-                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                                        Please describe your reason
-                                    </label>
-                                    <textarea
-                                        value={deleteOtherReason}
-                                        onChange={(e) => setDeleteOtherReason(e.target.value)}
-                                        placeholder="Tell us why you're leaving…"
-                                        disabled={deleting}
-                                        rows={3}
-                                        className="w-full px-4 py-3 border border-gray-200 rounded-lg text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-red-200 focus:border-red-300 transition-all disabled:opacity-50 resize-none"
-                                    />
-                                </div>
-                            )}
 
                             {/* Confirmation Input */}
                             <div>

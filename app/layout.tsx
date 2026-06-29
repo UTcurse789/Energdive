@@ -57,6 +57,8 @@ import AuthPromptModal from "@/components/ui/auth-prompt-modal";
 import OnboardingModal from "@/components/onboarding/onboarding-modal";
 import { PostHogProvider } from "./providers";
 import { PostHogIdentify } from "@/components/PostHogIdentify";
+import { AuthModalProvider } from "@/hooks/use-auth-modal";
+import AuthModal from "@/components/auth/auth-modal";
 
 const sans = Inter({
   subsets: ["latin"],
@@ -111,17 +113,20 @@ export default function RootLayout({
       <body className="antialiased font-sans" suppressHydrationWarning>
         <ClerkProvider>
           <PostHogProvider>
-            {/* GTM — only loads after cookie consent is accepted */}
-            <ConsentAwareGTM gtmId="GTM-5P4C363M" />
-            <Suspense fallback={null}>
-              <UtmTracker />
-            </Suspense>
-            <PostHogIdentify />
-            <AuthPromptModal />
-            <OnboardingModal />
-            <SiteLayout>
-              {children}
-            </SiteLayout>
+            <AuthModalProvider>
+              {/* GTM — only loads after cookie consent is accepted */}
+              <ConsentAwareGTM gtmId="GTM-5P4C363M" />
+              <Suspense fallback={null}>
+                <UtmTracker />
+              </Suspense>
+              <PostHogIdentify />
+              <AuthPromptModal />
+              <OnboardingModal />
+              <AuthModal />
+              <SiteLayout>
+                {children}
+              </SiteLayout>
+            </AuthModalProvider>
           </PostHogProvider>
         </ClerkProvider>
       </body>

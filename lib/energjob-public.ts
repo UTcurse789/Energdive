@@ -1,5 +1,5 @@
 import { slugify } from "@/lib/utils";
-import { EnergJobCmsUnauthorizedError, fetchCmsJobs, ENERGJOB_STRAPI_URL } from "@/lib/energjob-cms";
+import { fetchCmsJobs, ENERGJOB_STRAPI_URL, isEnergJobCmsConfigured } from "@/lib/energjob-cms";
 import { listPublicEnergJobs, PublicEnergJobRow } from "@/lib/queries/energjob";
 import { strapiImageUrl, strapiMediaUrl } from "@/lib/strapi-image";
 
@@ -127,7 +127,7 @@ function normalizeStatus(value: string | null) {
 }
 
 function isVisibleStatus(value: string | null) {
-  return !["closed", "archived", "expired", "inactive"].includes(normalizeStatus(value));
+  return normalizeStatus(value) === "published";
 }
 
 function toNumber(value: unknown) {
@@ -323,7 +323,6 @@ function normalizeCmsJob(job: any): PublicEnergJob | null {
     externalApplyUrl: pickValue(job, "external_apply_url"),
   };
 
-  console.log(`[normalizeCmsJob] "${title}" (id=${id}) → externalApplyUrl="${result.externalApplyUrl}"`);  
   return result;
 }
 
@@ -389,11 +388,23 @@ function normalizeLocalJob(job: PublicEnergJobRow): PublicEnergJob {
   };
 }
 
-export async function loadPublicEnergJobs(limit = 60) {
-  // Prefer CMS data (has full recruiter + logo populated) over local DB
+type PublicJobsSource = "local" | "cms" | "auto";
+
+function getPublicJobsSource(): PublicJobsSource {
+  const value = (process.env.ENERGJOB_PUBLIC_JOBS_SOURCE || "cms").trim().toLowerCase();
+
+  if (value === "local" || value === "auto") {
+    return value;
+  }
+
+  return "cms";
+}
+
+async function loadCmsPublicEnergJobs(limit: number) {
   try {
     const cmsResponse = await fetchCmsJobs({
       pagination: { pageSize: limit },
+      filters: { job_status: { $eq: "published" } },
       sort: ["createdAt:desc"],
     });
 
@@ -406,13 +417,15 @@ export async function loadPublicEnergJobs(limit = 60) {
       return cmsJobs;
     }
   } catch (e: any) {
-    // CMS unreachable — fall through to local DB
-    console.error("[loadPublicEnergJobs] CMS fetch failed, falling back to local DB. Error:", e?.message || e);
+    console.error("[loadPublicEnergJobs] CMS fetch failed. Error:", e?.message || e);
   }
 
-  // Fallback: use local DB
+  return [];
+}
+
+async function loadLocalPublicEnergJobs(limit: number) {
   try {
-    const localJobs = await listPublicEnergJobs({ limit });
+    const localJobs = await listPublicEnergJobs({ limit, status: "published" });
 
     if (localJobs && localJobs.length > 0) {
       const normalizedLocalJobs = localJobs
@@ -425,10 +438,26 @@ export async function loadPublicEnergJobs(limit = 60) {
       }
     }
   } catch {
-    // Local tables may not exist — silently fail
+    // Local tables may not exist in early deployments.
   }
 
   return [];
+}
+
+export async function loadPublicEnergJobs(limit = 60) {
+  const source = getPublicJobsSource();
+
+  if (source === "local") {
+    return loadLocalPublicEnergJobs(limit);
+  }
+
+  const cmsJobs = isEnergJobCmsConfigured() ? await loadCmsPublicEnergJobs(limit) : [];
+
+  if (source === "cms" || cmsJobs.length > 0) {
+    return cmsJobs;
+  }
+
+  return loadLocalPublicEnergJobs(limit);
 }
 
 export async function loadPublicEnergJobBySlug(routeSlug: string) {

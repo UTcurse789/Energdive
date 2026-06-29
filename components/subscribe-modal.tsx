@@ -4,6 +4,58 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence, Variants } from "framer-motion";
 import { X, Mail, ChevronDown, Check, Loader2, Minus, Plus } from "lucide-react";
 
+type TsParticlesConfetti = (
+    idOrOptions: string | Record<string, unknown>,
+    options?: Record<string, unknown>
+) => void;
+
+declare global {
+    interface Window {
+        confetti?: TsParticlesConfetti;
+        __energdiveConfettiPromise?: Promise<TsParticlesConfetti | null>;
+    }
+}
+
+async function loadConfetti(): Promise<TsParticlesConfetti | null> {
+    if (typeof window === "undefined") return null;
+    if (window.confetti) return window.confetti;
+    if (window.__energdiveConfettiPromise) return window.__energdiveConfettiPromise;
+
+    window.__energdiveConfettiPromise = new Promise((resolve) => {
+        const existingScript = document.querySelector<HTMLScriptElement>(
+            'script[data-energdive-confetti="true"]'
+        );
+        if (existingScript) {
+            existingScript.addEventListener("load", () => resolve(window.confetti || null), { once: true });
+            existingScript.addEventListener("error", () => resolve(null), { once: true });
+            return;
+        }
+        const script = document.createElement("script");
+        script.src = "https://cdn.jsdelivr.net/npm/@tsparticles/confetti@4.2.1/tsparticles.confetti.bundle.min.js";
+        script.async = true;
+        script.dataset.energdiveConfetti = "true";
+        script.onload = () => resolve(window.confetti || null);
+        script.onerror = () => resolve(null);
+        document.head.appendChild(script);
+    });
+    return window.__energdiveConfettiPromise;
+}
+
+async function fireRealisticConfetti() {
+    const confetti = await loadConfetti();
+    if (!confetti) return;
+    const count = 200;
+    const defaults = { origin: { y: 0.7 } };
+    const fire = (particleRatio: number, opts: Record<string, unknown>) => {
+        confetti({ ...defaults, ...opts, particleCount: Math.floor(count * particleRatio) });
+    };
+    fire(0.25, { spread: 26, startVelocity: 55 });
+    fire(0.2, { spread: 60 });
+    fire(0.35, { spread: 100, decay: 0.91, scalar: 0.8 });
+    fire(0.1, { spread: 120, startVelocity: 25, decay: 0.92, scalar: 1.2 });
+    fire(0.1, { spread: 120, startVelocity: 45 });
+}
+
 /* ─── Sector / Sub-sector data ────────────────────────── */
 const SECTORS: { name: string; subs: string[] }[] = [
     {
@@ -157,6 +209,8 @@ export function SubscribeModal({ isOpen, onClose }: SubscribeModalProps) {
 
         setStatus("loading");
         const frequencyValue = `${frequency} x${frequencyCounts[frequency]}`;
+        const currentUrl = typeof window !== "undefined" ? window.location.href : undefined;
+        const currentTitle = typeof document !== "undefined" ? document.title : undefined;
 
         try {
             const res = await fetch("/api/subscribe", {
@@ -168,10 +222,20 @@ export function SubscribeModal({ isOpen, onClose }: SubscribeModalProps) {
                     preferences,
                     communities: selectedSectors,
                     subCommunities: selectedSubs,
+                    source: "Subscribe Modal",
+                    subscribedFromUrl: currentUrl,
+                    subscribedFromTitle: currentTitle,
+                    subscribedFromPage: currentTitle,
                 }),
             });
-            if (!res.ok) { setStatus("error"); setErrorMsg("Something went wrong."); return; }
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                setStatus("error");
+                setErrorMsg(data.error || "Something went wrong.");
+                return;
+            }
             setStatus("success");
+            void fireRealisticConfetti();
         } catch {
             setStatus("error"); setErrorMsg("Network error.");
         }

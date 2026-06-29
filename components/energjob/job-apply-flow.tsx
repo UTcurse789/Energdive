@@ -5,6 +5,7 @@ import { ArrowRight, CheckCircle2, CloudUpload, FileText, Loader2, X } from "luc
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { PublicEnergJob } from "@/lib/energjob-public";
+import { useAuthModal } from "@/hooks/use-auth-modal";
 
 type JobApplyFlowProps = {
   autoOpenOnReturn?: boolean;
@@ -40,6 +41,7 @@ export default function JobApplyFlow({
 }: JobApplyFlowProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const { openAuthModal } = useAuthModal();
   const searchParams = useSearchParams();
   const { isLoaded, isSignedIn } = useAuth();
   const { user } = useUser();
@@ -190,7 +192,7 @@ export default function JobApplyFlow({
     }
 
     if (!isSignedIn) {
-      router.push(`/auth?redirect_url=${encodeURIComponent(returnUrl)}`);
+      openAuthModal(returnUrl);
       return;
     }
 

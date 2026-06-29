@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   createCmsJob,
   fetchCmsJobs,
+  isEnergJobCmsConfigured,
   updateCmsRecruiterRelations,
 } from "@/lib/energjob-cms";
 import { jobCreateSchema } from "@/lib/energjob-schemas";
@@ -16,14 +17,57 @@ import {
   markEnergJobEntitySynced,
 } from "@/lib/queries/energjob";
 
-export async function GET(req: NextRequest) {
-  try {
-    const searchParams = req.nextUrl.searchParams;
-    const limit = searchParams.get("limit");
-    const status = searchParams.get("status");
+type JobsSource = "local" | "cms" | "auto";
 
+function getJobsSource(value: string | null): JobsSource {
+  const normalized = (value || process.env.ENERGJOB_PUBLIC_JOBS_SOURCE || "cms")
+    .trim()
+    .toLowerCase();
+
+  if (normalized === "local" || normalized === "auto") {
+    return normalized;
+  }
+
+  return "cms";
+}
+
+export async function GET(req: NextRequest) {
+  const searchParams = req.nextUrl.searchParams;
+  const limit = searchParams.get("limit");
+  const status = searchParams.get("status");
+  const source = getJobsSource(searchParams.get("source"));
+
+  async function loadLocalJobs(warning?: string) {
+    const localJobs = await listEnergJobs({
+      limit: limit ? Number(limit) : undefined,
+      status,
+    });
+
+    return NextResponse.json({
+      success: true,
+      source: "local",
+      ...(warning ? { warning } : {}),
+      data: localJobs,
+      meta: {
+        total: localJobs.length,
+      },
+    });
+  }
+
+  if (source === "local") {
+    try {
+      return await loadLocalJobs();
+    } catch (error: any) {
+      console.error("[GET /api/energjob/jobs] Local fetch failed", error);
+      return NextResponse.json(
+        { success: false, error: error.message || "Failed to fetch local jobs" },
+        { status: 502 }
+      );
+    }
+  }
+
+  try {
     const params: Record<string, unknown> = {
-      populate: ["posted_by", "application", "sectors"],
       sort: ["createdAt:desc"],
     };
 
@@ -34,31 +78,21 @@ export async function GET(req: NextRequest) {
       params.filters = { job_status: { $eq: status } };
     }
 
+    if (!isEnergJobCmsConfigured()) {
+      throw new Error("ENERGJOB_STRAPI_URL is not configured");
+    }
+
     const data = await fetchCmsJobs(params);
     return NextResponse.json({ success: true, source: "cms", ...data });
   } catch (error: any) {
     console.error("[GET /api/energjob/jobs]", error);
 
-    try {
-      const localJobs = await listEnergJobs({
-        limit: req.nextUrl.searchParams.get("limit")
-          ? Number(req.nextUrl.searchParams.get("limit"))
-          : undefined,
-        status: req.nextUrl.searchParams.get("status"),
-      });
-
-      return NextResponse.json({
-        success: true,
-        source: "local",
-        warning: error.message || "CMS fetch failed; returning local DB data",
-        data: localJobs,
-        meta: {
-          fallback: true,
-          total: localJobs.length,
-        },
-      });
-    } catch (fallbackError: any) {
-      console.error("[GET /api/energjob/jobs] Local fallback failed", fallbackError);
+    if (source === "auto") {
+      try {
+        return await loadLocalJobs(error.message || "CMS fetch failed; returning local DB data");
+      } catch (fallbackError: any) {
+        console.error("[GET /api/energjob/jobs] Local fallback failed", fallbackError);
+      }
     }
 
     return NextResponse.json(

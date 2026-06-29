@@ -1,186 +1,97 @@
 "use client";
 
-import { useClerk, useAuth } from "@clerk/nextjs";
-import { useEffect, useRef, useState } from "react";
-import Image from "next/image";
+import { useAuth } from "@clerk/nextjs";
+import { useEffect, useRef } from "react";
 import {
+    getSafeRedirectFromClient,
     POST_AUTH_REDIRECT_STORAGE_KEY,
-    getSafeRedirectFromStoredValue,
+    POST_AUTH_REDIRECT_COOKIE,
 } from "@/lib/post-auth-redirect";
 
+type WindowWithPostHog = Window & {
+    posthog?: {
+        capture?: (event: string, properties?: Record<string, unknown>) => void;
+    };
+};
+
 /**
- * Ultra-fast, premium SSO callback page.
+ * SSO Callback fallback page.
  *
- * Approach:
- * 1. Resolve the redirect URL immediately (from sessionStorage)
- * 2. Let Clerk process the OAuth exchange via handleRedirectCallback
- * 3. Redirect immediately once auth is ready — no extra page loads
- * 4. Show a premium branded transition while processing
+ * In the optimized flow, users never land here — they go directly to the
+ * target page via Clerk's `redirectUrlComplete`. This page exists only as
+ * a safety net for edge cases (bookmarks, direct navigation, Clerk fallback).
+ *
+ * If the user does land here:
+ * 1. Check if already signed in → redirect immediately
+ * 2. If not yet signed in, wait for Clerk to finish processing → then redirect
+ * 3. After 5s timeout, redirect anyway (the target page will handle auth state)
  */
-
-const STATUS_MESSAGES = [
-    "Verifying your credentials…",
-    "Preparing your workspace…",
-    "Almost there…",
-];
-
 export default function SSOCallbackPage() {
-    const { handleRedirectCallback } = useClerk();
     const { isLoaded, isSignedIn } = useAuth();
-    const hasHandled = useRef(false);
-    const [statusIndex, setStatusIndex] = useState(0);
+    const hasRedirected = useRef(false);
 
-    // Resolve redirect URL once at mount — no state needed
-    const redirectUrl = useRef<string>(
-        typeof window !== "undefined"
-            ? getSafeRedirectFromStoredValue(
-                  sessionStorage.getItem(POST_AUTH_REDIRECT_STORAGE_KEY)
-              )
-            : "/"
-    );
+    // Resolve redirect URL from sessionStorage/cookie/URL params
+    const getTargetUrl = (): string => {
+        if (typeof window === "undefined") return "/";
+        const res = getSafeRedirectFromClient();
+        console.log("[SSO CALLBACK] Resolved target URL:", res, "from search:", window.location.search);
+        return res;
+    };
 
-    // Process the OAuth callback as soon as Clerk is loaded
-    useEffect(() => {
-        if (hasHandled.current) return;
-        hasHandled.current = true;
+    // Navigate immediately — call once only
+    const navigateAway = () => {
+        if (hasRedirected.current) return;
+        hasRedirected.current = true;
 
-        const processCallback = async () => {
-            try {
-                await handleRedirectCallback({
-                    afterSignInUrl: redirectUrl.current,
-                    afterSignUpUrl: redirectUrl.current,
+        const target = getTargetUrl();
+        console.log("[SSO CALLBACK] navigateAway() redirecting to:", target);
+
+        // Fire PostHog event asynchronously (don't block redirect)
+        try {
+            const posthog = (window as WindowWithPostHog).posthog;
+            if (posthog?.capture) {
+                posthog.capture("login_completed", {
+                    timestamp: new Date().toISOString(),
+                    path: "/auth/sso-callback",
                 });
-            } catch (err) {
-                console.error("[SSO Callback] Error:", err);
-                // Fallback: if handleRedirectCallback fails, wait for auth state
             }
-        };
+        } catch {}
 
-        processCallback();
-    }, [handleRedirectCallback]);
+        // Clean up stored redirect
+        sessionStorage.removeItem(POST_AUTH_REDIRECT_STORAGE_KEY);
+        document.cookie = `${POST_AUTH_REDIRECT_COOKIE}=; path=/; max-age=0; SameSite=Lax`;
 
-    // Safety net: if auth completes but handleRedirectCallback didn't navigate
+        // Navigate immediately — replace so user can't go "back" to callback
+        window.location.replace(target);
+    };
+
     useEffect(() => {
+        // If auth is loaded and user is signed in, redirect immediately
         if (isLoaded && isSignedIn) {
-            // Fire PostHog event asynchronously (don't block redirect)
-            try {
-                const posthog = (window as any).posthog;
-                if (posthog?.capture) {
-                    posthog.capture("login_completed", {
-                        timestamp: new Date().toISOString(),
-                        path: "/auth/sso-callback",
-                    });
-                }
-            } catch {}
+            navigateAway();
+            return;
+        }
 
-            // Clean up stored redirect
-            sessionStorage.removeItem(POST_AUTH_REDIRECT_STORAGE_KEY);
-
-            // Navigate immediately
-            window.location.replace(redirectUrl.current);
+        // If auth is loaded but NOT signed in, Clerk may still be processing
+        // the OAuth exchange. Give it a short timeout, then redirect anyway —
+        // the target page's middleware/layout will handle the auth state.
+        if (isLoaded && !isSignedIn) {
+            const timer = setTimeout(() => {
+                console.log("[SSO CALLBACK] Timeout: redirecting to target even though not signed in");
+                navigateAway();
+            }, 3000);
+            return () => clearTimeout(timer);
         }
     }, [isLoaded, isSignedIn]);
 
-    // Cycle through status messages for visual polish
-    useEffect(() => {
-        const interval = setInterval(() => {
-            setStatusIndex((prev) =>
-                prev < STATUS_MESSAGES.length - 1 ? prev + 1 : prev
-            );
-        }, 1800);
-        return () => clearInterval(interval);
-    }, []);
-
+    // Minimal loading UI — just a spinner and nothing else
     return (
-        <div className="min-h-screen flex flex-col items-center justify-center bg-white relative overflow-hidden">
-            {/* Subtle radial glow background */}
-            <div
-                className="absolute inset-0 pointer-events-none"
-                style={{
-                    background:
-                        "radial-gradient(ellipse 600px 400px at 50% 40%, rgba(0,166,81,0.06) 0%, transparent 70%)",
-                }}
-            />
-
-            {/* Main content */}
-            <div className="relative z-10 flex flex-col items-center">
-                {/* Logo with pulse */}
-                <div className="mb-8 animate-pulse">
-                    <Image
-                        src="/logo - energclub-energdive.png"
-                        alt="Energdive"
-                        width={200}
-                        height={50}
-                        priority
-                        className="w-auto h-10 object-contain"
-                    />
-                </div>
-
-                {/* Progress spinner */}
-                <div className="relative w-12 h-12 mb-6">
-                    {/* Track */}
-                    <div className="absolute inset-0 rounded-full border-[2.5px] border-zinc-100" />
-                    {/* Spinning arc */}
-                    <div
-                        className="absolute inset-0 rounded-full border-[2.5px] border-transparent border-t-[#00A651] animate-spin"
-                        style={{ animationDuration: "0.7s" }}
-                    />
-                    {/* Inner glow dot */}
-                    <div className="absolute inset-[10px] rounded-full bg-[#00A651]/5" />
-                </div>
-
-                {/* Status text with crossfade */}
-                <div className="h-6 relative flex items-center justify-center">
-                    <p
-                        key={statusIndex}
-                        className="text-sm font-medium text-zinc-500 animate-fade-in-status"
-                    >
-                        {STATUS_MESSAGES[statusIndex]}
-                    </p>
-                </div>
-
-                {/* Subtle linear progress bar */}
-                <div className="mt-6 w-48 h-[3px] bg-zinc-100 rounded-full overflow-hidden">
-                    <div
-                        className="h-full rounded-full"
-                        style={{
-                            background: "linear-gradient(90deg, #00A651, #0AB996)",
-                            animation: "sso-progress 2.5s ease-in-out infinite",
-                        }}
-                    />
-                </div>
+        <div className="min-h-screen flex items-center justify-center bg-white">
+            <div className="flex flex-col items-center gap-4">
+                {/* Simple fast spinner */}
+                <div className="w-8 h-8 rounded-full border-[2.5px] border-zinc-100 border-t-[#00A651] animate-spin" />
+                <p className="text-sm text-zinc-400">Signing you in…</p>
             </div>
-
-            {/* Inline keyframes */}
-            <style jsx>{`
-                @keyframes sso-progress {
-                    0% {
-                        width: 0%;
-                        margin-left: 0%;
-                    }
-                    50% {
-                        width: 70%;
-                        margin-left: 15%;
-                    }
-                    100% {
-                        width: 0%;
-                        margin-left: 100%;
-                    }
-                }
-                .animate-fade-in-status {
-                    animation: fadeInStatus 0.5s ease-out;
-                }
-                @keyframes fadeInStatus {
-                    from {
-                        opacity: 0;
-                        transform: translateY(4px);
-                    }
-                    to {
-                        opacity: 1;
-                        transform: translateY(0);
-                    }
-                }
-            `}</style>
         </div>
     );
 }

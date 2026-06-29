@@ -2,7 +2,7 @@
 
 import { useSignIn, useSignUp, useAuth } from "@clerk/nextjs";
 import { useSearchParams } from "next/navigation";
-import { useState, useCallback, useMemo, useEffect } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import DotGrid from "@/components/DotGrid";
@@ -12,9 +12,51 @@ import {
     POST_AUTH_REDIRECT_COOKIE,
     POST_AUTH_REDIRECT_STORAGE_KEY,
     getSafeRedirectPath,
+    persistPostAuthRedirect,
 } from "@/lib/post-auth-redirect";
 
 type AuthStep = "identifier" | "otp-signin" | "otp-signup" | "complete";
+type ClerkErrorBody = {
+    code?: string;
+    longMessage?: string;
+    message?: string;
+};
+type ClerkErrorLike = {
+    errors?: ClerkErrorBody[];
+    message?: string;
+};
+type EmailCodeFactor = {
+    strategy?: string;
+    emailAddressId?: string;
+};
+
+const getClerkError = (error: unknown) => {
+    if (typeof error !== "object" || error === null) {
+        return { code: undefined, message: undefined };
+    }
+
+    const clerkError = error as ClerkErrorLike;
+    const firstError = clerkError.errors?.[0];
+
+    return {
+        code: firstError?.code,
+        message: firstError?.longMessage || firstError?.message || clerkError.message,
+    };
+};
+
+const findEmailCodeFactor = (factors: unknown): EmailCodeFactor | undefined => {
+    if (!Array.isArray(factors)) {
+        return undefined;
+    }
+
+    return factors.find((factor): factor is EmailCodeFactor => {
+        if (typeof factor !== "object" || factor === null) {
+            return false;
+        }
+
+        return (factor as EmailCodeFactor).strategy === "email_code";
+    });
+};
 
 // ── Helpers ──
 
@@ -51,7 +93,6 @@ export default function UnifiedAuthPage() {
     const [info, setInfo] = useState("");
     const [resolvedPostAuthRedirect, setResolvedPostAuthRedirect] = useState<string | null>(null);
     const [userFirstName, setUserFirstName] = useState("");
-    const [existingUserOnboarded, setExistingUserOnboarded] = useState(false);
     const [mounted, setMounted] = useState(false);
 
     const posthog = usePostHog();
@@ -92,31 +133,6 @@ export default function UnifiedAuthPage() {
         }
     }, [posthog]);
 
-    const redirectTarget = useMemo(() => {
-        const rawValue = searchParams.get("redirect_url");
-        const origin =
-            typeof window !== "undefined" ? window.location.origin : "https://www.energdive.com";
-
-        if (!rawValue) {
-            return DEFAULT_POST_AUTH_REDIRECT;
-        }
-
-        try {
-            if (rawValue.startsWith("/") && !rawValue.startsWith("//")) {
-                return getSafeRedirectPath(rawValue);
-            }
-
-            const parsed = new URL(rawValue, origin);
-            if (parsed.origin === origin) {
-                return getSafeRedirectPath(`${parsed.pathname}${parsed.search}${parsed.hash}`);
-            }
-        } catch {
-            return DEFAULT_POST_AUTH_REDIRECT;
-        }
-
-        return DEFAULT_POST_AUTH_REDIRECT;
-    }, [searchParams]);
-
     const resolveFinalAuthRedirect = useCallback(
         () => getPostLoginFallbackPath(resolvePostAuthRedirect()),
         [resolvePostAuthRedirect]
@@ -127,6 +143,7 @@ export default function UnifiedAuthPage() {
      *  will show the onboarding form as a popup if needed. */
     const navigatePostAuth = useCallback(
         (target: string, _forceOnboarding?: boolean) => {
+            void _forceOnboarding;
             window.location.href = target;
         },
         [],
@@ -135,8 +152,7 @@ export default function UnifiedAuthPage() {
 
 
     // If already signed in, redirect away from /auth.
-    // Don't use navigatePostAuth here — existingUserOnboarded might still be
-    // at its default (false) since handleSubmit never ran. The target page's
+    // Don't use navigatePostAuth here. The target page's
     // layout (e.g. dashboard/layout.tsx) will enforce onboarding if needed.
     useEffect(() => {
         if (mounted && isSignedIn) {
@@ -174,7 +190,6 @@ export default function UnifiedAuthPage() {
                 if (checkData.exists) {
                     exists = true;
                     dbFirstName = checkData.firstName || "";
-                    setExistingUserOnboarded(checkData.onboardingCompleted === true);
                 }
             } catch (err) {
                 console.error("[AUTH] Error in check-user DB query:", err);
@@ -193,10 +208,8 @@ export default function UnifiedAuthPage() {
                     });
 
                     if (result.status === "needs_first_factor") {
-                        const emailFactor = (result.supportedFirstFactors as any[])?.find(
-                            (f) => f.strategy === "email_code"
-                        );
-                        if (emailFactor) {
+                        const emailFactor = findEmailCodeFactor(result.supportedFirstFactors);
+                        if (emailFactor?.emailAddressId) {
                             await signIn!.prepareFirstFactor({
                                 strategy: "email_code",
                                 emailAddressId: emailFactor.emailAddressId,
@@ -223,13 +236,11 @@ export default function UnifiedAuthPage() {
                         setStep("complete");
                         navigatePostAuth(getPostLoginFallbackPath(postAuthRedirect));
                     }
-                } catch (err: any) {
-                    const clerkError = err?.errors?.[0];
-                    const clerkCode = clerkError?.code;
+                } catch (err: unknown) {
+                    const clerkError = getClerkError(err);
+                    const clerkCode = clerkError.code;
                     const clerkMessage =
-                        clerkError?.longMessage ||
-                        clerkError?.message ||
-                        err?.message ||
+                        clerkError.message ||
                         "Something went wrong. Please try again.";
 
                     if (
@@ -245,8 +256,9 @@ export default function UnifiedAuthPage() {
                             setStep("otp-signup");
                             setInfo("We sent a verification code to your email.");
                             return;
-                        } catch (signUpErr: any) {
-                            const signUpCode = signUpErr?.errors?.[0]?.code;
+                        } catch (signUpErr: unknown) {
+                            const signUpError = getClerkError(signUpErr);
+                            const signUpCode = signUpError.code;
 
                             if (signUpCode === "form_identifier_exists") {
                                 setIsNewUser(false);
@@ -255,9 +267,7 @@ export default function UnifiedAuthPage() {
                             }
 
                             setError(
-                                signUpErr?.errors?.[0]?.longMessage ||
-                                signUpErr?.errors?.[0]?.message ||
-                                signUpErr?.message ||
+                                signUpError.message ||
                                 "Could not create account. Please try again."
                             );
                             return;
@@ -276,7 +286,7 @@ export default function UnifiedAuthPage() {
         } finally {
             setLoading(false);
         }
-    }, [identifier, postAuthRedirect, navigatePostAuth, resolveFinalAuthRedirect, signIn, signUp, signInLoaded, signUpLoaded, setActive]);
+    }, [identifier, postAuthRedirect, navigatePostAuth, posthog, resolveFinalAuthRedirect, signIn, signUp, signInLoaded, signUpLoaded, setActive]);
 
     // ── Step 2a: Verify OTP (Email - Clerk) ──
     const handleEmailOTPSubmit = useCallback(async () => {
@@ -376,9 +386,9 @@ export default function UnifiedAuthPage() {
                     setError(`Verification status: ${result.status}. Please try again.`);
                 }
             }
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error("[Auth] Verification error:", err);
-            const errMsg = err?.errors?.[0]?.longMessage || err?.errors?.[0]?.message || "";
+            const errMsg = getClerkError(err).message || "";
 
             // If verification was already done (retry scenario), fall back to backend
             if (isNewUser && errMsg.toLowerCase().includes("already been verified")) {
@@ -423,7 +433,7 @@ export default function UnifiedAuthPage() {
         } finally {
             setLoading(false);
         }
-    }, [code, identifier, isNewUser, postAuthRedirect, navigatePostAuth, resolveFinalAuthRedirect, signIn, signUp, signInLoaded, signUpLoaded, setActive]);
+    }, [code, identifier, isNewUser, postAuthRedirect, navigatePostAuth, posthog, resolveFinalAuthRedirect, signIn, signUp, signInLoaded, signUpLoaded, setActive]);
 
 
 
@@ -432,30 +442,32 @@ export default function UnifiedAuthPage() {
         if (!signInLoaded) return;
         if (posthog) posthog.capture('login_clicked', { timestamp: new Date().toISOString(), path: window.location.pathname });
         try {
+            const target = persistPostAuthRedirect(resolveFinalAuthRedirect());
             await signIn!.authenticateWithRedirect({
                 strategy: "oauth_google",
                 redirectUrl: "/auth/sso-callback",
-                redirectUrlComplete: redirectTarget,
+                redirectUrlComplete: target,
             });
         } catch {
             setError("Google sign-in failed. Please try again.");
         }
-    }, [redirectTarget, signIn, signInLoaded]);
+    }, [posthog, resolveFinalAuthRedirect, signIn, signInLoaded]);
 
     // ── LinkedIn OAuth ──
     const handleLinkedInAuth = useCallback(async () => {
         if (!signInLoaded) return;
         if (posthog) posthog.capture('login_clicked', { timestamp: new Date().toISOString(), path: window.location.pathname });
         try {
+            const target = persistPostAuthRedirect(resolveFinalAuthRedirect());
             await signIn!.authenticateWithRedirect({
                 strategy: "oauth_linkedin_oidc",
                 redirectUrl: "/auth/sso-callback",
-                redirectUrlComplete: redirectTarget,
+                redirectUrlComplete: target,
             });
         } catch {
             setError("LinkedIn sign-in failed. Please try again.");
         }
-    }, [redirectTarget, signIn, signInLoaded]);
+    }, [posthog, resolveFinalAuthRedirect, signIn, signInLoaded]);
 
     // ── Resend OTP ──
     const handleResend = useCallback(async () => {
@@ -469,13 +481,13 @@ export default function UnifiedAuthPage() {
                     strategy: "email_code",
                 });
             } else {
-                const emailFactor = (signIn!.supportedFirstFactors as any[])?.find(
-                    (f) => f.strategy === "email_code"
-                );
-                await signIn!.prepareFirstFactor({
-                    strategy: "email_code",
-                    emailAddressId: emailFactor?.emailAddressId,
-                });
+                const emailFactor = findEmailCodeFactor(signIn!.supportedFirstFactors);
+                if (emailFactor?.emailAddressId) {
+                    await signIn!.prepareFirstFactor({
+                        strategy: "email_code",
+                        emailAddressId: emailFactor.emailAddressId,
+                    });
+                }
             }
             setInfo("A new code has been sent.");
         } catch {
