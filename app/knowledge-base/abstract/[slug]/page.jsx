@@ -3,6 +3,7 @@ import { fetchPaperSubmissions } from "@/lib/paper-submissions-server";
 import { formatSubmissionDate } from "@/lib/paper-submissions";
 import { Building2, CalendarDays, UserRound, ArrowLeft, Download, FileText } from "lucide-react";
 import Link from "next/link";
+import { KnowledgeBaseDownloadButton } from "@/components/knowledge-base/download-button";
 
 const KNOWLEDGE_BASE_QUERY =
     "populate[sectors][fields][0]=name&populate[sectors][fields][1]=slug&populate[sectors][populate][parent][fields][0]=name&populate[sectors][populate][parent][fields][1]=slug&populate[abstract_pdf][fields][0]=url&populate[abstract_pdf][fields][1]=name&populate[abstract_pdf][fields][2]=size&populate[abstract_pdf][fields][3]=ext&populate[final_paper_submissions][fields][0]=final_status&populate[final_paper_submissions][fields][1]=final_submission_date&populate[final_paper_submissions][populate][full_paper][fields][0]=url&populate[final_paper_submissions][populate][full_paper][fields][1]=name&populate[final_paper_submissions][populate][full_paper][fields][2]=size&populate[final_paper_submissions][populate][full_paper][fields][3]=ext&sort[0]=submitted_date:desc&pagination[pageSize]=100";
@@ -166,13 +167,7 @@ export default async function AbstractPage({ params }) {
                                 <div className="border-t border-slate-200/60 bg-white p-6 pb-8">
                                     {pdfUrl ? (
                                         <div className="flex flex-col gap-3">
-                                            <Link
-                                                href={`/knowledge-base/abstract/${slug}/download`}
-                                                className="group flex w-full items-center justify-center gap-3 rounded-2xl bg-emerald-600 px-6 py-4 text-[15px] font-semibold text-white transition-all hover:-translate-y-0.5 hover:bg-emerald-700 hover:shadow-lg"
-                                            >
-                                                <Download className="h-[18px] w-[18px] transition-transform group-hover:translate-y-0.5" />
-                                                Save & Download
-                                            </Link>
+                                            <KnowledgeBaseDownloadButton slug={slug} />
                                         </div>
                                     ) : (
                                         <div className="flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-6 py-4 text-sm font-medium text-slate-400">

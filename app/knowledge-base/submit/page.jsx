@@ -13,7 +13,7 @@ export default async function KnowledgeBaseSubmitPage({ searchParams }) {
     const { userId } = await auth();
 
     if (!userId) {
-        redirect(`/auth?redirect_url=${encodeURIComponent("/knowledge-base/submit")}`);
+        redirect("/knowledge-base");
     }
 
     const profile = await getUserProfile(userId);
