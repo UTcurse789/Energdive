@@ -21,14 +21,18 @@ import { Button } from "@/components/ui/buttons";
 import { cn } from "@/lib/utils";
 import type { EnergyEvent, EventResource, FileType, ResourceType } from "./types";
 
+const THEME_STYLE = "bg-[#00A651]/10 text-[#00A651] border-[#00A651]/20";
+
 const RESOURCE_TYPE_STYLES: Record<string, string> = {
-  "Event Brochure": "bg-emerald-50 text-emerald-700 border-emerald-200",
-  "Post Show Report": "bg-blue-50 text-blue-700 border-blue-200",
-  Whitepaper: "bg-violet-50 text-violet-700 border-violet-200",
-  "Industry Report": "bg-amber-50 text-amber-700 border-amber-200",
-  Presentation: "bg-sky-50 text-sky-700 border-sky-200",
-  "Media Kit": "bg-zinc-100 text-zinc-700 border-zinc-200",
-  "Sponsor Prospectus": "bg-rose-50 text-rose-700 border-rose-200",
+  "Magazine EPDF": THEME_STYLE,
+  "Post Show Report": THEME_STYLE,
+  "Paper Abstract": THEME_STYLE,
+  Whitepaper: THEME_STYLE,
+  "Industry Report": THEME_STYLE,
+  "Event Brochure": THEME_STYLE,
+  Presentation: THEME_STYLE,
+  "Media Kit": THEME_STYLE,
+  "Sponsor Prospectus": THEME_STYLE,
 };
 
 const FILE_TYPE_STYLES: Record<string, string> = {
@@ -54,7 +58,7 @@ function hashIndex(value: string, length: number) {
 }
 
 function getResourceTypeStyle(type: ResourceType) {
-  return RESOURCE_TYPE_STYLES[type] ?? "bg-zinc-100 text-zinc-700 border-zinc-200";
+  return RESOURCE_TYPE_STYLES[type] ?? THEME_STYLE;
 }
 
 function getFileTypeStyle(type: FileType) {
@@ -79,6 +83,10 @@ export function ResourceDetailPage({
   const [downloadNotice, setDownloadNotice] = useState<string | null>(null);
 
   const canDownload = hasLocalAccess || (isLoaded && isSignedIn);
+
+  const isLandscape = resource.coverImageUrl 
+    ? (resource.coverImageWidth || 1200) > (resource.coverImageHeight || 675)
+    : true;
 
   useEffect(() => {
     if (!accessOpen) return;
@@ -155,14 +163,6 @@ export function ResourceDetailPage({
                 >
                   {resource.resource_type}
                 </span>
-                <span
-                  className={cn(
-                    "rounded-full border px-3 py-1 text-[11px] font-black",
-                    getFileTypeStyle(resource.fileType)
-                  )}
-                >
-                  {resource.fileType}
-                </span>
                 {resource.featured && (
                   <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[11px] font-black text-emerald-700">
                     Featured
@@ -170,7 +170,7 @@ export function ResourceDetailPage({
                 )}
               </div>
 
-              <h1 className="max-w-4xl text-4xl font-black leading-[1.02] tracking-tight text-zinc-950 dark:text-white sm:text-5xl lg:text-6xl">
+              <h1 className="max-w-4xl text-3xl font-black leading-[1.05] tracking-tight text-zinc-950 dark:text-white sm:text-4xl lg:text-5xl xl:text-[54px] xl:leading-[1.02]">
                 {resource.title}
               </h1>
               {resource.description && (
@@ -179,12 +179,12 @@ export function ResourceDetailPage({
                 </p>
               )}
 
-              <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                <SummaryItem icon={Building2} label="Event" value={resource.eventName} />
+              <div className="mt-6 grid gap-2.5 sm:grid-cols-2 xl:grid-cols-3">
+                <SummaryItem icon={Building2} label="Resource" value={resource.eventName} />
                 <SummaryItem icon={CalendarDays} label="Year" value={String(resource.year)} />
-                <div className="rounded-lg border border-zinc-200 bg-[#fbfcfb] p-4 dark:border-zinc-800 dark:bg-zinc-900">
-                  <Layers3 className="h-4 w-4 text-[#00A651]" />
-                  <p className="mt-3 text-[11px] font-black uppercase tracking-[0.14em] text-zinc-400">
+                <div className="rounded-lg border border-zinc-200 bg-[#fbfcfb] p-3 dark:border-zinc-800 dark:bg-zinc-900">
+                  <Layers3 className="h-3.5 w-3.5 text-[#00A651]" />
+                  <p className="mt-2 text-[10px] font-black uppercase tracking-[0.14em] text-zinc-400">
                     Sectors
                   </p>
                   <div className="mt-1 flex flex-wrap gap-1.5">
@@ -208,7 +208,7 @@ export function ResourceDetailPage({
             </div>
 
             <div className="lg:sticky lg:top-28 flex flex-col items-center">
-              <div className="w-full max-w-[260px]">
+              <div className={cn("w-full", isLandscape ? "max-w-[380px] xl:max-w-[420px]" : "max-w-[260px]")}>
                 <ResourceCover resource={resource} />
                 <Button
                   type="button"
@@ -382,9 +382,9 @@ function SummaryItem({
   value: string;
 }) {
   return (
-    <div className="rounded-lg border border-zinc-200 bg-[#fbfcfb] p-4 dark:border-zinc-800 dark:bg-zinc-900">
-      <Icon className="h-4 w-4 text-[#00A651]" />
-      <p className="mt-3 text-[11px] font-black uppercase tracking-[0.14em] text-zinc-400">
+    <div className="rounded-lg border border-zinc-200 bg-[#fbfcfb] p-3 dark:border-zinc-800 dark:bg-zinc-900">
+      <Icon className="h-3.5 w-3.5 text-[#00A651]" />
+      <p className="mt-2 text-[10px] font-black uppercase tracking-[0.14em] text-zinc-400">
         {label}
       </p>
       <p className="mt-1 truncate text-sm font-black text-zinc-950 dark:text-white">
