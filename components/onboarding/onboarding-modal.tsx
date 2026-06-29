@@ -4,9 +4,13 @@ import { useAuth } from "@clerk/nextjs";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Lock } from "lucide-react";
 import Image from "next/image";
 import OnboardingWizard from "@/components/onboarding/wizard";
+import {
+    DEFAULT_POST_AUTH_REDIRECT,
+    getSafeRedirectFromClient,
+    getSafeRedirectPath,
+} from "@/lib/post-auth-redirect";
 
 // Pages where the modal should NOT appear
 const EXCLUDED_PATHS = ["/auth", "/onboarding", "/print/"];
@@ -15,7 +19,9 @@ export default function OnboardingModal() {
     const { isLoaded, isSignedIn } = useAuth();
     const pathname = usePathname();
     const [showModal, setShowModal] = useState(false);
-    const [checked, setChecked] = useState(false);
+    const [checkedPathname, setCheckedPathname] = useState<string | null>(null);
+    const [returnTo, setReturnTo] = useState(DEFAULT_POST_AUTH_REDIRECT);
+    const checked = checkedPathname === pathname;
 
     // Check if the current path is excluded
     const isExcluded = EXCLUDED_PATHS.some(
@@ -31,20 +37,25 @@ export default function OnboardingModal() {
             try {
                 const res = await fetch("/api/onboarding/status");
                 if (!res.ok) {
-                    setChecked(true);
+                    setCheckedPathname(pathname);
                     return;
                 }
                 const data = await res.json();
                 if (!cancelled) {
-                    setChecked(true);
+                    setCheckedPathname(pathname);
                     if (data.signedIn && !data.onboardingCompleted) {
+                        const target = getSafeRedirectFromClient();
+                        const currentTarget = typeof window !== "undefined"
+                            ? getSafeRedirectPath(`${window.location.pathname}${window.location.search}${window.location.hash}`)
+                            : DEFAULT_POST_AUTH_REDIRECT;
+                        setReturnTo(target !== DEFAULT_POST_AUTH_REDIRECT ? target : currentTarget);
                         setShowModal(true);
                     }
                 }
             } catch (err) {
                 console.error("[OnboardingModal] Status check failed:", err);
                 if (!cancelled) {
-                    setChecked(true);
+                    setCheckedPathname(pathname);
                 }
             }
         }
@@ -54,12 +65,7 @@ export default function OnboardingModal() {
         return () => {
             cancelled = true;
         };
-    }, [isLoaded, isSignedIn, isExcluded, checked]);
-
-    // Reset check when pathname changes (user navigates)
-    useEffect(() => {
-        setChecked(false);
-    }, [pathname]);
+    }, [isLoaded, isSignedIn, isExcluded, checked, pathname]);
 
     const handleComplete = useCallback(() => {
         setShowModal(false);
@@ -98,7 +104,7 @@ export default function OnboardingModal() {
 
                             {/* Wizard Form */}
                             <div className="px-0">
-                                <OnboardingWizard mode="modal" onComplete={handleComplete} />
+                                <OnboardingWizard returnTo={returnTo} mode="modal" onComplete={handleComplete} />
                             </div>
                         </div>
                     </motion.div>

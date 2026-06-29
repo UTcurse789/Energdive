@@ -4,7 +4,7 @@ import { normalizeRichTextBlocks } from "@/lib/energjob-schemas";
 export const ENERGJOB_STRAPI_URL =
   process.env.ENERGJOB_STRAPI_URL ||
   process.env.ENERGJOB_STRAPI_API_URL ||
-  "https://cms-staging.energdive.com";
+  "";
 
 const ENERGJOB_STRAPI_TOKEN = process.env.ENERGJOB_STRAPI_TOKEN || "";
 
@@ -32,6 +32,10 @@ export class EnergJobCmsUnauthorizedError extends Error {
   }
 }
 
+export function isEnergJobCmsConfigured() {
+  return Boolean(ENERGJOB_STRAPI_URL.trim());
+}
+
 function getHeaders(extra?: HeadersInit): HeadersInit {
   return {
     "Content-Type": "application/json",
@@ -46,6 +50,10 @@ async function energJobCmsRequest<T>(
   endpoint: string,
   { params, ...options }: CmsRequestOptions = {}
 ): Promise<T> {
+  if (!isEnergJobCmsConfigured()) {
+    throw new Error("ENERGJOB_STRAPI_URL is not configured");
+  }
+
   const query = params ? qs.stringify(params, { encodeValuesOnly: true }) : "";
   const url = `${ENERGJOB_STRAPI_URL.replace(/\/$/, "")}/api/${endpoint}${query ? `?${query}` : ""}`;
 

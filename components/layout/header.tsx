@@ -13,6 +13,7 @@ import { SignedIn, SignedOut, useAuth } from "@clerk/nextjs";
 import { GlobalSearch } from "@/components/global-search";
 import { strapiImageUrl } from "@/lib/strapi-image";
 import { CustomUserMenu } from "@/components/layout/CustomUserMenu";
+import { useAuthModal } from "@/hooks/use-auth-modal";
 
 import { usePostHog } from "@posthog/react";
 
@@ -166,6 +167,7 @@ function normalizeIssue(item: StrapiIssueResponseItem): MagazineIssue | null {
 
 export function Header() {
     const pathname = usePathname();
+    const { openAuthModal } = useAuthModal();
     const [isScrolled, setIsScrolled] = useState(false);
     const [activeMenu, setActiveMenu] = useState<string | null>(null); // 'sectors' | 'magazine' | 'more' | 'opinion' | null
     const [magazineIssues, setMagazineIssues] = useState<MagazineIssue[]>([]);
@@ -437,7 +439,7 @@ export function Header() {
                                 </SignedIn>
                                 <SignedOut>
                                     <motion.div className="relative" onMouseEnter={() => setIsLoginHovered(true)} onMouseLeave={() => setIsLoginHovered(false)}>
-                                        <Link href={`/auth?redirect_url=${encodeURIComponent(pathname)}`} className="block border-[1.5px] border-black px-3 py-1 md:px-6 md:py-2 text-[10px] md:text-[12px] font-bold uppercase tracking-wider hover:bg-black hover:text-white transition-all overflow-hidden whitespace-nowrap" onClick={handleLoginClick}>
+                                        <button onClick={(e) => { e.preventDefault(); openAuthModal(pathname); handleLoginClick(); }} className="block border-[1.5px] border-black px-3 py-1 md:px-6 md:py-2 text-[10px] md:text-[12px] font-bold uppercase tracking-wider hover:bg-black hover:text-white transition-all overflow-hidden whitespace-nowrap cursor-pointer">
                                             LOGIN
                                             <AnimatePresence>
                                                 {isLoginHovered && (
@@ -446,7 +448,7 @@ export function Header() {
                                                     </motion.div>
                                                 )}
                                             </AnimatePresence>
-                                        </Link>
+                                        </button>
                                     </motion.div>
                                 </SignedOut>
                             </div>
@@ -1301,13 +1303,12 @@ export function Header() {
                                 {/* Login CTA on mobile */}
                                 <div className="px-6 py-4 border-t border-gray-100">
                                     <SignedOut>
-                                        <Link
-                                            href={`/auth?redirect_url=${encodeURIComponent(pathname)}`}
-                                            onClick={handleLoginClick}
-                                            className="block w-full text-center border-[1.5px] border-black px-6 py-3 text-[12px] font-bold uppercase tracking-wider hover:bg-black hover:text-white transition-all"
+                                        <button
+                                            onClick={(e) => { e.preventDefault(); openAuthModal(pathname); handleLoginClick(); }}
+                                            className="block w-full text-center border-[1.5px] border-black px-6 py-3 text-[12px] font-bold uppercase tracking-wider hover:bg-black hover:text-white transition-all cursor-pointer"
                                         >
                                             LOGIN
-                                        </Link>
+                                        </button>
                                     </SignedOut>
                                 </div>
                             </nav>

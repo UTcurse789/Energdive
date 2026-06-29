@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useUser } from "@clerk/nextjs";
 import { useForm, useWatch } from "react-hook-form";
@@ -96,26 +96,6 @@ const onboardingSchema = z.object({
 
 type OnboardingFormData = z.infer<typeof onboardingSchema>;
 
-function cleanSubCommunityName(subName: string, communityName: string): string {
-    const separators = ["-", " - ", " ", ": ", "/"];
-    for (const sep of separators) {
-        const prefix = communityName + sep;
-        if (subName.toLowerCase().startsWith(prefix.toLowerCase())) {
-            return subName.slice(prefix.length);
-        }
-    }
-    const firstWord = communityName.split(/\s+/)[0];
-    if (firstWord && firstWord.length > 2) {
-        for (const sep of separators) {
-            const prefix = firstWord + sep;
-            if (subName.toLowerCase().startsWith(prefix.toLowerCase())) {
-                return subName.slice(prefix.length);
-            }
-        }
-    }
-    return subName;
-}
-
 /* ─────────────────────────────────────────────────────────────── */
 /*  Component                                                     */
 /* ─────────────────────────────────────────────────────────────── */
@@ -155,8 +135,6 @@ export default function OnboardingWizard({ returnTo = "/", mode = "page", onComp
     /* Derived user info */
     const primaryEmail = user?.emailAddresses?.[0]?.emailAddress || "";
     const hasRealEmail = Boolean(primaryEmail && !primaryEmail.endsWith("@phone.energdive.com"));
-    const userPhone = typeof user?.publicMetadata?.phone === "string" ? user.publicMetadata.phone : "";
-
     /* ── React Hook Form ─────────────────────────────────────── */
     const {
         register,
@@ -427,25 +405,26 @@ export default function OnboardingWizard({ returnTo = "/", mode = "page", onComp
                 console.warn("Could not reload Clerk user object:", e);
             }
 
-            // Clean up stored redirect
-            sessionStorage.removeItem(POST_AUTH_REDIRECT_STORAGE_KEY);
-            document.cookie = `${POST_AUTH_REDIRECT_COOKIE}=; path=/; max-age=0; SameSite=Lax`;
+            // Read stored redirect before clearing
+            const storedRedirect = typeof window !== "undefined"
+                ? sessionStorage.getItem(POST_AUTH_REDIRECT_STORAGE_KEY)
+                : null;
+
 
             if (mode === "modal" && onComplete) {
-                // In modal mode, just close the modal — user stays on current page
                 onComplete();
-                return;
             }
 
-            // Page mode: redirect to the target
             let finalRedirect = getSafeRedirectPath(returnTo || "/");
             if (finalRedirect === "/") {
-                const storedRedirect = sessionStorage.getItem(POST_AUTH_REDIRECT_STORAGE_KEY);
                 const safeStoredRedirect = getSafeRedirectPath(storedRedirect);
                 if (safeStoredRedirect !== "/") {
                     finalRedirect = safeStoredRedirect;
                 }
             }
+
+            sessionStorage.removeItem(POST_AUTH_REDIRECT_STORAGE_KEY);
+            document.cookie = `${POST_AUTH_REDIRECT_COOKIE}=; path=/; max-age=0; SameSite=Lax`;
 
             window.location.href = finalRedirect;
         } catch (error) {
@@ -665,6 +644,10 @@ export default function OnboardingWizard({ returnTo = "/", mode = "page", onComp
                     <h2 className={mode === "modal" ? "text-lg font-bold text-zinc-900" : "text-2xl font-bold text-zinc-900"}>Your interests</h2>
                     <p className={mode === "modal" ? "text-zinc-500 text-sm mt-0.5" : "text-zinc-500 mt-1"}>
                         Pick the communities and briefings that should shape your ENERGClub feed.
+                    </p>
+                    <p className="text-xs text-emerald-600 mt-1.5 flex items-center gap-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5 shrink-0"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z" clipRule="evenodd" /></svg>
+                        You can choose multiple communities &amp; sub-communities
                     </p>
                 </div>
 

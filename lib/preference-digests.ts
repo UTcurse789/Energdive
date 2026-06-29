@@ -620,13 +620,28 @@ async function markDigestSent(userIds: number[]) {
         return;
     }
 
-    await query(
-        `UPDATE users
-         SET last_content_digest_sent_at = NOW(),
-             updated_at = NOW()
-         WHERE id = ANY($1::int[])`,
-        [userIds]
-    );
+    const regularUserIds = userIds.filter((id) => id > 0);
+    const letterboxIds = userIds.filter((id) => id < 0).map((id) => -id);
+
+    if (regularUserIds.length > 0) {
+        await query(
+            `UPDATE users
+             SET last_content_digest_sent_at = NOW(),
+                 updated_at = NOW()
+             WHERE id = ANY($1::int[])`,
+            [regularUserIds]
+        );
+    }
+
+    if (letterboxIds.length > 0) {
+        await query(
+            `UPDATE subscribe_letterbox
+             SET last_content_digest_sent_at = NOW(),
+                 updated_at = NOW()
+             WHERE id = ANY($1::int[])`,
+            [letterboxIds]
+        );
+    }
 }
 
 function dedupeCandidatesByEmail(rows: DigestCandidateRow[]): DigestEmailCandidate[] {
@@ -683,36 +698,55 @@ function dedupeCandidatesByEmail(rows: DigestCandidateRow[]): DigestEmailCandida
 
 async function getDigestCandidates(options: ProcessDigestsOptions): Promise<DigestEmailCandidate[]> {
     const params: unknown[] = [];
-    const clauses = [
-        `onboarding_completed = true`,
-        `verification_status = 'verified'`,
-        `email NOT LIKE '%@phone.energdive.com'`,
-        `COALESCE(content_digest_opted_out, false) = false`,
-        `preferred_frequency IS NOT NULL`,
-        `preferred_formats IS NOT NULL`,
-        `COALESCE(array_length(preferred_formats, 1), 0) > 0`,
-    ];
+    let emailFilter = "";
 
     if (options.email) {
         params.push(options.email.trim().toLowerCase());
-        clauses.push(`LOWER(email) = $${params.length}`);
+        emailFilter = `AND LOWER(email) = $${params.length}`;
     }
 
     params.push(options.limit || 100);
+    const limitPlaceholder = `$${params.length}`;
+
+    // Ensure last_content_digest_sent_at column exists in subscribe_letterbox
+    await query(`ALTER TABLE subscribe_letterbox ADD COLUMN IF NOT EXISTS last_content_digest_sent_at TIMESTAMPTZ`);
 
     const result = await query<DigestCandidateRow>(
-        `SELECT
-            id,
-            email,
-            first_name,
-            last_name,
-            preferred_frequency,
-            preferred_formats,
-            last_content_digest_sent_at
-         FROM users
-         WHERE ${clauses.join(" AND ")}
-         ORDER BY COALESCE(last_content_digest_sent_at, TO_TIMESTAMP(0)) ASC
-         LIMIT $${params.length}`,
+        `SELECT * FROM (
+            SELECT
+                id,
+                email,
+                first_name,
+                last_name,
+                preferred_frequency,
+                preferred_formats,
+                last_content_digest_sent_at
+            FROM users
+            WHERE onboarding_completed = true
+              AND verification_status = 'verified'
+              AND email NOT LIKE '%@phone.energdive.com'
+              AND COALESCE(content_digest_opted_out, false) = false
+              AND preferred_frequency IS NOT NULL
+              AND preferred_formats IS NOT NULL
+              AND COALESCE(array_length(preferred_formats, 1), 0) > 0
+              ${emailFilter}
+
+            UNION ALL
+
+            SELECT
+                -id as id,
+                email,
+                NULL as first_name,
+                NULL as last_name,
+                'Daily' as preferred_frequency,
+                ARRAY['News Briefing'] as preferred_formats,
+                last_content_digest_sent_at
+            FROM subscribe_letterbox
+            WHERE email NOT LIKE '%@phone.energdive.com'
+              ${emailFilter}
+        ) AS combined
+        ORDER BY COALESCE(last_content_digest_sent_at, TO_TIMESTAMP(0)) ASC
+        LIMIT ${limitPlaceholder}`,
         params
     );
 
