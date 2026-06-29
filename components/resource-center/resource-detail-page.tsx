@@ -216,7 +216,7 @@ export function ResourceDetailPage({
                   className="mt-4 h-12 w-full rounded-md bg-[#00A651] text-sm font-black text-white hover:bg-[#008b44]"
                 >
                   <Download className="mr-2 h-4 w-4" />
-                  Download Resource
+                  Download
                 </Button>
               </div>
             </div>
