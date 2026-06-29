@@ -8,6 +8,7 @@ import Link from "next/link";
 import { X } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { usePostHog } from "@posthog/react";
+import { useAuthModal } from "@/hooks/use-auth-modal";
 
 const DISMISSAL_COOLDOWN_MS = 60 * 60 * 1000; // 1 hour
 const POPUP_DELAY_MS = 5 * 1000; // 5 seconds
@@ -26,6 +27,7 @@ interface CurrentIssue {
 
 export default function AuthPromptModal() {
     const { isLoaded, isSignedIn } = useAuth();
+    const { openAuthModal } = useAuthModal();
     const [show, setShow] = useState(false);
     const [currentIssue, setCurrentIssue] = useState<CurrentIssue | null>(null);
     const pathname = usePathname();
@@ -216,10 +218,10 @@ export default function AuthPromptModal() {
 
                             <div className="flex flex-col gap-4">
                                 {/* Primary CTA */}
-                                <Link
-                                    href="/auth"
+                                <button
                                     onClick={() => {
                                         handleDismiss();
+                                        openAuthModal(pathname);
                                         if (posthog) {
                                             posthog.capture("signup_button_clicked", {
                                                 timestamp: new Date().toISOString(),
@@ -227,11 +229,11 @@ export default function AuthPromptModal() {
                                             });
                                         }
                                     }}
-                                    className="w-full h-12 rounded-xl bg-[#0AB996] hover:bg-[#099c82] text-white font-semibold flex items-center justify-center gap-2 transition-all shadow-lg shadow-[#0AB996]/20 active:scale-[0.98]"
+                                    className="w-full h-12 rounded-xl bg-[#0AB996] hover:bg-[#099c82] text-white font-semibold flex items-center justify-center gap-2 transition-all shadow-lg shadow-[#0AB996]/20 active:scale-[0.98] cursor-pointer"
                                 >
                                     REGISTER / LOGIN
                                     <span className="text-lg">→</span>
-                                </Link>
+                                </button>
 
                                 {/* Secondary Action */}
                                 <button

@@ -18,11 +18,13 @@ import {
   setSessionFlag,
 } from "@/lib/onboarding-storage";
 import { useOnboardingStep } from "@/hooks/use-onboarding-step";
+import { useAuthModal } from "@/hooks/use-auth-modal";
 
 const NEWSLETTER_DISMISS_MS = 7 * 24 * 60 * 60 * 1000;
 
 export function PlatformOnboarding() {
   const pathname = usePathname();
+  const { openAuthModal } = useAuthModal();
   const { isLoaded, isSignedIn } = useAuth();
   const [isNewsletterEligible, setIsNewsletterEligible] = useState(false);
   const posthog = usePostHog();
@@ -137,9 +139,9 @@ export function PlatformOnboarding() {
                 </div>
               </div>
 
-              <Link
-                href={loginHref}
+              <button
                 onClick={() => {
+                  openAuthModal(window.location.href);
                   if (posthog) {
                     posthog.capture("login_clicked", {
                       timestamp: new Date().toISOString(),
@@ -147,10 +149,10 @@ export function PlatformOnboarding() {
                     });
                   }
                 }}
-                className="mt-6 inline-flex w-full items-center justify-center rounded-xl bg-gradient-to-r from-[#0AB996] to-[#00A651] px-5 py-3.5 text-[15px] font-bold text-white shadow-lg shadow-[#00A651]/25 transition-all duration-300 hover:from-[#099c82] hover:to-[#008c44] hover:shadow-xl hover:shadow-[#00A651]/40 hover:-translate-y-0.5 active:translate-y-0 active:scale-95"
+                className="mt-6 inline-flex w-full items-center justify-center rounded-xl bg-gradient-to-r from-[#0AB996] to-[#00A651] px-5 py-3.5 text-[15px] font-bold text-white shadow-lg shadow-[#00A651]/25 transition-all duration-300 hover:from-[#099c82] hover:to-[#008c44] hover:shadow-xl hover:shadow-[#00A651]/40 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 cursor-pointer"
               >
                 Login & Subscribe
-              </Link>
+              </button>
 
               <p className="mt-3 text-center text-xs font-medium text-slate-500">
                 No spam. Only high-value industry updates.
