@@ -15,6 +15,8 @@ type StrapiMedia = {
   ext?: string | null;
   mime?: string | null;
   size?: number | string | null;
+  width?: number | null;
+  height?: number | null;
   url?: string | null;
   formats?: Record<string, { url?: string | null } | undefined> | null;
   data?: { attributes?: StrapiMedia } | null;
@@ -172,17 +174,21 @@ function normalizeResource(item: StrapiResourceCenterEntry): EventResource | nul
   const publishedAt = entry.publishedAt || entry.updatedAt || entry.createdAt || "";
   const parsedYear = Number(entry.year) || new Date(publishedAt).getFullYear();
   const resourceFile = mediaAttributes(entry.resource_file);
+  const coverImage = mediaAttributes(entry.cover_image);
   const fileType = mediaFileType(entry.resource_file);
   const fileName = resourceFile?.name || `${slug}.${fileType.toLowerCase()}`;
 
   return {
     id: entry.documentId || String(entry.id || slug),
+    slug,
     event_id: eventId,
     resource_type: (entry.resource_type || "Resource").trim(),
     resourceTag: (entry.resource_tag || "Resource").trim(),
     file_url: mediaFileUrl(entry.resource_file),
     fileName,
     coverImageUrl: strapiMediaUrl(entry.cover_image, "", STRAPI_BASE) || null,
+    coverImageWidth: coverImage?.width || null,
+    coverImageHeight: coverImage?.height || null,
     title,
     eventName,
     eventLogo: showCode || initials(eventName),
@@ -268,4 +274,34 @@ export async function getResourceCenterData() {
     resources,
     events: buildEvents(resources),
   };
+}
+
+export async function getResourceCenterResource(slug: string) {
+  const url = new URL(
+    `/api/${RESOURCE_CENTER_ENDPOINT}`,
+    STRAPI_BASE.replace(/\/$/, "")
+  );
+  url.searchParams.set("populate", "*");
+  url.searchParams.set("filters[slug][$eq]", slug);
+  url.searchParams.set("pagination[pageSize]", "1");
+
+  const response = await fetch(url.toString(), {
+    headers: STRAPI_TOKEN
+      ? {
+          Authorization: `Bearer ${STRAPI_TOKEN}`,
+        }
+      : undefined,
+    next: { revalidate: 300 },
+  });
+
+  if (!response.ok) {
+    throw new Error(
+      `Resource Center CMS request failed: ${response.status} ${response.statusText}`
+    );
+  }
+
+  const payload = (await response.json()) as StrapiListResponse;
+  const resource = payload.data?.[0] ? normalizeResource(payload.data[0]) : null;
+
+  return resource;
 }
