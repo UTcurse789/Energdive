@@ -8,7 +8,6 @@ import Link from "next/link";
 export default function KnowledgeBaseArchiveGrid({ papers }) {
     const [selectedSector, setSelectedSector] = useState("all");
     const [selectedSubSector, setSelectedSubSector] = useState("all");
-    const [selectedAffiliation, setSelectedAffiliation] = useState("all");
 
     const sectorOptions = useMemo(
         () => Array.from(new Set(
@@ -29,14 +28,7 @@ export default function KnowledgeBaseArchiveGrid({ papers }) {
         ).sort((left, right) => left.localeCompare(right));
     }, [papers, selectedSector]);
 
-    const affiliationOptions = useMemo(
-        () => Array.from(new Set(
-            papers
-                .map((paper) => paper.affiliation?.trim())
-                .filter(Boolean)
-        )).sort((left, right) => left.localeCompare(right)),
-        [papers]
-    );
+
 
     const activeSubSector = subSectorOptions.includes(selectedSubSector) ? selectedSubSector : "all";
 
@@ -50,13 +42,9 @@ export default function KnowledgeBaseArchiveGrid({ papers }) {
                 activeSubSector === "all" ||
                 (paper.subSectorNames || []).includes(activeSubSector);
 
-            const matchesAffiliation =
-                selectedAffiliation === "all" ||
-                paper.affiliation?.trim() === selectedAffiliation;
-
-            return matchesSector && matchesSubSector && matchesAffiliation;
+            return matchesSector && matchesSubSector;
         }),
-        [activeSubSector, papers, selectedAffiliation, selectedSector]
+        [activeSubSector, papers, selectedSector]
     );
 
     return (
@@ -72,7 +60,7 @@ export default function KnowledgeBaseArchiveGrid({ papers }) {
                         </p>
                     </div>
 
-                    <div className="grid flex-1 gap-3 md:grid-cols-2 xl:min-w-0 xl:grid-cols-3">
+                    <div className="grid flex-1 gap-3 md:grid-cols-2 xl:min-w-0 xl:grid-cols-2">
                         <FilterSelect
                             compact
                             label="Sector"
@@ -92,14 +80,7 @@ export default function KnowledgeBaseArchiveGrid({ papers }) {
                             options={subSectorOptions}
                             placeholder="All sub-sectors"
                         />
-                        <FilterSelect
-                            compact
-                            label="University / Institution"
-                            value={selectedAffiliation}
-                            onChange={setSelectedAffiliation}
-                            options={affiliationOptions}
-                            placeholder="All institutions"
-                        />
+
                     </div>
 
                     <button
@@ -107,7 +88,6 @@ export default function KnowledgeBaseArchiveGrid({ papers }) {
                         onClick={() => {
                             setSelectedSector("all");
                             setSelectedSubSector("all");
-                            setSelectedAffiliation("all");
                         }}
                         className="inline-flex h-11 items-center justify-center rounded-full border border-slate-200 bg-slate-50 px-4 text-sm font-semibold text-slate-700 transition-colors hover:border-slate-300 hover:bg-white xl:flex-none"
                     >
@@ -122,7 +102,7 @@ export default function KnowledgeBaseArchiveGrid({ papers }) {
                         No approved papers match these filters.
                     </p>
                     <p className="mt-2 text-sm leading-7 text-slate-500">
-                        Try another sector, sub-sector, or institution to explore the archive.
+                        Try another sector or sub-sector to explore the archive.
                     </p>
                 </div>
             ) : (
