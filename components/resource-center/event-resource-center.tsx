@@ -600,16 +600,7 @@ function FilterPanel({
       <div className="flex-1 space-y-4 overflow-y-auto p-4 dashboard-scrollbar">
         <SortControl value={filters.sort} onChange={onSortChange} />
 
-        <FilterGroup
-          title="Event"
-          options={events.map((event) => ({
-            label: event.name,
-            value: event.id,
-            count: counts.events[event.id] ?? event.totalResources,
-          }))}
-          selectedValues={filters.events}
-          onToggle={(value) => onToggle("events", value)}
-        />
+
         <FilterGroup
           title="Resource Type"
           options={resourceTypeOptions.map((type) => ({
@@ -726,16 +717,7 @@ function MobileFilterDrawer({
               <div className="space-y-4">
                 <SortControl value={filters.sort} onChange={onSortChange} />
 
-                <FilterGroup
-                  title="Event"
-                  options={events.map((event) => ({
-                    label: event.name,
-                    value: event.id,
-                    count: counts.events[event.id] ?? event.totalResources,
-                  }))}
-                  selectedValues={filters.events}
-                  onToggle={(value) => onToggle("events", value)}
-                />
+
                 <FilterGroup
                   title="Resource Type"
                   options={resourceTypeOptions.map((type) => ({
