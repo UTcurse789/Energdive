@@ -6,13 +6,14 @@ import Link from "next/link";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { formatContentDate } from "@/lib/date";
-import { Search, ChevronDown, Facebook, Linkedin, Megaphone, ChevronRight, Zap, Menu, X, MapPin, Mail, Phone, Play, ArrowRight, Youtube, Instagram, LibraryBig } from "lucide-react";
+import { Search, ChevronDown, Facebook, Linkedin, Megaphone, ChevronRight, Zap, Menu, X, MapPin, Mail, Phone, Play, ArrowRight, Youtube, Instagram, LibraryBig, FileDown } from "lucide-react";
 import { SECTORS } from "@/data/dummy";
 import { motion, AnimatePresence } from "framer-motion";
 import { SignedIn, SignedOut, useAuth } from "@clerk/nextjs";
 import { GlobalSearch } from "@/components/global-search";
 import { strapiImageUrl } from "@/lib/strapi-image";
 import { CustomUserMenu } from "@/components/layout/CustomUserMenu";
+import { useAuthModal } from "@/hooks/use-auth-modal";
 
 import { usePostHog } from "@posthog/react";
 
@@ -166,6 +167,7 @@ function normalizeIssue(item: StrapiIssueResponseItem): MagazineIssue | null {
 
 export function Header() {
     const pathname = usePathname();
+    const { openAuthModal } = useAuthModal();
     const [isScrolled, setIsScrolled] = useState(false);
     const [activeMenu, setActiveMenu] = useState<string | null>(null); // 'sectors' | 'magazine' | 'more' | 'opinion' | null
     const [magazineIssues, setMagazineIssues] = useState<MagazineIssue[]>([]);
@@ -183,6 +185,8 @@ export function Header() {
     const [mobileExpanded, setMobileExpanded] = useState<string | null>(null); // 'sectors' | 'magazine' | 'more' | 'opinion'
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const [tagCounts, setTagCounts] = useState<Record<string, number>>({});
+    const [resourceTypesCounts, setResourceTypesCounts] = useState<Record<string, number>>({});
+    const [resourceSectorsCounts, setResourceSectorsCounts] = useState<Record<string, number>>({});
     const [isDesktopViewport, setIsDesktopViewport] = useState(false);
     const { isLoaded, isSignedIn } = useAuth();
     const posthog = usePostHog();
@@ -232,11 +236,15 @@ export function Header() {
                     tagCounts?: Record<string, number>;
                     opinionArticles?: any[];
                     interviewArticles?: any[];
+                    resourceTypesCounts?: Record<string, number>;
+                    resourceSectorsCounts?: Record<string, number>;
                 };
 
                 if (cancelled) return;
 
                 setTagCounts(menuData.tagCounts || {});
+                setResourceTypesCounts(menuData.resourceTypesCounts || {});
+                setResourceSectorsCounts(menuData.resourceSectorsCounts || {});
                 setRealVideos(Array.isArray(menuData.videos) ? menuData.videos : []);
                 setRealEvents(Array.isArray(menuData.events) ? menuData.events : []);
                 setOpinionArticles(Array.isArray(menuData.opinionArticles) ? menuData.opinionArticles : []);
@@ -437,7 +445,7 @@ export function Header() {
                                 </SignedIn>
                                 <SignedOut>
                                     <motion.div className="relative" onMouseEnter={() => setIsLoginHovered(true)} onMouseLeave={() => setIsLoginHovered(false)}>
-                                        <Link href={`/auth?redirect_url=${encodeURIComponent(pathname)}`} className="block border-[1.5px] border-black px-3 py-1 md:px-6 md:py-2 text-[10px] md:text-[12px] font-bold uppercase tracking-wider hover:bg-black hover:text-white transition-all overflow-hidden whitespace-nowrap" onClick={handleLoginClick}>
+                                        <button onClick={(e) => { e.preventDefault(); openAuthModal(pathname); handleLoginClick(); }} className="block border-[1.5px] border-black px-3 py-1 md:px-6 md:py-2 text-[10px] md:text-[12px] font-bold uppercase tracking-wider hover:bg-black hover:text-white transition-all overflow-hidden whitespace-nowrap cursor-pointer">
                                             LOGIN
                                             <AnimatePresence>
                                                 {isLoginHovered && (
@@ -446,7 +454,7 @@ export function Header() {
                                                     </motion.div>
                                                 )}
                                             </AnimatePresence>
-                                        </Link>
+                                        </button>
                                     </motion.div>
                                 </SignedOut>
                             </div>
@@ -745,6 +753,20 @@ export function Header() {
                                             Events <ChevronRight size={14} />
                                         </Link>
 
+                                        <Link
+                                            href="/resource-center"
+                                            onClick={closeMenus}
+                                            className={cn(
+                                                "px-4 py-3 text-[14px] font-bold text-gray-800 flex justify-between items-center transition-colors",
+                                                hoveredMoreItem === "resource-center"
+                                                    ? "bg-[#00A651] text-white"
+                                                    : "hover:bg-[#00A651] hover:text-white"
+                                            )}
+                                            onMouseEnter={() => setHoveredMoreItem("resource-center")}
+                                        >
+                                            Resource Center <ChevronRight size={14} />
+                                        </Link>
+
                                         {/* <Link
                                             href="/energdive-insights-exchange"
                                             onClick={closeMenus}
@@ -896,6 +918,90 @@ export function Header() {
                                             <Link href="/events" onClick={closeMenus} className="mt-8 inline-flex items-center gap-1.5 text-[11px] font-bold text-[#00A651] uppercase tracking-widest hover:underline">
                                                 View All Events <ArrowRight size={13} />
                                             </Link>
+                                        </div>
+                                    )}
+
+                                    {/* Resource Center hover content */}
+                                    {hoveredMoreItem === "resource-center" && (
+                                        <div className="flex gap-12 h-full">
+                                            <div className="flex-1">
+                                                <h4 className="text-[12px] font-bold uppercase text-gray-400 border-b pb-3 mb-6 tracking-widest">Resource Types</h4>
+                                                <div className="flex flex-col gap-3">
+                                                    {(() => {
+                                                        const orderedTypes = [
+                                                            "Magazine EPDF",
+                                                            "Post Show Report",
+                                                            "Paper Abstract",
+                                                            "Whitepaper",
+                                                            "Industry Report",
+                                                            "Event Brochure",
+                                                        ];
+                                                        const hasLoaded = Object.keys(resourceTypesCounts).length > 0;
+                                                        return orderedTypes.map((type) => {
+                                                            const count = resourceTypesCounts[type] || 0;
+                                                            const isEnabled = !hasLoaded || count > 0;
+                                                            if (isEnabled) {
+                                                                return (
+                                                                    <Link key={type} href={`/resource-center?type=${encodeURIComponent(type)}`} onClick={closeMenus} className="text-[13px] font-medium text-gray-700 hover:text-[#00A651] transition-colors flex items-center gap-2 group/item">
+                                                                        <div className="w-1.5 h-1.5 rounded-full bg-gray-300 group-hover/item:bg-[#00A651]" />
+                                                                        {type}
+                                                                    </Link>
+                                                                );
+                                                            } else {
+                                                                return (
+                                                                    <div key={type} className="text-[13px] font-medium text-gray-400 flex items-center gap-2 cursor-not-allowed opacity-40 select-none">
+                                                                        <div className="w-1.5 h-1.5 rounded-full bg-gray-200" />
+                                                                        {type}
+                                                                    </div>
+                                                                );
+                                                            }
+                                                        });
+                                                    })()}
+                                                </div>
+                                            </div>
+                                            <div className="flex-1">
+                                                <h4 className="text-[12px] font-bold uppercase text-gray-400 border-b pb-3 mb-6 tracking-widest">Sectors</h4>
+                                                <div className="flex flex-col gap-3">
+                                                    {(() => {
+                                                        const sectorsList = ["Oil & Gas", "Power Generation", "Renewables", "Energy Storage", "Transmission", "Distribution"];
+                                                        const hasLoaded = Object.keys(resourceSectorsCounts).length > 0;
+                                                        return sectorsList.map((sector) => {
+                                                            const count = resourceSectorsCounts[sector] || 0;
+                                                            const isEnabled = !hasLoaded || count > 0;
+                                                            if (isEnabled) {
+                                                                return (
+                                                                    <Link key={sector} href={`/resource-center?sector=${encodeURIComponent(sector)}`} onClick={closeMenus} className="text-[13px] font-medium text-gray-700 hover:text-[#00A651] transition-colors flex items-center gap-2 group/item">
+                                                                        <div className="w-1.5 h-1.5 rounded-full bg-gray-300 group-hover/item:bg-[#00A651]" />
+                                                                        {sector}
+                                                                    </Link>
+                                                                );
+                                                            } else {
+                                                                return (
+                                                                    <div key={sector} className="text-[13px] font-medium text-gray-400 flex items-center gap-2 cursor-not-allowed opacity-40 select-none">
+                                                                        <div className="w-1.5 h-1.5 rounded-full bg-gray-200" />
+                                                                        {sector}
+                                                                    </div>
+                                                                );
+                                                            }
+                                                        });
+                                                    })()}
+                                                </div>
+                                            </div>
+                                            <div className="flex-1">
+                                                <h4 className="text-[12px] font-bold uppercase text-gray-400 border-b pb-3 mb-6 tracking-widest">Explore Library</h4>
+                                                <div className="flex flex-col gap-4">
+                                                    <Link href="/resource-center" onClick={closeMenus} className="group p-5 bg-gray-50 rounded-xl border border-gray-100 hover:border-[#00A651]/40 transition-all hover:shadow-sm">
+                                                        <div className="w-10 h-10 rounded-lg flex items-center justify-center mb-3 bg-white shadow-sm">
+                                                            <FileDown size={18} className="text-[#00A651]" />
+                                                        </div>
+                                                        <p className="text-[14px] font-bold text-gray-900 group-hover:text-[#00A651]">All Resources</p>
+                                                        <p className="text-[12px] text-gray-500 mt-1.5 leading-relaxed">Browse our complete library of intelligence, reports, and insights.</p>
+                                                    </Link>
+                                                    <Link href="/resource-center" onClick={closeMenus} className="mt-2 inline-flex items-center gap-1.5 text-[11px] font-bold text-[#00A651] uppercase tracking-widest hover:underline">
+                                                        Go to Resource Center <ArrowRight size={13} />
+                                                    </Link>
+                                                </div>
+                                            </div>
                                         </div>
                                     )}
 
@@ -1269,6 +1375,9 @@ export function Header() {
                                                 <Link href="/events" onClick={closeAll} className="block px-10 py-3 text-[13px] font-medium text-gray-700 hover:text-[#00A651] hover:bg-white transition-colors border-b border-gray-100">
                                                     Events
                                                 </Link>
+                                                <Link href="/resource-center" onClick={closeAll} className="block px-10 py-3 text-[13px] font-medium text-gray-700 hover:text-[#00A651] hover:bg-white transition-colors border-b border-gray-100">
+                                                    Resource Center
+                                                </Link>
                                                 <Link href="/energdive-insights-exchange" onClick={closeAll} className="block px-10 py-3 text-[13px] font-medium text-gray-700 hover:text-[#00A651] hover:bg-white transition-colors border-b border-gray-100">
                                                     Insights Exchange
                                                 </Link>
@@ -1301,13 +1410,12 @@ export function Header() {
                                 {/* Login CTA on mobile */}
                                 <div className="px-6 py-4 border-t border-gray-100">
                                     <SignedOut>
-                                        <Link
-                                            href={`/auth?redirect_url=${encodeURIComponent(pathname)}`}
-                                            onClick={handleLoginClick}
-                                            className="block w-full text-center border-[1.5px] border-black px-6 py-3 text-[12px] font-bold uppercase tracking-wider hover:bg-black hover:text-white transition-all"
+                                        <button
+                                            onClick={(e) => { e.preventDefault(); openAuthModal(pathname); handleLoginClick(); }}
+                                            className="block w-full text-center border-[1.5px] border-black px-6 py-3 text-[12px] font-bold uppercase tracking-wider hover:bg-black hover:text-white transition-all cursor-pointer"
                                         >
                                             LOGIN
-                                        </Link>
+                                        </button>
                                     </SignedOut>
                                 </div>
                             </nav>

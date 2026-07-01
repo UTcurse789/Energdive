@@ -1,23 +1,214 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Mail, ArrowRight, Loader2, CheckCircle2, FileText, Clock, Lock, ShieldCheck } from "lucide-react";
+
+type BrowserLocationResponse = {
+    ip?: string;
+    city?: string;
+    region?: string;
+    regionName?: string;
+    success?: boolean;
+    error?: boolean;
+    status?: string;
+};
+
+type BrowserIpLocation = {
+    clientIp?: string;
+    clientLocation?: string;
+};
+
+type TsParticlesConfetti = (
+    idOrOptions: string | Record<string, unknown>,
+    options?: Record<string, unknown>
+) => void;
+
+declare global {
+    interface Window {
+        confetti?: TsParticlesConfetti;
+        __energdiveConfettiPromise?: Promise<TsParticlesConfetti | null>;
+    }
+}
+
+function formatCityState(city?: string | null, state?: string | null): string | undefined {
+    const parts = [city, state]
+        .map((part) => (part || "").trim())
+        .filter(Boolean);
+
+    return parts.length > 0 ? parts.join(", ") : undefined;
+}
+
+function getSubscribedFrom() {
+    if (typeof window === "undefined") {
+        return {
+            subscribedFromUrl: undefined,
+            subscribedFromTitle: undefined,
+        };
+    }
+
+    return {
+        subscribedFromUrl: window.location.href,
+        subscribedFromTitle: document.title,
+    };
+}
+
+async function fetchIpLocation(url: string): Promise<BrowserLocationResponse | null> {
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 1_800);
+
+    try {
+        const res = await fetch(url, {
+            cache: "no-store",
+            signal: controller.signal,
+            headers: { Accept: "application/json" },
+        });
+
+        if (!res.ok) return null;
+        return (await res.json()) as BrowserLocationResponse;
+    } catch {
+        return null;
+    } finally {
+        window.clearTimeout(timeout);
+    }
+}
+
+async function getBrowserIpLocation(): Promise<BrowserIpLocation | null> {
+    const results = await Promise.all([
+        fetchIpLocation("https://ipapi.co/json/"),
+        fetchIpLocation("https://ipwho.is/"),
+    ]);
+
+    for (const data of results) {
+        if (!data || data.error || data.success === false || data.status === "fail") {
+            continue;
+        }
+
+        const clientLocation = formatCityState(data.city, data.region || data.regionName);
+        if (data.ip || clientLocation) {
+            return {
+                clientIp: data.ip,
+                clientLocation,
+            };
+        }
+    }
+
+    return null;
+}
+
+async function loadConfetti(): Promise<TsParticlesConfetti | null> {
+    if (typeof window === "undefined") return null;
+    if (window.confetti) return window.confetti;
+    if (window.__energdiveConfettiPromise) return window.__energdiveConfettiPromise;
+
+    window.__energdiveConfettiPromise = new Promise((resolve) => {
+        const existingScript = document.querySelector<HTMLScriptElement>(
+            'script[data-energdive-confetti="true"]'
+        );
+
+        if (existingScript) {
+            existingScript.addEventListener("load", () => resolve(window.confetti || null), { once: true });
+            existingScript.addEventListener("error", () => resolve(null), { once: true });
+            return;
+        }
+
+        const script = document.createElement("script");
+        script.src = "https://cdn.jsdelivr.net/npm/@tsparticles/confetti@4.2.1/tsparticles.confetti.bundle.min.js";
+        script.async = true;
+        script.dataset.energdiveConfetti = "true";
+        script.onload = () => resolve(window.confetti || null);
+        script.onerror = () => resolve(null);
+        document.head.appendChild(script);
+    });
+
+    return window.__energdiveConfettiPromise;
+}
+
+async function fireRealisticConfetti() {
+    const confetti = await loadConfetti();
+    if (!confetti) return;
+
+    const count = 200;
+    const defaults = { origin: { y: 0.7 } };
+    const fire = (particleRatio: number, opts: Record<string, unknown>) => {
+        confetti({
+            ...defaults,
+            ...opts,
+            particleCount: Math.floor(count * particleRatio),
+        });
+    };
+
+    fire(0.25, {
+        spread: 26,
+        startVelocity: 55,
+    });
+    fire(0.2, { spread: 60 });
+    fire(0.35, {
+        spread: 100,
+        decay: 0.91,
+        scalar: 0.8,
+    });
+    fire(0.1, {
+        spread: 120,
+        startVelocity: 25,
+        decay: 0.92,
+        scalar: 1.2,
+    });
+    fire(0.1, {
+        spread: 120,
+        startVelocity: 45,
+    });
+}
 
 export function ArticleNewsletterCTA() {
     const [email, setEmail] = useState("");
     const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+    const [errorMsg, setErrorMsg] = useState("");
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!email) return;
+        const normalizedEmail = email.trim().toLowerCase();
+        if (!normalizedEmail) return;
 
+        setErrorMsg("");
         setStatus("loading");
 
-        // Simulate API call
-        setTimeout(() => {
+        try {
+            const browserIpLocation = await getBrowserIpLocation();
+            const subscribedFrom = getSubscribedFrom();
+            const res = await fetch("/api/subscribe", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    email: normalizedEmail,
+                    frequency: "Daily x1",
+                    preferences: ["News Briefing"],
+                    communities: [],
+                    subCommunities: [],
+                    source: "Article Newsletter CTA",
+                    clientIp: browserIpLocation?.clientIp,
+                    clientLocation: browserIpLocation?.clientLocation,
+                    subscribedFromUrl: subscribedFrom.subscribedFromUrl,
+                    subscribedFromTitle: subscribedFrom.subscribedFromTitle,
+                    subscribedFromPage: subscribedFrom.subscribedFromTitle || document.title,
+                }),
+            });
+
+            const data = await res.json().catch(() => ({}));
+
+            if (!res.ok) {
+                setStatus("error");
+                setErrorMsg(data.error || "Subscription failed. Please try again.");
+                return;
+            }
+
             setStatus("success");
             setEmail("");
-        }, 1200);
+            void fireRealisticConfetti();
+        } catch {
+            setStatus("error");
+            setErrorMsg("Network error. Please try again.");
+        }
     };
 
     if (status === "success") {
@@ -100,11 +291,16 @@ export function ArticleNewsletterCTA() {
                             )}
                         </button>
                     </form>
+                    {status === "error" && errorMsg && (
+                        <p className="mt-3 text-center text-[12px] font-semibold text-red-300" role="alert">
+                            {errorMsg}
+                        </p>
+                    )}
 
                     <div className="flex items-center justify-center gap-2 mt-4">
                         <ShieldCheck className="w-[14px] h-[14px] text-[#00C49A]" />
                         <p className="text-[11px] text-gray-400">
-                            By subscribing, you agree to our <a href="/terms" className="text-[#00C49A] hover:underline">Terms</a> and <a href="/privacy" className="text-[#00C49A] hover:underline">Privacy Policy</a>.
+                            By subscribing, you agree to our <Link href="/terms" className="text-[#00C49A] hover:underline">Terms</Link> and <Link href="/privacy" className="text-[#00C49A] hover:underline">Privacy Policy</Link>.
                         </p>
                     </div>
                 </div>

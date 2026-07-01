@@ -4,26 +4,31 @@ import { useAuth } from "@clerk/nextjs";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowDownAZ,
-  Building2,
   CheckCircle2,
-  ChevronRight,
   Download,
   Eye,
-  FileDown,
   Filter,
-  Layers3,
-  LockKeyhole,
-  Mail,
   RotateCcw,
   Search,
   ShieldCheck,
   X,
 } from "lucide-react";
 import Image from "next/image";
-import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/buttons";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
+import { useAuthModal } from "@/hooks/use-auth-modal";
+import {
+  clearPendingResourceDownload,
+  type DownloadableResource,
+  readPendingResourceDownload,
+  requestTrackedResourceDownload,
+  storePendingResourceDownload,
+  triggerResourceFileDownload,
+} from "./resource-download";
 
 import type {
   EnergyEvent,
@@ -44,14 +49,27 @@ const DEFAULT_FILTERS: ResourceFilters = {
 
 const SORT_OPTIONS: SortOption[] = ["Latest First", "Event Name", "Year"];
 
+const RESOURCE_TYPE_ORDER: string[] = [
+  "Magazine EPDF",
+  "Post Show Report",
+  "Paper Abstract",
+  "Whitepaper",
+  "Industry Report",
+  "Event Brochure",
+];
+
+const THEME_STYLE = "bg-[#00A651]/10 text-[#00A651] border-[#00A651]/20";
+
 const RESOURCE_TYPE_STYLES: Record<string, string> = {
-  "Event Brochure": "bg-emerald-50 text-emerald-700 border-emerald-200",
-  "Post Show Report": "bg-blue-50 text-blue-700 border-blue-200",
-  Whitepaper: "bg-violet-50 text-violet-700 border-violet-200",
-  "Industry Report": "bg-amber-50 text-amber-700 border-amber-200",
-  Presentation: "bg-sky-50 text-sky-700 border-sky-200",
-  "Media Kit": "bg-zinc-100 text-zinc-700 border-zinc-200",
-  "Sponsor Prospectus": "bg-rose-50 text-rose-700 border-rose-200",
+  "Magazine EPDF": THEME_STYLE,
+  "Post Show Report": THEME_STYLE,
+  "Paper Abstract": THEME_STYLE,
+  Whitepaper: THEME_STYLE,
+  "Industry Report": THEME_STYLE,
+  "Event Brochure": THEME_STYLE,
+  Presentation: THEME_STYLE,
+  "Media Kit": THEME_STYLE,
+  "Sponsor Prospectus": THEME_STYLE,
 };
 
 const FILE_TYPE_STYLES: Record<string, string> = {
@@ -99,15 +117,6 @@ function getFileTypeStyle(type: FileType) {
   return FILE_TYPE_STYLES[type] ?? FILE_TYPE_STYLES.FILE;
 }
 
-function formatDate(value: string) {
-  if (!value) return "Not published";
-  return new Intl.DateTimeFormat("en", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  }).format(new Date(value));
-}
-
 function uniqueSorted<T extends string | number>(values: T[]) {
   return Array.from(new Set(values.filter(Boolean))).sort((a, b) =>
     String(a).localeCompare(String(b))
@@ -122,23 +131,15 @@ export function EventResourceCenter({
   events: EnergyEvent[];
 }) {
   const { isLoaded, isSignedIn } = useAuth();
+  const { openAuthModal } = useAuthModal();
+  const searchParams = useSearchParams();
   const [searchQuery, setSearchQuery] = useState("");
   const [filters, setFilters] = useState<ResourceFilters>(DEFAULT_FILTERS);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
-  const [selectedResource, setSelectedResource] = useState<EventResource | null>(
-    null
-  );
-  const [pendingDownload, setPendingDownload] = useState<EventResource | null>(
-    null
-  );
-  const [accessModalOpen, setAccessModalOpen] = useState(false);
-  const [accessMode, setAccessMode] = useState<"login" | "register" | "success">(
-    "login"
-  );
-  const [hasLocalAccess, setHasLocalAccess] = useState(false);
   const [downloadNotice, setDownloadNotice] = useState<string | null>(null);
+  const [downloadingSlug, setDownloadingSlug] = useState<string | null>(null);
 
-  const canDownload = hasLocalAccess || (isLoaded && isSignedIn);
+  const canDownload = isLoaded && isSignedIn;
   const eventLookup = useMemo(
     () =>
       events.reduce<Record<string, EnergyEvent>>((acc, event) => {
@@ -148,7 +149,15 @@ export function EventResourceCenter({
     [events]
   );
   const resourceTypeOptions = useMemo(
-    () => uniqueSorted(resources.map((resource) => resource.resource_type)),
+    () => {
+      const existing = new Set(resources.map((r) => r.resource_type));
+      // Fixed order first, then any types not in the list (alphabetically)
+      const ordered = RESOURCE_TYPE_ORDER.filter((t) => existing.has(t));
+      const extras = Array.from(existing)
+        .filter((t) => !RESOURCE_TYPE_ORDER.includes(t))
+        .sort();
+      return [...ordered, ...extras];
+    },
     [resources]
   );
   const sectorOptions = useMemo(
@@ -164,16 +173,24 @@ export function EventResourceCenter({
   );
 
   useEffect(() => {
-    const shouldLock =
-      mobileFiltersOpen || selectedResource !== null || accessModalOpen;
-    if (!shouldLock) return;
+    if (!mobileFiltersOpen) return;
 
     const previous = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
       document.body.style.overflow = previous;
     };
-  }, [accessModalOpen, mobileFiltersOpen, selectedResource]);
+  }, [mobileFiltersOpen]);
+
+  useEffect(() => {
+    const typeParam = searchParams.get("type");
+    const sectorParam = searchParams.get("sector");
+    setFilters((current) => ({
+      ...current,
+      types: typeParam ? [typeParam] : [],
+      sectors: sectorParam ? [sectorParam] : [],
+    }));
+  }, [searchParams]);
 
   useEffect(() => {
     if (!downloadNotice) return;
@@ -287,42 +304,56 @@ export function EventResourceCenter({
     setSearchQuery("");
   }
 
-  function startResourceDownload(resource: EventResource) {
-    if (!resource.file_url) {
-      setDownloadNotice("File is not available for this resource");
-      return;
-    }
+  const startResourceDownload = useCallback(async (resource: DownloadableResource) => {
+    if (downloadingSlug === resource.slug) return;
 
-    const anchor = document.createElement("a");
-    anchor.href = resource.file_url;
-    anchor.download = resource.fileName;
-    anchor.target = "_blank";
-    anchor.rel = "noopener noreferrer";
-    document.body.appendChild(anchor);
-    anchor.click();
-    anchor.remove();
-    setDownloadNotice(`${resource.fileName} download started`);
-  }
+    setDownloadingSlug(resource.slug);
+    try {
+      const result = await requestTrackedResourceDownload(resource);
+
+      if (result.status === "unauthenticated") {
+        storePendingResourceDownload(resource);
+        openAuthModal("/resource-center");
+        return;
+      }
+
+      if (result.status === "onboarding_required") {
+        storePendingResourceDownload(resource);
+        window.location.href = result.redirectUrl;
+        return;
+      }
+
+      triggerResourceFileDownload(result.downloadUrl, result.fileName);
+      setDownloadNotice(`${result.fileName} download started`);
+    } catch (error) {
+      console.error("[RESOURCE_DOWNLOAD] Failed to start download:", error);
+      const message =
+        error instanceof Error ? error.message : "Unable to start this download";
+      setDownloadNotice(message);
+    } finally {
+      setDownloadingSlug(null);
+    }
+  }, [downloadingSlug, openAuthModal]);
+
+  // After auth redirect: check for pending download
+  useEffect(() => {
+    if (!canDownload) return;
+
+    const pending = readPendingResourceDownload();
+    if (!pending) return;
+
+    clearPendingResourceDownload();
+    void startResourceDownload(pending);
+  }, [canDownload, startResourceDownload]);
 
   function requestDownload(resource: EventResource) {
-    setPendingDownload(resource);
     if (canDownload) {
-      startResourceDownload(resource);
+      void startResourceDownload(resource);
       return;
     }
 
-    setAccessMode("login");
-    setAccessModalOpen(true);
-  }
-
-  function completeAccess() {
-    setAccessMode("success");
-    setHasLocalAccess(true);
-    window.setTimeout(() => {
-      if (pendingDownload) startResourceDownload(pendingDownload);
-      setAccessModalOpen(false);
-      setAccessMode("login");
-    }, 1000);
+    storePendingResourceDownload(resource);
+    openAuthModal("/resource-center");
   }
 
   return (
@@ -395,10 +426,10 @@ export function EventResourceCenter({
               {filteredResources.length > 0 ? (
                 <ResourceGrid
                   key={resourceGridKey}
+                  downloadingSlug={downloadingSlug}
                   eventLookup={eventLookup}
                   resources={filteredResources}
                   onDownload={requestDownload}
-                  onPreview={setSelectedResource}
                 />
               ) : (
                 <EmptyState
@@ -412,15 +443,6 @@ export function EventResourceCenter({
           </div>
         </div>
       </section>
-
-      <PreviewDrawer
-        eventLookup={eventLookup}
-        resource={selectedResource}
-        resources={resources}
-        onClose={() => setSelectedResource(null)}
-        onDownload={requestDownload}
-        onSelectResource={setSelectedResource}
-      />
 
       <MobileFilterDrawer
         counts={filterCounts}
@@ -438,14 +460,7 @@ export function EventResourceCenter({
         onToggle={toggleFilter}
       />
 
-      <AccessModal
-        mode={accessMode}
-        open={accessModalOpen}
-        resource={pendingDownload}
-        onClose={() => setAccessModalOpen(false)}
-        onModeChange={setAccessMode}
-        onSubmit={completeAccess}
-      />
+
 
       <AnimatePresence>
         {downloadNotice && (
@@ -563,16 +578,7 @@ function FilterPanel({
       <div className="flex-1 space-y-4 overflow-y-auto p-4 dashboard-scrollbar">
         <SortControl value={filters.sort} onChange={onSortChange} />
 
-        <FilterGroup
-          title="Event"
-          options={events.map((event) => ({
-            label: event.name,
-            value: event.id,
-            count: counts.events[event.id] ?? event.totalResources,
-          }))}
-          selectedValues={filters.events}
-          onToggle={(value) => onToggle("events", value)}
-        />
+
         <FilterGroup
           title="Resource Type"
           options={resourceTypeOptions.map((type) => ({
@@ -689,16 +695,7 @@ function MobileFilterDrawer({
               <div className="space-y-4">
                 <SortControl value={filters.sort} onChange={onSortChange} />
 
-                <FilterGroup
-                  title="Event"
-                  options={events.map((event) => ({
-                    label: event.name,
-                    value: event.id,
-                    count: counts.events[event.id] ?? event.totalResources,
-                  }))}
-                  selectedValues={filters.events}
-                  onToggle={(value) => onToggle("events", value)}
-                />
+
                 <FilterGroup
                   title="Resource Type"
                   options={resourceTypeOptions.map((type) => ({
@@ -860,15 +857,15 @@ function FilterGroup({
 }
 
 function ResourceGrid({
+  downloadingSlug,
   eventLookup,
   resources,
   onDownload,
-  onPreview,
 }: {
+  downloadingSlug: string | null;
   eventLookup: Record<string, EnergyEvent>;
   resources: EventResource[];
   onDownload: (resource: EventResource) => void;
-  onPreview: (resource: EventResource) => void;
 }) {
   const pageSize = 12;
   const [visibleCount, setVisibleCount] = useState(pageSize);
@@ -886,9 +883,9 @@ function ResourceGrid({
             <ResourceCard
               key={resource.id}
               event={eventLookup[resource.event_id]}
+              isDownloading={downloadingSlug === resource.slug}
               resource={resource}
               onDownload={onDownload}
-              onPreview={onPreview}
             />
           ))}
         </AnimatePresence>
@@ -912,14 +909,14 @@ function ResourceGrid({
 
 function ResourceCard({
   event,
+  isDownloading,
   resource,
   onDownload,
-  onPreview,
 }: {
   event?: EnergyEvent;
+  isDownloading: boolean;
   resource: EventResource;
   onDownload: (resource: EventResource) => void;
-  onPreview: (resource: EventResource) => void;
 }) {
   return (
     <motion.article
@@ -934,7 +931,6 @@ function ResourceCard({
       <div className="p-3 pb-0">
         <div className="mb-2.5 flex items-center justify-between gap-2">
           <div className="flex min-w-0 items-center gap-2">
-            <EventLogo event={event} fallback={resource.eventLogo} size="sm" />
             <div className="min-w-0">
               <p className="truncate text-[13px] font-black leading-tight text-zinc-950 dark:text-white">
                 {resource.eventName}
@@ -944,14 +940,6 @@ function ResourceCard({
               </p>
             </div>
           </div>
-          <span
-            className={cn(
-              "shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-black",
-              getFileTypeStyle(resource.fileType)
-            )}
-          >
-            {resource.fileType}
-          </span>
         </div>
 
         <ResourceCover resource={resource} />
@@ -974,24 +962,25 @@ function ResourceCard({
         </h3>
 
         <div className="mt-auto grid grid-cols-2 gap-2 pt-4">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => onPreview(resource)}
-            className="h-9 rounded-md px-2 text-xs"
+          <Link
+            href={`/resource-center/${resource.slug}`}
+            className="inline-flex h-9 items-center justify-center rounded-md border border-input bg-transparent px-2 text-xs font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
             title="Preview"
           >
             <Eye className="h-3.5 w-3.5 xl:mr-1.5" />
             <span className="hidden xl:inline">Preview</span>
-          </Button>
+          </Link>
           <Button
             type="button"
             onClick={() => onDownload(resource)}
+            disabled={isDownloading}
             className="h-9 rounded-md bg-zinc-950 px-2 text-xs text-white hover:bg-[#00A651] dark:bg-white dark:text-zinc-950 dark:hover:bg-[#00A651] dark:hover:text-white"
             title="Download"
           >
             <Download className="h-3.5 w-3.5 xl:mr-1.5" />
-            <span className="hidden xl:inline">Download</span>
+            <span className="hidden xl:inline">
+              {isDownloading ? "Preparing..." : "Download"}
+            </span>
           </Button>
         </div>
       </div>
@@ -1008,17 +997,19 @@ function ResourceCover({
 }) {
   const palette = COVER_PALETTES[hashIndex(resource.id, COVER_PALETTES.length)];
 
+  const imageUrl = resource.thumbnailImageUrl || resource.coverImageUrl;
+
   return (
     <div
       className={cn(
-        "relative overflow-hidden rounded-md border border-white/10 bg-gradient-to-br text-white shadow-inner",
+        "relative overflow-hidden rounded-md bg-gradient-to-br text-white",
         palette,
         large ? "aspect-[5/3]" : "aspect-[16/10]"
       )}
     >
-      {resource.coverImageUrl && (
+      {imageUrl && (
         <Image
-          src={resource.coverImageUrl}
+          src={imageUrl}
           alt={resource.title}
           fill
           sizes={
@@ -1029,45 +1020,47 @@ function ResourceCover({
           className="object-cover"
         />
       )}
-      {resource.coverImageUrl && (
-        <div className="absolute inset-0 bg-gradient-to-t from-zinc-950/85 via-zinc-950/25 to-zinc-950/10" />
-      )}
-      <div className="absolute inset-0 opacity-35">
-        <div className="absolute left-0 top-1/4 h-px w-full bg-white/30" />
-        <div className="absolute left-0 top-1/2 h-px w-full bg-white/20" />
-        <div className="absolute bottom-1/4 left-0 h-px w-full bg-white/20" />
-        <div className="absolute bottom-0 right-8 top-0 w-px bg-white/20" />
-        <div className="absolute bottom-0 right-20 top-0 w-px bg-white/10" />
-      </div>
 
-      <div className={cn("relative flex h-full flex-col justify-between", large ? "p-5" : "p-3.5")}>
-        <div className="flex items-start justify-between gap-4">
-          <span className="rounded-full border border-white/20 bg-white/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.14em]">
-            {resource.fileType}
-          </span>
-          <span className="text-right text-[11px] font-black uppercase tracking-[0.14em] text-white/70">
-            {resource.year}
-          </span>
-        </div>
-
-        <div>
-          <p className="mb-2 text-[11px] font-black uppercase tracking-[0.16em] text-emerald-100">
-            {resource.resourceTag}
-          </p>
-          <h4
-            className={cn(
-              "line-clamp-2 max-w-[92%] font-black leading-tight tracking-tight",
-              large ? "text-2xl sm:text-3xl" : "text-sm"
-            )}
-          >
-            {resource.title}
-          </h4>
-          <div className={cn("flex items-center gap-2 text-[10px] font-bold text-white/70", large ? "mt-4" : "mt-2.5")}>
-            <span className="h-1.5 w-1.5 rounded-full bg-[#00A651]" />
-            {resource.eventName}
+      {!imageUrl && (
+        <>
+          <div className="absolute inset-0 opacity-35">
+            <div className="absolute left-0 top-1/4 h-px w-full bg-white/30" />
+            <div className="absolute left-0 top-1/2 h-px w-full bg-white/20" />
+            <div className="absolute bottom-1/4 left-0 h-px w-full bg-white/20" />
+            <div className="absolute bottom-0 right-8 top-0 w-px bg-white/20" />
+            <div className="absolute bottom-0 right-20 top-0 w-px bg-white/10" />
           </div>
-        </div>
-      </div>
+
+          <div className={cn("relative flex h-full flex-col justify-between", large ? "p-5" : "p-3.5")}>
+            <div className="flex items-start justify-between gap-4">
+              <span className="rounded-full border border-white/20 bg-white/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.14em]">
+                {resource.fileType}
+              </span>
+              <span className="text-right text-[11px] font-black uppercase tracking-[0.14em] text-white/70">
+                {resource.year}
+              </span>
+            </div>
+
+            <div>
+              <p className="mb-2 text-[11px] font-black uppercase tracking-[0.16em] text-emerald-100">
+                {resource.resourceTag}
+              </p>
+              <h4
+                className={cn(
+                  "line-clamp-2 max-w-[92%] font-black leading-tight tracking-tight",
+                  large ? "text-2xl sm:text-3xl" : "text-sm"
+                )}
+              >
+                {resource.title}
+              </h4>
+              <div className={cn("flex items-center gap-2 text-[10px] font-bold text-white/70", large ? "mt-4" : "mt-2.5")}>
+                <span className="h-1.5 w-1.5 rounded-full bg-[#00A651]" />
+                {resource.eventName}
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -1097,245 +1090,6 @@ function EventLogo({
     >
       {label}
     </span>
-  );
-}
-
-function PreviewDrawer({
-  eventLookup,
-  resource,
-  resources,
-  onClose,
-  onDownload,
-  onSelectResource,
-}: {
-  eventLookup: Record<string, EnergyEvent>;
-  resource: EventResource | null;
-  resources: EventResource[];
-  onClose: () => void;
-  onDownload: (resource: EventResource) => void;
-  onSelectResource: (resource: EventResource) => void;
-}) {
-  const relatedResources = resource
-    ? resources.filter(
-        (candidate) =>
-          candidate.event_id === resource.event_id && candidate.id !== resource.id
-      ).slice(0, 4)
-    : [];
-
-  const event = resource ? eventLookup[resource.event_id] : undefined;
-
-  return (
-    <AnimatePresence>
-      {resource && (
-        <motion.div
-          className="fixed inset-0 z-[60]"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-        >
-          <button
-            type="button"
-            aria-label="Close preview"
-            className="absolute inset-0 bg-zinc-950/50 backdrop-blur-sm"
-            onClick={onClose}
-          />
-          <motion.aside
-            role="dialog"
-            aria-modal="true"
-            aria-label={`${resource.title} preview`}
-            initial={{ x: "100%" }}
-            animate={{ x: 0 }}
-            exit={{ x: "100%" }}
-            transition={{ type: "spring", stiffness: 260, damping: 30 }}
-            className="absolute right-0 top-0 flex h-full w-full max-w-2xl flex-col overflow-hidden bg-white shadow-2xl dark:bg-zinc-950 sm:border-l sm:border-zinc-200 sm:dark:border-zinc-800"
-          >
-            <div className="flex items-center justify-between border-b border-zinc-100 bg-white/95 p-4 backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/95">
-              <div className="flex min-w-0 items-center gap-3">
-                <EventLogo event={event} fallback={resource.eventLogo} />
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-black text-zinc-950 dark:text-white">
-                    {resource.eventName}
-                  </p>
-                  <p className="text-xs font-semibold text-zinc-500">
-                    {resource.resource_type}
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={onClose}
-                className="grid h-10 w-10 place-items-center rounded-md border border-zinc-200 text-zinc-600 transition hover:border-zinc-300 hover:text-zinc-950 dark:border-zinc-700 dark:text-zinc-300 dark:hover:text-white"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            <div className="flex-1 overflow-y-auto dashboard-scrollbar">
-              <div className="space-y-5 p-4 sm:p-5">
-                <ResourceCover resource={resource} large />
-
-                <section>
-                  <div className="mb-3 flex flex-wrap items-center gap-2">
-                    <span
-                      className={cn(
-                        "rounded-full border px-2.5 py-1 text-[11px] font-black",
-                        getResourceTypeStyle(resource.resource_type)
-                      )}
-                    >
-                      {resource.resource_type}
-                    </span>
-                    <span
-                      className={cn(
-                        "rounded-full border px-2.5 py-1 text-[11px] font-black",
-                        getFileTypeStyle(resource.fileType)
-                      )}
-                    >
-                      {resource.fileType}
-                    </span>
-                  </div>
-                  <h2 className="text-2xl font-black leading-tight tracking-tight text-zinc-950 dark:text-white sm:text-3xl">
-                    {resource.title}
-                  </h2>
-                  <p className="mt-3 text-sm leading-6 text-zinc-600 dark:text-zinc-400 sm:text-base sm:leading-7">
-                    {resource.description}
-                  </p>
-                </section>
-
-                <section className="rounded-lg border border-zinc-200 bg-[#fbfcfb] p-4 dark:border-zinc-800 dark:bg-zinc-900">
-                  <h3 className="mb-3 text-xs font-black uppercase tracking-[0.16em] text-zinc-500">
-                    Event Information
-                  </h3>
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <DetailItem icon={Building2} label="Event" value={resource.eventName} />
-                    <DetailItem icon={Layers3} label="Show" value={resource.showCode} />
-                    <DetailItem icon={FileDown} label="Resource Tag" value={resource.resourceTag} />
-                    <DetailItem
-                      icon={ShieldCheck}
-                      label="Featured"
-                      value={resource.featured ? "Yes" : "No"}
-                    />
-                  </div>
-                </section>
-
-                <section>
-                  <h3 className="mb-3 text-xs font-black uppercase tracking-[0.16em] text-zinc-500">
-                    File Details
-                  </h3>
-                  <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
-                    <FileDetail label="File type" value={resource.fileType} />
-                    <FileDetail label="File size" value={resource.fileSize} />
-                    <FileDetail label="Year" value={String(resource.year)} />
-                    <FileDetail
-                      label="Published"
-                      value={formatDate(resource.publishedAt)}
-                    />
-                    <FileDetail
-                      label="Promotional"
-                      value={resource.promotional ? "Yes" : "No"}
-                    />
-                  </div>
-                </section>
-
-                <section>
-                  <h3 className="mb-3 text-xs font-black uppercase tracking-[0.16em] text-zinc-500">
-                    Sectors
-                  </h3>
-                  <div className="flex flex-wrap gap-1.5">
-                    {resource.sector.map((sector) => (
-                      <span
-                        key={sector}
-                        className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-bold text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
-                      >
-                        {sector}
-                      </span>
-                    ))}
-                  </div>
-                </section>
-
-                {relatedResources.length > 0 && (
-                <section>
-                  <div className="mb-3 flex items-center justify-between gap-4">
-                    <h3 className="text-xs font-black uppercase tracking-[0.16em] text-zinc-500">
-                      More Resources From This Event
-                    </h3>
-                    <Layers3 className="h-4 w-4 text-zinc-400" />
-                  </div>
-                  <div className="space-y-2.5">
-                    {relatedResources.map((related) => (
-                      <button
-                        key={related.id}
-                        type="button"
-                        onClick={() => onSelectResource(related)}
-                        className="group flex w-full items-center justify-between gap-4 rounded-lg border border-zinc-200 bg-white p-3 text-left transition hover:border-zinc-300 hover:shadow-md dark:border-zinc-800 dark:bg-zinc-900"
-                      >
-                        <div className="min-w-0">
-                          <p className="text-xs font-black uppercase tracking-[0.14em] text-[#00A651]">
-                            {related.resource_type}
-                          </p>
-                          <p className="mt-1 truncate text-sm font-bold text-zinc-900 dark:text-white">
-                            {related.title}
-                          </p>
-                        </div>
-                        <ChevronRight className="h-4 w-4 shrink-0 text-zinc-400 transition group-hover:text-[#00A651]" />
-                      </button>
-                    ))}
-                  </div>
-                </section>
-                )}
-              </div>
-            </div>
-
-            <div className="border-t border-zinc-100 bg-white p-3.5 dark:border-zinc-800 dark:bg-zinc-950">
-              <Button
-                type="button"
-                onClick={() => onDownload(resource)}
-                className="h-11 w-full rounded-md bg-[#00A651] text-sm font-black text-white hover:bg-[#008b44]"
-              >
-                <Download className="mr-2 h-4 w-4" />
-                Download Resource
-              </Button>
-            </div>
-          </motion.aside>
-        </motion.div>
-      )}
-    </AnimatePresence>
-  );
-}
-
-function DetailItem({
-  icon: Icon,
-  label,
-  value,
-}: {
-  icon: typeof Building2;
-  label: string;
-  value: string;
-}) {
-  return (
-    <div className="flex gap-3">
-      <Icon className="mt-0.5 h-4 w-4 shrink-0 text-[#00A651]" />
-      <div>
-        <p className="text-[11px] font-black uppercase tracking-[0.14em] text-zinc-400">
-          {label}
-        </p>
-        <p className="mt-1 text-sm font-bold text-zinc-900 dark:text-white">
-          {value}
-        </p>
-      </div>
-    </div>
-  );
-}
-
-function FileDetail({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
-      <p className="text-[11px] font-black uppercase tracking-[0.14em] text-zinc-400">
-        {label}
-      </p>
-      <p className="mt-2 text-base font-black text-zinc-950 dark:text-white">
-        {value}
-      </p>
-    </div>
   );
 }
 
@@ -1399,188 +1153,3 @@ function EmptyState({
   );
 }
 
-function AccessModal({
-  mode,
-  open,
-  resource,
-  onClose,
-  onModeChange,
-  onSubmit,
-}: {
-  mode: "login" | "register" | "success";
-  open: boolean;
-  resource: EventResource | null;
-  onClose: () => void;
-  onModeChange: (mode: "login" | "register" | "success") => void;
-  onSubmit: () => void;
-}) {
-  return (
-    <AnimatePresence>
-      {open && (
-        <motion.div
-          className="fixed inset-0 z-[80] grid place-items-center px-4"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-        >
-          <button
-            type="button"
-            aria-label="Close access modal"
-            className="absolute inset-0 bg-zinc-950/65 backdrop-blur-sm"
-            onClick={onClose}
-          />
-          <motion.div
-            role="dialog"
-            aria-modal="true"
-            aria-label="Access Premium Industry Resources"
-            initial={{ opacity: 0, y: 18, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 18, scale: 0.98 }}
-            className="relative w-full max-w-lg overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-2xl dark:border-zinc-800 dark:bg-zinc-950"
-          >
-            <div className="border-b border-zinc-100 p-5 dark:border-zinc-800">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <div className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-md bg-zinc-950 text-white dark:bg-white dark:text-zinc-950">
-                    <LockKeyhole className="h-5 w-5" />
-                  </div>
-                  <h2 className="text-xl font-black tracking-tight text-zinc-950 dark:text-white sm:text-2xl">
-                    Access Premium Industry Resources
-                  </h2>
-                  <p className="mt-2 text-sm leading-6 text-zinc-600 dark:text-zinc-400">
-                    {resource
-                      ? `Sign in or register to download ${resource.fileName}.`
-                      : "Sign in or register to continue."}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="grid h-9 w-9 shrink-0 place-items-center rounded-md border border-zinc-200 text-zinc-500 dark:border-zinc-700"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
-
-            {mode === "success" ? (
-              <div className="p-7 text-center">
-                <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-emerald-50 text-[#00A651]">
-                  <CheckCircle2 className="h-8 w-8" />
-                </div>
-                <h3 className="mt-5 text-2xl font-black text-zinc-950 dark:text-white">
-                  Your download is starting...
-                </h3>
-                <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
-                  Access approved. Your resource will download automatically.
-                </p>
-              </div>
-            ) : (
-              <div className="p-5">
-                <div className="mb-4 grid grid-cols-2 rounded-md border border-zinc-200 bg-zinc-50 p-1 dark:border-zinc-800 dark:bg-zinc-900">
-                  {(["login", "register"] as const).map((tab) => (
-                    <button
-                      key={tab}
-                      type="button"
-                      onClick={() => onModeChange(tab)}
-                      className={cn(
-                        "h-10 rounded px-3 text-sm font-black capitalize transition",
-                        mode === tab
-                          ? "bg-white text-zinc-950 shadow-sm dark:bg-zinc-950 dark:text-white"
-                          : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
-                      )}
-                    >
-                      {tab}
-                    </button>
-                  ))}
-                </div>
-
-                <form
-                  className="space-y-3"
-                  onSubmit={(event) => {
-                    event.preventDefault();
-                    onSubmit();
-                  }}
-                >
-                  {mode === "register" && (
-                    <div>
-                      <label className="text-xs font-black uppercase tracking-[0.14em] text-zinc-500">
-                        Full Name
-                      </label>
-                      <input
-                        className="mt-1.5 h-10 w-full rounded-md border border-zinc-200 bg-white px-3 text-sm font-medium outline-none focus:border-[#00A651] focus:ring-2 focus:ring-[#00A651]/15 dark:border-zinc-800 dark:bg-zinc-900"
-                        placeholder="Aarav Mehta"
-                      />
-                    </div>
-                  )}
-                  <div>
-                    <label className="text-xs font-black uppercase tracking-[0.14em] text-zinc-500">
-                      Work Email
-                    </label>
-                    <input
-                      type="email"
-                      className="mt-1.5 h-10 w-full rounded-md border border-zinc-200 bg-white px-3 text-sm font-medium outline-none focus:border-[#00A651] focus:ring-2 focus:ring-[#00A651]/15 dark:border-zinc-800 dark:bg-zinc-900"
-                      placeholder="name@company.com"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs font-black uppercase tracking-[0.14em] text-zinc-500">
-                      Password
-                    </label>
-                    <input
-                      type="password"
-                      className="mt-1.5 h-10 w-full rounded-md border border-zinc-200 bg-white px-3 text-sm font-medium outline-none focus:border-[#00A651] focus:ring-2 focus:ring-[#00A651]/15 dark:border-zinc-800 dark:bg-zinc-900"
-                      placeholder="••••••••"
-                    />
-                  </div>
-                  {mode === "register" && (
-                    <div>
-                      <label className="text-xs font-black uppercase tracking-[0.14em] text-zinc-500">
-                        Company
-                      </label>
-                      <input
-                        className="mt-1.5 h-10 w-full rounded-md border border-zinc-200 bg-white px-3 text-sm font-medium outline-none focus:border-[#00A651] focus:ring-2 focus:ring-[#00A651]/15 dark:border-zinc-800 dark:bg-zinc-900"
-                        placeholder="Energia Global"
-                      />
-                    </div>
-                  )}
-                  <Button
-                    type="submit"
-                    className="h-11 w-full rounded-md bg-[#00A651] text-sm font-black text-white hover:bg-[#008b44]"
-                  >
-                    <FileDown className="mr-2 h-4 w-4" />
-                    {mode === "login"
-                      ? "Login and Download"
-                      : "Register and Download"}
-                  </Button>
-                </form>
-
-                <div className="my-4 flex items-center gap-3">
-                  <div className="h-px flex-1 bg-zinc-200 dark:bg-zinc-800" />
-                  <span className="text-xs font-bold uppercase tracking-[0.14em] text-zinc-400">
-                    Social Login
-                  </span>
-                  <div className="h-px flex-1 bg-zinc-200 dark:bg-zinc-800" />
-                </div>
-
-                <div className="grid gap-2.5 sm:grid-cols-3">
-                  {["Google", "LinkedIn", "Company SSO"].map((provider) => (
-                    <button
-                      key={provider}
-                      type="button"
-                      onClick={onSubmit}
-                      className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-zinc-200 bg-white px-3 text-sm font-bold text-zinc-700 transition hover:border-zinc-300 hover:text-zinc-950 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200"
-                    >
-                      <Mail className="h-4 w-4" />
-                      {provider}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
-  );
-}
