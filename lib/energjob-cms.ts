@@ -4,9 +4,15 @@ import { normalizeRichTextBlocks } from "@/lib/energjob-schemas";
 export const ENERGJOB_STRAPI_URL =
   process.env.ENERGJOB_STRAPI_URL ||
   process.env.ENERGJOB_STRAPI_API_URL ||
+  process.env.STRAPI_API_URL ||
+  process.env.NEXT_PUBLIC_STRAPI_API_URL ||
+  process.env.NEXT_PUBLIC_STRAPI_URL ||
   "";
 
-const ENERGJOB_STRAPI_TOKEN = process.env.ENERGJOB_STRAPI_TOKEN || "";
+const ENERGJOB_STRAPI_TOKEN =
+  process.env.ENERGJOB_STRAPI_TOKEN ||
+  process.env.STRAPI_API_TOKEN ||
+  "";
 
 type CmsEntity = "jobs" | "recruiters" | "applications" | "plans" | "payments";
 

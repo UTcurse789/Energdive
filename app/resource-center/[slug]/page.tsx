@@ -12,6 +12,9 @@ type ResourceCenterDetailPageProps = {
   params: Promise<{
     slug: string;
   }>;
+  searchParams?: Promise<{
+    download?: string | string[];
+  }>;
 };
 
 export async function generateMetadata({
@@ -78,8 +81,14 @@ export async function generateStaticParams() {
 
 export default async function ResourceCenterDetailPage({
   params,
+  searchParams,
 }: ResourceCenterDetailPageProps) {
   const { slug } = await params;
+  const resolvedSearchParams = searchParams ? await searchParams : undefined;
+  const downloadParam = Array.isArray(resolvedSearchParams?.download)
+    ? resolvedSearchParams?.download[0]
+    : resolvedSearchParams?.download;
+  const autoDownload = downloadParam === "true" || downloadParam === "1";
   const [resource, resourceCenterData] = await Promise.all([
     getResourceCenterResource(slug),
     getResourceCenterData(),
@@ -99,6 +108,7 @@ export default async function ResourceCenterDetailPage({
 
   return (
     <ResourceDetailPage
+      autoDownload={autoDownload}
       event={event}
       relatedResources={relatedResources}
       resource={resource}
