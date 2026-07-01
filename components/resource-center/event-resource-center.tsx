@@ -15,12 +15,20 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/buttons";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import { useAuthModal } from "@/hooks/use-auth-modal";
+import {
+  clearPendingResourceDownload,
+  type DownloadableResource,
+  readPendingResourceDownload,
+  requestTrackedResourceDownload,
+  storePendingResourceDownload,
+  triggerResourceFileDownload,
+} from "./resource-download";
 
 import type {
   EnergyEvent,
@@ -129,6 +137,7 @@ export function EventResourceCenter({
   const [filters, setFilters] = useState<ResourceFilters>(DEFAULT_FILTERS);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [downloadNotice, setDownloadNotice] = useState<string | null>(null);
+  const [downloadingSlug, setDownloadingSlug] = useState<string | null>(null);
 
   const canDownload = isLoaded && isSignedIn;
   const eventLookup = useMemo(
@@ -295,85 +304,55 @@ export function EventResourceCenter({
     setSearchQuery("");
   }
 
-  function startResourceDownload(resource: EventResource) {
-    if (!resource.file_url) {
-      setDownloadNotice("File is not available for this resource");
-      return;
+  const startResourceDownload = useCallback(async (resource: DownloadableResource) => {
+    if (downloadingSlug === resource.slug) return;
+
+    setDownloadingSlug(resource.slug);
+    try {
+      const result = await requestTrackedResourceDownload(resource);
+
+      if (result.status === "unauthenticated") {
+        storePendingResourceDownload(resource);
+        openAuthModal("/resource-center");
+        return;
+      }
+
+      if (result.status === "onboarding_required") {
+        storePendingResourceDownload(resource);
+        window.location.href = result.redirectUrl;
+        return;
+      }
+
+      triggerResourceFileDownload(result.downloadUrl, result.fileName);
+      setDownloadNotice(`${result.fileName} download started`);
+    } catch (error) {
+      console.error("[RESOURCE_DOWNLOAD] Failed to start download:", error);
+      const message =
+        error instanceof Error ? error.message : "Unable to start this download";
+      setDownloadNotice(message);
+    } finally {
+      setDownloadingSlug(null);
     }
-
-    const anchor = document.createElement("a");
-    anchor.href = resource.file_url;
-    anchor.download = resource.fileName;
-    anchor.target = "_blank";
-    anchor.rel = "noopener noreferrer";
-    document.body.appendChild(anchor);
-    anchor.click();
-    anchor.remove();
-    setDownloadNotice(`${resource.fileName} download started`);
-
-    // Save to dashboard saved articles
-    fetch("/api/user/saved-articles", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        title: resource.title,
-        url: `/resource-center/${resource.slug}`,
-      }),
-    }).catch(() => {});
-  }
+  }, [downloadingSlug, openAuthModal]);
 
   // After auth redirect: check for pending download
   useEffect(() => {
     if (!canDownload) return;
 
-    const pending = localStorage.getItem("rc_pending_download");
+    const pending = readPendingResourceDownload();
     if (!pending) return;
 
-    localStorage.removeItem("rc_pending_download");
-    try {
-      const data = JSON.parse(pending) as {
-        slug: string;
-        title: string;
-        fileName: string;
-        file_url: string;
-      };
-      if (data.file_url) {
-        const anchor = document.createElement("a");
-        anchor.href = data.file_url;
-        anchor.download = data.fileName;
-        document.body.appendChild(anchor);
-        anchor.click();
-        anchor.remove();
-        setDownloadNotice(`${data.fileName} download started`);
-
-        fetch("/api/user/saved-articles", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            title: data.title,
-            url: `/resource-center/${data.slug}`,
-          }),
-        }).catch(() => {});
-      }
-    } catch {}
-  }, [canDownload]);
+    clearPendingResourceDownload();
+    void startResourceDownload(pending);
+  }, [canDownload, startResourceDownload]);
 
   function requestDownload(resource: EventResource) {
     if (canDownload) {
-      startResourceDownload(resource);
+      void startResourceDownload(resource);
       return;
     }
 
-    // Store pending download for after auth
-    localStorage.setItem(
-      "rc_pending_download",
-      JSON.stringify({
-        slug: resource.slug,
-        title: resource.title,
-        fileName: resource.fileName,
-        file_url: resource.file_url,
-      })
-    );
+    storePendingResourceDownload(resource);
     openAuthModal("/resource-center");
   }
 
@@ -447,6 +426,7 @@ export function EventResourceCenter({
               {filteredResources.length > 0 ? (
                 <ResourceGrid
                   key={resourceGridKey}
+                  downloadingSlug={downloadingSlug}
                   eventLookup={eventLookup}
                   resources={filteredResources}
                   onDownload={requestDownload}
@@ -877,10 +857,12 @@ function FilterGroup({
 }
 
 function ResourceGrid({
+  downloadingSlug,
   eventLookup,
   resources,
   onDownload,
 }: {
+  downloadingSlug: string | null;
   eventLookup: Record<string, EnergyEvent>;
   resources: EventResource[];
   onDownload: (resource: EventResource) => void;
@@ -901,6 +883,7 @@ function ResourceGrid({
             <ResourceCard
               key={resource.id}
               event={eventLookup[resource.event_id]}
+              isDownloading={downloadingSlug === resource.slug}
               resource={resource}
               onDownload={onDownload}
             />
@@ -926,10 +909,12 @@ function ResourceGrid({
 
 function ResourceCard({
   event,
+  isDownloading,
   resource,
   onDownload,
 }: {
   event?: EnergyEvent;
+  isDownloading: boolean;
   resource: EventResource;
   onDownload: (resource: EventResource) => void;
 }) {
@@ -988,11 +973,14 @@ function ResourceCard({
           <Button
             type="button"
             onClick={() => onDownload(resource)}
+            disabled={isDownloading}
             className="h-9 rounded-md bg-zinc-950 px-2 text-xs text-white hover:bg-[#00A651] dark:bg-white dark:text-zinc-950 dark:hover:bg-[#00A651] dark:hover:text-white"
             title="Download"
           >
             <Download className="h-3.5 w-3.5 xl:mr-1.5" />
-            <span className="hidden xl:inline">Download</span>
+            <span className="hidden xl:inline">
+              {isDownloading ? "Preparing..." : "Download"}
+            </span>
           </Button>
         </div>
       </div>

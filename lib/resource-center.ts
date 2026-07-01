@@ -51,6 +51,10 @@ type StrapiResourceCenterEntry = {
   featured?: boolean | null;
   promotional?: boolean | null;
   show?: string | null;
+  third_party_notification_emails?: string | string[] | null;
+  third_party_notification_email?: string | null;
+  notification_emails?: string | string[] | null;
+  notification_email?: string | null;
   cover_image?: StrapiMedia | null;
   thumbnail_image?: StrapiMedia | null;
   resource_file?: StrapiMedia | null;
@@ -163,6 +167,16 @@ function sectorNames(sectors: StrapiResourceCenterEntry["sectors"]) {
     .filter(Boolean);
 }
 
+function emailList(value: unknown) {
+  const values = Array.isArray(value) ? value : [value];
+  const emails = values
+    .flatMap((item) => (typeof item === "string" ? item.split(/[,\n;]+/) : []))
+    .map((item) => item.trim().toLowerCase())
+    .filter((item) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(item));
+
+  return Array.from(new Set(emails));
+}
+
 function normalizeResource(item: StrapiResourceCenterEntry): EventResource | null {
   const entry = item.attributes || item;
   const title = (entry.full_title || entry.short_title || "").trim();
@@ -187,6 +201,12 @@ function normalizeResource(item: StrapiResourceCenterEntry): EventResource | nul
     resourceTag: (entry.resource_tag || "Resource").trim(),
     file_url: mediaFileUrl(entry.resource_file),
     fileName,
+    thirdPartyNotificationEmails: emailList(
+      entry.third_party_notification_emails ||
+        entry.third_party_notification_email ||
+        entry.notification_emails ||
+        entry.notification_email
+    ),
     coverImageUrl: strapiMediaUrl(entry.cover_image, "", STRAPI_BASE) || null,
     coverImageWidth: coverImage?.width || null,
     coverImageHeight: coverImage?.height || null,
