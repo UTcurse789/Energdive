@@ -341,8 +341,6 @@ export function EventResourceCenter({
         const anchor = document.createElement("a");
         anchor.href = data.file_url;
         anchor.download = data.fileName;
-        anchor.target = "_blank";
-        anchor.rel = "noopener noreferrer";
         document.body.appendChild(anchor);
         anchor.click();
         anchor.remove();
@@ -1011,6 +1009,8 @@ function ResourceCover({
 }) {
   const palette = COVER_PALETTES[hashIndex(resource.id, COVER_PALETTES.length)];
 
+  const imageUrl = resource.thumbnailImageUrl || resource.coverImageUrl;
+
   return (
     <div
       className={cn(
@@ -1019,9 +1019,9 @@ function ResourceCover({
         large ? "aspect-[5/3]" : "aspect-[16/10]"
       )}
     >
-      {resource.coverImageUrl && (
+      {imageUrl && (
         <Image
-          src={resource.coverImageUrl}
+          src={imageUrl}
           alt={resource.title}
           fill
           sizes={
@@ -1033,7 +1033,7 @@ function ResourceCover({
         />
       )}
 
-      {!resource.coverImageUrl && (
+      {!imageUrl && (
         <>
           <div className="absolute inset-0 opacity-35">
             <div className="absolute left-0 top-1/4 h-px w-full bg-white/30" />
