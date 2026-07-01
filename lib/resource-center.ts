@@ -52,6 +52,7 @@ type StrapiResourceCenterEntry = {
   promotional?: boolean | null;
   show?: string | null;
   cover_image?: StrapiMedia | null;
+  thumbnail_image?: StrapiMedia | null;
   resource_file?: StrapiMedia | null;
   sectors?: StrapiSector[] | { data?: StrapiSector[] } | null;
   attributes?: StrapiResourceCenterEntry;
@@ -189,6 +190,7 @@ function normalizeResource(item: StrapiResourceCenterEntry): EventResource | nul
     coverImageUrl: strapiMediaUrl(entry.cover_image, "", STRAPI_BASE) || null,
     coverImageWidth: coverImage?.width || null,
     coverImageHeight: coverImage?.height || null,
+    thumbnailImageUrl: strapiMediaUrl(entry.thumbnail_image, "", STRAPI_BASE) || null,
     title,
     eventName,
     eventLogo: showCode || initials(eventName),

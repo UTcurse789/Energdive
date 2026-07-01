@@ -23,6 +23,7 @@ export type EventResource = {
   coverImageUrl: string | null;
   coverImageWidth: number | null;
   coverImageHeight: number | null;
+  thumbnailImageUrl: string | null;
   title: string;
   eventName: string;
   eventLogo: string;
