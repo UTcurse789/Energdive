@@ -12,10 +12,18 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/buttons";
 import { cn } from "@/lib/utils";
 import { useAuthModal } from "@/hooks/use-auth-modal";
+import {
+  clearPendingResourceDownload,
+  getResourceDownloadPath,
+  readPendingResourceDownload,
+  requestTrackedResourceDownload,
+  storePendingResourceDownload,
+  triggerResourceFileDownload,
+} from "./resource-download";
 import type { EnergyEvent, EventResource, FileType, ResourceType } from "./types";
 
 const THEME_STYLE = "bg-[#00A651]/10 text-[#00A651] border-[#00A651]/20";
@@ -63,10 +71,12 @@ function getFileTypeStyle(type: FileType) {
 }
 
 export function ResourceDetailPage({
+  autoDownload = false,
   event,
   relatedResources,
   resource,
 }: {
+  autoDownload?: boolean;
   event?: EnergyEvent;
   relatedResources: EventResource[];
   resource: EventResource;
@@ -74,6 +84,8 @@ export function ResourceDetailPage({
   const { isLoaded, isSignedIn } = useAuth();
   const { openAuthModal } = useAuthModal();
   const [downloadNotice, setDownloadNotice] = useState<string | null>(null);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const autoDownloadStartedRef = useRef(false);
 
   const canDownload = isLoaded && isSignedIn;
 
@@ -87,86 +99,75 @@ export function ResourceDetailPage({
     return () => window.clearTimeout(timer);
   }, [downloadNotice]);
 
-  function startDownload() {
+  const startDownload = useCallback(async () => {
     if (!resource.file_url) {
       setDownloadNotice("File is not available for this resource");
       return;
     }
 
-    const anchor = document.createElement("a");
-    anchor.href = resource.file_url;
-    anchor.download = resource.fileName;
-    anchor.target = "_blank";
-    anchor.rel = "noopener noreferrer";
-    document.body.appendChild(anchor);
-    anchor.click();
-    anchor.remove();
-    setDownloadNotice(`${resource.fileName} download started`);
+    if (isDownloading) return;
 
-    // Save to dashboard saved articles
-    fetch("/api/user/saved-articles", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        title: resource.title,
-        url: `/resource-center/${resource.slug}`,
-      }),
-    }).catch(() => {});
-  }
+    setIsDownloading(true);
+    try {
+      const result = await requestTrackedResourceDownload(resource);
+
+      if (result.status === "unauthenticated") {
+        storePendingResourceDownload(resource);
+        openAuthModal(getResourceDownloadPath(resource, autoDownload));
+        return;
+      }
+
+      if (result.status === "onboarding_required") {
+        storePendingResourceDownload(resource);
+        window.location.href = result.redirectUrl;
+        return;
+      }
+
+      triggerResourceFileDownload(result.downloadUrl, result.fileName);
+      setDownloadNotice(`${result.fileName} download started`);
+    } catch (error) {
+      console.error("[RESOURCE_DOWNLOAD] Failed to start download:", error);
+      const message =
+        error instanceof Error ? error.message : "Unable to start this download";
+      setDownloadNotice(message);
+    } finally {
+      setIsDownloading(false);
+    }
+  }, [autoDownload, isDownloading, openAuthModal, resource]);
 
   // After auth redirect: auto-download pending resource
   useEffect(() => {
     if (!canDownload) return;
 
-    const pending = localStorage.getItem("rc_pending_download");
+    const pending = readPendingResourceDownload();
     if (!pending) return;
 
-    localStorage.removeItem("rc_pending_download");
-    try {
-      const data = JSON.parse(pending) as {
-        slug: string;
-        title: string;
-        fileName: string;
-        file_url: string;
-      };
-      // Only auto-download if this is the same resource
-      if (data.slug === resource.slug && data.file_url) {
-        const anchor = document.createElement("a");
-        anchor.href = data.file_url;
-        anchor.download = data.fileName;
-        document.body.appendChild(anchor);
-        anchor.click();
-        anchor.remove();
-        setDownloadNotice(`${data.fileName} download started`);
+    if (pending.slug !== resource.slug) return;
 
-        fetch("/api/user/saved-articles", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            title: data.title,
-            url: `/resource-center/${data.slug}`,
-          }),
-        }).catch(() => {});
-      }
-    } catch {}
-  }, [canDownload, resource.slug]);
+    clearPendingResourceDownload();
+    void startDownload();
+  }, [canDownload, resource.slug, startDownload]);
 
-  function requestDownload() {
+  useEffect(() => {
+    if (!autoDownload || !isLoaded || autoDownloadStartedRef.current) return;
+
+    autoDownloadStartedRef.current = true;
     if (canDownload) {
-      startDownload();
+      void startDownload();
       return;
     }
 
-    // Store pending download for after auth
-    localStorage.setItem(
-      "rc_pending_download",
-      JSON.stringify({
-        slug: resource.slug,
-        title: resource.title,
-        fileName: resource.fileName,
-        file_url: resource.file_url,
-      })
-    );
+    storePendingResourceDownload(resource);
+    openAuthModal(getResourceDownloadPath(resource, true));
+  }, [autoDownload, canDownload, isLoaded, openAuthModal, resource, startDownload]);
+
+  function requestDownload() {
+    if (canDownload) {
+      void startDownload();
+      return;
+    }
+
+    storePendingResourceDownload(resource);
     openAuthModal(`/resource-center/${resource.slug}`);
   }
 
@@ -243,10 +244,11 @@ export function ResourceDetailPage({
                 <Button
                   type="button"
                   onClick={requestDownload}
+                  disabled={isDownloading}
                   className="mt-4 h-12 w-full rounded-md bg-[#00A651] text-sm font-black text-white hover:bg-[#008b44]"
                 >
                   <Download className="mr-2 h-4 w-4" />
-                  Download
+                  {isDownloading ? "Preparing..." : "Download"}
                 </Button>
               </div>
             </div>

@@ -20,6 +20,7 @@ export type EventResource = {
   resourceTag: string;
   file_url: string;
   fileName: string;
+  thirdPartyNotificationEmails?: string[];
   coverImageUrl: string | null;
   coverImageWidth: number | null;
   coverImageHeight: number | null;
