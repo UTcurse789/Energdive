@@ -2,7 +2,7 @@ export type ResourceType = string;
 export type Sector = string;
 export type FileType = string;
 
-export type SortOption = "Latest First" | "Event Name" | "Year";
+export type SortOption = "Latest First" | "Oldest First" | "A–Z" | "Z–A" | "Most Downloaded" | "Featured";
 
 export type EnergyEvent = {
   id: string;
@@ -44,5 +44,6 @@ export type ResourceFilters = {
   types: ResourceType[];
   sectors: Sector[];
   years: number[];
+  fileFormats: string[];
   sort: SortOption;
 };
