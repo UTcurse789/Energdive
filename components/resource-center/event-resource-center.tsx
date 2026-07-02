@@ -44,10 +44,18 @@ const DEFAULT_FILTERS: ResourceFilters = {
   types: [],
   sectors: [],
   years: [],
+  fileFormats: [],
   sort: "Latest First",
 };
 
-const SORT_OPTIONS: SortOption[] = ["Latest First", "Event Name", "Year"];
+const SORT_OPTIONS: SortOption[] = [
+  "Latest First",
+  "Oldest First",
+  "A–Z",
+  "Z–A",
+  "Most Downloaded",
+  "Featured",
+];
 
 const RESOURCE_TYPE_ORDER: string[] = [
   "Magazine EPDF",
@@ -171,6 +179,10 @@ export function EventResourceCenter({
         .sort((a, b) => b - a),
     [resources]
   );
+  const fileFormatOptions = useMemo(
+    () => uniqueSorted(resources.map((r) => r.fileType).filter(Boolean)),
+    [resources]
+  );
 
   useEffect(() => {
     if (!mobileFiltersOpen) return;
@@ -204,6 +216,7 @@ export function EventResourceCenter({
       types: countBy(resources, (resource) => resource.resource_type),
       sectors: countBy(resources, (resource) => resource.sector),
       years: countBy(resources, (resource) => resource.year),
+      fileFormats: countBy(resources, (resource) => resource.fileType),
     }),
     [resources]
   );
@@ -239,26 +252,39 @@ export function EventResourceCenter({
         resource.sector.some((sector) => filters.sectors.includes(sector));
       const matchesYear =
         filters.years.length === 0 || filters.years.includes(resource.year);
+      const matchesFileFormat =
+        filters.fileFormats.length === 0 ||
+        filters.fileFormats.includes(resource.fileType);
 
       return (
         matchesSearch &&
         matchesEvent &&
         matchesType &&
         matchesSector &&
-        matchesYear
+        matchesYear &&
+        matchesFileFormat
       );
     });
 
     return matching.sort((a, b) => {
-      if (filters.sort === "Event Name") {
-        return `${a.eventName}${a.title}`.localeCompare(
-          `${b.eventName}${b.title}`
-        );
+      switch (filters.sort) {
+        case "Oldest First":
+          return new Date(a.publishedAt).getTime() - new Date(b.publishedAt).getTime();
+        case "A–Z":
+          return a.title.localeCompare(b.title);
+        case "Z–A":
+          return b.title.localeCompare(a.title);
+        case "Featured":
+          if (a.featured !== b.featured) return a.featured ? -1 : 1;
+          return new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime();
+        case "Most Downloaded":
+          // No download count data yet — fall back to featured then latest
+          if (a.featured !== b.featured) return a.featured ? -1 : 1;
+          return new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime();
+        case "Latest First":
+        default:
+          return new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime();
       }
-      if (filters.sort === "Year") return b.year - a.year;
-      return (
-        new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
-      );
     });
   }, [filters, resources, searchQuery]);
 
@@ -266,7 +292,8 @@ export function EventResourceCenter({
     filters.events.length +
     filters.types.length +
     filters.sectors.length +
-    filters.years.length;
+    filters.years.length +
+    filters.fileFormats.length;
 
   const hasActiveCriteria = activeFilterCount > 0 || searchQuery.trim().length > 0;
   const resourceGridKey = [
@@ -276,6 +303,7 @@ export function EventResourceCenter({
     filters.types.join("|"),
     filters.sectors.join("|"),
     filters.years.join("|"),
+    filters.fileFormats.join("|"),
   ].join("::");
 
   function setSort(sort: SortOption) {
@@ -368,7 +396,7 @@ export function EventResourceCenter({
                 Resource Library
               </p>
               <h2 className="mt-1.5 text-2xl font-black tracking-tight text-zinc-950 dark:text-white sm:text-3xl">
-                Browse Resources & Market Intelligence
+                Browse Resources
               </h2>
             </div>
             <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center lg:w-auto">
@@ -410,6 +438,7 @@ export function EventResourceCenter({
               <FilterPanel
                 counts={filterCounts}
                 events={events}
+                fileFormatOptions={fileFormatOptions}
                 filters={filters}
                 resourceTypeOptions={resourceTypeOptions}
                 resultCount={filteredResources.length}
@@ -447,6 +476,7 @@ export function EventResourceCenter({
       <MobileFilterDrawer
         counts={filterCounts}
         events={events}
+        fileFormatOptions={fileFormatOptions}
         filters={filters}
         open={mobileFiltersOpen}
         resourceTypeOptions={resourceTypeOptions}
@@ -501,17 +531,15 @@ function HeroSection() {
         <div className="max-w-5xl">
           <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[11px] font-black uppercase tracking-[0.18em] text-emerald-200 backdrop-blur">
             <ShieldCheck className="h-3.5 w-3.5" />
-            Resource Center
+            RESOURCE HUB
           </div>
 
           <h1 className="max-w-4xl text-4xl font-black leading-[1.02] tracking-tight sm:text-5xl lg:text-6xl">
-            ENERGDIVE Resource Center
+            ENERGDIVE Resource Hub
           </h1>
 
           <p className="mt-4 max-w-3xl text-base leading-7 text-zinc-200 sm:text-lg">
-            Browse event brochures, post-show reports, whitepapers,
-            presentations, and industry insights from leading energy events
-            worldwide.
+            Access ENERGDIVE magazines, industry reports, technical papers, whitepapers, case studies, event publications, presentations, and other valuable resources from across the global energy sector.
           </p>
         </div>
       </div>
@@ -522,6 +550,7 @@ function HeroSection() {
 function FilterPanel({
   counts,
   events,
+  fileFormatOptions,
   filters,
   resourceTypeOptions,
   resultCount,
@@ -537,8 +566,10 @@ function FilterPanel({
     types: Record<string, number>;
     sectors: Record<string, number>;
     years: Record<string, number>;
+    fileFormats: Record<string, number>;
   };
   events: EnergyEvent[];
+  fileFormatOptions: string[];
   filters: ResourceFilters;
   resourceTypeOptions: ResourceType[];
   resultCount: number;
@@ -580,7 +611,7 @@ function FilterPanel({
 
 
         <FilterGroup
-          title="Resource Type"
+          title="Content Type"
           options={resourceTypeOptions.map((type) => ({
             label: type,
             value: type,
@@ -609,6 +640,16 @@ function FilterPanel({
           selectedValues={filters.years}
           onToggle={(value) => onToggle("years", value)}
         />
+        <FilterGroup
+          title="File Format"
+          options={fileFormatOptions.map((fmt) => ({
+            label: fmt,
+            value: fmt,
+            count: counts.fileFormats[fmt] ?? 0,
+          }))}
+          selectedValues={filters.fileFormats}
+          onToggle={(value) => onToggle("fileFormats", value)}
+        />
 
       </div>
     </div>
@@ -618,6 +659,7 @@ function FilterPanel({
 function MobileFilterDrawer({
   counts,
   events,
+  fileFormatOptions,
   filters,
   open,
   resourceTypeOptions,
@@ -635,8 +677,10 @@ function MobileFilterDrawer({
     types: Record<string, number>;
     sectors: Record<string, number>;
     years: Record<string, number>;
+    fileFormats: Record<string, number>;
   };
   events: EnergyEvent[];
+  fileFormatOptions: string[];
   filters: ResourceFilters;
   open: boolean;
   resourceTypeOptions: ResourceType[];
@@ -697,7 +741,7 @@ function MobileFilterDrawer({
 
 
                 <FilterGroup
-                  title="Resource Type"
+                  title="Content Type"
                   options={resourceTypeOptions.map((type) => ({
                     label: type,
                     value: type,
@@ -725,6 +769,16 @@ function MobileFilterDrawer({
                   }))}
                   selectedValues={filters.years}
                   onToggle={(value) => onToggle("years", value)}
+                />
+                <FilterGroup
+                  title="File Format"
+                  options={fileFormatOptions.map((fmt) => ({
+                    label: fmt,
+                    value: fmt,
+                    count: counts.fileFormats[fmt] ?? 0,
+                  }))}
+                  selectedValues={filters.fileFormats}
+                  onToggle={(value) => onToggle("fileFormats", value)}
                 />
 
               </div>
