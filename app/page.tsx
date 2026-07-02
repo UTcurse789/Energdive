@@ -251,13 +251,15 @@ export default async function Home() {
   return (
     <>
       {/* Homepage Hero Ad Banner */}
-      <AdBanner placement="home_platform_hero" variant="banner" className="pb-4 md:pb-5" />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4">
+        <AdBanner placement="home_platform_hero" variant="banner" className="py-0" />
+      </div>
 
       {/* Cover Story (left) + Trending (right) — the original Hero */}
       <Hero topStories={heroTopStories} />
 
       {/* Featured Bento */}
-      <section className="py-12 bg-white relative overflow-hidden">
+      <section className="pt-8 pb-12 bg-white relative overflow-hidden">
         <div
           className="absolute inset-0 pointer-events-none opacity-[0.03]"
           style={{
@@ -265,7 +267,7 @@ export default async function Home() {
             backgroundSize: "40px 40px",
           }}
         />
-        <div className="w-full max-w-[1800px] mx-auto px-6 lg:px-16 relative z-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <SectionHeading
             title="Featured"
           />
@@ -288,7 +290,7 @@ export default async function Home() {
 
       {/* Sector Blocks */}
       <div className="border-b border-border">
-        <div className="container max-w-[1400px] mx-auto">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {sectorsWithArticles.map((sector) => (
             <div key={sector.slug}>
               <AdBanner
@@ -307,7 +309,7 @@ export default async function Home() {
           ))}
 
           {/* View All Sectors Button */}
-          <div className="flex justify-center py-12">
+          <div className="flex justify-center py-5">
             <a
               href="/sectors"
               className="group inline-flex items-center gap-3 px-8 py-4 bg-[#09B697] text-white text-[12px] font-black uppercase tracking-[0.2em] rounded-full hover:bg-[#078a72] transition-all duration-300 shadow-lg shadow-[#09B697]/20 hover:shadow-xl hover:shadow-[#09B697]/30 hover:-translate-y-0.5"

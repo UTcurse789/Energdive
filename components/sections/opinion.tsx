@@ -57,8 +57,8 @@ export function OpinionSection({
         <>
             {/* ─── OPINION SECTION ─── */}
             {opinions.length > 0 && (
-                <section className="py-12 md:py-20 bg-white border-b border-zinc-100">
-                    <div className="container mx-auto px-4 md:px-8 max-w-[1400px]">
+                <section className="py-12 md:py-8 bg-white border-b border-zinc-100">
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                         <SectionHeading
                             title="Opinion"
                             linkText="View All"
@@ -165,8 +165,8 @@ export function OpinionSection({
 
             {/* ─── INTERVIEW SECTION ─── */}
             {interviews.length > 0 && (
-                <section className="py-12 md:py-20 bg-white border-b border-zinc-100">
-                    <div className="container mx-auto px-4 md:px-8 max-w-[1400px]">
+                <section className="py-12 md:py-8 bg-white border-b border-zinc-100">
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                         <SectionHeading
                             title="Interview"
                             linkText="View All"

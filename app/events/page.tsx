@@ -58,17 +58,17 @@ export default function EventsPage() {
             <div className="min-h-screen bg-[#FDFDFD]">
                 <Header />
                 <div className="pt-10">
-                    <section className="container mx-auto px-6 lg:px-12 mb-16">
+                    <section className="mx-auto max-w-[1200px] px-8 sm:px-14 lg:px-20 mb-16">
                         <Skeleton className="h-16 md:h-20 w-3/4 mb-6" />
                         <Skeleton className="h-4 w-full max-w-2xl mb-2" />
                         <Skeleton className="h-4 w-1/2 max-w-2xl" />
                     </section>
                     <div className="border-y border-zinc-100 py-6 mb-12">
-                        <div className="container mx-auto px-6 lg:px-12">
+                        <div className="mx-auto max-w-[1200px] px-8 sm:px-14 lg:px-20">
                             <Skeleton className="h-10 w-64 rounded-full" />
                         </div>
                     </div>
-                    <div className="container mx-auto px-6 lg:px-12">
+                    <div className="mx-auto max-w-[1200px] px-8 sm:px-14 lg:px-20">
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
                             {[...Array(6)].map((_, i) => (
                                 <div key={i} className="space-y-8 rounded-[2rem] border border-zinc-100 p-8">
@@ -95,7 +95,7 @@ export default function EventsPage() {
             <Header />
 
             <main className="relative pt-10 pb-32">
-                <section className="container mx-auto px-6 lg:px-12 mb-16">
+                <section className="mx-auto max-w-[1200px] px-8 sm:px-14 lg:px-20 mb-16">
                     <motion.h1
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -110,7 +110,7 @@ export default function EventsPage() {
 
                 {/* TAB NAVIGATION */}
                 <section className="sticky top-[72px] z-40 bg-white/80 backdrop-blur-xl border-y border-zinc-100 py-4 mb-12">
-                    <div className="container mx-auto px-6 lg:px-12">
+                    <div className="mx-auto max-w-[1200px] px-8 sm:px-14 lg:px-20">
                         <div className="flex items-center gap-1 bg-zinc-100 p-1 rounded-full w-fit">
                             {tabs.map((tab) => (
                                 <button
@@ -129,7 +129,7 @@ export default function EventsPage() {
                 </section>
 
                 {/* GRID SECTION */}
-                <section className="container mx-auto px-6 lg:px-12">
+                <section className="mx-auto max-w-[1200px] px-8 sm:px-14 lg:px-20">
                     <AnimatePresence mode="wait">
                         <motion.div
                             key={activeTab}
@@ -147,12 +147,12 @@ export default function EventsPage() {
                                         transition={{ delay: idx * 0.1 }}
                                         className="group flex flex-col h-full bg-white relative rounded-[2rem] border border-zinc-100 shadow-sm hover:shadow-xl transition-all duration-500 overflow-hidden"
                                     >
-                                        <Link href={`/events/${event.slug}`} className="relative aspect-video bg-zinc-50 border-b border-zinc-100 overflow-hidden block">
+                                        <Link href={`/events/${event.slug}`} className="relative aspect-[2.2/1] bg-zinc-50 border-b border-zinc-100 overflow-hidden block">
                                             <Image
                                                 src={event.imageUrl}
                                                 alt={event.title}
                                                 fill
-                                                className="object-contain p-10 transition-transform duration-700 group-hover:scale-110"
+                                                className="object-contain p-4 transition-transform duration-700 group-hover:scale-110"
                                             />
                                             <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-full flex items-center gap-2 shadow-sm border border-zinc-100">
                                                 <div className={cn(
@@ -166,25 +166,20 @@ export default function EventsPage() {
                                             </div>
                                         </Link>
 
-                                        <div className="flex flex-col grow p-8">
+                                        <div className="flex flex-col grow p-5">
                                             <Link href={`/events/${event.slug}`}>
-                                                <h3 className="text-xl md:text-2xl font-black uppercase tracking-tight text-zinc-900 leading-[1.1] mb-4 group-hover:text-[#00A651] transition-colors line-clamp-2">
+                                                <h3 className="text-lg md:text-xl font-black uppercase tracking-tight text-zinc-900 leading-[1.1] mb-2 group-hover:text-[#00A651] transition-colors line-clamp-2">
                                                     {event.title}
                                                 </h3>
                                             </Link>
 
-                                            <div className="text-sm text-zinc-500 font-serif italic leading-relaxed mb-8 line-clamp-3">
+                                            <div className="text-xs text-zinc-500 font-serif italic leading-relaxed mb-4 line-clamp-2">
                                                 {event.description}
                                             </div>
 
                                             <div className="mt-auto space-y-4">
                                                 <div className="flex flex-wrap items-center gap-4 text-[11px] font-bold uppercase tracking-wider text-zinc-400">
                                                     <DateChip value={event.date} />
-                                                    <div className="w-1 h-1 bg-zinc-200 rounded-full hidden sm:block" />
-                                                    <div className="flex items-center gap-2">
-                                                        <Clock size={14} className="text-[#00A651]" />
-                                                        <span>{event.time}</span>
-                                                    </div>
                                                 </div>
 
                                                 <a
@@ -209,10 +204,10 @@ export default function EventsPage() {
                                             </div>
                                         </div>
 
-                                        <div className="px-8 pb-8 pt-0">
+                                        <div className="px-5 pb-5 pt-0">
                                             <Link
                                                 href={`/events/${event.slug}`}
-                                                className="w-full py-4 rounded-xl border border-zinc-200 flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] hover:bg-black hover:text-white hover:border-black transition-all"
+                                                className="w-full py-3 rounded-xl border border-zinc-200 flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] hover:bg-black hover:text-white hover:border-black transition-all"
                                             >
                                                 View Details <ArrowUpRight size={14} />
                                             </Link>
