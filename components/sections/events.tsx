@@ -100,11 +100,11 @@ export async function EventsSection() {
     if (events.length === 0) return null;
 
     return (
-        <section className="py-16 border-b border-border overflow-hidden">
-            <div className="container">
+        <section className="py-8 border-b border-border overflow-hidden">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <SectionHeading
                     title="Upcoming Events"
-                    linkText="View Calendar"
+                    linkText="View more"
                     linkHref="/events"
                 />
                 <div className="flex gap-5 overflow-x-auto pb-6 snap-x mt-8"

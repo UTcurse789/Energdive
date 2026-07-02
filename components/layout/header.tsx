@@ -375,7 +375,7 @@ export function Header() {
                 {/* 2. MAIN NAVIGATION */}
                 <div className={cn(
                     "border-b transition-all duration-300 px-2 md:px-6 lg:px-8",
-                    isScrolled ? "py-2 shadow-sm" : "py-3 md:py-6"
+                    isScrolled ? "py-2 shadow-sm" : "py-2"
                 )}>
                     <div className="max-w-[1920px] mx-auto flex items-center justify-between">
 

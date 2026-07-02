@@ -18,7 +18,7 @@ export function EventCard({ event }: EventCardProps) {
             href={href}
             target={isExternal ? "_blank" : "_self"}
             rel={isExternal ? "noopener" : undefined}
-            className="w-[320px] shrink-0 snap-start group block"
+            className="w-[320px] lg:w-[calc(25%-15px)] shrink-0 snap-start group block"
         >
             <div className="bg-white border border-slate-100 overflow-hidden hover:border-[#09B697] hover:shadow-lg hover:shadow-[rgba(9,182,151,0.08)] transition-all duration-300 relative">
 
@@ -48,13 +48,7 @@ export function EventCard({ event }: EventCardProps) {
 
                 {/* Content */}
                 <div className="p-4 relative bg-white">
-                    {/* Time */}
-                    {event.time && (
-                        <div className="flex items-center gap-1.5 text-[10px] text-[#09B697] font-black uppercase tracking-widest mb-2">
-                            <Clock className="w-3 h-3" />
-                            {event.time}
-                        </div>
-                    )}
+                    {/* Time removed as requested */}
 
                     <h3 className="font-serif font-bold text-base leading-snug mb-3 text-slate-900 group-hover:text-[#09B697] transition-colors line-clamp-2 min-h-[42px]">
                         {event.title}

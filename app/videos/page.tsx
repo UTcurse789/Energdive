@@ -36,7 +36,7 @@ export default function VideosPage() {
             try {
                 // We populate author and sectors to get names and images
                 const baseUrl = process.env.NEXT_PUBLIC_STRAPI_URL || "http://localhost:1337";
-                const response = await fetch(`${baseUrl}/api/videos?populate[0]=thumbnail&populate[1]=author.avatar&populate[2]=sectors`);
+                const response = await fetch(`${baseUrl}/api/videos?populate[0]=thumbnail&populate[1]=author.avatar&populate[2]=sectors&sort=publishedAt:desc`);
                 const { data } = await response.json();
 
                 const mappedData: Video[] = data.map((item: any) => {
@@ -80,54 +80,42 @@ export default function VideosPage() {
         ? videos
         : videos.filter((v) => v.category === activeCategory);
 
-    const featuredVideo = videos[0];
-    const gridVideos = activeCategory === "All" ? filteredVideos.slice(1) : filteredVideos;
-
     if (loading) {
         return (
-            <main className="min-h-screen bg-gray-50 pb-20">
+            <main className="min-h-screen bg-white pb-20">
                 <Header />
-                <div className="mx-auto px-6 max-w-[1440px]">
-                    {/* Header Skeleton */}
-                    <div className="text-center pt-16 pb-12">
+                {/* Header Skeleton */}
+                <div className="mx-auto max-w-[1200px] px-8 sm:px-14 lg:px-20 pt-16 pb-8">
+                    <div className="text-center">
                         <Skeleton className="h-16 md:h-20 w-48 mx-auto mb-6" />
                         <Skeleton className="h-6 w-full max-w-2xl mx-auto mb-2" />
                         <Skeleton className="h-6 w-1/2 mx-auto" />
                     </div>
+                </div>
 
-                    {/* Featured Video Skeleton */}
-                    <div className="py-8">
-                        <div className="grid grid-cols-1 lg:grid-cols-2 bg-white rounded-3xl overflow-hidden border border-gray-100">
-                            <Skeleton className="aspect-video lg:aspect-auto min-h-[400px] w-full" />
-                            <div className="p-10 space-y-6">
-                                <Skeleton className="h-6 w-24 rounded-full" />
-                                <Skeleton className="h-12 w-full" />
-                                <Skeleton className="h-24 w-full" />
-                                <Skeleton className="h-4 w-32 border-t pt-6" />
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Filter Skeleton */}
-                    <div className="py-12 flex flex-col md:flex-row justify-between gap-6">
-                        <Skeleton className="h-6 w-32" />
-                        <div className="flex gap-2">
-                            {[...Array(5)].map((_, i) => (
-                                <Skeleton key={i} className="h-10 w-24 rounded-full" />
+                {/* Filter Skeleton */}
+                <div className="border-b border-gray-100 py-3">
+                    <div className="mx-auto max-w-[1200px] px-8 sm:px-14 lg:px-20">
+                        <div className="flex gap-3 overflow-hidden">
+                            {[...Array(6)].map((_, i) => (
+                                <Skeleton key={i} className="h-8 w-24 rounded-lg flex-shrink-0" />
                             ))}
                         </div>
                     </div>
+                </div>
 
+                <div className="mx-auto max-w-[1200px] px-8 sm:px-14 lg:px-20">
                     {/* Grid Skeleton */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-                        {[...Array(6)].map((_, i) => (
-                            <div key={i} className="bg-white rounded-2xl border border-gray-100 p-6 space-y-6">
-                                <Skeleton className="aspect-video w-full rounded-xl" />
-                                <div className="space-y-4">
-                                    <Skeleton className="h-4 w-24" />
-                                    <Skeleton className="h-8 w-full" />
-                                    <Skeleton className="h-12 w-full" />
-                                    <Skeleton className="h-4 w-24 border-t pt-4" />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-8 gap-y-12 pt-8">
+                        {[...Array(12)].map((_, i) => (
+                            <div key={i} className="flex flex-col bg-transparent">
+                                <Skeleton className="aspect-video w-full rounded-xl mb-3" />
+                                <div className="flex gap-3">
+                                    <div className="flex flex-col gap-2 flex-1 pt-1">
+                                        <Skeleton className="h-4 w-full" />
+                                        <Skeleton className="h-4 w-5/6" />
+                                        <Skeleton className="h-3 w-1/2 mt-1" />
+                                    </div>
                                 </div>
                             </div>
                         ))}
@@ -138,120 +126,74 @@ export default function VideosPage() {
     }
 
     return (
-        <main className="min-h-screen bg-gray-50 text-black font-sans pb-20">
-            <div className="mx-auto px-6 max-w-[1400px]">
-                <AdBanner placement="Videos_top" variant="banner" className="py-4" />
-
-                {/* Header Section */}
-                <div className="text-center pt-16 pb-12">
-                    <h1 className="text-5xl md:text-6xl font-serif font-medium mb-6 tracking-tight text-gray-900">
+        <main className="min-h-screen bg-white text-black font-sans pb-20">
+            {/* Header Section */}
+            <div className="mx-auto max-w-[1200px] px-8 sm:px-14 lg:px-20 pt-16 pb-8">
+                <div className="text-left">
+                    <h1 className="text-5xl sm:text-6xl lg:text-7xl font-serif font-normal tracking-tight text-[#1a2340]">
                         Videos
                     </h1>
-                    <p className="text-gray-600 max-w-2xl mx-auto text-lg">
+                    <p className="mt-6 max-w-[58ch] text-lg font-light leading-relaxed text-zinc-500">
                         Watch conversations that matter with ENERGDIVE Videos, where domain experts and sector leaders share quick insights and viewpoints on India’s evolving energy landscape.
                     </p>
                 </div>
+            </div>
 
-                {/* Featured Video (Large Card) */}
-                {activeCategory === "All" && featuredVideo && (
-                    <div className="py-8">
-                        <div onClick={() => router.push(`/videos/${featuredVideo.slug}`)} className="group block cursor-pointer">
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-0 bg-white rounded-3xl overflow-hidden shadow-xl border border-gray-100 hover:shadow-2xl transition-all duration-500">
-                                <div className="relative aspect-video lg:aspect-auto min-h-[400px]">
-                                    <Image
-                                        src={featuredVideo.thumbnail}
-                                        alt={featuredVideo.title}
-                                        fill
-                                        className="object-cover transition-transform duration-700 group-hover:scale-105"
-                                    />
-                                    <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
-                                        <div className="w-20 h-20 bg-white/95 rounded-full flex items-center justify-center pl-1 shadow-2xl group-hover:scale-110 transition-transform">
-                                            <Play size={32} className="text-red-600 fill-red-600" />
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="p-10 flex flex-col justify-center">
-                                    <span className="bg-teal-50 text-teal-700 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest w-fit mb-6">
-                                        {featuredVideo.category}
-                                    </span>
-                                    <h2 className="text-3xl md:text-4xl font-serif font-bold leading-tight mb-4 group-hover:text-teal-700 transition-colors">
-                                        {featuredVideo.title}
-                                    </h2>
-                                    <p className="text-gray-600 text-lg mb-8 line-clamp-3 italic">
-                                        {featuredVideo.excerpt}
-                                    </p>
-                                    {/* <div className="pt-6 border-t border-gray-100">
-                                        <p className="text-xs text-gray-400 uppercase tracking-widest font-bold">{featuredVideo.date}</p>
-                                    </div> */}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {/* Filter Section */}
-                <div className="py-12 border-y border-gray-100">
-                    <div className="flex flex-col gap-5 xl:flex-row xl:items-center">
-                        <div className="flex items-center gap-3 shrink-0 xl:min-w-[180px]">
-                            <Filter size={18} className="text-teal-600" />
-                            <h2 className="text-sm font-black uppercase tracking-widest text-gray-400">Categories</h2>
-                        </div>
-
-                        <div className="min-w-0 flex-1">
-                            <div className="-mx-1 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                                <div className="flex w-max min-w-full gap-2 px-1">
-                                    {categories.map((cat) => (
-                                        <button
-                                            key={cat}
-                                            onClick={() => setActiveCategory(cat)}
-                                            className={`shrink-0 whitespace-nowrap rounded-full border px-6 py-2 text-xs font-bold uppercase tracking-widest transition-all ${
-                                                activeCategory === cat
-                                                    ? "border-black bg-black text-white shadow-lg"
-                                                    : "border-gray-200 bg-white text-gray-500 hover:border-teal-400"
-                                            }`}
-                                        >
-                                            {cat}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
+            {/* Filter Section (Top Bar like YouTube) */}
+            <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-sm border-y border-gray-100 py-3">
+                <div className="mx-auto max-w-[1200px] px-8 sm:px-14 lg:px-20">
+                    <div className="flex items-center gap-3 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                        {categories.map((cat) => (
+                            <button
+                                key={cat}
+                                onClick={() => setActiveCategory(cat)}
+                                className={`shrink-0 whitespace-nowrap rounded-lg px-4 py-1.5 text-sm font-medium transition-all ${
+                                    activeCategory === cat
+                                        ? "bg-black text-white"
+                                        : "bg-gray-100 text-gray-800 hover:bg-gray-200"
+                                }`}
+                            >
+                                {cat}
+                            </button>
+                        ))}
                     </div>
                 </div>
+            </div>
+
+            <div className="mx-auto max-w-[1200px] px-8 sm:px-14 lg:px-20 pt-8">
+                {/* <AdBanner placement="Videos_top" variant="banner" className="pb-8" /> */}
 
                 {/* Video Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-                    {gridVideos.map((video) => (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-10 gap-y-14">
+                    {filteredVideos.map((video) => (
                         <div key={video.id} onClick={() => router.push(`/videos/${video.slug}`)} className="group block cursor-pointer">
-                            <div className="flex flex-col h-full bg-white rounded-2xl overflow-hidden border border-gray-100 hover:border-teal-100 transition-all">
-                                <div className="relative aspect-video overflow-hidden">
+                            <div className="flex flex-col h-full bg-transparent">
+                                <div className="relative aspect-video overflow-hidden rounded-xl mb-3">
                                     <Image
                                         src={video.thumbnail}
                                         alt={video.title}
                                         fill
-                                        className="object-cover transition-transform duration-500 group-hover:scale-110"
+                                        className="object-cover"
                                     />
-                                    <div className="absolute inset-0 bg-black/10 group-hover:bg-black/30 transition-all flex items-center justify-center">
+                                    {/* Play icon overlay on hover (optional) */}
+                                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
                                         <div className="w-12 h-12 bg-white/90 rounded-full flex items-center justify-center pl-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                                             <Play size={20} className="text-red-600 fill-red-600" />
                                         </div>
                                     </div>
                                 </div>
 
-                                <div className="p-6 flex flex-col flex-1">
-                                    <span className="text-teal-600 text-[10px] font-black uppercase tracking-widest mb-3">
-                                        {video.category}
-                                    </span>
-                                    <h3 className="text-xl font-bold leading-snug mb-3 group-hover:text-teal-700 transition-colors line-clamp-2">
-                                        {video.title}
-                                    </h3>
-                                    <p className="text-gray-500 text-sm line-clamp-2 mb-6 flex-1">
-                                        {video.excerpt}
-                                    </p>
-                                    {/* <div className="pt-4 border-t border-gray-50">
-                                        <span className="text-xs text-gray-400 font-bold uppercase tracking-widest">{video.date}</span>
-                                    </div> */}
+                                <div className="flex gap-3">
+                                    <div className="flex flex-col flex-1 min-w-0 pr-4">
+                                        <h3 className="text-base font-bold leading-tight text-gray-900 group-hover:text-blue-600 transition-colors line-clamp-2 mb-1">
+                                            {video.title}
+                                        </h3>
+                                        <div className="flex items-center gap-1 mt-1">
+                                            <span className="inline-block bg-gray-100 text-gray-700 px-2 py-0.5 rounded text-[11px] font-bold uppercase tracking-wider">
+                                                {video.category}
+                                            </span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -259,8 +201,8 @@ export default function VideosPage() {
                 </div>
 
                 {filteredVideos.length === 0 && (
-                    <div className="text-center py-20 bg-white rounded-3xl border border-dashed border-gray-200">
-                        <p className="text-gray-400 italic font-serif text-xl">No videos found in this category.</p>
+                    <div className="text-center py-32">
+                        <p className="text-gray-500 text-lg">No videos found for this category.</p>
                     </div>
                 )}
             </div>

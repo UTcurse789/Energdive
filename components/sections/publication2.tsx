@@ -63,7 +63,7 @@ const itemVariants: Variants = {
 
 export function Publication2({ variant = "full", latestCoverImage, latestIssueSlug }: { variant?: "full" | "compact"; latestCoverImage?: string; latestIssueSlug?: string }) {
     return (
-        <section className="container mx-auto px-6 lg:px-12 py-16 max-w-[1400px]">
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
 
             {/* 1. COMPACT HERO SECTION */}
             <div className="bg-zinc-900 rounded-[1.5rem] md:rounded-[2.5rem] p-6 sm:p-8 md:p-14 border border-zinc-800 text-white relative overflow-hidden shadow-2xl mb-16">
