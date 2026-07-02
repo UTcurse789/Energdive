@@ -16,7 +16,7 @@ export default async function EnergClubDashboardLayout({
     const { userId } = await auth();
 
     if (!userId) {
-        redirect("/auth");
+        redirect("/auth?redirect_url=%2Fenergclub%2Fdashboard");
     }
 
     const clerkUser = await currentUser();

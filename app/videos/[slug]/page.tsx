@@ -145,127 +145,87 @@ export default async function VideoDetailPage({ params }: { params: Promise<{ sl
                 </div>
             </div>
 
-            {/* Video Player Section */}
-            <div className="bg-white border-b border-gray-100">
-                <div className="mx-auto px-6 max-w-[1200px] pt-8 pb-12">
-                    <div className="relative aspect-video w-full bg-black rounded-3xl overflow-hidden shadow-2xl border-12px border-gray-900">
-                        <iframe
-                            src={`https://www.youtube.com/embed/${youtubeId}?autoplay=0&rel=0`}
-                            title={title}
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                            allowFullScreen
-                            className="absolute inset-0 w-full h-full"
-                        />
-                    </div>
+            {/* Main Layout Grid */}
+            <div className="mx-auto max-w-[1200px] px-8 sm:px-14 lg:px-20 pt-6 lg:pt-8">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10">
 
-                    <div className="mt-10 space-y-4">
-                        <div className="flex items-center gap-2 text-teal-600 font-black text-[10px] uppercase tracking-[0.2em]">
-                            <Tag size={12} />
-                            <span>{category}</span>
+                    {/* Left Side: Video Player & Details */}
+                    <div className="lg:col-span-8 space-y-4">
+                        {/* Video Player */}
+                        <div className="relative aspect-video w-full bg-black rounded-2xl overflow-hidden shadow-xl border border-gray-100">
+                            <iframe
+                                src={`https://www.youtube.com/embed/${youtubeId}?autoplay=0&rel=0`}
+                                title={title}
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                allowFullScreen
+                                className="absolute inset-0 w-full h-full"
+                            />
                         </div>
-                        <h1 className="text-3xl md:text-5xl font-serif font-bold leading-tight text-gray-900">
-                            {title}
-                        </h1>
 
-                        <div className="flex flex-wrap items-center gap-6 pt-4 text-sm text-gray-400 font-medium">
-                            <DateChip value={createdAt} />
-                            <div className="flex items-center gap-3">
-                                <Link
-                                    href={`/print/${slug}`}
-                                    target="_blank"
-                                    className="flex items-center gap-1.5 text-gray-500 hover:text-red-600 font-medium text-sm border border-gray-200 px-3 py-1.5 rounded-full bg-white hover:bg-gray-50 shadow-sm transition-colors"
-                                    title="Print this article"
-                                >
-                                    <Printer className="h-3.5 w-3.5" />
-                                    Print
-                                </Link>
-                                <div className="flex items-center gap-2 text-red-600 font-bold hover:opacity-80">
-                                    <ShareButton title={title} url={`https://www.youtube.com/watch?v=${youtubeId}`} className="text-red-600 hover:text-red-700" />
+                        {/* Title & Metadata */}
+                        <div className="space-y-3 pt-2">
+                            <h1 className="text-xl md:text-2xl font-bold leading-tight text-gray-900">
+                                {title}
+                            </h1>
+                            
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-gray-200">
+                                <div className="flex items-center gap-2 text-sm text-gray-500 font-medium">
+                                    <DateChip value={createdAt} />
+                                </div>
+                                
+                                {/* Actions */}
+                                <div className="flex items-center gap-2">
+                                    <ShareButton 
+                                        title={title} 
+                                        url={`https://www.youtube.com/watch?v=${youtubeId}`} 
+                                        className="text-gray-600 hover:text-gray-900 font-medium text-sm border border-gray-200 px-4 py-2 rounded-full bg-white hover:bg-gray-50 shadow-sm transition-colors"
+                                    />
                                 </div>
                             </div>
                         </div>
-                    </div>
-                </div>
-            </div>
 
-            {/* Content & Sidebar */}
-            <div className="mx-auto px-6 max-w-[1200px] pt-12">
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-16">
-
-                    {/* Left Side: Description & Author */}
-                    <div className="lg:col-span-2 space-y-12">
-                        <section>
-                            <h2 className="text-sm font-black uppercase tracking-widest text-gray-400 mb-6 border-b pb-2">Overview</h2>
-                            <div className="prose prose-lg prose-teal max-w-none text-gray-700 leading-relaxed">
+                        {/* Overview */}
+                        <section className="bg-gray-100/60 p-4 rounded-xl mt-2">
+                            <div className="prose prose-sm prose-teal max-w-none text-gray-800">
                                 <ArticleBody content={description} dataBlocks={dataBlocks} />
                             </div>
                         </section>
 
-                        <AdBanner
-                            placement="videos_partner_end"
-                            sectorSlug={sectorSlug}
-                            variant="native"
-                        />
-
-                        {/* <section className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm flex items-start gap-6">
-                            <div className="relative w-20 h-20 rounded-2xl overflow-hidden flex-0 bg-gray-50 border border-gray-100">
-                                <Image src={authorAvatar} sizes="32px" alt={authorName} fill className="object-cover" />
-                            </div>
-                            <div>
-                                <span className="text-[10px] font-black text-teal-600 uppercase tracking-widest">Contributed By</span>
-                                <Link href={`/author/${slugify(authorName)}`} className="block hover:opacity-80 transition-opacity">
-                                    <h3 className="text-xl font-bold text-gray-900 mb-2 hover:text-teal-600 transition-colors">{authorName}</h3>
-                                </Link>
-                                <p className="text-gray-500 text-sm leading-relaxed">
-                                    The editorial unit of ENERGDIVE, tracking policy and innovation breakthroughs in the energy sector.
-                                </p>
-                            </div>
-                        </section> */}
+                        <div className="pt-8">
+                            <AdBanner
+                                placement="videos_partner_end"
+                                sectorSlug={sectorSlug}
+                                variant="native"
+                            />
+                        </div>
                     </div>
 
-                    {/* Right Side: More Videos */}
-                    <aside className="space-y-8">
-                        <div>
-                            <h3 className="text-sm font-black uppercase tracking-widest text-gray-900 mb-6 flex items-center gap-2">
-                                <Youtube size={18} className="text-red-600" />
-                                More Videos
-                            </h3>
-                            <div className="space-y-6">
+                    {/* Right Side: More Videos Sidebar */}
+                    <div className="lg:col-span-4">
+                        <aside className="sticky top-24 space-y-4">
+                            <div className="flex items-center gap-2 mb-4">
+                                <span className="px-3 py-1 bg-gray-900 text-white text-[11px] font-bold uppercase tracking-widest rounded-lg">More Videos</span>
+                            </div>
+                            <div className="flex flex-col gap-4">
                                 {moreVideos.map((item: any) => {
                                     const thumb = `https://img.youtube.com/vi/${item.youtubeId}/mqdefault.jpg`;
                                     const itemAuthor = item.author?.name || "Team ENERGDIVE";
-                                    const itemAuthorImg = item.author?.avatar?.url
-                                        ? strapiImageUrl(item.author.avatar.url)
-                                        : "/api/placeholder/30/30";
-
                                     return (
-                                        <div key={item.id} className="group">
-                                            <div className="flex gap-4">
-                                                <Link href={`/videos/${item.slug}`} className="block">
-                                                    <div className="relative w-32 aspect-video rounded-xl overflow-hidden flex-0 border border-gray-200">
-                                                        <Image src={thumb} priority sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw" alt={item.title} fill className="object-cover group-hover:scale-110 transition-transform" />
-                                                    </div>
-                                                </Link>
-                                                <div className="space-y-2">
-                                                    <Link href={`/videos/${item.slug}`}>
-                                                        <h4 className="text-sm font-bold leading-snug group-hover:text-teal-600 transition-colors line-clamp-2">
-                                                            {item.title}
-                                                        </h4>
-                                                    </Link>
-                                                    <div className="flex items-center gap-2">
-                                                        <div className="relative w-5 h-5 rounded-full overflow-hidden">
-                                                            <Image src={itemAuthorImg} alt={itemAuthor} fill className="object-cover" />
-                                                        </div>
-                                                        <Link href={`/author/${slugify(itemAuthor)}`} className="text-[10px] font-bold text-gray-400 hover:text-teal-600 transition-colors">{itemAuthor}</Link>
-                                                    </div>
-                                                </div>
+                                        <Link key={item.id} href={`/videos/${item.slug}`} className="group flex gap-3 items-start">
+                                            <div className="relative w-36 aspect-video rounded-xl overflow-hidden flex-shrink-0 border border-gray-200 bg-gray-100">
+                                                <Image src={thumb} sizes="144px" alt={item.title} fill className="object-cover group-hover:scale-105 transition-transform" />
                                             </div>
-                                        </div>
+                                            <div className="flex flex-col pt-1">
+                                                <h4 className="text-sm font-bold leading-tight text-gray-900 group-hover:text-teal-600 transition-colors line-clamp-2">
+                                                    {item.title}
+                                                </h4>
+                                            </div>
+                                        </Link>
                                     );
                                 })}
                             </div>
-                        </div>
-                    </aside>
+                        </aside>
+                    </div>
 
                 </div>
             </div>

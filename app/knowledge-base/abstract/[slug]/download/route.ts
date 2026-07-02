@@ -64,8 +64,8 @@ export async function GET(
     // 1. Check user authentication
     const { userId } = await auth();
     if (!userId) {
-        // Redirect to auth, returning to this exact URL afterwards
-        const redirectUrl = `/auth?redirect_url=${encodeURIComponent(requestUrl.pathname)}`;
+        // Redirect to the abstract page if not logged in
+        const redirectUrl = `/knowledge-base/abstract/${slug}`;
         return NextResponse.redirect(new URL(redirectUrl, request.url));
     }
 

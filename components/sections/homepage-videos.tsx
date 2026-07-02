@@ -43,7 +43,7 @@ export async function HomepageVideos() {
 
     return (
         <section className="py-20 bg-white border-b border-gray-100">
-            <div className="container mx-auto px-4 md:px-6 lg:px-12 max-w-[1400px]">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <SectionHeading
                     title="Videos"
                     linkText="View All Videos"

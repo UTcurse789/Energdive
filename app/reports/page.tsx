@@ -3,8 +3,8 @@
 import React, { useEffect, useState, useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
-import { ArrowUpRight, Clock, Search } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Clock, Search } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Header } from "@/components/layout/header";
 import { AdBanner } from "@/components/ads/AdBanner";
@@ -61,9 +61,6 @@ export default function ReportsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
 
-  const { scrollY } = useScroll();
-  const y1 = useTransform(scrollY, [0, 500], [0, 200]);
-
   useEffect(() => {
     fetchReports().then((data) => {
       const formatted = data.map((item) => ({
@@ -88,29 +85,21 @@ export default function ReportsPage() {
     });
   }, [reports, searchQuery, selectedCategory]);
 
+  /* ── Loading skeleton ── */
   if (loading) return (
-    <div className="min-h-screen bg-[#FDFDFD]">
+    <div className="min-h-screen bg-white">
       <Header />
-      <div className="pt-20">
-        <div className="w-full h-[70vh] bg-zinc-900 flex items-center px-6 lg:px-12">
-          <div className="max-w-4xl w-full">
-            <Skeleton className="h-24 w-3/4 mb-6 bg-white/20" />
-            <Skeleton className="h-8 w-1/2 bg-white/10" />
-          </div>
-        </div>
-        <div className="container mx-auto px-6 lg:px-12 py-20 mt-16">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
+      <div className="pt-32 pb-16">
+        <div className="mx-auto max-w-[1200px] px-8 sm:px-14 lg:px-20">
+          <Skeleton className="h-12 w-64 mb-4" />
+          <Skeleton className="h-6 w-96 mb-16" />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
             {[...Array(6)].map((_, i) => (
-              <div key={i} className="space-y-8">
-                <Skeleton className="aspect-[3/4] w-full rounded-2xl" />
-                <div className="space-y-4">
-                  <div className="flex gap-4">
-                    <Skeleton className="h-4 w-20" />
-                    <Skeleton className="h-4 w-20" />
-                  </div>
-                  <Skeleton className="h-10 w-full" />
-                  <Skeleton className="h-16 w-full" />
-                </div>
+              <div key={i} className="space-y-5">
+                <Skeleton className="aspect-[3/4] w-full rounded-lg" />
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-6 w-full" />
+                <Skeleton className="h-10 w-full" />
               </div>
             ))}
           </div>
@@ -120,133 +109,148 @@ export default function ReportsPage() {
   );
 
   return (
-    <div className="min-h-screen bg-[#FDFDFD] font-sans text-zinc-900 overflow-x-hidden">
-      <main className="relative pb-32">
-        {/* HERO SECTION */}
-        <section className="relative w-full min-h-[70vh] flex items-center bg-[#0a0a0a] overflow-hidden">
-          <div className="absolute inset-0 z-0">
-            <motion.div
-              style={{ y: y1 }}
-              className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2072')] bg-cover bg-center opacity-40"
-            />
-            <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/20 to-[#FDFDFD]" />
-          </div>
+    <div className="min-h-screen bg-white font-sans text-zinc-900 overflow-x-hidden">
+      <main>
+        {/* ════════════════════════════════════════════
+            HERO — Clean typographic header
+            ════════════════════════════════════════════ */}
+        <section className="bg-white pt-16 pb-12">
+          <div className="mx-auto max-w-[1200px] px-8 sm:px-14 lg:px-20">
+            <motion.h1
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className="font-serif text-5xl sm:text-6xl lg:text-7xl font-normal tracking-tight text-[#1a2340]"
+            >
+              Reports
+            </motion.h1>
 
-          <div className="container mx-auto px-6 lg:px-12 max-w-[1400px] relative z-10 pt-20">
-            <div className="flex flex-col gap-6 max-w-4xl">
-              <motion.h1
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                className="text-6xl md:text-9xl font-black uppercase text-[#00A651]"
-              >
-                Reports
-              </motion.h1>
-
-              <motion.p
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-                className="text-lg md:text-xl font-medium text-white/80 leading-relaxed"
-              >
-                Explore in-depth reports featuring data-driven analysis, sector insights,
-                policy reviews, and market intelligence shaping India’s evolving energy landscape.
-              </motion.p>
-            </div>
+            <motion.p
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.15 }}
+              className="mt-6 max-w-[58ch] text-lg font-light leading-relaxed text-zinc-500"
+            >
+              Explore in-depth reports featuring data-driven analysis, sector insights,
+              policy reviews, and market intelligence shaping India&apos;s evolving energy landscape.
+            </motion.p>
           </div>
         </section>
 
-        {/* Reports Hero Ad Banner */}
-        <div className="container mx-auto px-6 lg:px-12 max-w-[1400px] pt-8">
+        {/* Ad Banner */}
+        <div className="mx-auto max-w-[1200px] px-8 sm:px-14 lg:px-20">
           <AdBanner placement="reports_hero" variant="banner" className="flex justify-center" />
         </div>
 
-        {/* SEARCH & FILTER AREA */}
-        <div className="container mx-auto px-6 lg:px-12 max-w-[1400px] mt-16 mb-20">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-8 pt-20 pb-12">
-            <div className="relative w-full md:w-96">
-              <button
-                onClick={() => setSelectedCategory("All")}
-                className={`hover:text-black transition-colors ${selectedCategory === "All" ? "text-[#00A651]" : ""}`}
-              >
-                All Reports
-              </button>
-            </div>
+        {/* ════════════════════════════════════════════
+            FILTER & SEARCH BAR
+            ════════════════════════════════════════════ */}
+        <section className="bg-white pt-14 pb-4">
+          <div className="mx-auto max-w-[1200px] px-8 sm:px-14 lg:px-20">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 border-b border-zinc-200 pb-6">
+              {/* Category filters */}
+              <nav className="flex items-center">
+                <span className="text-sm font-medium text-[#1a2340] relative pb-1 after:absolute after:bottom-[-25px] after:left-0 after:right-0 after:h-[2px] after:bg-[#1a2340]">
+                  All Reports
+                </span>
+              </nav>
 
-            <div className="w-full md:w-80 lg:w-96">
-              <div className="relative">
-                <Search className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 w-4 h-4" />
+              {/* Search field — minimalist bottom-bordered */}
+              <div className="relative w-full sm:w-72">
+                <Search className="pointer-events-none absolute left-0 top-1/2 -translate-y-1/2 text-zinc-300 w-4 h-4" />
                 <input
                   type="text"
-                  placeholder="Search resources..."
+                  placeholder="Search reports…"
                   value={searchQuery}
-                  className="w-full pl-12 pr-4 py-3 bg-zinc-100 rounded-full text-sm focus:outline-none focus:ring-1 focus:ring-[#00A651] transition-all"
+                  className="w-full pl-7 pr-2 py-2.5 bg-transparent border-b border-zinc-200 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:border-[#1a2340] transition-colors"
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
             </div>
           </div>
-        </div>
+        </section>
 
-        {/* REPORTS GRID */}
-        <div className="container mx-auto px-6 lg:px-12 max-w-[1400px]">
-          <motion.div
-            layout
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-12 gap-y-24"
-          >
-            <AnimatePresence mode='popLayout'>
-              {filteredReports.map((report, index) => (
-                <Link
-                  key={report.id}
-                  href={`/reports/${report.slug}`}
-                  className="group block outline-none"
-                >
-                  <motion.div
-                    layout
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.9 }}
-                    transition={{ duration: 0.5, delay: index * 0.1 }}
-                    className="flex flex-col h-full"
+        {/* ════════════════════════════════════════════
+            REPORTS GRID
+            ════════════════════════════════════════════ */}
+        <section className="bg-white pt-12 pb-24">
+          <div className="mx-auto max-w-[1200px] px-8 sm:px-14 lg:px-20">
+            <motion.div
+              layout
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-10 gap-y-16"
+            >
+              <AnimatePresence mode="popLayout">
+                {filteredReports.map((report, index) => (
+                  <Link
+                    key={report.id}
+                    href={`/reports/${report.slug}`}
+                    className="group block outline-none"
                   >
-                    {/* IMAGE CONTAINER */}
-                    <div className="relative aspect-3/4 bg-zinc-100 overflow-hidden rounded-2xl mb-8">
-                      {report.image && (
-                        <Image
-                          src={report.image}
-                          alt={report.title}
-                          fill
-                          className="object-cover grayscale group-hover:grayscale-0 transition-all duration-700"
-                        />
-                      )}
-                      <div className="absolute bottom-6 right-6 bg-white p-4 rounded-full shadow-2xl translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">
-                        <ArrowUpRight size={20} className="text-black" />
+                    <motion.article
+                      layout
+                      initial={{ opacity: 0, y: 16 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95 }}
+                      transition={{ duration: 0.4, delay: index * 0.06 }}
+                      className="flex flex-col h-full"
+                    >
+                      {/* Image — strict 3:4 portrait ratio */}
+                      <div className="relative aspect-[3/4] w-full bg-zinc-100 overflow-hidden rounded-lg mb-6">
+                        {report.image ? (
+                          <Image
+                            src={report.image}
+                            alt={report.title}
+                            fill
+                            className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.03]"
+                          />
+                        ) : (
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <span className="font-serif italic text-zinc-300 text-lg">No Cover</span>
+                          </div>
+                        )}
                       </div>
-                    </div>
 
-                    {/* CONTENT AREA */}
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-3 mb-4 text-[10px] font-bold uppercase">
-                        <span className="text-[#00A651]">{report.category}</span>
-                        <span className="flex items-center gap-1 text-zinc-400">
-                          <Clock size={10} />
-                          {formatDate(report.date)}
-                        </span>
+                      {/* Content — flex-grow ensures baseline alignment */}
+                      <div className="flex flex-col flex-1">
+                        {/* Badge + Date row */}
+                        <div className="flex items-center gap-3 mb-3">
+                          <span className="text-[10px] font-black uppercase tracking-[0.18em] text-[#00A651]">
+                            Report
+                          </span>
+                          {report.date && (
+                            <span className="flex items-center gap-1 text-[10px] uppercase tracking-wider text-zinc-400">
+                              <Clock size={10} />
+                              {formatDate(report.date)}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Title */}
+                        <h3 className="font-serif text-xl leading-snug text-zinc-900 transition-colors group-hover:text-[#00A651] mb-3">
+                          {report.title}
+                        </h3>
+
+                        {/* Excerpt — exactly 2 lines max */}
+                        {report.excerpt && (
+                          <p className="text-sm font-light leading-relaxed text-zinc-500 line-clamp-2 mt-auto">
+                            {report.excerpt}
+                          </p>
+                        )}
                       </div>
+                    </motion.article>
+                  </Link>
+                ))}
+              </AnimatePresence>
+            </motion.div>
 
-                      <h3 className="text-2xl font-bold font-serif leading-tight group-hover:text-[#00A651] transition-colors">
-                        {report.title}
-                      </h3>
-
-                      <p className="text-zinc-500 text-sm line-clamp-2 leading-relaxed">
-                        {report.excerpt}
-                      </p>
-                    </div>
-                  </motion.div>
-                </Link>
-              ))}
-            </AnimatePresence>
-          </motion.div>
-        </div>
+            {/* Empty state */}
+            {filteredReports.length === 0 && (
+              <div className="py-20 text-center">
+                <p className="text-zinc-400 font-light text-lg">No reports found matching your search.</p>
+              </div>
+            )}
+          </div>
+        </section>
       </main>
     </div>
   );

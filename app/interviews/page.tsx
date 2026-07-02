@@ -6,8 +6,6 @@ import Link from "next/link";
 import {
   motion,
   AnimatePresence,
-  useScroll,
-  useTransform,
 } from "framer-motion";
 import { ArrowUpRight, ArrowRight } from "lucide-react";
 import { slugify } from "@/lib/utils";
@@ -61,10 +59,6 @@ export default function InterviewsPage() {
   const [interviews, setInterviews] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const { scrollY } = useScroll();
-  const y1 = useTransform(scrollY, [0, 500], [0, 200]);
-  const opacity = useTransform(scrollY, [0, 300], [1, 0]);
-
   useEffect(() => {
     fetchInterviews().then((data) => {
       const formatted = data.map((item: any) => {
@@ -117,11 +111,11 @@ export default function InterviewsPage() {
             <Skeleton className="h-12 w-48 rounded-full bg-white/20" />
           </div>
         </div>
-        <div className="container mx-auto px-4 lg:px-12 py-20">
+        <div className="mx-auto max-w-[1200px] px-8 sm:px-14 lg:px-20 py-20">
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-12">
             {[...Array(8)].map((_, i) => (
               <div key={i} className="space-y-6">
-                <Skeleton className="aspect-3/4 w-full rounded-2xl" />
+                <Skeleton className="aspect-[4/5] w-full rounded-2xl" />
                 <div className="space-y-4">
                   <Skeleton className="h-4 w-24" />
                   <Skeleton className="h-8 w-full" />
@@ -142,37 +136,29 @@ export default function InterviewsPage() {
     <div className="min-h-screen bg-[#FDFDFD] font-sans text-zinc-900 overflow-x-hidden">
       <main className="relative pb-32">
         {/* HERO */}
-        <section className="relative w-full min-h-[80vh] flex items-center bg-[#0a0a0a] overflow-hidden">
-          <div className="absolute inset-0 z-0">
-            <motion.div
-              style={{ y: y1 }}
-              className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1551818255-e6e10975bc17?q=80&w=2073')] bg-cover bg-center opacity-40 scale-110"
-            />
-            <div className="absolute inset-0 bg-linear-to-b from-black/60 via-black/20 to-[#FDFDFD]" />
-          </div>
-
-          <div className="container mx-auto px-4 lg:px-8 relative z-10 pt-20">
-            <motion.div
-              initial={{ opacity: 0, y: 40 }}
+        <section className="bg-white pt-16 pb-12 border-b border-zinc-100">
+          <div className="mx-auto max-w-[1200px] px-8 sm:px-14 lg:px-20">
+            <motion.h1
+              initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 1 }}
-              style={{ opacity }}
-              className="max-w-5xl"
+              transition={{ duration: 0.5 }}
+              className="font-serif text-5xl sm:text-6xl lg:text-7xl font-normal tracking-tight text-[#1a2340]"
             >
-              <h1 className="text-4xl sm:text-6xl md:text-8xl lg:text-[8rem] font-black leading-[0.85] tracking-tight uppercase mb-6 sm:mb-10">
-                <span className="text-[#00A651]">
-                  Interview
-                </span>
-              </h1>
+              Interviews
+            </motion.h1>
 
-              <p className="text-xl text-white/70 max-w-2xl mb-12">
-                Gain direct insights from industry leaders, policymakers, and innovators driving the global energy transition forward.
-              </p>
-            </motion.div>
+            <motion.p
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.15 }}
+              className="mt-6 max-w-[58ch] text-lg font-light leading-relaxed text-zinc-500"
+            >
+              Gain direct insights from industry leaders, policymakers, and innovators driving the global energy transition forward.
+            </motion.p>
           </div>
         </section>
 
-        <div className="container mx-auto px-4 sm:px-6 lg:px-12 pt-12 sm:pt-20">
+        <div className="mx-auto max-w-[1200px] px-8 sm:px-14 lg:px-20 pt-12 sm:pt-20">
 
           {/* ── GRID ── */}
           {interviews.length > 0 ? (
@@ -180,18 +166,18 @@ export default function InterviewsPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
-              className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-y-12 sm:gap-y-20 gap-x-8 sm:gap-x-12"
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-12 sm:gap-y-20 gap-x-8 sm:gap-x-12"
             >
               {interviews.map((item) => (
                 <motion.div
                   key={item.id}
-                  className="group flex flex-col"
+                  className="group flex flex-col h-full"
                 >
                   <Link
                     href={`/interviews/${item.slug}`}
                     className="block overflow-hidden rounded-2xl mb-8"
                   >
-                    <div className="relative aspect-3/4 bg-zinc-100 overflow-hidden">
+                    <div className="relative aspect-[4/5] bg-zinc-100 overflow-hidden">
                       {item.image && (
                         <Image
                           src={item.image}
@@ -212,7 +198,7 @@ export default function InterviewsPage() {
                       </span>
                     </div>
                     <Link href={`/interviews/${item.slug}`}>
-                      <h3 className="font-serif font-bold text-2xl leading-[1.1] group-hover:text-[#00A651] mb-6">
+                      <h3 className="font-serif font-bold text-xl sm:text-2xl leading-[1.1] group-hover:text-[#00A651] mb-6">
                         {item.title}
                       </h3>
                     </Link>

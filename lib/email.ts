@@ -925,6 +925,233 @@ export async function sendWelcomeEmail(
     await sendEmail({ to, toName: firstName, subject, htmlContent });
 }
 
+export async function sendNewsletterSubscriptionThanksEmail(to: string): Promise<void> {
+    const subject = "Thanks for subscribing to ENERGDIVE Daily Briefing";
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://www.energdive.com";
+    const isDev = process.env.NODE_ENV === "development";
+    
+    // In dev/local testing, fallback to temporary CDN urls so images render properly in user email clients.
+    // In production, use standard public path urls served by the next app.
+    const logoUrl = isDev 
+        ? "https://tmpfiles.org/dl/wMwTWkdz090m/energdive-logo-white-rr.png"
+        : `${appUrl}/energdive-logo-white-rr.png`;
+    const headerBgUrl = isDev
+        ? "https://tmpfiles.org/dl/w2wHWodM0ko8/email_header_bg.png"
+        : `${appUrl}/images/email_header_bg.png`;
+    const envelopeUrl = isDev
+        ? "https://tmpfiles.org/dl/wpwkWidZ0bcU/newsletter_envelope.png"
+        : `${appUrl}/images/newsletter_envelope.png`;
+
+    const unsubscribeUrl = `${appUrl}/unsubscribe?email=${encodeURIComponent(to)}`;
+    const year = new Date().getFullYear();
+
+    const htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>${subject}</title>
+</head>
+<body style="margin:0;padding:0;background-color:#f4f5f7;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f5f7;padding:32px 16px;">
+        <tr>
+            <td align="center">
+                <!-- Container Card -->
+                <table width="600" cellpadding="0" cellspacing="0" style="width:100%;max-width:600px;background-color:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #e5e7eb;box-shadow:0 4px 12px rgba(0,0,0,0.05);">
+                    
+                    <!-- Header Banner -->
+                    <tr>
+                        <td style="background-color:#05131b; background-image:url('${headerBgUrl}'); background-size:cover; background-position:center; padding:32px 40px; text-align:left; border-bottom:4px solid #00C49A;">
+                            <table width="100%" cellpadding="0" cellspacing="0">
+                                <tr>
+                                    <td>
+                                        <img src="${logoUrl}" alt="ENERGDIVE" width="160" style="display:block; max-width:160px; height:auto; margin-bottom:6px;" />
+                                        <div style="color:rgba(255,255,255,0.7); font-size:11px; font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif; letter-spacing:0.5px;">Insights and Market Intelligence</div>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    
+                    <!-- Main Body Container -->
+                    <tr>
+                        <td style="padding:40px 32px 32px 32px; background-color:#ffffff;">
+                            <table width="100%" cellpadding="0" cellspacing="0">
+                                <tr>
+                                    <!-- Left Text Column -->
+                                    <td width="320" valign="top" style="padding-right:20px; text-align:left;">
+                                        
+                                        <!-- Subscription Confirmed Pill -->
+                                        <table cellpadding="0" cellspacing="0" style="margin-bottom:20px;">
+                                            <tr>
+                                                <td style="background-color:#e6f7ed; border:1px solid #ccefdc; border-radius:20px; padding:6px 14px;">
+                                                    <table cellpadding="0" cellspacing="0">
+                                                        <tr>
+                                                            <td style="background-color:#00A651; color:#ffffff; width:16px; height:16px; border-radius:50%; text-align:center; font-size:10px; line-height:16px; font-weight:bold; font-family:'Segoe UI',Roboto,sans-serif;">✔</td>
+                                                            <td style="color:#00A651; font-size:11px; font-weight:bold; letter-spacing:0.5px; text-transform:uppercase; font-family:'Segoe UI',Roboto,sans-serif; padding-left:6px; line-height:16px;">Subscription Confirmed</td>
+                                                        </tr>
+                                                    </table>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                        
+                                        <!-- Heading -->
+                                        <h1 style="margin:0 0 12px 0; color:#111827; font-size:32px; font-weight:800; line-height:1.2; font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">Thanks for subscribing!</h1>
+                                        
+                                        <!-- Green accent bar -->
+                                        <div style="width:44px; height:3px; background-color:#00A651; margin-bottom:24px;"></div>
+                                        
+                                        <!-- Description -->
+                                        <p style="margin:0 0 16px 0; color:#4b5563; font-size:14px; line-height:1.6; font-family:'Segoe UI',Roboto,sans-serif;">
+                                            You are now subscribed to the ENERGDIVE Daily Briefing newsletter.
+                                        </p>
+                                        <p style="margin:0 0 28px 0; color:#4b5563; font-size:14px; line-height:1.6; font-family:'Segoe UI',Roboto,sans-serif;">
+                                            We'll send you concise energy news, market updates, policy moves, and expert insights—straight to your inbox.
+                                        </p>
+                                        
+                                        <!-- Read Latest News Button -->
+                                        <table cellpadding="0" cellspacing="0">
+                                            <tr>
+                                                <td style="background-color:#00A651; border-radius:8px; padding:12px 20px;">
+                                                    <a href="${appUrl}/news" style="color:#ffffff; text-decoration:none; font-size:14px; font-weight:bold; font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif; display:inline-block;">
+                                                        <table cellpadding="0" cellspacing="0">
+                                                            <tr>
+                                                                <td style="padding-right:8px; line-height:1;"><span style="font-size:16px;">📰</span></td>
+                                                                <td style="line-height:1; font-size:14px; font-weight:bold; color:#ffffff; font-family:'Segoe UI',Roboto,sans-serif;">Read latest news</td>
+                                                                <td style="padding-left:8px; line-height:1;"><span style="font-size:16px;">→</span></td>
+                                                            </tr>
+                                                        </table>
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                        
+                                    </td>
+                                    
+                                    <!-- Right Image Column -->
+                                    <td width="200" align="center" valign="middle" style="text-align:center;">
+                                        <img src="${envelopeUrl}" alt="Newsletter Subscription" width="200" style="display:block; max-width:200px; height:auto; margin:0 auto;" />
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    
+                    <!-- Features Band -->
+                    <tr>
+                        <td style="background-color:#f9fafb; border-top:1px solid #f3f4f6; border-bottom:1px solid #f3f4f6; padding:24px 32px;">
+                            <table width="100%" cellpadding="0" cellspacing="0">
+                                <tr>
+                                    <!-- Feature 1 -->
+                                    <td width="33%" valign="top" style="padding-right:12px;">
+                                        <table cellpadding="0" cellspacing="0">
+                                            <tr>
+                                                <td valign="top" style="padding-right:8px;">
+                                                    <div style="width:32px; height:32px; border-radius:50%; background-color:#e6f7ed; text-align:center; line-height:32px;">
+                                                        <span style="color:#00A651; font-size:16px; font-weight:bold; font-family:'Segoe UI',Roboto,sans-serif;">⚡</span>
+                                                    </div>
+                                                </td>
+                                                <td valign="top">
+                                                    <h4 style="margin:0 0 2px 0; color:#111827; font-size:12px; font-weight:bold; font-family:'Segoe UI',Roboto,sans-serif;">Timely Updates</h4>
+                                                    <p style="margin:0; color:#6b7280; font-size:11px; line-height:1.4; font-family:'Segoe UI',Roboto,sans-serif;">Stay ahead with the latest energy news.</p>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                    <!-- Feature 2 -->
+                                    <td width="33%" valign="top" style="padding-right:12px;">
+                                        <table cellpadding="0" cellspacing="0">
+                                            <tr>
+                                                <td valign="top" style="padding-right:8px;">
+                                                    <div style="width:32px; height:32px; border-radius:50%; background-color:#e6f7ed; text-align:center; line-height:32px;">
+                                                        <span style="color:#00A651; font-size:16px; font-weight:bold; font-family:'Segoe UI',Roboto,sans-serif;">📈</span>
+                                                    </div>
+                                                </td>
+                                                <td valign="top">
+                                                    <h4 style="margin:0 0 2px 0; color:#111827; font-size:12px; font-weight:bold; font-family:'Segoe UI',Roboto,sans-serif;">Market Intelligence</h4>
+                                                    <p style="margin:0; color:#6b7280; font-size:11px; line-height:1.4; font-family:'Segoe UI',Roboto,sans-serif;">Actionable insights you can trust.</p>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                    <!-- Feature 3 -->
+                                    <td width="33%" valign="top">
+                                        <table cellpadding="0" cellspacing="0">
+                                            <tr>
+                                                <td valign="top" style="padding-right:8px;">
+                                                    <div style="width:32px; height:32px; border-radius:50%; background-color:#e6f7ed; text-align:center; line-height:32px;">
+                                                        <span style="color:#00A651; font-size:16px; font-weight:bold; font-family:'Segoe UI',Roboto,sans-serif;">📄</span>
+                                                    </div>
+                                                </td>
+                                                <td valign="top">
+                                                    <h4 style="margin:0 0 2px 0; color:#111827; font-size:12px; font-weight:bold; font-family:'Segoe UI',Roboto,sans-serif;">Expert Analysis</h4>
+                                                    <p style="margin:0; color:#6b7280; font-size:11px; line-height:1.4; font-family:'Segoe UI',Roboto,sans-serif;">In-depth perspectives from industry experts.</p>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    
+                    <!-- Footer Section -->
+                    <tr>
+                        <td style="background-color:#f3f4f6; padding:32px 40px; text-align:center;">
+                            <p style="margin:0 0 8px 0; color:#111827; font-size:13px; font-weight:bold; font-family:'Segoe UI',Roboto,sans-serif;">
+                                ENERGDive Intelligence
+                            </p>
+                            <p style="margin:0 0 16px 0; color:#6b7280; font-size:12px; font-family:'Segoe UI',Roboto,sans-serif;">
+                                You can unsubscribe at any time. <a href="${unsubscribeUrl}" style="color:#00A651; text-decoration:underline; font-weight:bold;">Unsubscribe</a>
+                            </p>
+                            
+                            <!-- Social Media Icons -->
+                            <table cellpadding="0" cellspacing="0" align="center" style="margin:0 auto 16px auto;">
+                                <tr>
+                                    <td style="padding:0 6px;">
+                                        <a href="https://www.linkedin.com/company/energdive/" style="display:inline-block; width:28px; height:28px; border-radius:50%; background-color:#111827; text-align:center; line-height:28px; text-decoration:none;">
+                                            <img src="https://img.icons8.com/ios-filled/50/ffffff/linkedin.png" alt="LinkedIn" width="14" style="vertical-align:middle; width:14px; height:14px; display:inline-block; border:0;" />
+                                        </a>
+                                    </td>
+                                    <td style="padding:0 6px;">
+                                        <a href="https://x.com/energdive" style="display:inline-block; width:28px; height:28px; border-radius:50%; background-color:#111827; text-align:center; line-height:28px; text-decoration:none;">
+                                            <img src="https://img.icons8.com/ios-filled/50/ffffff/twitter.png" alt="Twitter" width="14" style="vertical-align:middle; width:14px; height:14px; display:inline-block; border:0;" />
+                                        </a>
+                                    </td>
+                                    <td style="padding:0 6px;">
+                                        <a href="${appUrl}" style="display:inline-block; width:28px; height:28px; border-radius:50%; background-color:#111827; text-align:center; line-height:28px; text-decoration:none;">
+                                            <img src="https://img.icons8.com/ios-filled/50/ffffff/globe.png" alt="Website" width="14" style="vertical-align:middle; width:14px; height:14px; display:inline-block; border:0;" />
+                                        </a>
+                                    </td>
+                                </tr>
+                            </table>
+                            
+                            <p style="margin:0; color:#9ca3af; font-size:11px; font-family:'Segoe UI',Roboto,sans-serif;">
+                                &copy; ${year} ENERGDIVE. All rights reserved.
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>`;
+
+    await sendEmail({
+        to,
+        toName: to,
+        subject,
+        htmlContent,
+        sender: {
+            email: DIGEST_FROM_EMAIL,
+            name: DIGEST_FROM_NAME,
+        },
+        tags: ["newsletter-subscription", "daily-briefing"],
+    });
+}
+
 export async function sendPreferenceDigestEmail(
     to: string,
     firstName: string,

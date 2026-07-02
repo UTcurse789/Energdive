@@ -3,10 +3,11 @@
 import React from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import { Issue } from "@/types";
 import { ScrollProgress } from "@/components/ui/scroll-progress";
+import { useAuthModal } from "@/hooks/use-auth-modal";
 
 interface IssueDetailClientProps {
     issue: Issue;
@@ -67,6 +68,7 @@ function IssueArticleThumbnail({
 
 function PdfDownloadLink({ slug }: { slug: string }) {
     const { isSignedIn, isLoaded } = useUser();
+    const { openAuthModal } = useAuthModal();
 
     const isLoggedIn = isLoaded && isSignedIn === true;
 
@@ -81,12 +83,12 @@ function PdfDownloadLink({ slug }: { slug: string }) {
                     PDF
                 </a>
             ) : (
-                <Link
-                    href={`/auth?redirect_url=${encodeURIComponent(`/issues/${slug}?download=true`)}`}
-                    className="ml-2 underline underline-offset-4 transition-colors hover:text-black"
+                <button
+                    onClick={() => openAuthModal(`/issues/${slug}?download=true`)}
+                    className="ml-2 underline underline-offset-4 transition-colors hover:text-black cursor-pointer bg-transparent border-none p-0 inline font-serif text-[16px] text-gray-600"
                 >
                     PDF
-                </Link>
+                </button>
             )}
         </div>
     );
@@ -98,31 +100,58 @@ function PdfDownloadLink({ slug }: { slug: string }) {
  */
 function AutoDownloadTrigger({ slug }: { slug: string }) {
     const searchParams = useSearchParams();
-    const router = useRouter();
     const { user, isSignedIn, isLoaded } = useUser();
+    const { openAuthModal } = useAuthModal();
     const hasTriggered = React.useRef(false);
+    const downloadRequested = searchParams.get("download") === "true";
+    const clerkOnboardingCompleted = user?.publicMetadata?.onboarding_completed === true;
 
     React.useEffect(() => {
-        if (!isLoaded || hasTriggered.current) return;
-        if (searchParams.get("download") !== "true") return;
+        if (!isLoaded || hasTriggered.current || !downloadRequested) return;
+
+        const startDownload = () => {
+            if (hasTriggered.current) return;
+            hasTriggered.current = true;
+            // Clean the URL to prevent re-triggering on refresh.
+            window.history.replaceState({}, "", `/issues/${slug}`);
+            window.location.href = `/issues/${slug}/download`;
+        };
 
         if (isSignedIn) {
-            const onboardingCompleted = user?.publicMetadata?.onboarding_completed === true;
-            if (onboardingCompleted) {
-                hasTriggered.current = true;
-                // Clean the URL (remove ?download=true) to prevent re-triggering on refresh
-                window.history.replaceState({}, "", `/issues/${slug}`);
-                // Navigate to the download route handler — auth session is now established
-                window.location.href = `/issues/${slug}/download`;
-            } else {
-                console.log("[AutoDownloadTrigger] User is signed in but onboarding is not completed yet. Waiting...");
+            if (clerkOnboardingCompleted) {
+                startDownload();
+                return;
             }
-        } else {
-            // Not signed in — redirect to auth with download intent
-            hasTriggered.current = true;
-            router.push(`/auth?redirect_url=${encodeURIComponent(`/issues/${slug}?download=true`)}`);
+
+            let cancelled = false;
+
+            (async () => {
+                try {
+                    const res = await fetch("/api/onboarding/status", { cache: "no-store" });
+                    if (!res.ok) {
+                        console.warn("[AutoDownloadTrigger] Onboarding status check failed:", res.status);
+                        return;
+                    }
+
+                    const data = await res.json();
+                    if (!cancelled && data.signedIn && data.onboardingCompleted) {
+                        startDownload();
+                    } else {
+                        console.log("[AutoDownloadTrigger] User is signed in but onboarding is not completed yet. Waiting...");
+                    }
+                } catch (error) {
+                    console.warn("[AutoDownloadTrigger] Onboarding status check failed:", error);
+                }
+            })();
+
+            return () => {
+                cancelled = true;
+            };
         }
-    }, [isLoaded, isSignedIn, user, searchParams, slug, router]);
+
+        hasTriggered.current = true;
+        openAuthModal(`/issues/${slug}?download=true`);
+    }, [clerkOnboardingCompleted, downloadRequested, isLoaded, isSignedIn, slug, openAuthModal]);
 
     return null;
 }

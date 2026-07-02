@@ -130,12 +130,12 @@ export function Hero({ topStories: propTopStories }: HeroProps) {
     const featured = carouselArticles[currentSlide];
 
     return (
-        <section className="py-10 bg-white">
-            <div className="container mx-auto px-4">
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+        <section className="pt-4 pb-4 bg-white">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-3">
 
-                    {/* === LEFT (8 Cols) === */}
-                    <div className="lg:col-span-8 flex flex-col">
+                    {/* === LEFT (2 Cols) === */}
+                    <div className="lg:col-span-2 flex flex-col">
 
                         {/* Banner */}
                         <div className="relative aspect-[16/8.5] w-full overflow-hidden rounded-3xl bg-black group/img shadow-md">
@@ -230,9 +230,9 @@ export function Hero({ topStories: propTopStories }: HeroProps) {
                         </div>
                     </div>
 
-                    {/* === RIGHT SIDEBAR (4 Cols) === */}
-                    <div className="lg:col-span-4 lg:pl-10">
-                        <div className="relative flex items-center justify-between mb-8 pb-4 border-b border-slate-100">
+                    {/* === RIGHT SIDEBAR (1 Col) === */}
+                    <div className="lg:col-span-1">
+                        <div className="relative flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
                             <h3 className="text-sm font-black uppercase tracking-[0.2em] text-[#1a1a1a] flex items-center gap-2">
                                 <span className="w-2 h-2 rounded-full bg-red-600 animate-pulse" />
                                 Latest News
@@ -242,33 +242,37 @@ export function Hero({ topStories: propTopStories }: HeroProps) {
                             </Link>
                         </div>
 
-                        <div className="space-y-6">
-                            {topStories.map((story) => (
+                        <div className="space-y-3">
+                            {topStories.map((story) => {
+                                const storyHref = buildContentUrl({ slug: story.slug || "", type_of_content: story.type_of_content, content_tag: story.content_tag });
+
+                                return (
                                     <Link
                                         key={story.id}
-                                        href={buildContentUrl({ slug: story.slug || "", type_of_content: story.type_of_content, content_tag: story.content_tag })}
-                                        className="group flex gap-5 items-start border-b border-slate-50 pb-5 last:border-0"
+                                        href={storyHref}
+                                        className="group flex gap-4 items-start border-b border-slate-50 pb-4 last:border-0"
                                     >
-                                    <div className="relative h-20 w-28 shrink-0 overflow-hidden rounded-2xl bg-slate-100">
+                                        <div className="relative h-20 w-28 shrink-0 overflow-hidden rounded-2xl bg-slate-100">
                                             <Image
                                                 src={getImageUrl(story)}
                                                 alt={story.Title || "Latest news image"}
-                                            fill
-                                            sizes="112px"
-                                            className="object-cover transition-transform duration-500 group-hover:scale-105"
-                                        />
-                                    </div>
-                                    <div className="min-w-0 space-y-1.5">
-                                        <p className="text-[9px] font-black text-[#09B697] uppercase tracking-widest">
-                                            {story.sectors?.[0]?.name}
-                                        </p>
-                                        <h4 className="font-serif text-[15.5px] font-bold leading-snug text-[#1a1a1a] group-hover:text-[#09B697] transition-colors line-clamp-2">
-                                            {story.Title}
-                                        </h4>
-                                        <DateChip value={formatContentDate(story.Date || story.createdAt || "")} className="text-[10px]" />
-                                    </div>
-                                </Link>
-                            ))}
+                                                fill
+                                                sizes="112px"
+                                                className="object-cover transition-transform duration-500 group-hover:scale-105"
+                                            />
+                                        </div>
+                                        <div className="min-w-0 space-y-1.5">
+                                            <p className="text-[9px] font-black text-[#09B697] uppercase tracking-widest">
+                                                {story.sectors?.[0]?.name}
+                                            </p>
+                                            <h4 className="font-serif text-[15px] font-bold leading-snug text-[#1a1a1a] group-hover:text-[#09B697] transition-colors line-clamp-2">
+                                                {story.Title}
+                                            </h4>
+                                            <DateChip value={formatContentDate(story.Date || story.createdAt || "")} className="text-[10px]" />
+                                        </div>
+                                    </Link>
+                                );
+                            })}
                         </div>
                     </div>
                 </div>
@@ -282,10 +286,10 @@ import { strapiImageUrl } from "@/lib/strapi-image";
 
 function HeroSkeleton() {
     return (
-        <section className="py-10 bg-white">
-            <div className="container mx-auto px-4">
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-                    <div className="lg:col-span-8 flex flex-col">
+        <section className="pt-4 pb-4 bg-white">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-3">
+                    <div className="lg:col-span-2 flex flex-col">
                         <Skeleton className="aspect-[16/8.5] w-full rounded-3xl" />
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mt-10">
                             <div className="md:col-span-3 space-y-5">
@@ -295,10 +299,11 @@ function HeroSkeleton() {
                             </div>
                         </div>
                     </div>
-                    <div className="lg:col-span-4 lg:pl-10 space-y-8">
-                        <Skeleton className="h-8 w-full border-b pb-4" />
+                    <div className="lg:col-span-1">
+                        <Skeleton className="mb-4 h-8 w-full border-b pb-3" />
+                        <div className="space-y-3">
                         {[...Array(5)].map((_, i) => (
-                            <div key={i} className="flex gap-5 pb-5 border-b last:border-0">
+                            <div key={i} className="flex gap-4 pb-4 border-b last:border-0">
                                 <Skeleton className="h-20 w-28 rounded-2xl shrink-0" />
                                 <div className="flex-1 space-y-2">
                                     <Skeleton className="h-3 w-24" />
@@ -306,6 +311,7 @@ function HeroSkeleton() {
                                 </div>
                             </div>
                         ))}
+                        </div>
                     </div>
                 </div>
             </div>

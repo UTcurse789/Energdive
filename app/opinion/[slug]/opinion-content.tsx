@@ -49,9 +49,9 @@ export default function OpinionContent({ opinion, recommended }: any) {
             <ArticleStickyShare title={opinion.title} url={`https://www.energdive.com${sectionPath}/${opinion.slug}`} />
             <ScrollProgress />
 
-            <article className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl pt-12">
+            <article className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl pt-6 lg:pt-8">
                 {/* Navigation */}
-                <nav className="flex items-center justify-between mb-16 border-b border-zinc-100 pb-6">
+                <nav className="flex items-center justify-between mb-8 lg:mb-10 border-b border-zinc-100 pb-6">
                     <Link
                         href={sectionPath}
                         className="group flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 hover:text-[#00A651] transition-all"
@@ -79,8 +79,8 @@ export default function OpinionContent({ opinion, recommended }: any) {
                 </nav>
 
                 {/* Hero Section */}
-                <header className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-20 mb-24 items-start">
-                    <div className="lg:col-span-7 space-y-8">
+                <header className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-20 mb-16 lg:mb-24 lg:h-[calc(100vh-220px)] lg:min-h-[500px] items-center">
+                    <div className="lg:col-span-7 flex flex-col justify-center">
                         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
                             <span className="inline-block px-3 py-1 border border-zinc-200 text-zinc-500 text-[10px] font-black uppercase tracking-[0.3em] rounded mb-6">
                                 {opinion.category}
@@ -114,11 +114,11 @@ export default function OpinionContent({ opinion, recommended }: any) {
                         </motion.div>
                     </div>
 
-                    <div className="lg:col-span-5 h-full min-h-[400px]">
+                    <div className="lg:col-span-5 w-full h-full mt-8 lg:mt-0">
                         <motion.div
                             initial={{ opacity: 0, scale: 0.98 }}
                             animate={{ opacity: 1, scale: 1 }}
-                            className="relative aspect-4/5 overflow-hidden rounded-2xl shadow-3xl bg-zinc-100"
+                            className="relative w-full aspect-square lg:aspect-auto lg:h-full overflow-hidden rounded-2xl shadow-3xl bg-zinc-100"
                         >
                             {opinion.featuredImage && (
                                 <Image src={opinion.featuredImage} alt={opinion.title} fill className="object-cover grayscale hover:grayscale-0 transition-all duration-1000" priority />
