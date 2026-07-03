@@ -1,6 +1,6 @@
 "use client";
 
-import { useAuth } from "@clerk/nextjs";
+import { useAuth, AuthenticateWithRedirectCallback } from "@clerk/nextjs";
 import { useEffect, useRef } from "react";
 import {
     getSafeRedirectFromClient,
@@ -14,18 +14,6 @@ type WindowWithPostHog = Window & {
     };
 };
 
-/**
- * SSO Callback fallback page.
- *
- * In the optimized flow, users never land here — they go directly to the
- * target page via Clerk's `redirectUrlComplete`. This page exists only as
- * a safety net for edge cases (bookmarks, direct navigation, Clerk fallback).
- *
- * If the user does land here:
- * 1. Check if already signed in → redirect immediately
- * 2. If not yet signed in, wait for Clerk to finish processing → then redirect
- * 3. After 5s timeout, redirect anyway (the target page will handle auth state)
- */
 export default function SSOCallbackPage() {
     const { isLoaded, isSignedIn } = useAuth();
     const hasRedirected = useRef(false);
@@ -61,36 +49,32 @@ export default function SSOCallbackPage() {
         sessionStorage.removeItem(POST_AUTH_REDIRECT_STORAGE_KEY);
         document.cookie = `${POST_AUTH_REDIRECT_COOKIE}=; path=/; max-age=0; SameSite=Lax`;
 
-        // Navigate immediately — replace so user can't go "back" to callback
+        // Navigate immediately — replace so user can't go "back" to callback.
+        // We use window.location.replace to force a full hard reload.
+        // This is necessary because Next.js App Router aggressively caches the unauthenticated 
+        // version of pages during a soft navigation. A hard reload forces the server 
+        // to re-evaluate the auth state and fetch fresh data.
         window.location.replace(target);
     };
 
     useEffect(() => {
-        // If auth is loaded and user is signed in, redirect immediately
+        // If auth is loaded and user is signed in, redirect immediately.
+        // This triggers after AuthenticateWithRedirectCallback finishes token exchange.
         if (isLoaded && isSignedIn) {
             navigateAway();
             return;
         }
-
-        // If auth is loaded but NOT signed in, Clerk may still be processing
-        // the OAuth exchange. Give it a short timeout, then redirect anyway —
-        // the target page's middleware/layout will handle the auth state.
-        if (isLoaded && !isSignedIn) {
-            const timer = setTimeout(() => {
-                console.log("[SSO CALLBACK] Timeout: redirecting to target even though not signed in");
-                navigateAway();
-            }, 3000);
-            return () => clearTimeout(timer);
-        }
+        
+        // Removed the 3 second timeout race condition that was causing premature redirects.
     }, [isLoaded, isSignedIn]);
 
-    // Minimal loading UI — just a spinner and nothing else
     return (
         <div className="min-h-screen flex items-center justify-center bg-white">
             <div className="flex flex-col items-center gap-4">
                 {/* Simple fast spinner */}
                 <div className="w-8 h-8 rounded-full border-[2.5px] border-zinc-100 border-t-[#00A651] animate-spin" />
                 <p className="text-sm text-zinc-400">Signing you in…</p>
+                <AuthenticateWithRedirectCallback />
             </div>
         </div>
     );

@@ -446,7 +446,7 @@ export default function UnifiedAuthPage() {
             await signIn!.authenticateWithRedirect({
                 strategy: "oauth_google",
                 redirectUrl: "/auth/sso-callback",
-                redirectUrlComplete: target,
+                redirectUrlComplete: "/auth/sso-callback",
             });
         } catch {
             setError("Google sign-in failed. Please try again.");
@@ -462,7 +462,7 @@ export default function UnifiedAuthPage() {
             await signIn!.authenticateWithRedirect({
                 strategy: "oauth_linkedin_oidc",
                 redirectUrl: "/auth/sso-callback",
-                redirectUrlComplete: target,
+                redirectUrlComplete: "/auth/sso-callback",
             });
         } catch {
             setError("LinkedIn sign-in failed. Please try again.");

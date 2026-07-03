@@ -389,21 +389,8 @@ export default function OnboardingWizard({ returnTo = "/", mode = "page", onComp
 
             if (!res.ok) throw new Error("Failed to save profile");
 
-            // Update Clerk's user profile with the name so it shows in menus
-            try {
-                await user?.update({
-                    firstName: data.firstName,
-                    lastName: data.lastName,
-                });
-            } catch (e) {
-                console.warn("Could not update Clerk profile name:", e);
-            }
-
-            try {
-                await user?.reload();
-            } catch (e) {
-                console.warn("Could not reload Clerk user object:", e);
-            }
+            // Removed frontend user?.update() and user?.reload() to prevent race conditions 
+            // with the backend clerkClient().users.updateUser() call which can invalidate the session.
 
             // Read stored redirect before clearing
             const storedRedirect = typeof window !== "undefined"
