@@ -31,6 +31,7 @@ export type EventResource = {
   showCode: string;
   year: number;
   sector: Sector[];
+  shortDescription: string;
   description: string;
   fileType: FileType;
   fileSize: string;

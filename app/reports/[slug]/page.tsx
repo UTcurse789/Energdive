@@ -104,23 +104,14 @@ function getMediaUrl(media: any): string | null {
     return path ? strapiImageUrl(path) : null;
 }
 
-function normalizeExternalUrl(value: unknown): string | null {
-    const raw = typeof value === "string" ? value.trim() : "";
-    if (!raw) return null;
+function hasMediaFile(media: any): boolean {
+    if (!media) return false;
 
-    if (/^https?:\/\//i.test(raw) || raw.startsWith("//")) {
-        return raw;
-    }
+    const source = Array.isArray(media) ? media[0] : media;
+    const data = source?.data || source;
+    const attrs = Array.isArray(data) ? data[0]?.attributes || data[0] : data?.attributes || data;
 
-    if (raw.startsWith("/")) {
-        return `${STRAPI.replace(/\/$/, "")}${raw}`;
-    }
-
-    if (/^[\w.-]+\.[a-z]{2,}(?:\/.*)?$/i.test(raw)) {
-        return `https://${raw}`;
-    }
-
-    return raw;
+    return typeof attrs?.url === "string" && attrs.url.trim().length > 0;
 }
 
 /* ==========================================================
@@ -411,9 +402,8 @@ export default async function IntelligenceReportPage({ params }: { params: Promi
 
     const title = report.Title || report.title || "Untitled Report";
     const imageUrl = getMediaUrl(report.FeaturedImage || report.featuredImage);
-    const downloadUrl = normalizeExternalUrl(
-        report.source || report.Source || report.downloadUrl || report.DownloadUrl
-    );
+    const hasPdf = hasMediaFile(report.pdf || report.PDF);
+    const downloadUrl = hasPdf ? `/api/reports/${encodeURIComponent(slug)}/download` : null;
     const excerpt = extractText(report.Excerpt || report.excerpt);
 
     // Derived values for UI

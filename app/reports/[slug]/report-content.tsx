@@ -148,7 +148,8 @@ export default async function ArticlePage(props: PageProps) {
             ? `${process.env.NEXT_PUBLIC_STRAPI_URL}${author.avatar.data.attributes.url}`
             : null;
 
-    const downloadUrl = article.source || article.downloadUrl || "#";
+    const hasPdf = Boolean(article.pdf?.url || article.pdf?.data?.attributes?.url);
+    const downloadUrl = hasPdf ? `/api/reports/${encodeURIComponent(article.slug)}/download` : "#";
     const excerpt = article.Excerpt?.[0]?.children?.[0]?.text || article.excerpt || "";
 
     return (

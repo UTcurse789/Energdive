@@ -170,7 +170,7 @@ export function getResourceDownloadPath(
   resource: Pick<EventResource, "slug">,
   autoDownload = false
 ) {
-  const path = `/resource-center/${encodeURIComponent(resource.slug)}`;
+  const path = `/resource-hub/${encodeURIComponent(resource.slug)}`;
   return autoDownload ? `${path}?download=true` : path;
 }
 
@@ -219,7 +219,7 @@ export async function requestTrackedResourceDownload(
     ...(await fetchClientIpApiAttribution()),
   };
 
-  const response = await fetch("/api/resource-center/download", {
+  const response = await fetch("/api/resource-hub/download", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ slug: resource.slug, attribution }),
