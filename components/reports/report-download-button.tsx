@@ -21,8 +21,7 @@ export function ReportDownloadButton({ slug, title, downloadUrl }: ReportDownloa
   function startDownload() {
     const anchor = document.createElement("a");
     anchor.href = downloadUrl;
-    anchor.target = "_blank";
-    anchor.rel = "noopener noreferrer";
+    anchor.download = "";
     document.body.appendChild(anchor);
     anchor.click();
     anchor.remove();
@@ -57,12 +56,10 @@ export function ReportDownloadButton({ slug, title, downloadUrl }: ReportDownloa
       if (data.slug === slug && data.downloadUrl) {
         const anchor = document.createElement("a");
         anchor.href = data.downloadUrl;
-        anchor.target = "_blank";
-        anchor.rel = "noopener noreferrer";
+        anchor.download = "";
         document.body.appendChild(anchor);
         anchor.click();
         anchor.remove();
-        setDownloadNotice("Download started");
 
         fetch("/api/user/saved-articles", {
           method: "POST",

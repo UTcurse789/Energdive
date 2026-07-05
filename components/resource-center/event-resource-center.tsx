@@ -57,13 +57,14 @@ const SORT_OPTIONS: SortOption[] = [
   "Featured",
 ];
 
+const EVENT_BROCHURE_TYPE = "Event Brochure";
+
 const RESOURCE_TYPE_ORDER: string[] = [
   "Magazine EPDF",
   "Post Show Report",
   "Paper Abstract",
   "Whitepaper",
   "Industry Report",
-  "Event Brochure",
 ];
 
 const THEME_STYLE = "bg-[#00A651]/10 text-[#00A651] border-[#00A651]/20";
@@ -131,6 +132,55 @@ function uniqueSorted<T extends string | number>(values: T[]) {
   );
 }
 
+function normalizeResourceType(type: string) {
+  return type.trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+function isEventBrochureType(type: string) {
+  const normalized = normalizeResourceType(type);
+  return (
+    normalized === normalizeResourceType(EVENT_BROCHURE_TYPE) ||
+    normalized === `${normalizeResourceType(EVENT_BROCHURE_TYPE)}s`
+  );
+}
+
+function isListedResource(resource: EventResource) {
+  return !isEventBrochureType(resource.resource_type);
+}
+
+function getOrderedResourceTypes(types: Iterable<ResourceType>) {
+  const fixedOrderLookup = new Map(
+    RESOURCE_TYPE_ORDER.map((type, index) => [normalizeResourceType(type), index])
+  );
+
+  return Array.from(types).sort((a, b) => {
+    const aOrder = fixedOrderLookup.get(normalizeResourceType(a));
+    const bOrder = fixedOrderLookup.get(normalizeResourceType(b));
+
+    if (aOrder !== undefined || bOrder !== undefined) {
+      return (
+        (aOrder ?? Number.MAX_SAFE_INTEGER) -
+        (bOrder ?? Number.MAX_SAFE_INTEGER)
+      );
+    }
+
+    return a.localeCompare(b);
+  });
+}
+
+function getResourceTypeFromQuery(
+  typeParam: string | null,
+  resourceTypeOptions: ResourceType[]
+) {
+  if (!typeParam || isEventBrochureType(typeParam)) return null;
+
+  return (
+    resourceTypeOptions.find(
+      (type) => normalizeResourceType(type) === normalizeResourceType(typeParam)
+    ) ?? typeParam
+  );
+}
+
 export function EventResourceCenter({
   resources,
   events,
@@ -148,6 +198,10 @@ export function EventResourceCenter({
   const [downloadingSlug, setDownloadingSlug] = useState<string | null>(null);
 
   const canDownload = isLoaded && isSignedIn;
+  const listedResources = useMemo(
+    () => resources.filter(isListedResource),
+    [resources]
+  );
   const eventLookup = useMemo(
     () =>
       events.reduce<Record<string, EnergyEvent>>((acc, event) => {
@@ -158,30 +212,35 @@ export function EventResourceCenter({
   );
   const resourceTypeOptions = useMemo(
     () => {
-      const existing = new Set(resources.map((r) => r.resource_type));
-      // Fixed order first, then any types not in the list (alphabetically)
-      const ordered = RESOURCE_TYPE_ORDER.filter((t) => existing.has(t));
-      const extras = Array.from(existing)
-        .filter((t) => !RESOURCE_TYPE_ORDER.includes(t))
-        .sort();
-      return [...ordered, ...extras];
+      const existing = new Set(listedResources.map((r) => r.resource_type));
+      return getOrderedResourceTypes(existing);
     },
-    [resources]
+    [listedResources]
+  );
+  const resourceTypeRank = useMemo(
+    () =>
+      new Map(
+        resourceTypeOptions.map((type, index) => [
+          normalizeResourceType(type),
+          index,
+        ])
+      ),
+    [resourceTypeOptions]
   );
   const sectorOptions = useMemo(
-    () => uniqueSorted(resources.flatMap((resource) => resource.sector)),
-    [resources]
+    () => uniqueSorted(listedResources.flatMap((resource) => resource.sector)),
+    [listedResources]
   );
   const yearOptions = useMemo(
     () =>
-      Array.from(new Set(resources.map((resource) => resource.year)))
+      Array.from(new Set(listedResources.map((resource) => resource.year)))
         .filter(Boolean)
         .sort((a, b) => b - a),
-    [resources]
+    [listedResources]
   );
   const fileFormatOptions = useMemo(
-    () => uniqueSorted(resources.map((r) => r.fileType).filter(Boolean)),
-    [resources]
+    () => uniqueSorted(listedResources.map((r) => r.fileType).filter(Boolean)),
+    [listedResources]
   );
 
   useEffect(() => {
@@ -197,12 +256,14 @@ export function EventResourceCenter({
   useEffect(() => {
     const typeParam = searchParams.get("type");
     const sectorParam = searchParams.get("sector");
+    const resourceType = getResourceTypeFromQuery(typeParam, resourceTypeOptions);
+
     setFilters((current) => ({
       ...current,
-      types: typeParam ? [typeParam] : [],
+      types: resourceType ? [resourceType] : [],
       sectors: sectorParam ? [sectorParam] : [],
     }));
-  }, [searchParams]);
+  }, [resourceTypeOptions, searchParams]);
 
   useEffect(() => {
     if (!downloadNotice) return;
@@ -212,25 +273,26 @@ export function EventResourceCenter({
 
   const filterCounts = useMemo(
     () => ({
-      events: countBy(resources, (resource) => resource.event_id),
-      types: countBy(resources, (resource) => resource.resource_type),
-      sectors: countBy(resources, (resource) => resource.sector),
-      years: countBy(resources, (resource) => resource.year),
-      fileFormats: countBy(resources, (resource) => resource.fileType),
+      events: countBy(listedResources, (resource) => resource.event_id),
+      types: countBy(listedResources, (resource) => resource.resource_type),
+      sectors: countBy(listedResources, (resource) => resource.sector),
+      years: countBy(listedResources, (resource) => resource.year),
+      fileFormats: countBy(listedResources, (resource) => resource.fileType),
     }),
-    [resources]
+    [listedResources]
   );
 
   const filteredResources = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
 
-    const matching = resources.filter((resource) => {
+    const matching = listedResources.filter((resource) => {
       const matchesSearch =
         !query ||
         [
           resource.title,
           resource.eventName,
           resource.resource_type,
+          resource.shortDescription,
           resource.description,
           resource.resourceTag,
           resource.showCode,
@@ -267,6 +329,14 @@ export function EventResourceCenter({
     });
 
     return matching.sort((a, b) => {
+      const typePriority =
+        (resourceTypeRank.get(normalizeResourceType(a.resource_type)) ??
+          Number.MAX_SAFE_INTEGER) -
+        (resourceTypeRank.get(normalizeResourceType(b.resource_type)) ??
+          Number.MAX_SAFE_INTEGER);
+
+      if (typePriority !== 0) return typePriority;
+
       switch (filters.sort) {
         case "Oldest First":
           return new Date(a.publishedAt).getTime() - new Date(b.publishedAt).getTime();
@@ -286,7 +356,7 @@ export function EventResourceCenter({
           return new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime();
       }
     });
-  }, [filters, resources, searchQuery]);
+  }, [filters, listedResources, resourceTypeRank, searchQuery]);
 
   const activeFilterCount =
     filters.events.length +
@@ -341,7 +411,7 @@ export function EventResourceCenter({
 
       if (result.status === "unauthenticated") {
         storePendingResourceDownload(resource);
-        openAuthModal("/resource-center");
+        openAuthModal("/resource-hub");
         return;
       }
 
@@ -381,7 +451,7 @@ export function EventResourceCenter({
     }
 
     storePendingResourceDownload(resource);
-    openAuthModal("/resource-center");
+    openAuthModal("/resource-hub");
   }
 
   return (
@@ -443,7 +513,7 @@ export function EventResourceCenter({
                 resourceTypeOptions={resourceTypeOptions}
                 resultCount={filteredResources.length}
                 sectorOptions={sectorOptions}
-                totalCount={resources.length}
+                totalCount={listedResources.length}
                 yearOptions={yearOptions}
                 onReset={resetFilters}
                 onSortChange={setSort}
@@ -482,7 +552,7 @@ export function EventResourceCenter({
         resourceTypeOptions={resourceTypeOptions}
         resultCount={filteredResources.length}
         sectorOptions={sectorOptions}
-        totalCount={resources.length}
+        totalCount={listedResources.length}
         yearOptions={yearOptions}
         onClose={() => setMobileFiltersOpen(false)}
         onReset={resetFilters}
@@ -1017,7 +1087,7 @@ function ResourceCard({
 
         <div className="mt-auto grid grid-cols-2 gap-2 pt-4">
           <Link
-            href={`/resource-center/${resource.slug}`}
+            href={`/resource-hub/${resource.slug}`}
             className="inline-flex h-9 items-center justify-center rounded-md border border-input bg-transparent px-2 text-xs font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
             title="Preview"
           >
@@ -1206,4 +1276,3 @@ function EmptyState({
     </div>
   );
 }
-

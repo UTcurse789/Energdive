@@ -35,6 +35,8 @@ type StrapiRichTextNode = {
   children?: StrapiRichTextNode[];
 };
 
+type StrapiRichTextValue = StrapiRichTextNode[] | string | null | undefined;
+
 type StrapiResourceCenterEntry = {
   id?: number;
   documentId?: string;
@@ -45,7 +47,10 @@ type StrapiResourceCenterEntry = {
   full_title?: string | null;
   slug?: string | null;
   resource_tag?: string | null;
-  description?: StrapiRichTextNode[] | string | null;
+  short_description?: StrapiRichTextValue;
+  short_descrtiption?: StrapiRichTextValue;
+  shortDescription?: StrapiRichTextValue;
+  description?: StrapiRichTextValue;
   resource_type?: string | null;
   year?: string | number | null;
   featured?: boolean | null;
@@ -107,7 +112,7 @@ function initials(value: string) {
   return words.slice(0, 3).map((word) => word[0]).join("").toUpperCase();
 }
 
-function plainTextFromRichText(value: StrapiResourceCenterEntry["description"]) {
+function plainTextFromRichText(value: StrapiRichTextValue) {
   if (!value) return "";
   if (typeof value === "string") return value;
 
@@ -183,8 +188,8 @@ function normalizeResource(item: StrapiResourceCenterEntry): EventResource | nul
   if (!title) return null;
 
   const showCode = (entry.show || "").trim();
-  const eventName = (entry.short_title || showCode || "Resource Center").trim();
-  const eventId = slugify(showCode || eventName || "resource-center");
+  const eventName = (entry.short_title || showCode || "Resource Hub").trim();
+  const eventId = slugify(showCode || eventName || "resource-hub");
   const slug = (entry.slug || slugify(title)).trim();
   const publishedAt = entry.publishedAt || entry.updatedAt || entry.createdAt || "";
   const parsedYear = Number(entry.year) || new Date(publishedAt).getFullYear();
@@ -192,6 +197,10 @@ function normalizeResource(item: StrapiResourceCenterEntry): EventResource | nul
   const coverImage = mediaAttributes(entry.cover_image);
   const fileType = mediaFileType(entry.resource_file);
   const fileName = resourceFile?.name || `${slug}.${fileType.toLowerCase()}`;
+  const shortDescription =
+    plainTextFromRichText(entry.short_description) ||
+    plainTextFromRichText(entry.short_descrtiption) ||
+    plainTextFromRichText(entry.shortDescription);
 
   return {
     id: entry.documentId || String(entry.id || slug),
@@ -217,6 +226,7 @@ function normalizeResource(item: StrapiResourceCenterEntry): EventResource | nul
     showCode: showCode || initials(eventName),
     year: Number.isFinite(parsedYear) ? parsedYear : new Date().getFullYear(),
     sector: sectorNames(entry.sectors),
+    shortDescription,
     description: plainTextFromRichText(entry.description),
     fileType,
     fileSize: mediaFileSize(entry.resource_file),
@@ -269,7 +279,7 @@ async function fetchResourceCenterPage(page: number) {
 
   if (!response.ok) {
     throw new Error(
-      `Resource Center CMS request failed: ${response.status} ${response.statusText}`
+      `Resource Hub CMS request failed: ${response.status} ${response.statusText}`
     );
   }
 
@@ -318,7 +328,7 @@ export async function getResourceCenterResource(slug: string) {
 
   if (!response.ok) {
     throw new Error(
-      `Resource Center CMS request failed: ${response.status} ${response.statusText}`
+      `Resource Hub CMS request failed: ${response.status} ${response.statusText}`
     );
   }
 

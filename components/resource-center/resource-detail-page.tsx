@@ -88,6 +88,7 @@ export function ResourceDetailPage({
   const autoDownloadStartedRef = useRef(false);
 
   const canDownload = isLoaded && isSignedIn;
+  const heroDescription = resource.shortDescription || resource.description;
 
   const isLandscape = resource.coverImageUrl 
     ? (resource.coverImageWidth || 1200) > (resource.coverImageHeight || 675)
@@ -168,7 +169,7 @@ export function ResourceDetailPage({
     }
 
     storePendingResourceDownload(resource);
-    openAuthModal(`/resource-center/${resource.slug}`);
+    openAuthModal(`/resource-hub/${resource.slug}`);
   }
 
   return (
@@ -176,11 +177,11 @@ export function ResourceDetailPage({
       <section className="border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
         <div className="mx-auto max-w-[1200px] px-8 py-8 pb-10 sm:px-14 lg:px-20">
           <Link
-            href="/resource-center"
+            href="/resource-hub"
             className="inline-flex items-center gap-2 text-sm font-black text-zinc-600 transition hover:text-[#00A651] dark:text-zinc-300"
           >
             <ArrowLeft className="h-4 w-4" />
-            Resource Center
+            Resource Hub
           </Link>
 
           <div className="mt-6 grid gap-8 lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start xl:grid-cols-[minmax(0,1fr)_420px]">
@@ -204,9 +205,9 @@ export function ResourceDetailPage({
               <h1 className="max-w-4xl text-3xl font-black leading-[1.05] tracking-tight text-zinc-950 dark:text-white sm:text-4xl lg:text-5xl xl:text-[54px] xl:leading-[1.02]">
                 {resource.title}
               </h1>
-              {resource.description && (
+              {heroDescription && (
                 <p className="mt-5 max-w-3xl text-base leading-7 text-zinc-600 dark:text-zinc-300 sm:text-lg">
-                  {resource.description}
+                  {heroDescription}
                 </p>
               )}
 
@@ -271,7 +272,7 @@ export function ResourceDetailPage({
               </h2>
               <p className="mt-4 text-sm leading-7 text-zinc-600 dark:text-zinc-300 sm:text-base">
                 {resource.description ||
-                  "This resource is available from the ENERGDIVE Resource Center."}
+                  "This resource is available from the ENERGDIVE Resource Hub."}
               </p>
             </section>
 
@@ -288,7 +289,7 @@ export function ResourceDetailPage({
                   {relatedResources.map((related) => (
                     <Link
                       key={related.id}
-                      href={`/resource-center/${related.slug}`}
+                      href={`/resource-hub/${related.slug}`}
                       className="group block rounded-lg border border-zinc-200 bg-white p-3 transition hover:border-[#00A651]/40 hover:shadow-md dark:border-zinc-800 dark:bg-zinc-950"
                     >
                       <p className="text-xs font-black uppercase tracking-[0.14em] text-[#00A651]">
@@ -418,5 +419,3 @@ function SummaryItem({
     </div>
   );
 }
-
-

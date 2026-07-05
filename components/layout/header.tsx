@@ -165,6 +165,24 @@ function normalizeIssue(item: StrapiIssueResponseItem): MagazineIssue | null {
     };
 }
 
+function normalizeResourceTypeLabel(value: string) {
+    return value.trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+function getResourceTypeCount(
+    counts: Record<string, number>,
+    type: string
+) {
+    if (typeof counts[type] === "number") return counts[type];
+
+    const normalizedType = normalizeResourceTypeLabel(type);
+    const matchingEntry = Object.entries(counts).find(
+        ([countType]) => normalizeResourceTypeLabel(countType) === normalizedType
+    );
+
+    return matchingEntry?.[1] ?? 0;
+}
+
 export function Header() {
     const pathname = usePathname();
     const { openAuthModal } = useAuthModal();
@@ -754,17 +772,17 @@ export function Header() {
                                         </Link>
 
                                         <Link
-                                            href="/resource-center"
+                                            href="/resource-hub"
                                             onClick={closeMenus}
                                             className={cn(
                                                 "px-4 py-3 text-[14px] font-bold text-gray-800 flex justify-between items-center transition-colors",
-                                                hoveredMoreItem === "resource-center"
+                                                hoveredMoreItem === "resource-hub"
                                                     ? "bg-[#00A651] text-white"
                                                     : "hover:bg-[#00A651] hover:text-white"
                                             )}
-                                            onMouseEnter={() => setHoveredMoreItem("resource-center")}
+                                            onMouseEnter={() => setHoveredMoreItem("resource-hub")}
                                         >
-                                            Resource Center <ChevronRight size={14} />
+                                            Resource Hub <ChevronRight size={14} />
                                         </Link>
 
                                         {/* <Link
@@ -921,8 +939,8 @@ export function Header() {
                                         </div>
                                     )}
 
-                                    {/* Resource Center hover content */}
-                                    {hoveredMoreItem === "resource-center" && (
+                                    {/* Resource Hub hover content */}
+                                    {hoveredMoreItem === "resource-hub" && (
                                         <div className="flex gap-12 h-full">
                                             <div className="flex-1">
                                                 <h4 className="text-[12px] font-bold uppercase text-gray-400 border-b pb-3 mb-6 tracking-widest">Resource Types</h4>
@@ -934,15 +952,14 @@ export function Header() {
                                                             "Paper Abstract",
                                                             "Whitepaper",
                                                             "Industry Report",
-                                                            "Event Brochure",
                                                         ];
                                                         const hasLoaded = Object.keys(resourceTypesCounts).length > 0;
                                                         return orderedTypes.map((type) => {
-                                                            const count = resourceTypesCounts[type] || 0;
+                                                            const count = getResourceTypeCount(resourceTypesCounts, type);
                                                             const isEnabled = !hasLoaded || count > 0;
                                                             if (isEnabled) {
                                                                 return (
-                                                                    <Link key={type} href={`/resource-center?type=${encodeURIComponent(type)}`} onClick={closeMenus} className="text-[13px] font-medium text-gray-700 hover:text-[#00A651] transition-colors flex items-center gap-2 group/item">
+                                                                    <Link key={type} href={`/resource-hub?type=${encodeURIComponent(type)}`} onClick={closeMenus} className="text-[13px] font-medium text-gray-700 hover:text-[#00A651] transition-colors flex items-center gap-2 group/item">
                                                                         <div className="w-1.5 h-1.5 rounded-full bg-gray-300 group-hover/item:bg-[#00A651]" />
                                                                         {type}
                                                                     </Link>
@@ -970,7 +987,7 @@ export function Header() {
                                                             const isEnabled = !hasLoaded || count > 0;
                                                             if (isEnabled) {
                                                                 return (
-                                                                    <Link key={sector} href={`/resource-center?sector=${encodeURIComponent(sector)}`} onClick={closeMenus} className="text-[13px] font-medium text-gray-700 hover:text-[#00A651] transition-colors flex items-center gap-2 group/item">
+                                                                    <Link key={sector} href={`/resource-hub?sector=${encodeURIComponent(sector)}`} onClick={closeMenus} className="text-[13px] font-medium text-gray-700 hover:text-[#00A651] transition-colors flex items-center gap-2 group/item">
                                                                         <div className="w-1.5 h-1.5 rounded-full bg-gray-300 group-hover/item:bg-[#00A651]" />
                                                                         {sector}
                                                                     </Link>
@@ -990,15 +1007,15 @@ export function Header() {
                                             <div className="flex-1">
                                                 <h4 className="text-[12px] font-bold uppercase text-gray-400 border-b pb-3 mb-6 tracking-widest">Explore Library</h4>
                                                 <div className="flex flex-col gap-4">
-                                                    <Link href="/resource-center" onClick={closeMenus} className="group p-5 bg-gray-50 rounded-xl border border-gray-100 hover:border-[#00A651]/40 transition-all hover:shadow-sm">
+                                                    <Link href="/resource-hub" onClick={closeMenus} className="group p-5 bg-gray-50 rounded-xl border border-gray-100 hover:border-[#00A651]/40 transition-all hover:shadow-sm">
                                                         <div className="w-10 h-10 rounded-lg flex items-center justify-center mb-3 bg-white shadow-sm">
                                                             <FileDown size={18} className="text-[#00A651]" />
                                                         </div>
                                                         <p className="text-[14px] font-bold text-gray-900 group-hover:text-[#00A651]">All Resources</p>
                                                         <p className="text-[12px] text-gray-500 mt-1.5 leading-relaxed">Browse our complete library of intelligence, reports, and insights.</p>
                                                     </Link>
-                                                    <Link href="/resource-center" onClick={closeMenus} className="mt-2 inline-flex items-center gap-1.5 text-[11px] font-bold text-[#00A651] uppercase tracking-widest hover:underline">
-                                                        Go to Resource Center <ArrowRight size={13} />
+                                                    <Link href="/resource-hub" onClick={closeMenus} className="mt-2 inline-flex items-center gap-1.5 text-[11px] font-bold text-[#00A651] uppercase tracking-widest hover:underline">
+                                                        Go to Resource Hub <ArrowRight size={13} />
                                                     </Link>
                                                 </div>
                                             </div>
@@ -1375,8 +1392,8 @@ export function Header() {
                                                 <Link href="/events" onClick={closeAll} className="block px-10 py-3 text-[13px] font-medium text-gray-700 hover:text-[#00A651] hover:bg-white transition-colors border-b border-gray-100">
                                                     Events
                                                 </Link>
-                                                <Link href="/resource-center" onClick={closeAll} className="block px-10 py-3 text-[13px] font-medium text-gray-700 hover:text-[#00A651] hover:bg-white transition-colors border-b border-gray-100">
-                                                    Resource Center
+                                                <Link href="/resource-hub" onClick={closeAll} className="block px-10 py-3 text-[13px] font-medium text-gray-700 hover:text-[#00A651] hover:bg-white transition-colors border-b border-gray-100">
+                                                    Resource Hub
                                                 </Link>
                                                 <Link href="/energdive-insights-exchange" onClick={closeAll} className="block px-10 py-3 text-[13px] font-medium text-gray-700 hover:text-[#00A651] hover:bg-white transition-colors border-b border-gray-100">
                                                     Insights Exchange
