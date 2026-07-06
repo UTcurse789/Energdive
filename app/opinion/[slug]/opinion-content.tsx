@@ -79,7 +79,7 @@ export default function OpinionContent({ opinion, recommended }: any) {
                 </nav>
 
                 {/* Hero Section */}
-                <header className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-20 mb-16 lg:mb-24 lg:h-[calc(100vh-220px)] lg:min-h-[500px] items-center">
+                <header className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-20 mb-16 lg:mb-24 items-stretch">
                     <div className="lg:col-span-7 flex flex-col justify-center">
                         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
                             <span className="inline-block px-3 py-1 border border-zinc-200 text-zinc-500 text-[10px] font-black uppercase tracking-[0.3em] rounded mb-6">
@@ -114,11 +114,11 @@ export default function OpinionContent({ opinion, recommended }: any) {
                         </motion.div>
                     </div>
 
-                    <div className="lg:col-span-5 w-full h-full mt-8 lg:mt-0">
+                    <div className="lg:col-span-5 w-full mt-8 lg:mt-0 h-full flex flex-col">
                         <motion.div
                             initial={{ opacity: 0, scale: 0.98 }}
                             animate={{ opacity: 1, scale: 1 }}
-                            className="relative w-full aspect-square lg:aspect-auto lg:h-full overflow-hidden rounded-2xl shadow-3xl bg-zinc-100"
+                            className="relative w-full aspect-square lg:aspect-auto lg:h-full flex-1 overflow-hidden rounded-2xl shadow-3xl bg-zinc-100"
                         >
                             {opinion.featuredImage && (
                                 <Image src={opinion.featuredImage} alt={opinion.title} fill className="object-cover grayscale hover:grayscale-0 transition-all duration-1000" priority />

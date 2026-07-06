@@ -1160,7 +1160,7 @@ export function Header() {
                                     {/* Opinion Articles hover content */}
                                     {hoveredOpinionItem === "opinions" && (
                                         <div>
-                                            <h4 className="text-[12px] font-bold uppercase text-gray-400 border-b pb-3 mb-6 tracking-widest">Latest Opinion Articles</h4>
+                                            <h4 className="text-[12px] font-bold uppercase text-gray-400 border-b pb-3 mb-6 tracking-widest">Latest Opinion</h4>
                                             <div className="grid grid-cols-3 gap-5">
                                                 {opinionArticles.length > 0 ? opinionArticles.slice(0, 3).map((item: any) => {
                                                     const imgUrl = item?.FeaturedImage?.url ? strapiImageUrl(item.FeaturedImage.url) : "/magazine-default.jpg";
