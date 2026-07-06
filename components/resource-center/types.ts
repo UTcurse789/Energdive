@@ -16,6 +16,8 @@ export type EventResource = {
   id: string;
   slug: string;
   event_id: string;
+  eventSlugs?: string[];
+  eventRelationIds?: string[];
   resource_type: ResourceType;
   resourceTag: string;
   file_url: string;

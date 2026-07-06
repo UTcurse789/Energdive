@@ -9,6 +9,8 @@ import { strapiImageUrl } from "@/lib/strapi-image";
 import { getCanonicalUrl } from "@/lib/seo";
 import { Header } from "@/components/layout/header";
 import { getEventStartTimestamp, isEventDatePast } from "@/lib/event-dates";
+import { getEventBrochureResourcesForEvent } from "@/lib/resource-center";
+import { EventBrochureDownloads } from "@/components/events/event-brochure-downloads";
 
 const STRAPI_BASE = process.env.NEXT_PUBLIC_STRAPI_URL || "https://cms.energdive.com";
 
@@ -173,7 +175,13 @@ export default async function EventDetailPage({
 
     if (!event) notFound();
 
-    const relatedEvents = await getRelatedEvents(slug);
+    const [relatedEvents, eventBrochures] = await Promise.all([
+        getRelatedEvents(slug),
+        getEventBrochureResourcesForEvent({
+            id: event.id,
+            slug: event.slug || slug,
+        }),
+    ]);
     const imageUrl = readImageUrl(event.image);
     const registrationUrl = event.url && /^https?:\/\//.test(event.url) ? event.url : null;
     const mapUrl = event.mapUrl && /^https?:\/\//.test(event.mapUrl) ? event.mapUrl : null;
@@ -235,7 +243,7 @@ export default async function EventDetailPage({
                     </article>
 
                     {/* Sidebar Area */}
-                    <aside className="space-y-6 mt-10">
+                    <aside className="space-y-6 mt-10 mb-10">
                         
                         {/* Event Details Card */}
                         <section className="bg-white p-5 rounded-xl shadow-sm border border-slate-100">
@@ -289,6 +297,11 @@ export default async function EventDetailPage({
                                 )}
                             </div>
                         </section>
+
+                        <EventBrochureDownloads
+                            resources={eventBrochures}
+                            returnTo={`/events/${slug}`}
+                        />
 
                         {/* More Events Widget */}
                         {relatedEvents.length > 0 && (
