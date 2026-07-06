@@ -48,7 +48,7 @@ export async function GET() {
             fetch(`${STRAPI_BASE}/api/contents?fields[0]=id&populate[sectors][fields][0]=name&populate[sectors][fields][1]=slug&populate[tags][fields][0]=name&pagination[pageSize]=500`, { next: { revalidate: 600 } }).catch(() => null),
             fetch(`${STRAPI_BASE}/api/videos?fields[0]=id&populate[sectors][fields][0]=name&populate[sectors][fields][1]=slug&populate[tags][fields][0]=name&pagination[pageSize]=500`, { next: { revalidate: 600 } }).catch(() => null),
             // Opinion + Interview articles for the mega menu
-            fetch(`${STRAPI_BASE}/api/contents?filters[type_of_content][name][$eq]=Opinion&populate[FeaturedImage]=true&populate[content_tag]=true&populate[author][populate]=avatar&sort=Date:desc&pagination[limit]=10`, { next: { revalidate: 600 } }).catch(() => null),
+            fetch(`${STRAPI_BASE}/api/contents?filters[type_of_content][name][$eq]=Opinion&populate[FeaturedImage]=true&populate[content_tag]=true&populate[author][populate]=avatar&sort=Date:desc&pagination[limit]=30`, { next: { revalidate: 600 } }).catch(() => null),
             fetch(`${STRAPI_BASE}/api/resoucre-centers?fields[0]=resource_type&pagination[pageSize]=500`, {
                 headers: process.env.STRAPI_API_TOKEN ? { Authorization: `Bearer ${process.env.STRAPI_API_TOKEN}` } : {},
                 next: { revalidate: 600 }
