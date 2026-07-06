@@ -2,10 +2,12 @@
 
 import React, { useRef, useLayoutEffect, useCallback } from "react";
 import Image from "next/image";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@clerk/nextjs";
 import { motion } from "framer-motion";
 import { Brain, Lightbulb, Share2, ArrowRight, CheckCircle2 } from "lucide-react";
 import { usePostHog } from "@posthog/react";
+import { useAuthModal } from "@/hooks/use-auth-modal";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
@@ -37,12 +39,14 @@ const TierCard = ({
     features,
     recommended = false,
     onJoinClick,
+    onCtaClick,
 }: {
     title: string,
     price: string,
     features: string[],
     recommended?: boolean,
     onJoinClick?: () => void,
+    onCtaClick?: () => void,
 }) => (
     <div className={`gsap-tier-card relative p-8 rounded-2xl border ${recommended ? 'border-[#E5B866] bg-[#E5B866]/5' : 'border-zinc-800 bg-zinc-900/50'} flex flex-col h-full`}>
         {recommended && (
@@ -60,16 +64,19 @@ const TierCard = ({
                 </li>
             ))}
         </ul>
-        <Link
-            href="/auth"
-            onClick={recommended ? onJoinClick : undefined}
+        <button
+            type="button"
+            onClick={() => {
+                if (recommended) onJoinClick?.();
+                onCtaClick?.();
+            }}
             className={`w-full py-3 rounded-lg font-bold text-sm uppercase tracking-widest transition-all block text-center ${recommended
                 ? 'bg-[#E5B866] text-black hover:bg-[#d4a855]'
                 : 'bg-zinc-800 text-white hover:bg-zinc-700'
                 }`}
         >
             {recommended ? 'Join Now' : 'Coming Soon'}
-        </Link>
+        </button>
     </div>
 );
 
@@ -88,6 +95,9 @@ const ecosystemItems = [
 
 export default function EnergClubPage() {
     const posthog = usePostHog();
+    const router = useRouter();
+    const { isLoaded, isSignedIn } = useAuth();
+    const { openAuthModal } = useAuthModal();
     const mainRef = useRef<HTMLElement>(null);
     const heroRef = useRef<HTMLDivElement>(null);
     const clubSectionRef = useRef<HTMLElement>(null);
@@ -113,6 +123,22 @@ export default function EnergClubPage() {
             });
         }
     }, [posthog]);
+
+    const openDashboardAuth = useCallback(() => {
+        const dashboardPath = "/dashboard";
+
+        if (isLoaded && isSignedIn) {
+            router.push(dashboardPath);
+            return;
+        }
+
+        openAuthModal(dashboardPath);
+    }, [isLoaded, isSignedIn, openAuthModal, router]);
+
+    const handleJoinClick = useCallback(() => {
+        captureSignupClick();
+        openDashboardAuth();
+    }, [captureSignupClick, openDashboardAuth]);
 
     React.useEffect(() => {
         if (posthog) {
@@ -409,7 +435,7 @@ export default function EnergClubPage() {
                     />
 
                     <h1 className="text-4xl md:text-6xl lg:text-7xl font-serif font-bold text-white mb-8 leading-tight">
-                        Powering India's Intelligent, <br />
+                        Powering India&apos;s Intelligent, <br />
                         <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#E5B866] to-[#FFE0B2]">
                             Innovative & Interconnected
                         </span> <br />
@@ -418,9 +444,9 @@ export default function EnergClubPage() {
                     <p className="text-zinc-300 text-lg md:text-xl max-w-3xl mx-auto mb-10 leading-relaxed">
                         Join an exclusive network of industry leaders, policymakers, and innovators shaping the future of energy and sustainability in India.
                     </p>
-                    <Link href="/dashboard" className="inline-flex items-center gap-2 bg-[#E5B866] text-black px-8 py-4 rounded-full font-bold uppercase tracking-widest hover:bg-white transition-colors duration-300">
+                    <button type="button" onClick={openDashboardAuth} className="inline-flex items-center gap-2 bg-[#E5B866] text-black px-8 py-4 rounded-full font-bold uppercase tracking-widest hover:bg-white transition-colors duration-300 cursor-pointer">
                         Explore Now <ArrowRight size={18} />
-                    </Link>
+                    </button>
                 </div>
             </section>
 
@@ -432,7 +458,7 @@ export default function EnergClubPage() {
                             <SectionHeading>The Club</SectionHeading>
                             <div className="space-y-6 text-zinc-400 text-lg leading-relaxed">
                                 <p>
-                                    EnergClub is India's first integrated community for energy and sustainability professionals. Designed for decision-makers, innovators, CXOs, and thought leaders, we facilitate meaningful collaborations, knowledge sharing, and exclusive strategic alliances across the ecosystem.
+                                    EnergClub is India&apos;s first integrated community for energy and sustainability professionals. Designed for decision-makers, innovators, CXOs, and thought leaders, we facilitate meaningful collaborations, knowledge sharing, and exclusive strategic alliances across the ecosystem.
                                 </p>
                                 <p>
                                     Beyond a digital interface, the Club provides a collaboration network, membership base, and empowerment platform to ensure every stakeholder finds value.
@@ -516,15 +542,15 @@ export default function EnergClubPage() {
                         One Ecosystem. One Community. One Platform.
                     </h3>
                     <p className="text-zinc-400 text-lg mb-10 leading-relaxed">
-                        An integrated digital platform for India's energy professionals. All figures, power, generation, markets, storage, policy, and one goal: To Access Insights, Fuel Innovation, and Sustain Power for a better ecosystem.
+                        An integrated digital platform for India&apos;s energy professionals. All figures, power, generation, markets, storage, policy, and one goal: To Access Insights, Fuel Innovation, and Sustain Power for a better ecosystem.
                     </p>
-                    <Link
-                        href="/auth"
-                        onClick={captureSignupClick}
-                        className="bg-[#E5B866] text-black px-10 py-4 rounded-full font-bold uppercase tracking-widest hover:bg-white transition-colors duration-300 shadow-[0_0_20px_rgba(229,184,102,0.3)] inline-block"
+                    <button
+                        type="button"
+                        onClick={handleJoinClick}
+                        className="bg-[#E5B866] text-black px-10 py-4 rounded-full font-bold uppercase tracking-widest hover:bg-white transition-colors duration-300 shadow-[0_0_20px_rgba(229,184,102,0.3)] inline-block cursor-pointer"
                     >
                         Join Now
-                    </Link>
+                    </button>
                 </div>
             </section>
 
@@ -606,7 +632,7 @@ export default function EnergClubPage() {
                         <TierCard
                             title="Premier"
                             price="Paid"
-                            onJoinClick={captureSignupClick}
+                            onCtaClick={openDashboardAuth}
                             features={[
                                 "Complimentary Subscription to EnergDive Magazine (12 Issues)",
                                 "Publish view points, technical papers & research on our Digital Feed",
@@ -619,6 +645,7 @@ export default function EnergClubPage() {
                             price="Free"
                             recommended={true}
                             onJoinClick={captureSignupClick}
+                            onCtaClick={openDashboardAuth}
                             features={[
                                 "Early access to EnergDive featured content",
                                 "Join multiple digital sub-communities",
@@ -631,7 +658,7 @@ export default function EnergClubPage() {
                         <TierCard
                             title="Executive"
                             price="Invite / Corporate"
-                            onJoinClick={captureSignupClick}
+                            onCtaClick={openDashboardAuth}
                             features={[
                                 "Reserved for CXOs, Founder, Directors, Policy Makers",
                                 "Complimentary Print Edition of EnergDive Magazine",
@@ -691,15 +718,15 @@ export default function EnergClubPage() {
                         Activate Your Membership
                     </h3>
                     <p className="text-zinc-400 mb-10 leading-relaxed">
-                        Your access to India's most influential energy community is just one step away. Join now and start engaging with policymakers, industry giants, and opportunities that matter to your journey.
+                        Your access to India&apos;s most influential energy community is just one step away. Join now and start engaging with policymakers, industry giants, and opportunities that matter to your journey.
                     </p>
-                    <Link
-                        href="/auth"
-                        onClick={captureSignupClick}
-                        className="bg-[#E5B866] text-black px-12 py-4 rounded-full font-bold uppercase tracking-widest hover:bg-white transition-colors duration-300 shadow-[0_0_30px_rgba(229,184,102,0.4)] inline-block"
+                    <button
+                        type="button"
+                        onClick={handleJoinClick}
+                        className="bg-[#E5B866] text-black px-12 py-4 rounded-full font-bold uppercase tracking-widest hover:bg-white transition-colors duration-300 shadow-[0_0_30px_rgba(229,184,102,0.4)] inline-block cursor-pointer"
                     >
                         Join Now
-                    </Link>
+                    </button>
 
                     <div className="mt-20 pt-10 border-t border-zinc-800">
                         <div className="flex flex-col items-center gap-6">
