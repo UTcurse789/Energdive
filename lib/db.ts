@@ -22,10 +22,10 @@ function createPool(): Pool {
             rejectUnauthorized: false, // Required for DigitalOcean / self-signed certs
         },
 
-        // Pool tuning — production-grade for 5000+ concurrent users
-        max: 20,                          // scaled for concurrent load
+        // Pool tuning
+        max: process.env.NODE_ENV === "production" ? 20 : 5, // Reduce max connections in dev to prevent DB exhaustion
         idleTimeoutMillis: 30_000,        // close idle clients after 30s
-        connectionTimeoutMillis: 5_000,   // managed PG handshakes can exceed 2s
+        connectionTimeoutMillis: 30_000,  // wait up to 30s for a connection (Next.js dev fires many concurrent requests)
         allowExitOnIdle: true,            // let Node exit even if pool has idle clients
         statement_timeout: 10_000,        // kill queries running > 10s
         keepAlive: true,

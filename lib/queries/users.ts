@@ -498,17 +498,29 @@ export async function ensureUserProfileRow(
  * Permanently deletes a user and all related data from the database.
  * Runs in a transaction to ensure atomicity.
  */
-export async function deleteUserAccount(clerkId: string): Promise<boolean> {
+export async function deleteUserAccount(clerkId: string, email?: string | null): Promise<boolean> {
     const client = await getClient();
 
     try {
         await client.query("BEGIN");
 
-        // 1. Get the user's internal ID
-        const userResult = await client.query(
+        // 1. Get the user's internal ID — try clerk_id first, fall back to email.
+        //    After re-registration the clerk_id changes but the old DB row (matched
+        //    by email in getUserProfile) still lingers and blocks onboarding.
+        let userResult = await client.query(
             `SELECT id FROM users WHERE clerk_id = $1`,
             [clerkId]
         );
+
+        if (userResult.rows.length === 0 && email) {
+            userResult = await client.query(
+                `SELECT id FROM users WHERE LOWER(email) = LOWER($1)`,
+                [email]
+            );
+            if (userResult.rows.length > 0) {
+                console.log(`[DELETE_USER] clerk_id lookup missed, found user by email: ${email}`);
+            }
+        }
 
         if (userResult.rows.length === 0) {
             await client.query("ROLLBACK");
