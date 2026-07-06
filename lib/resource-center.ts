@@ -30,6 +30,15 @@ type StrapiSector = {
   };
 };
 
+type StrapiEventRelation = {
+  id?: number | string;
+  documentId?: string | null;
+  slug?: string | null;
+  title?: string | null;
+  name?: string | null;
+  attributes?: StrapiEventRelation;
+};
+
 type StrapiRichTextNode = {
   text?: string;
   children?: StrapiRichTextNode[];
@@ -64,6 +73,8 @@ type StrapiResourceCenterEntry = {
   thumbnail_image?: StrapiMedia | null;
   resource_file?: StrapiMedia | null;
   sectors?: StrapiSector[] | { data?: StrapiSector[] } | null;
+  event?: StrapiEventRelation | StrapiEventRelation[] | { data?: StrapiEventRelation | StrapiEventRelation[] | null } | null;
+  events?: StrapiEventRelation[] | { data?: StrapiEventRelation[] } | null;
   attributes?: StrapiResourceCenterEntry;
 };
 
@@ -172,6 +183,38 @@ function sectorNames(sectors: StrapiResourceCenterEntry["sectors"]) {
     .filter(Boolean);
 }
 
+function eventRelationItems(
+  relation: StrapiResourceCenterEntry["event"] | StrapiResourceCenterEntry["events"]
+): StrapiEventRelation[] {
+  if (!relation) return [];
+  if (Array.isArray(relation)) return relation;
+
+  const data = "data" in relation ? relation.data : null;
+  if (Array.isArray(data)) return data;
+  if (data) return [data];
+
+  return [relation as StrapiEventRelation];
+}
+
+function eventAttributes(event: StrapiEventRelation): StrapiEventRelation {
+  return event.attributes || event;
+}
+
+function linkedEvents(entry: StrapiResourceCenterEntry) {
+  return [...eventRelationItems(entry.event), ...eventRelationItems(entry.events)]
+    .map(eventAttributes)
+    .filter((event) => event.slug || event.id || event.documentId || event.title || event.name);
+}
+
+function normalizeResourceType(type: string) {
+  return type.trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+function isEventBrochureResource(resource: EventResource) {
+  const normalized = normalizeResourceType(resource.resource_type);
+  return normalized === "event brochure" || normalized === "event brochures";
+}
+
 function emailList(value: unknown) {
   const values = Array.isArray(value) ? value : [value];
   const emails = values
@@ -187,9 +230,17 @@ function normalizeResource(item: StrapiResourceCenterEntry): EventResource | nul
   const title = (entry.full_title || entry.short_title || "").trim();
   if (!title) return null;
 
+  const resourceLinkedEvents = linkedEvents(entry);
+  const primaryLinkedEvent = resourceLinkedEvents[0];
+  const linkedEventSlug = (primaryLinkedEvent?.slug || "").trim();
+  const linkedEventTitle = (
+    primaryLinkedEvent?.title ||
+    primaryLinkedEvent?.name ||
+    ""
+  ).trim();
   const showCode = (entry.show || "").trim();
-  const eventName = (entry.short_title || showCode || "Resource Hub").trim();
-  const eventId = slugify(showCode || eventName || "resource-hub");
+  const eventName = (linkedEventTitle || entry.short_title || showCode || "Resource Hub").trim();
+  const eventId = slugify(linkedEventSlug || showCode || eventName || "resource-hub");
   const slug = (entry.slug || slugify(title)).trim();
   const publishedAt = entry.publishedAt || entry.updatedAt || entry.createdAt || "";
   const parsedYear = Number(entry.year) || new Date(publishedAt).getFullYear();
@@ -206,6 +257,13 @@ function normalizeResource(item: StrapiResourceCenterEntry): EventResource | nul
     id: entry.documentId || String(entry.id || slug),
     slug,
     event_id: eventId,
+    eventSlugs: resourceLinkedEvents
+      .map((event) => (event.slug || "").trim())
+      .filter(Boolean),
+    eventRelationIds: resourceLinkedEvents
+      .flatMap((event) => [event.documentId, event.id ? String(event.id) : ""])
+      .map((id) => (id || "").trim())
+      .filter(Boolean),
     resource_type: (entry.resource_type || "Resource").trim(),
     resourceTag: (entry.resource_tag || "Resource").trim(),
     file_url: mediaFileUrl(entry.resource_file),
@@ -286,6 +344,82 @@ async function fetchResourceCenterPage(page: number) {
   return (await response.json()) as StrapiListResponse;
 }
 
+async function fetchResourceCenterPageByEventRelation(
+  page: number,
+  relationField: "event" | "events",
+  eventSlug: string
+) {
+  const url = new URL(
+    `/api/${RESOURCE_CENTER_ENDPOINT}`,
+    STRAPI_BASE.replace(/\/$/, "")
+  );
+  url.searchParams.set("populate", "*");
+  url.searchParams.set("sort", "publishedAt:desc");
+  url.searchParams.set(`filters[${relationField}][slug][$eq]`, eventSlug);
+  url.searchParams.set("pagination[page]", String(page));
+  url.searchParams.set("pagination[pageSize]", "100");
+
+  const response = await fetch(url.toString(), {
+    headers: STRAPI_TOKEN
+      ? {
+          Authorization: `Bearer ${STRAPI_TOKEN}`,
+        }
+      : undefined,
+    next: { revalidate: 300 },
+  });
+
+  if (!response.ok) {
+    throw new Error(
+      `Resource Hub CMS relation request failed: ${response.status} ${response.statusText}`
+    );
+  }
+
+  return (await response.json()) as StrapiListResponse;
+}
+
+async function fetchResourcesByEventRelation(
+  relationField: "event" | "events",
+  eventSlug: string
+) {
+  const resources: EventResource[] = [];
+  let page = 1;
+  let pageCount = 1;
+
+  do {
+    const payload = await fetchResourceCenterPageByEventRelation(
+      page,
+      relationField,
+      eventSlug
+    );
+    pageCount = payload.meta?.pagination?.pageCount || 1;
+    resources.push(
+      ...(payload.data || [])
+        .map((item) => normalizeResource(item))
+        .filter((item): item is EventResource => Boolean(item))
+    );
+    page += 1;
+  } while (page <= pageCount);
+
+  return resources;
+}
+
+function dedupeResources(resources: EventResource[]) {
+  const seen = new Set<string>();
+  return resources.filter((resource) => {
+    const key = resource.slug || resource.id;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function sortResourcesByDate(resources: EventResource[]) {
+  return [...resources].sort(
+    (a, b) =>
+      new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
+  );
+}
+
 export async function getResourceCenterData() {
   const resources: EventResource[] = [];
   let page = 1;
@@ -336,4 +470,47 @@ export async function getResourceCenterResource(slug: string) {
   const resource = payload.data?.[0] ? normalizeResource(payload.data[0]) : null;
 
   return resource;
+}
+
+export async function getEventBrochureResourcesForEvent(event: {
+  id?: string | number | null;
+  slug?: string | null;
+}) {
+  const eventSlug = (event.slug || "").trim();
+  if (!eventSlug) return [];
+
+  const relationResources: EventResource[] = [];
+
+  for (const relationField of ["event", "events"] as const) {
+    try {
+      relationResources.push(
+        ...(await fetchResourcesByEventRelation(relationField, eventSlug))
+      );
+    } catch (error) {
+      if (relationField === "event") {
+        console.warn(
+          `[Resource Hub] Unable to fetch resources by event relation for event "${eventSlug}"`,
+          error
+        );
+      }
+    }
+  }
+
+  let resources = dedupeResources(relationResources);
+
+  if (resources.length === 0) {
+    const resourceCenterData = await getResourceCenterData();
+    const eventId = event.id ? String(event.id) : "";
+
+    resources = resourceCenterData.resources.filter((resource) => {
+      const matchesSlug = resource.eventSlugs?.includes(eventSlug);
+      const matchesId = eventId
+        ? resource.eventRelationIds?.includes(eventId)
+        : false;
+
+      return matchesSlug || matchesId;
+    });
+  }
+
+  return sortResourcesByDate(resources.filter(isEventBrochureResource));
 }

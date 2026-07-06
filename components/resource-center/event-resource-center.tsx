@@ -5,6 +5,8 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowDownAZ,
   CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
   Download,
   Eye,
   Filter,
@@ -992,9 +994,33 @@ function ResourceGrid({
   onDownload: (resource: EventResource) => void;
 }) {
   const pageSize = 12;
-  const [visibleCount, setVisibleCount] = useState(pageSize);
-  const visibleResources = resources.slice(0, visibleCount);
-  const hasMore = visibleCount < resources.length;
+  const [currentPage, setCurrentPage] = useState(1);
+  const totalPages = Math.max(1, Math.ceil(resources.length / pageSize));
+  const activePage = Math.min(currentPage, totalPages);
+  const startIndex = (activePage - 1) * pageSize;
+  const pageResources = resources.slice(startIndex, startIndex + pageSize);
+  const paginationItems = useMemo(() => {
+    if (totalPages <= 7) {
+      return Array.from({ length: totalPages }, (_, index) => index + 1);
+    }
+
+    const items: Array<number | "start-ellipsis" | "end-ellipsis"> = [1];
+    const startPage = Math.max(2, activePage - 1);
+    const endPage = Math.min(totalPages - 1, activePage + 1);
+
+    if (startPage > 2) items.push("start-ellipsis");
+    for (let page = startPage; page <= endPage; page += 1) {
+      items.push(page);
+    }
+    if (endPage < totalPages - 1) items.push("end-ellipsis");
+    items.push(totalPages);
+
+    return items;
+  }, [activePage, totalPages]);
+
+  function goToPage(page: number) {
+    setCurrentPage(Math.min(Math.max(page, 1), totalPages));
+  }
 
   return (
     <div>
@@ -1003,7 +1029,7 @@ function ResourceGrid({
         className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:gap-4"
       >
         <AnimatePresence mode="popLayout">
-          {visibleResources.map((resource) => (
+          {pageResources.map((resource) => (
             <ResourceCard
               key={resource.id}
               event={eventLookup[resource.event_id]}
@@ -1015,17 +1041,62 @@ function ResourceGrid({
         </AnimatePresence>
       </motion.div>
 
-      {hasMore && (
-        <div className="mt-8 flex justify-center">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => setVisibleCount((count) => count + pageSize)}
-            className="h-11 rounded-md border-zinc-300 bg-white px-8 text-sm font-black text-zinc-950 shadow-sm transition hover:border-[#00A651] hover:text-[#007a3d] dark:border-zinc-700 dark:bg-zinc-900 dark:text-white"
-          >
-            Load more resources
-          </Button>
-        </div>
+      {totalPages > 1 && (
+        <nav
+          aria-label="Resource pagination"
+          className="mt-8 flex flex-col items-center gap-3"
+        >
+          <p className="text-xs font-bold text-zinc-500 dark:text-zinc-400">
+            Showing {startIndex + 1}-{Math.min(startIndex + pageSize, resources.length)} of {resources.length}
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            <button
+              type="button"
+              onClick={() => goToPage(activePage - 1)}
+              disabled={activePage === 1}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-zinc-200 bg-white text-zinc-700 shadow-sm transition hover:border-[#00A651] hover:text-[#007a3d] disabled:cursor-not-allowed disabled:opacity-40 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200"
+              aria-label="Previous page"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+
+            {paginationItems.map((item) =>
+              typeof item === "number" ? (
+                <button
+                  key={item}
+                  type="button"
+                  onClick={() => goToPage(item)}
+                  aria-current={item === activePage ? "page" : undefined}
+                  className={cn(
+                    "inline-flex h-10 min-w-10 items-center justify-center rounded-md border px-3 text-sm font-black shadow-sm transition",
+                    item === activePage
+                      ? "border-[#00A651] bg-[#00A651] text-white"
+                      : "border-zinc-200 bg-white text-zinc-800 hover:border-[#00A651] hover:text-[#007a3d] dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200"
+                  )}
+                >
+                  {item}
+                </button>
+              ) : (
+                <span
+                  key={item}
+                  className="inline-flex h-10 min-w-10 items-center justify-center px-2 text-sm font-black text-zinc-400"
+                >
+                  ...
+                </span>
+              )
+            )}
+
+            <button
+              type="button"
+              onClick={() => goToPage(activePage + 1)}
+              disabled={activePage === totalPages}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-zinc-200 bg-white text-zinc-700 shadow-sm transition hover:border-[#00A651] hover:text-[#007a3d] disabled:cursor-not-allowed disabled:opacity-40 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200"
+              aria-label="Next page"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+        </nav>
       )}
     </div>
   );
