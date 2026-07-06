@@ -4,7 +4,10 @@ import { NextResponse } from "next/server";
 const isProtectedRoute = createRouteMatcher(["/energclub/dashboard(.*)", "/dashboard(.*)", "/onboarding(.*)"]);
 
 export default clerkMiddleware(async (auth, req) => {
-    console.log("[PROXY.TS] Middleware executed for:", req.url);
+    // Skip logging for PostHog telemetry to avoid terminal spam
+    if (!req.url.includes("/ingest/")) {
+        console.log("[PROXY.TS] Middleware executed for:", req.url);
+    }
     const { userId, redirectToSignIn } = await auth();
 
     // Only handle authentication — NOT onboarding status.

@@ -52,6 +52,16 @@ export async function POST(req: Request) {
                 userName = [row.first_name, row.last_name].filter(Boolean).join(" ") || "Unknown";
                 userEmail = row.email || "Unknown";
                 companyName = row.organization || "";
+            } else {
+                // If DB lookup by clerk_id fails, fetch user profile from Clerk to get the email
+                try {
+                    const client = await clerkClient();
+                    const clerkUser = await client.users.getUser(userId);
+                    userEmail = clerkUser.emailAddresses[0]?.emailAddress || "Unknown";
+                    userName = [clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(" ") || "Unknown";
+                } catch (clerkFetchErr) {
+                    console.error("[DELETE_ACCOUNT] Failed to fetch user from Clerk:", clerkFetchErr);
+                }
             }
         } catch (profileErr) {
             console.error(`[DELETE_ACCOUNT] Failed to fetch profile for audit:`, profileErr);
@@ -127,7 +137,7 @@ export async function POST(req: Request) {
         }
 
         // 1. Delete from our database
-        const dbDeleted = await deleteUserAccount(userId);
+        const dbDeleted = await deleteUserAccount(userId, userEmail !== "Unknown" ? userEmail : null);
         console.log(`[DELETE_ACCOUNT] DB deletion result for ${userId}: ${dbDeleted}`);
 
         // 2. Delete from Clerk
