@@ -4,7 +4,7 @@ export const RESOURCE_PENDING_DOWNLOAD_KEY = "rc_pending_download";
 
 export type DownloadableResource = Pick<
   EventResource,
-  "slug" | "title" | "fileName"
+  "slug" | "title" | "fileName" | "content_access"
 > & {
   attribution?: ResourceDownloadAttribution;
 };
@@ -183,6 +183,7 @@ export function storePendingResourceDownload(resource: DownloadableResource) {
       slug: resource.slug,
       title: resource.title,
       fileName: resource.fileName,
+      content_access: resource.content_access,
       attribution,
     })
   );
@@ -200,6 +201,7 @@ export function readPendingResourceDownload(): PendingResourceDownload | null {
       slug: parsed.slug,
       title: parsed.title || "ENERGDIVE Resource",
       fileName: parsed.fileName || "resource-download",
+      content_access: parsed.content_access,
       attribution: parsed.attribution,
     };
   } catch {

@@ -31,6 +31,8 @@ import {
   storePendingResourceDownload,
   triggerResourceFileDownload,
 } from "./resource-download";
+import { getResourceAccessDecision } from "./resource-access";
+import { PremiumPaywall } from "./premium-paywall";
 
 import type {
   EnergyEvent,
@@ -198,8 +200,10 @@ export function EventResourceCenter({
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [downloadNotice, setDownloadNotice] = useState<string | null>(null);
   const [downloadingSlug, setDownloadingSlug] = useState<string | null>(null);
+  const [premiumPaywallResource, setPremiumPaywallResource] = useState<EventResource | null>(null);
 
   const canDownload = isLoaded && isSignedIn;
+  const { userId } = useAuth();
   const listedResources = useMemo(
     () => resources.filter(isListedResource),
     [resources]
@@ -447,8 +451,15 @@ export function EventResourceCenter({
   }, [canDownload, startResourceDownload]);
 
   function requestDownload(resource: EventResource) {
-    if (canDownload) {
+    const accessDecision = getResourceAccessDecision(resource, !!isSignedIn, userId || undefined);
+
+    if (accessDecision === "allow") {
       void startResourceDownload(resource);
+      return;
+    }
+
+    if (accessDecision === "require_purchase") {
+      setPremiumPaywallResource(resource);
       return;
     }
 
@@ -579,6 +590,12 @@ export function EventResourceCenter({
           </motion.div>
         )}
       </AnimatePresence>
+
+      <PremiumPaywall 
+        isOpen={!!premiumPaywallResource} 
+        onClose={() => setPremiumPaywallResource(null)} 
+        resource={premiumPaywallResource} 
+      />
     </div>
   );
 }

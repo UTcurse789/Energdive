@@ -25,6 +25,8 @@ import {
   triggerResourceFileDownload,
 } from "./resource-download";
 import type { EnergyEvent, EventResource, FileType, ResourceType } from "./types";
+import { getResourceAccessDecision } from "./resource-access";
+import { PremiumPaywall } from "./premium-paywall";
 
 const THEME_STYLE = "bg-[#00A651]/10 text-[#00A651] border-[#00A651]/20";
 
@@ -81,13 +83,16 @@ export function ResourceDetailPage({
   relatedResources: EventResource[];
   resource: EventResource;
 }) {
-  const { isLoaded, isSignedIn } = useAuth();
+  const { isLoaded, isSignedIn, userId } = useAuth();
   const { openAuthModal } = useAuthModal();
   const [downloadNotice, setDownloadNotice] = useState<string | null>(null);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [premiumPaywallOpen, setPremiumPaywallOpen] = useState(false);
   const autoDownloadStartedRef = useRef(false);
 
   const canDownload = isLoaded && isSignedIn;
+  const accessDecision = getResourceAccessDecision(resource, !!isSignedIn, userId || undefined);
+
   const heroDescription = resource.shortDescription || resource.description;
 
   const isLandscape = resource.coverImageUrl 
@@ -146,25 +151,41 @@ export function ResourceDetailPage({
     if (pending.slug !== resource.slug) return;
 
     clearPendingResourceDownload();
+    
+    if (accessDecision === "require_purchase") {
+      setPremiumPaywallOpen(true);
+      return;
+    }
+
     void startDownload();
-  }, [canDownload, resource.slug, startDownload]);
+  }, [canDownload, resource.slug, startDownload, accessDecision]);
 
   useEffect(() => {
     if (!autoDownload || !isLoaded || autoDownloadStartedRef.current) return;
 
     autoDownloadStartedRef.current = true;
-    if (canDownload) {
+    if (accessDecision === "allow") {
       void startDownload();
+      return;
+    }
+
+    if (accessDecision === "require_purchase") {
+      setPremiumPaywallOpen(true);
       return;
     }
 
     storePendingResourceDownload(resource);
     openAuthModal(getResourceDownloadPath(resource, true));
-  }, [autoDownload, canDownload, isLoaded, openAuthModal, resource, startDownload]);
+  }, [autoDownload, isLoaded, accessDecision, openAuthModal, resource, startDownload]);
 
   function requestDownload() {
-    if (canDownload) {
+    if (accessDecision === "allow") {
       void startDownload();
+      return;
+    }
+
+    if (accessDecision === "require_purchase") {
+      setPremiumPaywallOpen(true);
       return;
     }
 
@@ -322,6 +343,12 @@ export function ResourceDetailPage({
           </span>
         </motion.div>
       )}
+
+      <PremiumPaywall 
+        isOpen={premiumPaywallOpen} 
+        onClose={() => setPremiumPaywallOpen(false)} 
+        resource={resource} 
+      />
     </main>
   );
 }

@@ -2,6 +2,18 @@ export type ResourceType = string;
 export type Sector = string;
 export type FileType = string;
 
+export type AccessType = "public" | "authenticated" | "premium";
+export type PurchaseType = "one_time" | "subscription";
+
+export type ContentAccess = {
+  access_type: AccessType;
+  purchase_type: PurchaseType;
+  price: number;
+  currency: string;
+  preview_enabled: boolean;
+  preview_text: string;
+};
+
 export type SortOption = "Latest First" | "Oldest First" | "A–Z" | "Z–A" | "Most Downloaded" | "Featured";
 
 export type EnergyEvent = {
@@ -40,6 +52,7 @@ export type EventResource = {
   publishedAt: string;
   featured: boolean;
   promotional: boolean;
+  content_access?: ContentAccess;
 };
 
 export type ResourceFilters = {

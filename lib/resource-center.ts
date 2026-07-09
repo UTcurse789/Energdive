@@ -46,6 +46,15 @@ type StrapiRichTextNode = {
 
 type StrapiRichTextValue = StrapiRichTextNode[] | string | null | undefined;
 
+type StrapiContentAccess = {
+  access_type?: string | null;
+  purchase_type?: string | null;
+  price?: number | null;
+  currency?: string | null;
+  preview_enabled?: boolean | null;
+  preview_text?: string | null;
+};
+
 type StrapiResourceCenterEntry = {
   id?: number;
   documentId?: string;
@@ -75,6 +84,7 @@ type StrapiResourceCenterEntry = {
   sectors?: StrapiSector[] | { data?: StrapiSector[] } | null;
   event?: StrapiEventRelation | StrapiEventRelation[] | { data?: StrapiEventRelation | StrapiEventRelation[] | null } | null;
   events?: StrapiEventRelation[] | { data?: StrapiEventRelation[] } | null;
+  content_access?: StrapiContentAccess | null;
   attributes?: StrapiResourceCenterEntry;
 };
 
@@ -253,6 +263,19 @@ function normalizeResource(item: StrapiResourceCenterEntry): EventResource | nul
     plainTextFromRichText(entry.short_descrtiption) ||
     plainTextFromRichText(entry.shortDescription);
 
+  const contentAccessEntry = entry.content_access || {};
+  const parsedAccessType = (contentAccessEntry.access_type || "authenticated").toLowerCase();
+  const parsedPurchaseType = (contentAccessEntry.purchase_type || "one_time").toLowerCase();
+
+  const content_access = {
+    access_type: (["public", "authenticated", "premium"].includes(parsedAccessType) ? parsedAccessType : "authenticated") as any,
+    purchase_type: (["one_time", "subscription"].includes(parsedPurchaseType) ? parsedPurchaseType : "one_time") as any,
+    price: Number(contentAccessEntry.price) || 0,
+    currency: (contentAccessEntry.currency || "USD").toUpperCase(),
+    preview_enabled: Boolean(contentAccessEntry.preview_enabled),
+    preview_text: plainTextFromRichText(contentAccessEntry.preview_text as any) || "",
+  };
+
   return {
     id: entry.documentId || String(entry.id || slug),
     slug,
@@ -291,6 +314,7 @@ function normalizeResource(item: StrapiResourceCenterEntry): EventResource | nul
     publishedAt,
     featured: Boolean(entry.featured),
     promotional: Boolean(entry.promotional),
+    content_access,
   };
 }
 
