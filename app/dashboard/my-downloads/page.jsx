@@ -54,9 +54,6 @@ export default async function MyDownloadsPage() {
                     <h1 className="text-3xl font-bold" style={{ color: "var(--dash-text)" }}>
                         My Downloads
                     </h1>
-                    <p className="mt-2 text-sm" style={{ color: "var(--dash-text-dim)" }}>
-                        Access the research papers you have saved and downloaded.
-                    </p>
                 </div>
             </div>
 
@@ -82,14 +79,14 @@ export default async function MyDownloadsPage() {
                         No downloads yet
                     </h2>
                     <p className="mt-3 max-w-xl mx-auto text-sm leading-7" style={{ color: "var(--dash-text-dim)" }}>
-                        Explore the research archive in the Knowledge Base and save papers to your dashboard for offline access.
+                        Access ENERGDIVE magazines, industry reports, technical papers, whitepapers, case studies, event publications, presentations, and other valuable resources from across the global energy sector.
                     </p>
                     <Link
-                        href="/knowledge-base"
+                        href="/resource-hub"
                         className="mt-6 inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-3 text-sm font-semibold transition-all"
                         style={{ background: "var(--dash-accent)", color: "#0A0A0B" }}
                     >
-                        Explore Knowledge Base
+                        Explore Now
                     </Link>
                 </div>
             ) : (
