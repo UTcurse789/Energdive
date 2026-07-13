@@ -68,7 +68,7 @@ export async function GET(
     const arrayBuffer = await fileResponse.arrayBuffer();
     const watermarkedBuffer = await addIpWatermark(arrayBuffer, ipAddress);
 
-    return new NextResponse(watermarkedBuffer, {
+    return new NextResponse(Buffer.from(watermarkedBuffer), {
       headers: {
         "Content-Type": fileResponse.headers.get("content-type") || "application/pdf",
         "Content-Disposition": `attachment; filename="${filename}"`,
