@@ -10,6 +10,7 @@ import {
   Download,
   Eye,
   Filter,
+  Lock,
   RotateCcw,
   Search,
   ShieldCheck,
@@ -31,6 +32,12 @@ import {
   storePendingResourceDownload,
   triggerResourceFileDownload,
 } from "./resource-download";
+import {
+  getResourceDownloadLockMessage,
+  RESOURCE_AUTH_LOCK_MESSAGE,
+  RESOURCE_PREMIUM_LOCK_MESSAGE,
+} from "./resource-access";
+import { PremiumPaywall } from "./premium-paywall";
 
 import type {
   EnergyEvent,
@@ -198,6 +205,10 @@ export function EventResourceCenter({
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [downloadNotice, setDownloadNotice] = useState<string | null>(null);
   const [downloadingSlug, setDownloadingSlug] = useState<string | null>(null);
+  const [downloadedResourceSlugs, setDownloadedResourceSlugs] = useState<Set<string>>(
+    () => new Set()
+  );
+  const [premiumPaywallResource, setPremiumPaywallResource] = useState<EventResource | null>(null);
 
   const canDownload = isLoaded && isSignedIn;
   const listedResources = useMemo(
@@ -272,6 +283,32 @@ export function EventResourceCenter({
     const timer = window.setTimeout(() => setDownloadNotice(null), 3600);
     return () => window.clearTimeout(timer);
   }, [downloadNotice]);
+
+  useEffect(() => {
+    if (!isLoaded || !isSignedIn) {
+      setDownloadedResourceSlugs(new Set());
+      return;
+    }
+
+    let cancelled = false;
+
+    fetch("/api/user/downloads", { cache: "no-store" })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((payload) => {
+        if (cancelled) return;
+        const slugs = Array.isArray(payload?.downloadedResourceSlugs)
+          ? payload.downloadedResourceSlugs
+          : [];
+        setDownloadedResourceSlugs(new Set(slugs));
+      })
+      .catch(() => {
+        if (!cancelled) setDownloadedResourceSlugs(new Set());
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isLoaded, isSignedIn]);
 
   const filterCounts = useMemo(
     () => ({
@@ -423,7 +460,21 @@ export function EventResourceCenter({
         return;
       }
 
+      if (result.status === "already_downloaded") {
+        setDownloadedResourceSlugs((current) => new Set(current).add(resource.slug));
+        window.location.href = result.redirectUrl;
+        return;
+      }
+
+      if (result.status === "require_purchase") {
+        const fullResource = resources.find(r => r.slug === resource.slug);
+        setDownloadNotice(RESOURCE_PREMIUM_LOCK_MESSAGE);
+        if (fullResource) setPremiumPaywallResource(fullResource);
+        return;
+      }
+
       triggerResourceFileDownload(result.downloadUrl, result.fileName);
+      setDownloadedResourceSlugs((current) => new Set(current).add(resource.slug));
       setDownloadNotice(`${result.fileName} download started`);
     } catch (error) {
       console.error("[RESOURCE_DOWNLOAD] Failed to start download:", error);
@@ -433,7 +484,7 @@ export function EventResourceCenter({
     } finally {
       setDownloadingSlug(null);
     }
-  }, [downloadingSlug, openAuthModal]);
+  }, [downloadingSlug, openAuthModal, resources]);
 
   // After auth redirect: check for pending download
   useEffect(() => {
@@ -447,6 +498,11 @@ export function EventResourceCenter({
   }, [canDownload, startResourceDownload]);
 
   function requestDownload(resource: EventResource) {
+    const lockMessage = getResourceDownloadLockMessage(resource);
+    if (!isSignedIn && lockMessage) {
+      setDownloadNotice(lockMessage);
+    }
+
     if (canDownload) {
       void startResourceDownload(resource);
       return;
@@ -528,7 +584,9 @@ export function EventResourceCenter({
                 <ResourceGrid
                   key={resourceGridKey}
                   downloadingSlug={downloadingSlug}
+                  downloadedResourceSlugs={downloadedResourceSlugs}
                   eventLookup={eventLookup}
+                  isSignedIn={!!isSignedIn}
                   resources={filteredResources}
                   onDownload={requestDownload}
                 />
@@ -573,12 +631,23 @@ export function EventResourceCenter({
             className="fixed bottom-5 right-5 z-[70] max-w-[calc(100vw-2rem)] rounded-lg border border-emerald-200 bg-white px-4 py-3 text-sm font-semibold text-zinc-900 shadow-2xl shadow-emerald-950/10 dark:border-emerald-900 dark:bg-zinc-900 dark:text-zinc-100"
           >
             <span className="inline-flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4 text-[#00A651]" />
+              {downloadNotice === RESOURCE_AUTH_LOCK_MESSAGE ||
+              downloadNotice === RESOURCE_PREMIUM_LOCK_MESSAGE ? (
+                <Lock className="h-4 w-4 text-[#00A651]" />
+              ) : (
+                <CheckCircle2 className="h-4 w-4 text-[#00A651]" />
+              )}
               {downloadNotice}
             </span>
           </motion.div>
         )}
       </AnimatePresence>
+
+      <PremiumPaywall 
+        isOpen={!!premiumPaywallResource} 
+        onClose={() => setPremiumPaywallResource(null)} 
+        resource={premiumPaywallResource} 
+      />
     </div>
   );
 }
@@ -984,12 +1053,16 @@ function FilterGroup({
 
 function ResourceGrid({
   downloadingSlug,
+  downloadedResourceSlugs,
   eventLookup,
+  isSignedIn,
   resources,
   onDownload,
 }: {
   downloadingSlug: string | null;
+  downloadedResourceSlugs: Set<string>;
   eventLookup: Record<string, EnergyEvent>;
+  isSignedIn: boolean;
   resources: EventResource[];
   onDownload: (resource: EventResource) => void;
 }) {
@@ -1032,8 +1105,10 @@ function ResourceGrid({
           {pageResources.map((resource) => (
             <ResourceCard
               key={resource.id}
+              hasDownloaded={downloadedResourceSlugs.has(resource.slug)}
               event={eventLookup[resource.event_id]}
               isDownloading={downloadingSlug === resource.slug}
+              isSignedIn={isSignedIn}
               resource={resource}
               onDownload={onDownload}
             />
@@ -1104,15 +1179,47 @@ function ResourceGrid({
 
 function ResourceCard({
   event,
+  hasDownloaded,
   isDownloading,
+  isSignedIn,
   resource,
   onDownload,
 }: {
   event?: EnergyEvent;
+  hasDownloaded: boolean;
   isDownloading: boolean;
+  isSignedIn: boolean;
   resource: EventResource;
   onDownload: (resource: EventResource) => void;
 }) {
+  const isPublic = resource.content_access?.access_type === "public";
+  const isPremium = resource.content_access?.access_type === "premium";
+
+  let downloadButtonLabel = "Download";
+  let DownloadActionIcon = Download;
+  let tooltipMessage = null;
+
+  if (hasDownloaded) {
+    downloadButtonLabel = "Access";
+    DownloadActionIcon = Download;
+  } else if (isPublic) {
+    downloadButtonLabel = "Download";
+    DownloadActionIcon = Download;
+  } else if (!isSignedIn) {
+    downloadButtonLabel = "Locked";
+    DownloadActionIcon = Lock;
+    tooltipMessage = getResourceDownloadLockMessage(resource);
+  } else {
+    if (isPremium) {
+      downloadButtonLabel = "Buy";
+      DownloadActionIcon = Lock;
+      tooltipMessage = getResourceDownloadLockMessage(resource);
+    } else {
+      downloadButtonLabel = "Download";
+      DownloadActionIcon = Download;
+    }
+  }
+
   return (
     <motion.article
       layout
@@ -1135,6 +1242,11 @@ function ResourceCard({
               </p>
             </div>
           </div>
+          {isPremium && (
+            <span className="shrink-0 rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold text-amber-800 dark:bg-amber-900/30 dark:text-amber-500">
+              Paid Content
+            </span>
+          )}
         </div>
 
         <ResourceCover resource={resource} />
@@ -1170,11 +1282,12 @@ function ResourceCard({
             onClick={() => onDownload(resource)}
             disabled={isDownloading}
             className="h-9 rounded-md bg-zinc-950 px-2 text-xs text-white hover:bg-[#00A651] dark:bg-white dark:text-zinc-950 dark:hover:bg-[#00A651] dark:hover:text-white"
-            title="Download"
+            title={tooltipMessage || "Download"}
+            aria-label={tooltipMessage || "Download"}
           >
-            <Download className="h-3.5 w-3.5 xl:mr-1.5" />
-            <span className="hidden xl:inline">
-              {isDownloading ? "Preparing..." : "Download"}
+            <DownloadActionIcon className="h-3.5 w-3.5 xl:mr-1.5" />
+            <span className="hidden whitespace-nowrap xl:inline">
+              {isDownloading ? "Preparing..." : downloadButtonLabel}
             </span>
           </Button>
         </div>

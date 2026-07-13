@@ -76,6 +76,16 @@ export function EventBrochureDownloads({
           return;
         }
 
+        if (result.status === "already_downloaded") {
+          window.location.href = result.redirectUrl;
+          return;
+        }
+
+        if (result.status === "require_purchase") {
+          window.location.href = `/resource-hub/${resource.slug}`;
+          return;
+        }
+
         triggerResourceFileDownload(result.downloadUrl, result.fileName);
         setDownloadNotice(`${result.fileName} download started`);
       } catch (error) {

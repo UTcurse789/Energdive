@@ -83,20 +83,6 @@ export function KnowledgeBaseDashboardFrame({ children }: { children: React.Reac
                             </div>
                         )}
 
-                        {showDownloads && (
-                            <Link
-                                href="/dashboard/my-downloads"
-                                className="flex items-center gap-2 px-4 py-3 text-sm font-semibold transition-colors"
-                                style={
-                                    isDownloads
-                                        ? { color: "var(--dash-accent)", background: "rgba(201,168,76,0.08)" }
-                                        : { color: "var(--dash-text-muted)", background: "rgba(255,255,255,0.03)" }
-                                }
-                            >
-                                <Download className="h-4 w-4" />
-                                My Downloads
-                            </Link>
-                        )}
                     </nav>
                 </aside>
 

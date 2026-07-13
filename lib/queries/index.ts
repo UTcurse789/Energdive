@@ -29,6 +29,6 @@ export {
   logEnergJobSyncEvent,
 } from "./energjob";
 
-export { addPaperDownload, getUserDownloads, hasUserDownloads } from "./downloads";
+export { addPaperDownload, getUserDownloads, getUserDownloadById, hasUserDownloads, hasDownloadedResource } from "./downloads";
 export type { UserDownload } from "./downloads";
 

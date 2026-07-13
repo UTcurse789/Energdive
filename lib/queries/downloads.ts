@@ -6,6 +6,7 @@ export interface UserDownload {
     paper_title: string;
     pdf_url: string;
     downloaded_at: string;
+    item_type: string;
 }
 
 /**
@@ -16,7 +17,8 @@ export async function addPaperDownload(
     clerkId: string,
     paperSlug: string,
     paperTitle: string,
-    pdfUrl: string
+    pdfUrl: string,
+    itemType: string = "paper"
 ): Promise<void> {
     const userRes = await query("SELECT id FROM users WHERE clerk_id = $1", [clerkId]);
     if (userRes.rows.length === 0) {
@@ -25,10 +27,10 @@ export async function addPaperDownload(
     const userId = userRes.rows[0].id;
 
     await query(
-        `INSERT INTO user_downloads (user_id, paper_slug, paper_title, pdf_url, downloaded_at)
-         VALUES ($1, $2, $3, $4, NOW())
-         ON CONFLICT (user_id, paper_slug) DO UPDATE SET downloaded_at = NOW()`,
-        [userId, paperSlug, paperTitle, pdfUrl]
+        `INSERT INTO user_downloads (user_id, paper_slug, paper_title, pdf_url, downloaded_at, item_type)
+         VALUES ($1, $2, $3, $4, NOW(), $5)
+         ON CONFLICT (user_id, paper_slug) DO UPDATE SET downloaded_at = NOW(), item_type = $5`,
+        [userId, paperSlug, paperTitle, pdfUrl, itemType]
     );
 }
 
@@ -37,7 +39,7 @@ export async function addPaperDownload(
  */
 export async function getUserDownloads(clerkId: string): Promise<UserDownload[]> {
     const res = await query<UserDownload>(
-        `SELECT ud.id, ud.paper_slug, ud.paper_title, ud.pdf_url, ud.downloaded_at
+        `SELECT ud.id, ud.paper_slug, ud.paper_title, ud.pdf_url, ud.downloaded_at, ud.item_type
          FROM user_downloads ud
          JOIN users u ON ud.user_id = u.id
          WHERE u.clerk_id = $1
@@ -45,6 +47,21 @@ export async function getUserDownloads(clerkId: string): Promise<UserDownload[]>
         [clerkId]
     );
     return res.rows;
+}
+
+/**
+ * Retrieve a specific paper download by its ID.
+ * Ensures the download belongs to the requested clerkId.
+ */
+export async function getUserDownloadById(id: number, clerkId: string): Promise<UserDownload | null> {
+    const res = await query<UserDownload>(
+        `SELECT ud.id, ud.paper_slug, ud.paper_title, ud.pdf_url, ud.downloaded_at, ud.item_type
+         FROM user_downloads ud
+         JOIN users u ON ud.user_id = u.id
+         WHERE ud.id = $1 AND u.clerk_id = $2`,
+        [id, clerkId]
+    );
+    return res.rows[0] || null;
 }
 
 /**
@@ -64,6 +81,30 @@ export async function hasUserDownloads(clerkId: string): Promise<boolean> {
     } catch (error) {
         console.error("[hasUserDownloads] Falling back to false", {
             clerkId,
+            error,
+        });
+        return false;
+    }
+}
+
+/**
+ * Check if a user has downloaded a specific resource.
+ */
+export async function hasDownloadedResource(clerkId: string, paperSlug: string): Promise<boolean> {
+    try {
+        const res = await query(
+            `SELECT EXISTS(
+                SELECT 1 FROM user_downloads ud
+                JOIN users u ON ud.user_id = u.id
+                WHERE u.clerk_id = $1 AND ud.paper_slug = $2
+            ) AS has_downloaded`,
+            [clerkId, paperSlug]
+        );
+        return res.rows[0]?.has_downloaded === true;
+    } catch (error) {
+        console.error("[hasDownloadedResource] Falling back to false", {
+            clerkId,
+            paperSlug,
             error,
         });
         return false;

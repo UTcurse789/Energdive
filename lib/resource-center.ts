@@ -46,6 +46,15 @@ type StrapiRichTextNode = {
 
 type StrapiRichTextValue = StrapiRichTextNode[] | string | null | undefined;
 
+type StrapiContentAccess = {
+  access_type?: string | null;
+  purchase_type?: string | null;
+  price?: number | null;
+  currency?: string | null;
+  preview_enabled?: boolean | null;
+  preview_text?: string | null;
+};
+
 type StrapiResourceCenterEntry = {
   id?: number;
   documentId?: string;
@@ -75,6 +84,7 @@ type StrapiResourceCenterEntry = {
   sectors?: StrapiSector[] | { data?: StrapiSector[] } | null;
   event?: StrapiEventRelation | StrapiEventRelation[] | { data?: StrapiEventRelation | StrapiEventRelation[] | null } | null;
   events?: StrapiEventRelation[] | { data?: StrapiEventRelation[] } | null;
+  content_access?: StrapiContentAccess | null;
   attributes?: StrapiResourceCenterEntry;
 };
 
@@ -227,7 +237,8 @@ function emailList(value: unknown) {
 
 function normalizeResource(item: StrapiResourceCenterEntry): EventResource | null {
   const entry = item.attributes || item;
-  const title = (entry.full_title || entry.short_title || "").trim();
+  const shortTitle = (entry.short_title || "").trim();
+  const title = (entry.full_title || shortTitle || "").trim();
   if (!title) return null;
 
   const resourceLinkedEvents = linkedEvents(entry);
@@ -252,6 +263,19 @@ function normalizeResource(item: StrapiResourceCenterEntry): EventResource | nul
     plainTextFromRichText(entry.short_description) ||
     plainTextFromRichText(entry.short_descrtiption) ||
     plainTextFromRichText(entry.shortDescription);
+
+  const contentAccessEntry = entry.content_access || {};
+  const parsedAccessType = (contentAccessEntry.access_type || "authenticated").toLowerCase();
+  const parsedPurchaseType = (contentAccessEntry.purchase_type || "one_time").toLowerCase();
+
+  const content_access = {
+    access_type: (["public", "authenticated", "premium"].includes(parsedAccessType) ? parsedAccessType : "authenticated") as any,
+    purchase_type: (["one_time", "subscription"].includes(parsedPurchaseType) ? parsedPurchaseType : "one_time") as any,
+    price: Number(contentAccessEntry.price) || 0,
+    currency: (contentAccessEntry.currency || "USD").toUpperCase(),
+    preview_enabled: Boolean(contentAccessEntry.preview_enabled),
+    preview_text: plainTextFromRichText(contentAccessEntry.preview_text as any) || "",
+  };
 
   return {
     id: entry.documentId || String(entry.id || slug),
@@ -278,6 +302,7 @@ function normalizeResource(item: StrapiResourceCenterEntry): EventResource | nul
     coverImageWidth: coverImage?.width || null,
     coverImageHeight: coverImage?.height || null,
     thumbnailImageUrl: strapiMediaUrl(entry.thumbnail_image, "", STRAPI_BASE) || null,
+    shortTitle: shortTitle || title,
     title,
     eventName,
     eventLogo: showCode || initials(eventName),
@@ -291,6 +316,7 @@ function normalizeResource(item: StrapiResourceCenterEntry): EventResource | nul
     publishedAt,
     featured: Boolean(entry.featured),
     promotional: Boolean(entry.promotional),
+    content_access,
   };
 }
 
