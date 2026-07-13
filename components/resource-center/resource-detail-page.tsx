@@ -336,8 +336,14 @@ export function ResourceDetailPage({
                 <ResourceCover resource={resource} />
                 <Button
                   type="button"
-                  onClick={requestDownload}
-                  disabled={isDownloading}
+                  onClick={() => {
+                    if (hasDownloadedResource) {
+                      window.location.href = "/dashboard/my-downloads";
+                    } else {
+                      requestDownload();
+                    }
+                  }}
+                  disabled={isDownloading && !hasDownloadedResource}
                   title={tooltipMessage || "Download"}
                   aria-label={tooltipMessage || "Download"}
                   className="mt-4 h-12 w-full rounded-md bg-[#00A651] text-sm font-black text-white hover:bg-[#008b44]"
