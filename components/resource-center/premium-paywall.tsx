@@ -1,9 +1,61 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Lock, CheckCircle2 } from "lucide-react";
 import type { EventResource } from "./types";
+import { storePendingResourceDownload } from "./resource-download";
+
+type RazorpayCheckoutResponse = {
+  razorpay_order_id: string;
+  razorpay_payment_id: string;
+  razorpay_signature: string;
+};
+
+type RazorpayFailedResponse = {
+  error: {
+    description?: string;
+  };
+};
+
+type RazorpayOptions = {
+  key: string;
+  amount: number;
+  currency: string;
+  name: string;
+  description: string;
+  order_id: string;
+  prefill: {
+    name?: string;
+    email?: string;
+    contact?: string;
+  };
+  handler: (response: RazorpayCheckoutResponse) => void | Promise<void>;
+  theme: {
+    color: string;
+  };
+};
+
+type RazorpayInstance = {
+  open: () => void;
+  on: (event: "payment.failed", handler: (response: RazorpayFailedResponse) => void) => void;
+};
+
+type RazorpayConstructor = new (options: RazorpayOptions) => RazorpayInstance;
+
+type CreateOrderResponse = {
+  amount?: number;
+  currency?: string;
+  customer?: {
+    name?: string;
+    email?: string;
+    contact?: string;
+  };
+  error?: string;
+  message?: string;
+  orderId?: string;
+  razorpayKey?: string;
+};
 
 export function PremiumPaywall({
   isOpen,
@@ -14,6 +66,8 @@ export function PremiumPaywall({
   onClose: () => void;
   resource: EventResource | null;
 }) {
+  const [loading, setLoading] = useState(false);
+
   // Lock body scroll when modal is open
   useEffect(() => {
     if (isOpen) {
@@ -33,13 +87,106 @@ export function PremiumPaywall({
 
   const { price, currency, preview_enabled, preview_text } = contentAccess;
 
-  const handleBuyNow = () => {
-    // FUTURE: Razorpay checkout integration
-    console.log("Buy Now clicked", { 
-      resourceId: resource.id, 
-      price, 
-      currency 
+  const loadRazorpay = async () => {
+    return new Promise((resolve) => {
+      if ((window as Window & { Razorpay?: RazorpayConstructor }).Razorpay) {
+        resolve(true);
+        return;
+      }
+      const script = document.createElement("script");
+      script.src = "https://checkout.razorpay.com/v1/checkout.js";
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
     });
+  };
+
+  const handleBuyNow = async () => {
+    try {
+      setLoading(true);
+
+      const res = await fetch("/api/payments/create-order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ resourceId: resource.id }),
+      });
+
+      const data = (await res.json()) as CreateOrderResponse;
+      if (!res.ok) throw new Error(data.error || data.message || "Failed to create order");
+      if (!data.razorpayKey || !data.amount || !data.currency || !data.orderId) {
+        throw new Error("Invalid Razorpay order response.");
+      }
+
+      const isLoaded = await loadRazorpay();
+      if (!isLoaded) {
+        throw new Error("Razorpay SDK failed to load. Please check your connection.");
+      }
+
+      const options = {
+        key: data.razorpayKey,
+        amount: data.amount,
+        currency: data.currency,
+        name: "Energdive",
+        description: resource.title,
+        order_id: data.orderId,
+        prefill: {
+          name: data.customer?.name || undefined,
+          email: data.customer?.email || undefined,
+          contact: data.customer?.contact || undefined,
+        },
+        handler: async function (response: RazorpayCheckoutResponse) {
+          try {
+            const verifyRes = await fetch("/api/payments/verify", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+              }),
+            });
+
+            const verifyData = await verifyRes.json();
+
+            if (!verifyRes.ok) {
+              alert(verifyData.error || "Payment verification failed.");
+              return;
+            }
+
+            // Success! Store resource to auto-download, close modal, and reload
+            if (resource) {
+              storePendingResourceDownload(resource);
+            }
+            onClose();
+            window.location.reload();
+          } catch (err) {
+            console.error("Verification error:", err);
+            alert("Payment was received but verification failed. Please contact support.");
+          }
+        },
+        theme: {
+          color: "#00A651",
+        },
+      };
+
+      const RazorpayCheckout = (window as Window & { Razorpay?: RazorpayConstructor }).Razorpay;
+      if (!RazorpayCheckout) {
+        throw new Error("Razorpay SDK failed to initialize.");
+      }
+
+      const rzp = new RazorpayCheckout(options);
+      rzp.on("payment.failed", function (response: RazorpayFailedResponse) {
+        console.error("Payment Failed", response.error);
+        alert(`Payment failed: ${response.error.description || "Please try again."}`);
+      });
+
+      rzp.open();
+    } catch (error) {
+      console.error(error);
+      alert(error instanceof Error ? error.message : "Unable to start payment.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -91,7 +238,7 @@ export function PremiumPaywall({
                   Preview
                 </p>
                 <p className="text-sm text-zinc-600 italic line-clamp-4">
-                  "{preview_text}"
+                  &ldquo;{preview_text}&rdquo;
                 </p>
               </div>
             )}
@@ -122,13 +269,20 @@ export function PremiumPaywall({
 
             <button
               onClick={handleBuyNow}
-              className="w-full h-11 rounded-xl bg-[#00A651] hover:bg-[#009347] text-white text-sm font-bold shadow-md shadow-emerald-500/10 hover:shadow-lg active:scale-[0.98] transition-all duration-150 flex items-center justify-center gap-2"
+              disabled={loading}
+              className={`w-full h-11 rounded-xl bg-[#00A651] hover:bg-[#009347] text-white text-sm font-bold shadow-md shadow-emerald-500/10 hover:shadow-lg transition-all duration-150 flex items-center justify-center gap-2 ${
+                loading ? "opacity-70 cursor-not-allowed" : "active:scale-[0.98]"
+              }`}
             >
-              <Lock className="w-4 h-4" />
-              Buy Now
+              {loading ? (
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              ) : (
+                <Lock className="w-4 h-4" />
+              )}
+              {loading ? "Processing..." : "Buy Now"}
             </button>
           </div>
-          
+
           <div className="border-t border-zinc-100 bg-zinc-50/50 py-3.5 flex items-center justify-center gap-2">
             <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
             <span className="text-[9px] uppercase tracking-[0.25em] text-zinc-400 font-bold">

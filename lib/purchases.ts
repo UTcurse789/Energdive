@@ -1,11 +1,12 @@
 import { query } from "./db";
+import type { QueryResultRow } from "pg";
 
 export type PurchaseStatus = "pending" | "paid" | "failed" | "refunded";
 
 export interface Purchase {
   id: string;
   userId: string;
-  resourceId: number;
+  resourceId: string;
   amount: number;
   currency: string;
   status: PurchaseStatus;
@@ -16,19 +17,33 @@ export interface Purchase {
   updatedAt: Date;
 }
 
+type PurchaseRow = QueryResultRow & {
+  id: string;
+  user_id: string;
+  resource_id: string | number;
+  amount: string | number;
+  currency: string;
+  status: string;
+  razorpay_order_id?: string | null;
+  razorpay_payment_id?: string | null;
+  purchased_at?: string | Date | null;
+  created_at: string | Date;
+  updated_at: string | Date;
+};
+
 /**
  * Maps DB row to Purchase object
  */
-function mapPurchaseRow(row: any): Purchase {
+function mapPurchaseRow(row: PurchaseRow): Purchase {
   return {
     id: row.id,
     userId: row.user_id,
-    resourceId: parseInt(row.resource_id, 10),
-    amount: parseFloat(row.amount),
+    resourceId: String(row.resource_id),
+    amount: Number(row.amount),
     currency: row.currency,
     status: row.status as PurchaseStatus,
-    razorpayOrderId: row.razorpay_order_id,
-    razorpayPaymentId: row.razorpay_payment_id,
+    razorpayOrderId: row.razorpay_order_id || undefined,
+    razorpayPaymentId: row.razorpay_payment_id || undefined,
     purchasedAt: row.purchased_at ? new Date(row.purchased_at) : undefined,
     createdAt: new Date(row.created_at),
     updatedAt: new Date(row.updated_at),
@@ -38,15 +53,39 @@ function mapPurchaseRow(row: any): Purchase {
 /**
  * Checks if a user has successfully purchased a specific resource.
  */
-export async function hasPurchased(userId: string, resourceId: number): Promise<boolean> {
+export async function hasPurchased(userId: string, resourceId: string | number): Promise<boolean> {
   if (!userId || !resourceId) return false;
 
   const result = await query(
     `SELECT 1 FROM purchases WHERE user_id = $1 AND resource_id = $2 AND status = 'paid' LIMIT 1`,
-    [userId, resourceId]
+    [userId, String(resourceId)]
   );
 
   return (result.rowCount ?? 0) > 0;
+}
+
+/**
+ * Retrieves a paid purchase for a specific user/resource pair.
+ */
+export async function getPaidPurchaseForResource(
+  userId: string,
+  resourceId: string | number
+): Promise<Purchase | null> {
+  if (!userId || !resourceId) return null;
+
+  const result = await query<PurchaseRow>(
+    `
+    SELECT *
+    FROM purchases
+    WHERE user_id = $1 AND resource_id = $2 AND status = 'paid'
+    ORDER BY purchased_at DESC NULLS LAST, updated_at DESC
+    LIMIT 1
+    `,
+    [userId, String(resourceId)]
+  );
+
+  if (result.rowCount === 0) return null;
+  return mapPurchaseRow(result.rows[0]);
 }
 
 /**
@@ -62,7 +101,7 @@ export async function createPendingPurchase(data: {
   const { userId, resourceId, amount, currency } = data;
 
   // Ensure amount is handled correctly as a string for DECIMAL(10,2) or let pg do the conversion
-  const result = await query(
+  const result = await query<PurchaseRow>(
     `
     INSERT INTO purchases (user_id, resource_id, amount, currency, status)
     VALUES ($1, $2, $3, $4, 'pending')
@@ -116,7 +155,7 @@ export async function markPurchasePaid(
  * Retrieves a purchase by its ID.
  */
 export async function getPurchase(id: string): Promise<Purchase | null> {
-  const result = await query(`SELECT * FROM purchases WHERE id = $1 LIMIT 1`, [id]);
+  const result = await query<PurchaseRow>(`SELECT * FROM purchases WHERE id = $1 LIMIT 1`, [id]);
   
   if (result.rowCount === 0) return null;
   return mapPurchaseRow(result.rows[0]);
@@ -128,7 +167,7 @@ export async function getPurchase(id: string): Promise<Purchase | null> {
 export async function getPurchaseByOrderId(razorpayOrderId: string): Promise<Purchase | null> {
   if (!razorpayOrderId) return null;
 
-  const result = await query(
+  const result = await query<PurchaseRow>(
     `SELECT * FROM purchases WHERE razorpay_order_id = $1 LIMIT 1`,
     [razorpayOrderId]
   );
@@ -149,4 +188,32 @@ export async function getPurchasedResources(userId: string): Promise<number[]> {
   );
 
   return result.rows.map((row) => parseInt(row.resource_id, 10));
+}
+
+/**
+ * Stores a Razorpay Order ID on an existing pending purchase.
+ * Called after Razorpay order creation so we can reconcile later.
+ */
+export async function updatePurchaseOrderId(
+  purchaseId: string,
+  razorpayOrderId: string
+): Promise<void> {
+  if (!purchaseId || !razorpayOrderId) {
+    throw new Error("purchaseId and razorpayOrderId are required.");
+  }
+
+  const result = await query(
+    `
+    UPDATE purchases
+    SET razorpay_order_id = $1, updated_at = NOW()
+    WHERE id = $2 AND status = 'pending'
+    `,
+    [razorpayOrderId, purchaseId]
+  );
+
+  if (result.rowCount === 0) {
+    throw new Error(
+      `No pending purchase found with id=${purchaseId} to attach order.`
+    );
+  }
 }

@@ -237,7 +237,8 @@ function emailList(value: unknown) {
 
 function normalizeResource(item: StrapiResourceCenterEntry): EventResource | null {
   const entry = item.attributes || item;
-  const title = (entry.full_title || entry.short_title || "").trim();
+  const shortTitle = (entry.short_title || "").trim();
+  const title = (entry.full_title || shortTitle || "").trim();
   if (!title) return null;
 
   const resourceLinkedEvents = linkedEvents(entry);
@@ -301,6 +302,7 @@ function normalizeResource(item: StrapiResourceCenterEntry): EventResource | nul
     coverImageWidth: coverImage?.width || null,
     coverImageHeight: coverImage?.height || null,
     thumbnailImageUrl: strapiMediaUrl(entry.thumbnail_image, "", STRAPI_BASE) || null,
+    shortTitle: shortTitle || title,
     title,
     eventName,
     eventLogo: showCode || initials(eventName),

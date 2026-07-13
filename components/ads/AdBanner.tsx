@@ -180,7 +180,7 @@ export function AdBanner({
                     url += `&filters[sectors][slug][$eq]=${encodeURIComponent(sectorSlug)}`;
                 }
 
-                console.log(`[AdBanner] Fetching: placement=${placement}, today=${now}`);
+
 
                 const res = await fetch(url);
                 if (!res.ok) {
@@ -190,7 +190,7 @@ export function AdBanner({
                 const json = await res.json();
                 let ads: Ad[] = json.data || [];
 
-                console.log(`[AdBanner] Raw ads: ${ads.length} for "${placement}"`);
+
 
                 // Filter by date in code (null/empty dates = always active)
                 ads = ads.filter((ad) => {
@@ -199,11 +199,11 @@ export function AdBanner({
                     return true;
                 });
 
-                console.log(`[AdBanner] After date filter: ${ads.length} ads`);
+
 
                 // Fallback to global (no-sector) ads if no sector match
                 if (ads.length === 0 && sectorSlug) {
-                    console.log(`[AdBanner] No sector-specific ads, falling back to global ads only`);
+
                     const fallbackUrl =
                         `${STRAPI_BASE}/api/advertisements` +
                         `?filters[placement][$eq]=${encodeURIComponent(placement)}` +

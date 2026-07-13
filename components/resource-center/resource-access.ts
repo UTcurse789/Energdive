@@ -2,6 +2,22 @@ import type { EventResource } from "./types";
 
 export type AccessDecision = "allow" | "require_auth" | "require_purchase";
 
+export const RESOURCE_AUTH_LOCK_MESSAGE =
+  "Please login to access this content";
+export const RESOURCE_PREMIUM_LOCK_MESSAGE =
+  "Please login and pay to access this content";
+
+export function getResourceDownloadLockMessage(
+  resource: Pick<EventResource, "content_access">
+) {
+  const accessType = resource.content_access?.access_type || "authenticated";
+
+  if (accessType === "public") return null;
+  if (accessType === "premium") return RESOURCE_PREMIUM_LOCK_MESSAGE;
+
+  return RESOURCE_AUTH_LOCK_MESSAGE;
+}
+
 /**
  * Determines whether the current user has purchased a resource.
  * FUTURE: Replace this with an API call → hasPurchased(userId, resourceId)

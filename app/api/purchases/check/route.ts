@@ -13,7 +13,7 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const resourceId = searchParams.get("resourceId");
 
-    if (!resourceId) {
+    if (!resourceId || resourceId.trim() === "") {
       return NextResponse.json(
         { error: "resourceId is required" },
         { status: 400 }

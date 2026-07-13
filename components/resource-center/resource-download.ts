@@ -39,10 +39,18 @@ export type ResourceDownloadResult =
   | {
       status: "onboarding_required";
       redirectUrl: string;
+    }
+  | {
+      status: "already_downloaded";
+      redirectUrl: string;
+    }
+  | {
+      status: "require_purchase";
     };
 
 type ResourceDownloadResponse = {
   success?: boolean;
+  already_downloaded?: boolean;
   file_url?: string;
   downloadUrl?: string;
   download_url?: string;
@@ -241,6 +249,17 @@ export async function requestTrackedResourceDownload(
       redirectUrl:
         payload.redirectUrl || `/onboarding?return_to=${encodeURIComponent(getResourceDownloadPath(resource, true))}`,
     };
+  }
+
+  if (payload.success && payload.already_downloaded) {
+    return {
+      status: "already_downloaded",
+      redirectUrl: payload.redirectUrl || "/dashboard/my-downloads",
+    };
+  }
+
+  if (response.status === 403 && payload.error === "REQUIRE_PURCHASE") {
+    return { status: "require_purchase" };
   }
 
   if (!response.ok || !payload.success || !payload.file_url) {

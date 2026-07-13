@@ -59,6 +59,20 @@ interface EnergJobApplicationEmailPayload {
     applicationViewUrl?: string | null;
 }
 
+interface ResourceReadyEmailAttachment {
+    name: string;
+    content: string;
+}
+
+interface ResourceReadyEmailPayload {
+    to: string;
+    toName?: string | null;
+    resourceTitle: string;
+    resourceType?: string | null;
+    resourceUrl: string;
+    attachment?: ResourceReadyEmailAttachment;
+}
+
 function escapeHtml(value: string): string {
     return value
         .replace(/&/g, "&amp;")
@@ -168,6 +182,84 @@ async function sendEmail(options: SendEmailOptions): Promise<void> {
         `[EMAIL] Sent "${options.subject}" to ${options.to}${result.messageId ? ` (${result.messageId})` : ""
         }`
     );
+}
+
+export async function sendResourceReadyEmail(
+    payload: ResourceReadyEmailPayload
+): Promise<void> {
+    const subject = "Your ENERGDIVE resource is ready";
+    const displayName = payload.toName || payload.to.split("@")[0] || "Member";
+    const attachments: ResourceReadyEmailAttachment[] = [];
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://www.energdive.com";
+    const logoUrl = `${appUrl}/logo2-removebg-preview.png`;
+
+    if (payload.attachment) {
+        attachments.push(payload.attachment);
+    }
+
+    const resourceType = payload.resourceType
+        ? `<span style="display:inline-block;margin-top:10px;border-radius:999px;background:#EAF8F1;color:#007A3D;padding:6px 12px;font-size:12px;font-weight:700;">${escapeHtml(payload.resourceType)}</span>`
+        : "";
+    const readyMessage = payload.attachment
+        ? "Your requested ENERGDIVE resource is ready. The file is attached to this email for your records."
+        : "Your requested ENERGDIVE resource is ready. You can access it using the link below.";
+
+    const htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>${escapeHtml(subject)}</title>
+</head>
+<body style="margin:0;padding:0;background-color:#F4F7F6;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#F4F7F6;padding:32px 16px;">
+        <tr>
+            <td align="center">
+                <table width="620" cellpadding="0" cellspacing="0" style="max-width:620px;background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #E5E7EB;">
+                    <tr>
+                        <td style="background:#06130D;padding:30px 34px;border-bottom:4px solid #00A651;">
+                            <img src="${logoUrl}" alt="ENERGDIVE" width="220" style="display:block;max-width:220px;width:100%;height:auto;" />
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding:34px;">
+                            <p style="margin:0 0 10px;color:#111827;font-size:18px;font-weight:800;">Hi ${escapeHtml(displayName)},</p>
+                            <p style="margin:0 0 22px;color:#4B5563;font-size:15px;line-height:1.7;">
+                                ${escapeHtml(readyMessage)}
+                            </p>
+                            <div style="border-radius:14px;background:#F6FBF8;border:1px solid #D7F0E2;padding:22px;margin:0 0 24px;">
+                                <p style="margin:0;color:#111827;font-size:18px;font-weight:800;line-height:1.35;">${escapeHtml(payload.resourceTitle)}</p>
+                                ${resourceType}
+                            </div>
+                            <a href="${payload.resourceUrl}" target="_blank" style="display:inline-block;background:#00A651;color:#ffffff;text-decoration:none;padding:13px 22px;border-radius:10px;font-size:14px;font-weight:800;">
+                                View Resource
+                            </a>
+                            <p style="margin:26px 0 0;color:#6B7280;font-size:12px;line-height:1.6;">
+                                You can also access downloaded resources from your ENERGClub dashboard.
+                            </p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding:20px 34px;background:#F9FAFB;border-top:1px solid #EEF2F7;text-align:center;">
+                            <p style="margin:0;color:#9CA3AF;font-size:11px;">&copy; ${new Date().getFullYear()} ENERGDIVE. All rights reserved.</p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>`;
+
+    await sendEmail({
+        to: payload.to,
+        toName: displayName,
+        subject,
+        htmlContent,
+        attachment: attachments.length > 0 ? attachments : undefined,
+        tags: ["resource-download", "resource"],
+    });
 }
 
 export async function sendPortalAccessEmail(
@@ -2179,4 +2271,3 @@ export async function sendAbstractAcceptedEmail(
         htmlContent,
     });
 }
-
