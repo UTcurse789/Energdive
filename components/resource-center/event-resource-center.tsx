@@ -1279,8 +1279,14 @@ function ResourceCard({
           </Link>
           <Button
             type="button"
-            onClick={() => onDownload(resource)}
-            disabled={isDownloading}
+            onClick={() => {
+              if (hasDownloaded) {
+                window.location.href = "/dashboard/my-downloads";
+              } else {
+                onDownload(resource);
+              }
+            }}
+            disabled={isDownloading && !hasDownloaded}
             className="h-9 rounded-md bg-zinc-950 px-2 text-xs text-white hover:bg-[#00A651] dark:bg-white dark:text-zinc-950 dark:hover:bg-[#00A651] dark:hover:text-white"
             title={tooltipMessage || "Download"}
             aria-label={tooltipMessage || "Download"}
