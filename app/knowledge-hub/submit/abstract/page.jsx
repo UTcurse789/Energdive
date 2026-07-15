@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 
 export const metadata = {
     title: "Submit Abstract Form",
-    description: "Complete your knowledge base abstract submission.",
+    description: "Complete your knowledge hub abstract submission.",
 };
 
 export default async function KnowledgeBaseSubmitAbstractPage({ searchParams }) {

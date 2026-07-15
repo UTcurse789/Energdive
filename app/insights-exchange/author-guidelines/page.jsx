@@ -71,7 +71,7 @@ export default function AuthorGuidelinesPage() {
 
                         <div className="mt-7 flex flex-col gap-2.5 sm:flex-row justify-center w-full sm:w-auto">
                             <Link
-                                href="/knowledge-base/submit"
+                                href="/knowledge-hub/submit"
                                 className="inline-flex items-center justify-center gap-2 bg-zinc-950 px-4 py-2.5 text-xs font-bold uppercase tracking-[0.12em] text-white transition-colors hover:bg-[#00A651]"
                             >
                                 Submit Abstract
@@ -152,7 +152,7 @@ export default function AuthorGuidelinesPage() {
                     </p>
                     <div className="mt-6 flex flex-col justify-center gap-2.5 sm:flex-row">
                         <Link
-                            href="/knowledge-base/submit"
+                            href="/knowledge-hub/submit"
                             className="inline-flex items-center justify-center gap-2 bg-[#00A651] px-4 py-2.5 text-xs font-bold uppercase tracking-[0.12em] text-white transition-colors hover:bg-emerald-600"
                         >
                             Submit Abstract

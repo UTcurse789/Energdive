@@ -73,23 +73,12 @@ export default function KnowledgeBasePaperForm({
         [selectedSectors]
     );
 
-    const selectedSubSectorNames = useMemo(
-        () => Array.from(new Set(
-            selectedSectors.flatMap((sector) =>
-                sector.children
-                    .filter((child) => selectedSubSectorIds.includes(normalizeId(child.id)))
-                    .map((child) => child.name)
-            )
-        )),
-        [selectedSectors, selectedSubSectorIds]
-    );
-
     const summaryHref = useMemo(() => {
         const params = new URLSearchParams();
         if (affiliation.trim()) params.set("institution", affiliation.trim());
         if (initialProfession) params.set("profession", initialProfession);
         const query = params.toString();
-        return query ? `/knowledge-base/submit?${query}` : "/knowledge-base/submit";
+        return query ? `/knowledge-hub/submit?${query}` : "/knowledge-hub/submit";
     }, [affiliation, initialProfession]);
 
     const cardStyle = {
@@ -214,7 +203,7 @@ export default function KnowledgeBasePaperForm({
         }
 
         if (!pdfFile) {
-            setFormError("Please upload the paper as a PDF.");
+            setFormError("Please upload the paper file.");
             return;
         }
 
@@ -340,11 +329,11 @@ export default function KnowledgeBasePaperForm({
                                     Go to My Submissions
                                 </Link>
                                 <Link
-                                    href="/knowledge-base"
+                                    href="/knowledge-hub"
                                     className="inline-flex items-center justify-center rounded-2xl px-5 py-3 text-sm font-semibold transition-all hover:bg-black/5"
                                     style={{ ...mutedCardStyle, color: "var(--dash-text-muted)" }}
                                 >
-                                    View Knowledge Base
+                                    View Knowledge Hub
                                 </Link>
                             </div>
                         </div>
@@ -402,7 +391,7 @@ export default function KnowledgeBasePaperForm({
                                                     Paper Details
                                                 </h2>
                                                 <p className="text-sm" style={{ color: "var(--dash-text-dim)" }}>
-                                                    Complete the metadata and attach the final PDF.
+                                                    Complete the metadata and attach the paper file.
                                                 </p>
                                             </div>
                                         </div>

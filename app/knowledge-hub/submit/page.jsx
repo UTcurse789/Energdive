@@ -6,21 +6,21 @@ import { PAPER_PROFESSION_OPTIONS } from "@/lib/paper-submission-taxonomy";
 
 export const metadata = {
     title: "Submit Paper",
-    description: "Start the ENERGDIVE knowledge base paper submission flow.",
+    description: "Start the ENERGDIVE knowledge hub paper submission flow.",
 };
 
 export default async function KnowledgeBaseSubmitPage({ searchParams }) {
     const { userId } = await auth();
 
     if (!userId) {
-        redirect("/knowledge-base");
+        redirect("/knowledge-hub");
     }
 
     const profile = await getUserProfile(userId);
     const resolvedSearchParams = searchParams ? await searchParams : {};
 
     if (!profile?.onboarding_completed) {
-        redirect(`/onboarding?return_to=${encodeURIComponent("/knowledge-base/submit")}`);
+        redirect(`/onboarding?return_to=${encodeURIComponent("/knowledge-hub/submit")}`);
     }
 
     const safeInstitution =

@@ -475,7 +475,7 @@ async function uploadPaperPdf({
         }
     }
 
-    console.error("[SUBMIT-PAPER] Failed to upload PDF after all attempts:", {
+    console.error("[SUBMIT-PAPER] Failed to upload file after all attempts:", {
         entryId,
         documentId,
         fileName: pdfFile.name,
@@ -532,7 +532,7 @@ async function attachPdfToPaper({
         }
     }
 
-    console.error("[SUBMIT-PAPER] Failed to attach PDF relation after all attempts:", {
+    console.error("[SUBMIT-PAPER] Failed to attach file relation after all attempts:", {
         entryId,
         documentId,
         mediaId,
@@ -583,7 +583,7 @@ export async function POST(request: NextRequest) {
         const pdfFile = formData.get("files.pdf") as File | null;
 
         console.log("[SUBMIT-PAPER] Raw data string:", dataString);
-        console.log("[SUBMIT-PAPER] Has PDF:", !!pdfFile, pdfFile?.name, pdfFile?.size);
+        console.log("[SUBMIT-PAPER] Has File:", !!pdfFile, pdfFile?.name, pdfFile?.size);
 
         const data = JSON.parse(dataString);
         const rawSector = data.sector ?? data.sectors;
@@ -667,8 +667,8 @@ export async function POST(request: NextRequest) {
             if (!uploadedPdf.ok) {
                 const statusCode = uploadedPdf.statusCode || 500;
                 const message = statusCode === 413
-                    ? "PDF upload failed because the file is larger than the server upload limit. Please upload a smaller PDF."
-                    : "PDF upload failed. Please try again with a smaller PDF or contact support.";
+                    ? "File upload failed because the file is larger than the server upload limit. Please upload a smaller file."
+                    : "File upload failed. Please try again with a smaller file or contact support.";
 
                 return NextResponse.json(
                     { error: { message } },
@@ -682,7 +682,7 @@ export async function POST(request: NextRequest) {
                 mediaId: uploadedPdf.mediaId,
             });
         } else {
-            console.log("[SUBMIT-PAPER] Skipping PDF upload - no file provided.");
+            console.log("[SUBMIT-PAPER] Skipping file upload - no file provided.");
         }
 
         await logPaperSnapshot({

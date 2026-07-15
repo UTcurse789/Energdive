@@ -60,14 +60,14 @@ export default async function MyDownloadsPage() {
                         No downloads yet
                     </h2>
                     <p className="mt-3 max-w-xl mx-auto text-sm leading-7" style={{ color: "var(--dash-text-dim)" }}>
-                        Explore the research archive in the Knowledge Base and save papers to your dashboard for offline access.
+                        Explore the research archive in the Knowledge Hub and save papers to your dashboard for offline access.
                     </p>
                     <Link
-                        href="/knowledge-base"
+                        href="/knowledge-hub"
                         className="mt-6 inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-3 text-sm font-semibold transition-all"
                         style={{ background: "var(--dash-accent)", color: "#0A0A0B" }}
                     >
-                        Explore Knowledge Base
+                        Explore Knowledge Hub
                     </Link>
                 </div>
             ) : (
@@ -105,7 +105,7 @@ export default async function MyDownloadsPage() {
                                     Download PDF
                                 </a>
                                 <Link
-                                    href={`/knowledge-base/abstract/${item.paper_slug}`}
+                                    href={`/knowledge-hub/abstract/${item.paper_slug}`}
                                     className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-zinc-200 hover:border-zinc-300 dark:border-zinc-800 dark:hover:border-zinc-700 bg-transparent px-4 py-2.5 text-sm font-semibold transition-all"
                                     style={{ color: "var(--dash-text)" }}
                                 >

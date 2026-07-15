@@ -3,13 +3,13 @@ import {
     ArrowRight,
     BookOpen,
     Briefcase,
-    CheckCircle2,
     FileText,
     Lightbulb,
     Megaphone,
     TrendingUp,
     Wrench,
 } from "lucide-react";
+import { fetchPaperSectors } from "@/lib/paper-submission-taxonomy";
 
 const contentCategories = [
     {
@@ -58,46 +58,16 @@ const submissionProcess = [
     { stage: "Stage 5", title: "Publication" },
 ];
 
-const topicsOfInterest = [
-    {
-        sector: "Oil & Gas",
-        topics: ["LPG", "Oil Markets", "Petrochemicals", "Pipelines", "Refining", "Retail", "Upstream"],
-    },
-    {
-        sector: "Power Generation",
-        topics: ["Nuclear", "Thermal"],
-    },
-    {
-        sector: "Renewables",
-        topics: ["Biopower", "Hydro", "Solar", "Waste-to-energy", "Wind"],
-    },
-    {
-        sector: "Transmission",
-        topics: ["Smart Grid"],
-    },
-    {
-        sector: "Distribution",
-        topics: ["EV charging", "Smart Cities", "Smart Meter & AMI"],
-    },
-    {
-        sector: "Electricity Markets",
-        topics: ["New Energies"],
-    },
-    {
-        sector: "New Energies",
-        topics: ["Green Hydrogen"],
-    },
-    {
-        sector: "Energy Storage",
-        topics: ["BESS", "Pumped Hydro"],
-    },
-    {
-        sector: "Sustainability & Safety",
-        topics: ["Energy Efficiency", "Environment", "Industrial & Process Safety", "Occupational Health"],
-    },
-];
+export default async function CallForPapersPage() {
+    const topicsOfInterest = (await fetchPaperSectors()).map((sector) => ({
+        sector: sector.name,
+        topics: Array.from(new Set(
+            (sector.children ?? [])
+                .map((child) => child.name)
+                .filter(Boolean)
+        )),
+    }));
 
-export default function CallForPapersPage() {
     return (
         <div className="bg-white text-zinc-950">
             {/* Hero Section */}
@@ -130,14 +100,14 @@ export default function CallForPapersPage() {
 
                         <div className="mt-7 flex flex-col gap-2.5 sm:flex-row justify-center w-full sm:w-auto">
                             <Link
-                                href="/knowledge-base/submit"
+                                href="/knowledge-hub/submit"
                                 className="inline-flex items-center justify-center gap-2 bg-zinc-950 px-4 py-2.5 text-xs font-bold uppercase tracking-[0.12em] text-white transition-colors hover:bg-[#00A651]"
                             >
                                 Submit Abstract
                                 <ArrowRight className="h-3.5 w-3.5" />
                             </Link>
                             <Link
-                                href="/knowledge-base"
+                                href="/knowledge-hub"
                                 className="inline-flex items-center justify-center gap-2 border border-zinc-950 bg-white px-4 py-2.5 text-xs font-bold uppercase tracking-[0.12em] text-zinc-950 transition-colors hover:border-[#00A651] hover:text-[#00A651]"
                             >
                                 Browse Papers
@@ -153,7 +123,7 @@ export default function CallForPapersPage() {
                 <div className="mx-auto w-full max-w-[1400px] px-6 md:px-10 lg:px-16 xl:px-24 2xl:px-12">
                     <div className="max-w-3xl">
                         <h2 className="text-2xl font-black text-zinc-950 sm:text-3xl">
-                            Paper Categories
+                            Categories
                         </h2>
                     </div>
 
@@ -269,7 +239,7 @@ export default function CallForPapersPage() {
                     </p>
                     <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
                         <Link
-                            href="/knowledge-base/submit"
+                            href="/knowledge-hub/submit"
                             className="inline-flex items-center justify-center gap-2 bg-[#00A651] px-5 py-3 text-sm font-bold uppercase tracking-[0.12em] text-white transition-colors hover:bg-emerald-600"
                         >
                             Submit Abstract

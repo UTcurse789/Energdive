@@ -16,7 +16,7 @@ export default async function SubmitFinalPaperPage({ searchParams }) {
     const { userId } = await auth();
 
     if (!userId) {
-        redirect(`/auth?redirect_url=${encodeURIComponent("/knowledge-base/submit")}`);
+        redirect(`/auth?redirect_url=${encodeURIComponent("/knowledge-hub/submit")}`);
     }
 
     const profile = await getUserProfile(userId);
@@ -28,7 +28,7 @@ export default async function SubmitFinalPaperPage({ searchParams }) {
     }
 
     if (!profile?.onboarding_completed) {
-        redirect(`/onboarding?return_to=${encodeURIComponent("/knowledge-base/submit")}`);
+        redirect(`/onboarding?return_to=${encodeURIComponent("/knowledge-hub/submit")}`);
     }
 
     // Fetch abstract details using fetchAbstractSubmissions

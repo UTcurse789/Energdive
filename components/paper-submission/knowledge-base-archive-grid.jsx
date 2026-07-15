@@ -141,7 +141,7 @@ export default function KnowledgeBaseArchiveGrid({ papers }) {
 
                             <div className="mt-4 border-t border-zinc-200/80 pt-4">
                                 <Link
-                                    href={`/knowledge-base/abstract/${slugify(paper.title || "untitled-paper")}`}
+                                    href={`/knowledge-hub/abstract/${slugify(paper.title || "untitled-paper")}`}
                                     className="inline-flex w-full items-center justify-center gap-2 bg-zinc-950 px-5 py-2.5 text-xs font-bold uppercase tracking-[0.12em] text-white transition-colors hover:bg-emerald-700"
                                 >
                                     Read more

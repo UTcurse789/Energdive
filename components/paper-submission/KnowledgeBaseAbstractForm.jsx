@@ -10,7 +10,9 @@ import {
     ChevronDown,
     FileText,
     Loader2,
+    Plus,
     Send,
+    Trash2,
 } from "lucide-react";
 import UploadZone from "@/components/paper-submission/UploadZone";
 import {
@@ -20,8 +22,10 @@ import {
 
 const SUBMISSIONS_ENDPOINT = "/api/submit-abstract";
 const ABSTRACT_MIN_LENGTH = 200;
-const ABSTRACT_PDF_MAX_FILE_SIZE_BYTES = 20 * 1024 * 1024;
-const ABSTRACT_PDF_MAX_FILE_SIZE_LABEL = "20 MB";
+const ABSTRACT_FILE_MAX_FILE_SIZE_BYTES = 20 * 1024 * 1024;
+const ABSTRACT_FILE_MAX_FILE_SIZE_LABEL = "20 MB";
+const ABSTRACT_FILE_ACCEPT = ".pdf,application/pdf,.doc,application/msword,.docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+const ABSTRACT_FILE_ALLOWED_EXTENSIONS = [".pdf", ".doc", ".docx"];
 
 function normalizeId(value) {
     if (value === null || value === undefined) return "";
@@ -51,7 +55,7 @@ function getSubmissionErrorMessage(response, responseText) {
     }
 
     if (response.status === 413) {
-        return `The server rejected this PDF before it could be uploaded. Files up to ${ABSTRACT_PDF_MAX_FILE_SIZE_LABEL} are allowed here, but the deployment upload limit needs to be increased.`;
+        return `The server rejected this file before it could be uploaded. Files up to ${ABSTRACT_FILE_MAX_FILE_SIZE_LABEL} are allowed here, but the deployment upload limit needs to be increased.`;
     }
 
     if (!responseText || /<html[\s>]/i.test(responseText) || /<body[\s>]/i.test(responseText)) {
@@ -61,10 +65,69 @@ function getSubmissionErrorMessage(response, responseText) {
     return responseText;
 }
 
+function createEmptyCoAuthor() {
+    return { name: "", email: "" };
+}
+
+function normalizeInitialCoAuthors(initialCoAuthors, initialCoAuthor, initialCoAuthorEmail) {
+    const componentRows = Array.isArray(initialCoAuthors)
+        ? initialCoAuthors
+            .map((coAuthor) => ({
+                name: String(coAuthor?.name ?? ""),
+                email: String(coAuthor?.email ?? ""),
+            }))
+            .filter((coAuthor) => coAuthor.name.trim() || coAuthor.email.trim())
+        : [];
+
+    if (componentRows.length > 0) {
+        return componentRows;
+    }
+
+    return [{
+        name: String(initialCoAuthor ?? ""),
+        email: String(initialCoAuthorEmail ?? ""),
+    }];
+}
+
+function normalizeCoAuthorsForSubmission(coAuthors) {
+    const normalizedCoAuthors = [];
+
+    for (let index = 0; index < coAuthors.length; index += 1) {
+        const name = String(coAuthors[index]?.name ?? "").trim();
+        const email = String(coAuthors[index]?.email ?? "").trim();
+
+        if (!name && !email) {
+            continue;
+        }
+
+        if (name && !email) {
+            return {
+                coAuthors: [],
+                error: `Co-author email is required for co-author ${index + 1}.`,
+            };
+        }
+
+        if (email && !name) {
+            return {
+                coAuthors: [],
+                error: `Co-author name is required for co-author ${index + 1}.`,
+            };
+        }
+
+        normalizedCoAuthors.push({ name, email });
+    }
+
+    return {
+        coAuthors: normalizedCoAuthors,
+        error: "",
+    };
+}
+
 export default function KnowledgeBaseAbstractForm({
     initialTitle = "",
     initialAuthorName = "",
     initialAuthorEmail = "",
+    initialCoAuthors = [],
     initialCoAuthor = "",
     initialCoAuthorEmail = "",
     initialAffiliation = "",
@@ -74,14 +137,15 @@ export default function KnowledgeBaseAbstractForm({
     variant = "public",
     returnHref,
     returnLabel = "Back to extra info",
-    secondarySuccessHref = "/knowledge-base",
-    secondarySuccessLabel = "View Knowledge Base",
+    secondarySuccessHref = "/knowledge-hub",
+    secondarySuccessLabel = "View Knowledge Hub",
 }) {
     const [title, setTitle] = useState(initialTitle);
     const [authorName, setAuthorName] = useState(initialAuthorName);
     const [authorEmail, setAuthorEmail] = useState(initialAuthorEmail);
-    const [coAuthor, setCoAuthor] = useState(initialCoAuthor);
-    const [coAuthorEmail, setCoAuthorEmail] = useState(initialCoAuthorEmail);
+    const [coAuthors, setCoAuthors] = useState(() =>
+        normalizeInitialCoAuthors(initialCoAuthors, initialCoAuthor, initialCoAuthorEmail)
+    );
     const [affiliation, setAffiliation] = useState(initialAffiliation);
     const [selectedSectorIds, setSelectedSectorIds] = useState([]);
     const [selectedSubSectorIds, setSelectedSubSectorIds] = useState([]);
@@ -121,7 +185,7 @@ export default function KnowledgeBaseAbstractForm({
         if (initialProfession) params.set("profession", initialProfession);
         const query = params.toString();
         if (returnHref) return returnHref;
-        return query ? `/knowledge-base/submit?${query}` : "/knowledge-base/submit";
+        return query ? `/knowledge-hub/submit?${query}` : "/knowledge-hub/submit";
     }, [affiliation, initialProfession, returnHref]);
 
     const cardStyle = {
@@ -201,12 +265,30 @@ export default function KnowledgeBaseAbstractForm({
         );
     };
 
+    const updateCoAuthor = (index, field, value) => {
+        setCoAuthors((previous) =>
+            previous.map((coAuthor, coAuthorIndex) =>
+                coAuthorIndex === index ? { ...coAuthor, [field]: value } : coAuthor
+            )
+        );
+    };
+
+    const addCoAuthor = () => {
+        setCoAuthors((previous) => [...previous, createEmptyCoAuthor()]);
+    };
+
+    const removeCoAuthor = (index) => {
+        setCoAuthors((previous) => {
+            const nextCoAuthors = previous.filter((_, coAuthorIndex) => coAuthorIndex !== index);
+            return nextCoAuthors.length > 0 ? nextCoAuthors : [createEmptyCoAuthor()];
+        });
+    };
+
     const resetForm = () => {
         setTitle(initialTitle);
         setAuthorName(initialAuthorName);
         setAuthorEmail(initialAuthorEmail);
-        setCoAuthor(initialCoAuthor);
-        setCoAuthorEmail(initialCoAuthorEmail);
+        setCoAuthors(normalizeInitialCoAuthors(initialCoAuthors, initialCoAuthor, initialCoAuthorEmail));
         setAffiliation(initialAffiliation);
         setSelectedSectorIds([]);
         setSelectedSubSectorIds([]);
@@ -223,10 +305,9 @@ export default function KnowledgeBaseAbstractForm({
         const normalizedTitle = title.trim();
         const normalizedAuthorName = authorName.trim();
         const normalizedAuthorEmail = authorEmail.trim();
-        const normalizedCoAuthor = coAuthor.trim();
-        const normalizedCoAuthorEmail = coAuthorEmail.trim();
         const normalizedAffiliation = affiliation.trim();
         const normalizedAbstract = abstract.trim();
+        const normalizedCoAuthors = normalizeCoAuthorsForSubmission(coAuthors);
 
         if (!normalizedTitle) {
             setFormError("Paper title is required.");
@@ -240,12 +321,16 @@ export default function KnowledgeBaseAbstractForm({
             setFormError("Author email is required.");
             return;
         }
+        if (normalizedCoAuthors.error) {
+            setFormError(normalizedCoAuthors.error);
+            return;
+        }
         if (normalizedAbstract.length < ABSTRACT_MIN_LENGTH) {
             setFormError(`Abstract must be at least ${ABSTRACT_MIN_LENGTH} characters.`);
             return;
         }
         if (!pdfFile) {
-            setFormError("Please upload the abstract as a PDF.");
+            setFormError("Please upload the abstract file.");
             return;
         }
 
@@ -264,8 +349,7 @@ export default function KnowledgeBaseAbstractForm({
                 title: normalizedTitle,
                 author_name: normalizedAuthorName,
                 author_email: normalizedAuthorEmail,
-                co_author: normalizedCoAuthor || null,
-                co_author_email: normalizedCoAuthorEmail || null,
+                co_authors: normalizedCoAuthors.coAuthors,
                 affiliation: normalizedAffiliation,
                 profession: initialProfession,
                 abstract: normalizedAbstract,
@@ -406,7 +490,7 @@ export default function KnowledgeBaseAbstractForm({
                                                     Abstract Details
                                                 </h2>
                                                 <p className="text-sm" style={{ color: "var(--dash-text-dim)" }}>
-                                                    Complete the metadata and attach the abstract PDF.
+                                                    Complete the metadata and attach the abstract file.
                                                 </p>
                                             </div>
                                         </div>
@@ -471,32 +555,76 @@ export default function KnowledgeBaseAbstractForm({
                                         </Field>
                                     </div>
 
-                                    <div className="grid gap-5 md:grid-cols-2">
-                                        <Field label="Co-author Name" htmlFor="kb-co-author-name">
-                                            <input
-                                                id="kb-co-author-name"
-                                                type="text"
-                                                value={coAuthor}
-                                                onChange={(event) => setCoAuthor(event.target.value)}
-                                                placeholder="Enter co-author name (optional)"
-                                                className="w-full rounded-2xl border px-4 py-3 text-sm outline-none transition-all placeholder:text-slate-400 focus:border-[var(--dash-accent)]"
-                                                style={{ background: "var(--dash-surface-2)", borderColor: "var(--dash-border-subtle)", color: "var(--dash-text)" }}
-                                                disabled={isSubmitting}
-                                            />
-                                        </Field>
+                                    <div className="grid gap-4">
+                                        {coAuthors.map((coAuthor, index) => {
+                                            const coAuthorNameId = `kb-co-author-name-${index}`;
+                                            const coAuthorEmailId = `kb-co-author-email-${index}`;
+                                            const isNameRequired = Boolean(coAuthor.email.trim());
+                                            const isEmailRequired = Boolean(coAuthor.name.trim());
 
-                                        <Field label="Co-author Email" htmlFor="kb-co-author-email">
-                                            <input
-                                                id="kb-co-author-email"
-                                                type="email"
-                                                value={coAuthorEmail}
-                                                onChange={(event) => setCoAuthorEmail(event.target.value)}
-                                                placeholder="Enter co-author email (optional)"
-                                                className="w-full rounded-2xl border px-4 py-3 text-sm outline-none transition-all placeholder:text-slate-400 focus:border-[var(--dash-accent)]"
-                                                style={{ background: "var(--dash-surface-2)", borderColor: "var(--dash-border-subtle)", color: "var(--dash-text)" }}
+                                            return (
+                                                <div
+                                                    key={index}
+                                                    className={`grid gap-5 ${index > 0 ? "border-t pt-5 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]" : "md:grid-cols-2"}`}
+                                                    style={index > 0 ? { borderColor: "var(--dash-border)" } : undefined}
+                                                >
+                                                    <Field label="Co-author Name" htmlFor={coAuthorNameId} required={isNameRequired}>
+                                                        <input
+                                                            id={coAuthorNameId}
+                                                            type="text"
+                                                            value={coAuthor.name}
+                                                            onChange={(event) => updateCoAuthor(index, "name", event.target.value)}
+                                                            placeholder="Enter co-author name (optional)"
+                                                            className="w-full rounded-2xl border px-4 py-3 text-sm outline-none transition-all placeholder:text-slate-400 focus:border-[var(--dash-accent)]"
+                                                            style={{ background: "var(--dash-surface-2)", borderColor: "var(--dash-border-subtle)", color: "var(--dash-text)" }}
+                                                            disabled={isSubmitting}
+                                                            required={isNameRequired}
+                                                        />
+                                                    </Field>
+
+                                                    <Field label="Co-author Email" htmlFor={coAuthorEmailId} required={isEmailRequired}>
+                                                        <input
+                                                            id={coAuthorEmailId}
+                                                            type="email"
+                                                            value={coAuthor.email}
+                                                            onChange={(event) => updateCoAuthor(index, "email", event.target.value)}
+                                                            placeholder="Enter co-author email (optional)"
+                                                            className="w-full rounded-2xl border px-4 py-3 text-sm outline-none transition-all placeholder:text-slate-400 focus:border-[var(--dash-accent)]"
+                                                            style={{ background: "var(--dash-surface-2)", borderColor: "var(--dash-border-subtle)", color: "var(--dash-text)" }}
+                                                            disabled={isSubmitting}
+                                                            required={isEmailRequired}
+                                                        />
+                                                    </Field>
+
+                                                    {index > 0 ? (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => removeCoAuthor(index)}
+                                                            disabled={isSubmitting}
+                                                            className="inline-flex items-center justify-center gap-2 rounded-2xl border px-4 py-3 text-sm font-semibold transition-all disabled:cursor-not-allowed disabled:opacity-60 md:self-end"
+                                                            style={{ background: "rgba(239, 68, 68, 0.08)", borderColor: "rgba(239, 68, 68, 0.2)", color: "#EF4444" }}
+                                                            aria-label={`Remove co-author ${index + 1}`}
+                                                        >
+                                                            <Trash2 className="h-4 w-4" />
+                                                            Remove
+                                                        </button>
+                                                    ) : null}
+                                                </div>
+                                            );
+                                        })}
+
+                                        <div className="flex justify-end">
+                                            <button
+                                                type="button"
+                                                onClick={addCoAuthor}
                                                 disabled={isSubmitting}
-                                            />
-                                        </Field>
+                                                className="inline-flex items-center justify-center gap-2 rounded-2xl border px-4 py-3 text-sm font-semibold transition-all disabled:cursor-not-allowed disabled:opacity-60"
+                                                style={{ background: "rgba(9, 182, 151, 0.08)", borderColor: "rgba(9, 182, 151, 0.2)", color: "var(--dash-accent)" }}
+                                            >
+                                                <Plus className="h-4 w-4" />
+                                                Add Co-author
+                                            </button>
+                                        </div>
                                     </div>
 
                                     <Field label="Sectors" htmlFor="kb-paper-sectors">
@@ -637,15 +765,18 @@ export default function KnowledgeBaseAbstractForm({
                                         </div>
                                     </Field>
 
-                                    <Field label="Abstract PDF File" htmlFor="kb-paper-file" required>
+                                    <Field label="Abstract File" htmlFor="kb-paper-file" required>
                                         <UploadZone
                                             key={uploadZoneKey}
                                             file={pdfFile}
                                             onFileSelect={setPdfFile}
                                             disabled={isSubmitting}
-                                            helperText={`PDF only, maximum size ${ABSTRACT_PDF_MAX_FILE_SIZE_LABEL}.`}
-                                            maxFileSizeBytes={ABSTRACT_PDF_MAX_FILE_SIZE_BYTES}
-                                            maxFileSizeLabel={ABSTRACT_PDF_MAX_FILE_SIZE_LABEL}
+                                            label="Abstract File"
+                                            helperText={`PDF, DOC, or DOCX up to ${ABSTRACT_FILE_MAX_FILE_SIZE_LABEL}.`}
+                                            accept={ABSTRACT_FILE_ACCEPT}
+                                            allowedExtensions={ABSTRACT_FILE_ALLOWED_EXTENSIONS}
+                                            maxFileSizeBytes={ABSTRACT_FILE_MAX_FILE_SIZE_BYTES}
+                                            maxFileSizeLabel={ABSTRACT_FILE_MAX_FILE_SIZE_LABEL}
                                         />
                                     </Field>
                                 </div>

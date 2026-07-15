@@ -354,7 +354,7 @@ export default function SubmitPaperPage() {
         }
 
         if (!pdfFile) {
-            setFormError("Please upload the paper as a PDF.");
+            setFormError("Please upload the paper file.");
             return;
         }
 
@@ -529,7 +529,7 @@ export default function SubmitPaperPage() {
                                         Paper Details
                                     </h2>
                                     <p className="text-sm" style={{ color: "var(--dash-text-dim)" }}>
-                                        Complete the metadata and attach the final PDF.
+                                        Complete the metadata and attach the paper file.
                                     </p>
                                 </div>
                             </div>
@@ -538,7 +538,7 @@ export default function SubmitPaperPage() {
 
                     {/* <div className="mb-6 grid gap-3 md:grid-cols-3">
                         {[
-                            "PDF only, maximum 10 MB",
+                            "PDF, DOC, or DOCX up to 10 MB",
                             "Abstract must be at least 100 characters",
                             "Sector selection helps editorial routing",
                         ].map((item) => (

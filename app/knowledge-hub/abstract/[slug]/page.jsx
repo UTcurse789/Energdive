@@ -3,7 +3,7 @@ import { fetchPaperSubmissions } from "@/lib/paper-submissions-server";
 import { formatSubmissionDate } from "@/lib/paper-submissions";
 import { Building2, CalendarDays, UserRound, ArrowLeft, Download, FileText } from "lucide-react";
 import Link from "next/link";
-import { KnowledgeBaseDownloadButton } from "@/components/knowledge-base/download-button";
+import KnowledgeHubDownloadButton from "@/components/knowledge-hub/download-button";
 
 const KNOWLEDGE_BASE_QUERY =
     "populate[sectors][fields][0]=name&populate[sectors][fields][1]=slug&populate[sectors][populate][parent][fields][0]=name&populate[sectors][populate][parent][fields][1]=slug&populate[abstract_pdf][fields][0]=url&populate[abstract_pdf][fields][1]=name&populate[abstract_pdf][fields][2]=size&populate[abstract_pdf][fields][3]=ext&populate[final_paper_submissions][fields][0]=final_status&populate[final_paper_submissions][fields][1]=final_submission_date&populate[final_paper_submissions][populate][full_paper][fields][0]=url&populate[final_paper_submissions][populate][full_paper][fields][1]=name&populate[final_paper_submissions][populate][full_paper][fields][2]=size&populate[final_paper_submissions][populate][full_paper][fields][3]=ext&sort[0]=submitted_date:desc&pagination[pageSize]=100";
@@ -49,12 +49,12 @@ export async function generateMetadata({ params }) {
     try {
         papers = await fetchPaperSubmissions(KNOWLEDGE_BASE_QUERY);
     } catch {
-        return { title: "Paper Abstract | Knowledge Base" };
+        return { title: "Paper Abstract | Knowledge Hub" };
     }
 
     const paper = papers.find((p) => p.status === "accepted" && slugify(p.title || "untitled-paper") === slug);
     return {
-        title: paper ? `${paper.title} | Knowledge Base` : "Paper Abstract | Knowledge Base",
+        title: paper ? `${paper.title} | Knowledge Hub` : "Paper Abstract | Knowledge Hub",
         description: paper?.abstract ? paper.abstract.slice(0, 160) : "Read the full research paper abstract.",
     };
 }
@@ -72,8 +72,9 @@ export default async function AbstractPage({ params }) {
     const paper = papers.find((p) => p.status === "accepted" && slugify(p.title || "untitled-paper") === slug);
     if (!paper) notFound();
 
-    const pdfUrl = paper.hasAcceptedFinalPaper ? extractPdfUrl(paper.finalPaperPdf) : null;
-    const pdfMeta = paper.hasAcceptedFinalPaper ? extractPdfMeta(paper.finalPaperPdf) : null;
+    const finalPaperUrl = paper.hasAcceptedFinalPaper ? extractPdfUrl(paper.finalPaperPdf) : null;
+    const documentUrl = finalPaperUrl || extractPdfUrl(paper.pdf);
+    const documentMeta = finalPaperUrl ? extractPdfMeta(paper.finalPaperPdf) : extractPdfMeta(paper.pdf);
 
     return (
         <div className="min-h-screen bg-[#f6f3eb]">
@@ -84,7 +85,7 @@ export default async function AbstractPage({ params }) {
                 <div className="container relative pt-[67px] pb-[67px] md:pt-[83px] md:pb-[83px] lg:pt-[99px] lg:pb-[99px] xl:pt-[115px] xl:pb-[115px]">
                     {/* Back link */}
                     <Link
-                        href="/knowledge-base"
+                        href="/knowledge-hub"
                         className="group mb-10 mt-10 inline-flex items-center gap-2 text-sm font-semibold tracking-wide text-emerald-800 transition-colors hover:text-emerald-600"
                     >
                         <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
@@ -109,17 +110,17 @@ export default async function AbstractPage({ params }) {
                             </div>
                         </div>
 
-                        {/* ─ Right: PDF Card with Compact Gated Preview ─ */}
+                        {/* ─ Right: Document Card with Compact Gated Preview ─ */}
                         <aside className="xl:sticky xl:top-8">
                             <div className="relative overflow-hidden rounded-[32px] border border-slate-200/80 bg-white shadow-[0_24px_60px_rgba(15,23,42,0.08)] mb-10">
-                                {/* Simulated PDF cover page preview (compact) */}
+                                {/* Simulated document cover page preview (compact) */}
                                 <div className="relative flex h-[215px] flex-col bg-white p-5 overflow-hidden select-none border-b border-slate-100">
-                                    {pdfUrl ? (
+                                    {documentUrl ? (
                                         <>
                                             {/* Top mini header */}
                                             <div className="w-full flex justify-between items-center text-[8px] font-bold tracking-widest text-slate-400 border-b border-slate-100 pb-2">
                                                 <span>ENERGDIVE RESEARCH ARCHIVE</span>
-                                                <span className="bg-emerald-50 text-emerald-700 px-1.5 py-0.5 rounded text-[8px]">{pdfMeta?.size || "PDF"}</span>
+                                                <span className="bg-emerald-50 text-emerald-700 px-1.5 py-0.5 rounded text-[8px]">{documentMeta?.size || documentMeta?.ext?.toUpperCase() || "FILE"}</span>
                                             </div>
 
                                             {/* Document Title */}
@@ -157,7 +158,7 @@ export default async function AbstractPage({ params }) {
                                                 {paper.title || "Research Paper"}
                                             </p>
                                             <p className="mt-1 text-[10px] text-slate-400 max-w-[180px]">
-                                                No PDF document attached.
+                                                No document attached.
                                             </p>
                                         </div>
                                     )}
@@ -165,14 +166,14 @@ export default async function AbstractPage({ params }) {
 
                                 {/* Download actions */}
                                 <div className="border-t border-slate-200/60 bg-white p-6 pb-8">
-                                    {pdfUrl ? (
+                                    {documentUrl ? (
                                         <div className="flex flex-col gap-3">
-                                            <KnowledgeBaseDownloadButton slug={slug} />
+                                            <KnowledgeHubDownloadButton slug={slug} />
                                         </div>
                                     ) : (
                                         <div className="flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-6 py-4 text-sm font-medium text-slate-400">
                                             <Download className="h-4 w-4" />
-                                            PDF coming soon
+                                            Document coming soon
                                         </div>
                                     )}
                                 </div>

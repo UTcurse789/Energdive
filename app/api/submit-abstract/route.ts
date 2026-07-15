@@ -6,8 +6,10 @@ const STRAPI_API_TOKEN = process.env.STRAPI_API_TOKEN;
 const STRAPI_ABSTRACT_COLLECTION_PATH = "paper-submissions";
 const STRAPI_ABSTRACT_UID = "api::paper-submission.paper-submission";
 const STRAPI_ABSTRACT_PDF_FIELD = "abstract_pdf";
-const ABSTRACT_PDF_MAX_FILE_SIZE_BYTES = 20 * 1024 * 1024;
-const ABSTRACT_PDF_MAX_FILE_SIZE_LABEL = "20 MB";
+const ABSTRACT_FILE_MAX_FILE_SIZE_BYTES = 20 * 1024 * 1024;
+const ABSTRACT_FILE_MAX_FILE_SIZE_LABEL = "20 MB";
+const ABSTRACT_FILE_ALLOWED_EXTENSIONS = [".pdf", ".doc", ".docx"];
+const ABSTRACT_FILE_ALLOWED_FORMATS_LABEL = "PDF, DOC, or DOCX";
 
 type StrapiEntityResponse = {
     data?: {
@@ -55,6 +57,11 @@ function formatFileSize(bytes: number) {
     return `${Math.max(1, Math.round(bytes / 1024))} KB`;
 }
 
+function isAllowedAbstractFile(file: File) {
+    const fileName = file.name.toLowerCase();
+    return ABSTRACT_FILE_ALLOWED_EXTENSIONS.some((extension) => fileName.endsWith(extension));
+}
+
 function normalizeSectorSelection(value: unknown) {
     const rawItems = Array.isArray(value) ? value : [value];
     const ids = [];
@@ -97,6 +104,69 @@ function buildAbstractBlocks(value: unknown) {
             children: [{ type: "text", text: value.trim() }],
         },
     ];
+}
+
+function normalizeCoAuthors(value: unknown) {
+    if (!Array.isArray(value)) {
+        return [];
+    }
+
+    return value
+        .map((item) => {
+            if (!item || typeof item !== "object") {
+                return null;
+            }
+
+            const coAuthor = item as { name?: unknown; email?: unknown };
+            const name = typeof coAuthor.name === "string" ? coAuthor.name.trim() : "";
+            const email = typeof coAuthor.email === "string" ? coAuthor.email.trim() : "";
+
+            if (!name || !email) {
+                return null;
+            }
+
+            return { name, email };
+        })
+        .filter((coAuthor): coAuthor is { name: string; email: string } => coAuthor !== null);
+}
+
+function buildStrapiCoAuthorComponents(coAuthors: Array<{ name: string; email: string }>) {
+    return coAuthors.map((coAuthor) => ({
+        co_author_name: coAuthor.name,
+        co_author_email: coAuthor.email,
+    }));
+}
+
+function formatCoAuthorsForNotification(value: unknown) {
+    if (!Array.isArray(value)) {
+        return "";
+    }
+
+    return value
+        .map((item) => {
+            if (!item || typeof item !== "object") {
+                return "";
+            }
+
+            const coAuthor = item as {
+                name?: unknown;
+                email?: unknown;
+                co_author_name?: unknown;
+                co_author_email?: unknown;
+            };
+            const nameValue = coAuthor.name ?? coAuthor.co_author_name;
+            const emailValue = coAuthor.email ?? coAuthor.co_author_email;
+            const name = typeof nameValue === "string" ? nameValue.trim() : "";
+            const email = typeof emailValue === "string" ? emailValue.trim() : "";
+
+            if (name && email) {
+                return `${name} (${email})`;
+            }
+
+            return name || email;
+        })
+        .filter(Boolean)
+        .join(", ");
 }
 
 function extractStrapiErrorMessage(payload: unknown) {
@@ -360,7 +430,7 @@ async function uploadAbstractPdf({
                 cache: "no-store",
             });
         } catch (error) {
-            console.error("[SUBMIT-ABSTRACT] PDF Upload fetch error:", error);
+            console.error("[SUBMIT-ABSTRACT] File Upload fetch error:", error);
             if (isUploadLimitConnectionError(error)) {
                 lastStatus = 413;
                 lastErrorMessage = null;
@@ -368,7 +438,7 @@ async function uploadAbstractPdf({
             }
 
             lastStatus = 502;
-            lastErrorMessage = "PDF upload failed while connecting to the CMS.";
+            lastErrorMessage = "File upload failed while connecting to the CMS.";
             continue;
         }
 
@@ -383,7 +453,7 @@ async function uploadAbstractPdf({
             parsedUploadResponse = null;
         }
 
-        console.log("[SUBMIT-ABSTRACT] PDF Upload attempt:", {
+        console.log("[SUBMIT-ABSTRACT] File Upload attempt:", {
             refId,
             status: uploadResponse.status,
             response: uploadText,
@@ -405,7 +475,7 @@ async function uploadAbstractPdf({
         }
     }
 
-    console.error("[SUBMIT-ABSTRACT] Failed to upload PDF after all attempts:", {
+    console.error("[SUBMIT-ABSTRACT] Failed to upload file after all attempts:", {
         entryId,
         documentId,
         fileName: pdfFile.name,
@@ -446,7 +516,7 @@ async function attachPdfToAbstract({
     for (const identifier of candidateIdentifiers) {
         for (const payload of payloads) {
             const result = await updateAbstractDocumentVersion({ identifier, payload });
-            console.log("[SUBMIT-ABSTRACT] PDF attach attempt:", {
+            console.log("[SUBMIT-ABSTRACT] File attach attempt:", {
                 identifier,
                 payload,
                 status: result.statusCode,
@@ -456,7 +526,7 @@ async function attachPdfToAbstract({
         }
     }
 
-    console.error("[SUBMIT-ABSTRACT] Failed to attach PDF relation after all attempts:", {
+    console.error("[SUBMIT-ABSTRACT] Failed to attach file relation after all attempts:", {
         entryId,
         documentId,
         mediaId,
@@ -469,13 +539,24 @@ export async function POST(request: NextRequest) {
         const dataString = formData.get("data") as string;
         const pdfFile = formData.get("files.pdf") as File | null;
 
-        console.log("[SUBMIT-ABSTRACT] Has PDF:", !!pdfFile, "Size:", pdfFile?.size ?? 0);
+        console.log("[SUBMIT-ABSTRACT] Has File:", !!pdfFile, "Size:", pdfFile?.size ?? 0);
 
-        if (pdfFile && pdfFile.size > ABSTRACT_PDF_MAX_FILE_SIZE_BYTES) {
+        if (pdfFile && !isAllowedAbstractFile(pdfFile)) {
             return NextResponse.json(
                 {
                     error: {
-                        message: `The selected PDF is ${formatFileSize(pdfFile.size)}. Please upload a PDF up to ${ABSTRACT_PDF_MAX_FILE_SIZE_LABEL}.`,
+                        message: `Only ${ABSTRACT_FILE_ALLOWED_FORMATS_LABEL} files are allowed.`,
+                    },
+                },
+                { status: 400 }
+            );
+        }
+
+        if (pdfFile && pdfFile.size > ABSTRACT_FILE_MAX_FILE_SIZE_BYTES) {
+            return NextResponse.json(
+                {
+                    error: {
+                        message: `The selected file is ${formatFileSize(pdfFile.size)}. Please upload a file up to ${ABSTRACT_FILE_MAX_FILE_SIZE_LABEL}.`,
                     },
                 },
                 { status: 400 }
@@ -497,7 +578,6 @@ export async function POST(request: NextRequest) {
             "title",
             "author_name",
             "author_email",
-            "co_author",
             "submitted_date",
             "paper_status",
         ];
@@ -507,6 +587,11 @@ export async function POST(request: NextRequest) {
                 strapiData[field] = data[field];
             }
         }
+
+        const coAuthors = normalizeCoAuthors(data.co_authors);
+        // Staging exposes the repeatable paper-submission.co-author component
+        // with the API ID `co_author`; the browser payload remains `co_authors`.
+        strapiData.co_author = buildStrapiCoAuthorComponents(coAuthors);
 
         if (data.affiliation !== undefined) {
             strapiData.institution = data.affiliation;
@@ -549,9 +634,9 @@ export async function POST(request: NextRequest) {
             if (!uploadedPdf.ok) {
                 const statusCode = uploadedPdf.statusCode || 500;
                 const message = statusCode === 413
-                    ? `PDF upload failed because the CMS/server rejected ${formatFileSize(pdfFile.size)} even though this form allows up to ${ABSTRACT_PDF_MAX_FILE_SIZE_LABEL}. Please increase the CMS upload limit or try a smaller file.`
+                    ? `File upload failed because the CMS/server rejected ${formatFileSize(pdfFile.size)} even though this form allows up to ${ABSTRACT_FILE_MAX_FILE_SIZE_LABEL}. Please increase the CMS upload limit or try a smaller file.`
                     : uploadedPdf.errorMessage ||
-                        "PDF upload failed. Please try again with a smaller PDF or contact support.";
+                        "File upload failed. Please try again with a smaller file or contact support.";
                 return NextResponse.json({ error: { message } }, { status: statusCode });
             }
 
@@ -576,7 +661,7 @@ export async function POST(request: NextRequest) {
                 title: (strapiData.title as string) || "",
                 authorName: (strapiData.author_name as string) || "",
                 authorEmail: (strapiData.author_email as string) || "",
-                coAuthor: strapiData.co_author as string,
+                coAuthor: formatCoAuthorsForNotification(coAuthors),
                 institution: strapiData.institution as string,
                 profession: strapiData.Profession as string,
                 abstractText: data.abstract || "",
