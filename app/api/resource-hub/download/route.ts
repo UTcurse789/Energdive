@@ -1,13 +1,16 @@
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
 import { getResourceCenterResource } from "@/lib/resource-center";
-import { addPaperDownload, getUserProfile } from "@/lib/queries";
+import { addPaperDownload, getUserProfile, hasDownloadedResource } from "@/lib/queries";
+import { hasPurchased } from "@/lib/purchases";
 import { saveArticleForUser } from "@/lib/queries/saved-articles";
 import { getFullUserProfile } from "@/lib/getFullUserProfile";
 import { createZohoLead, type ZohoLeadData } from "@/lib/zoho-leads";
 import { logEvent } from "@/lib/system-logger";
 import { recordResourceDownloadEvent } from "@/lib/resource-download-events";
 import { sendThirdPartyResourceDownloadEmails } from "@/lib/resource-third-party-notifications";
+import { sendResourceReadyEmail } from "@/lib/email";
+import { addIpWatermark } from "@/lib/pdf-watermark";
 
 export const dynamic = "force-dynamic";
 
@@ -88,6 +91,49 @@ function safeDownloadFilename(value?: string | null) {
     .slice(0, 140);
 
   return normalized || fallback;
+}
+
+async function fetchResourceEmailAttachment(fileUrl: string, fileName: string) {
+  const maxBytes = Number(process.env.RESOURCE_EMAIL_ATTACHMENT_MAX_BYTES || 15 * 1024 * 1024);
+
+  try {
+    const response = await fetch(fileUrl, { cache: "no-store" });
+    if (!response.ok) {
+      console.error("[RESOURCE_DOWNLOAD] Resource email attachment fetch failed", {
+        fileUrl,
+        status: response.status,
+      });
+      return undefined;
+    }
+
+    const contentLength = Number(response.headers.get("content-length") || 0);
+    if (contentLength > maxBytes) {
+      console.warn("[RESOURCE_DOWNLOAD] Resource email attachment skipped: file too large", {
+        fileUrl,
+        contentLength,
+        maxBytes,
+      });
+      return undefined;
+    }
+
+    const buffer = Buffer.from(await response.arrayBuffer());
+    if (buffer.byteLength > maxBytes) {
+      console.warn("[RESOURCE_DOWNLOAD] Resource email attachment skipped after fetch: file too large", {
+        fileUrl,
+        size: buffer.byteLength,
+        maxBytes,
+      });
+      return undefined;
+    }
+
+    return {
+      name: safeDownloadFilename(fileName),
+      content: buffer.toString("base64"),
+    };
+  } catch (error) {
+    console.error("[RESOURCE_DOWNLOAD] Resource email attachment failed:", error);
+    return undefined;
+  }
 }
 
 function cleanStringArray(value: unknown): string[] | undefined {
@@ -496,7 +542,23 @@ export async function GET(req: NextRequest) {
 
     const filename = safeDownloadFilename(resource.fileName || `${resource.slug}.pdf`);
 
-    return new NextResponse(fileResponse.body, {
+    let ipAddress = getClientIp(req) || "Unknown";
+    if (
+      process.env.NODE_ENV === "development" &&
+      (ipAddress === "::1" || ipAddress === "127.0.0.1" || ipAddress === "Unknown")
+    ) {
+      try {
+        const ipRes = await fetch("https://api.ipify.org");
+        if (ipRes.ok) ipAddress = await ipRes.text();
+      } catch (e) {
+        // ignore
+      }
+    }
+
+    const arrayBuffer = await fileResponse.arrayBuffer();
+    const watermarkedBuffer = await addIpWatermark(arrayBuffer, ipAddress);
+
+    return new NextResponse(Buffer.from(watermarkedBuffer), {
       headers: {
         "Content-Type": fileResponse.headers.get("content-type") || "application/pdf",
         "Content-Disposition": `attachment; filename="${filename}"`,
@@ -564,6 +626,27 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Check premium access
+    const accessType = resource.content_access?.access_type || "authenticated";
+    if (accessType === "premium") {
+      const purchased = await hasPurchased(userId, resource.id);
+      if (!purchased) {
+        return NextResponse.json(
+          { error: "REQUIRE_PURCHASE", message: "This resource requires purchase." },
+          { status: 403 }
+        );
+      }
+    }
+
+    const alreadyDownloaded = await hasDownloadedResource(userId, resource.slug);
+    if (alreadyDownloaded) {
+      return NextResponse.json({
+        success: true,
+        already_downloaded: true,
+        redirectUrl: "/dashboard/my-downloads",
+      });
+    }
+
     const identity = {
       clerkId: userId,
       email: email || profile?.email || null,
@@ -581,7 +664,13 @@ export async function POST(req: NextRequest) {
     }
 
     try {
-      await addPaperDownload(userId, resource.slug, resource.title, resource.file_url);
+      await addPaperDownload(
+        userId,
+        resource.slug,
+        resource.shortTitle || resource.title,
+        resource.file_url,
+        "resource"
+      );
     } catch (error) {
       console.error("[RESOURCE_DOWNLOAD] Failed to save download record:", error);
     }
@@ -709,6 +798,42 @@ export async function POST(req: NextRequest) {
         })
       : [];
 
+    const resourceEmailResult = crmEmail
+      ? await (async () => {
+          try {
+            const resourceUrl = new URL(`/resource-hub/${resource.slug}`, req.url).toString();
+            const attachment = await fetchResourceEmailAttachment(
+              resource.file_url,
+              resource.fileName || `${resource.slug}.pdf`
+            );
+
+            await sendResourceReadyEmail({
+              to: crmEmail,
+              toName:
+                identity.firstName ||
+                cleanString(fullUser?.first_name) ||
+                profile?.first_name ||
+                crmEmail,
+              resourceTitle: resource.title,
+              resourceType: resource.resource_type,
+              resourceUrl,
+              attachment,
+            });
+
+            return { status: "sent" as const };
+          } catch (error) {
+            const message = error instanceof Error ? error.message : String(error);
+            console.error("[RESOURCE_DOWNLOAD] User resource email failed:", error);
+            void logEvent(
+              "BREVO_SYNC_FAILED",
+              crmEmail,
+              `User resource ready email failed: ${message}`
+            );
+            return { status: "failed" as const, error: message };
+          }
+        })()
+      : { status: "skipped" as const, error: "missing_email" };
+
     return NextResponse.json({
       success: true,
       file_url: resource.file_url,
@@ -717,6 +842,7 @@ export async function POST(req: NextRequest) {
       title: resource.title,
       downloadEventId: eventId,
       crm: crmResults,
+      resourceEmail: resourceEmailResult,
       thirdPartyEmails: thirdPartyEmailResults,
     });
   } catch (error) {

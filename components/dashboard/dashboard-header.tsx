@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-    Home, LayoutGrid, CreditCard, Calendar, Settings, Bookmark
+    Home, LayoutGrid, CreditCard, Calendar, Settings, Bookmark, Download
 } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
 import { CustomUserMenu } from "@/components/layout/CustomUserMenu";
@@ -14,6 +14,7 @@ const NAV_ITEMS = [
     { label: "ENERGDIVE", href: "/", icon: Home },
     { label: "My Feed", href: "/dashboard", icon: LayoutGrid },
     { label: "Saved", href: "/dashboard/saved", icon: Bookmark },
+    { label: "My Downloads", href: "/dashboard/my-downloads", icon: Download },
     { label: "Subscriptions", href: "/dashboard/subscriptions", icon: CreditCard },
     { label: "Events", href: "/dashboard/events", icon: Calendar },
     { label: "Account Settings", href: "/dashboard/settings", icon: Settings },

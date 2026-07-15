@@ -9,6 +9,7 @@ import {
   CheckCircle2,
   Download,
   Layers3,
+  Lock,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -25,6 +26,13 @@ import {
   triggerResourceFileDownload,
 } from "./resource-download";
 import type { EnergyEvent, EventResource, FileType, ResourceType } from "./types";
+import {
+  getResourceDownloadLockMessage,
+  RESOURCE_AUTH_LOCK_MESSAGE,
+  RESOURCE_PREMIUM_LOCK_MESSAGE,
+} from "./resource-access";
+
+import { PremiumPaywall } from "./premium-paywall";
 
 const THEME_STYLE = "bg-[#00A651]/10 text-[#00A651] border-[#00A651]/20";
 
@@ -85,9 +93,45 @@ export function ResourceDetailPage({
   const { openAuthModal } = useAuthModal();
   const [downloadNotice, setDownloadNotice] = useState<string | null>(null);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [hasDownloadedResource, setHasDownloadedResource] = useState(false);
+  const [premiumPaywallOpen, setPremiumPaywallOpen] = useState(false);
   const autoDownloadStartedRef = useRef(false);
 
   const canDownload = isLoaded && isSignedIn;
+
+  const isPublic = resource.content_access?.access_type === "public";
+  const isPremium = resource.content_access?.access_type === "premium";
+
+  let downloadButtonLabel = "Download";
+  let DownloadActionIcon = Download;
+  let tooltipMessage = null;
+
+  if (hasDownloadedResource) {
+    downloadButtonLabel = "Access";
+    DownloadActionIcon = Download;
+  } else if (isPublic) {
+    downloadButtonLabel = "Download";
+    DownloadActionIcon = Download;
+  } else if (!isSignedIn) {
+    downloadButtonLabel = "Locked";
+    DownloadActionIcon = Lock;
+    tooltipMessage = getResourceDownloadLockMessage(resource);
+  } else {
+    if (isPremium) {
+      downloadButtonLabel = "Buy";
+      DownloadActionIcon = Lock;
+      tooltipMessage = getResourceDownloadLockMessage(resource);
+    } else {
+      downloadButtonLabel = "Download";
+      DownloadActionIcon = Download;
+    }
+  }
+
+  const blockedDownloadMessage = !isSignedIn ? tooltipMessage : null;
+  const downloadNoticeIsLock =
+    downloadNotice === RESOURCE_AUTH_LOCK_MESSAGE ||
+    downloadNotice === RESOURCE_PREMIUM_LOCK_MESSAGE;
+
   const heroDescription = resource.shortDescription || resource.description;
 
   const isLandscape = resource.coverImageUrl 
@@ -99,6 +143,32 @@ export function ResourceDetailPage({
     const timer = window.setTimeout(() => setDownloadNotice(null), 3600);
     return () => window.clearTimeout(timer);
   }, [downloadNotice]);
+
+  useEffect(() => {
+    if (!isLoaded || !isSignedIn) {
+      setHasDownloadedResource(false);
+      return;
+    }
+
+    let cancelled = false;
+
+    fetch("/api/user/downloads", { cache: "no-store" })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((payload) => {
+        if (cancelled) return;
+        const downloadedResourceSlugs = Array.isArray(payload?.downloadedResourceSlugs)
+          ? payload.downloadedResourceSlugs
+          : [];
+        setHasDownloadedResource(downloadedResourceSlugs.includes(resource.slug));
+      })
+      .catch(() => {
+        if (!cancelled) setHasDownloadedResource(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isLoaded, isSignedIn, resource.slug]);
 
   const startDownload = useCallback(async () => {
     if (!resource.file_url) {
@@ -124,7 +194,20 @@ export function ResourceDetailPage({
         return;
       }
 
+      if (result.status === "already_downloaded") {
+        setHasDownloadedResource(true);
+        window.location.href = result.redirectUrl;
+        return;
+      }
+
+      if (result.status === "require_purchase") {
+        setDownloadNotice(RESOURCE_PREMIUM_LOCK_MESSAGE);
+        setPremiumPaywallOpen(true);
+        return;
+      }
+
       triggerResourceFileDownload(result.downloadUrl, result.fileName);
+      setHasDownloadedResource(true);
       setDownloadNotice(`${result.fileName} download started`);
     } catch (error) {
       console.error("[RESOURCE_DOWNLOAD] Failed to start download:", error);
@@ -160,9 +243,13 @@ export function ResourceDetailPage({
 
     storePendingResourceDownload(resource);
     openAuthModal(getResourceDownloadPath(resource, true));
-  }, [autoDownload, canDownload, isLoaded, openAuthModal, resource, startDownload]);
+  }, [autoDownload, isLoaded, canDownload, openAuthModal, resource, startDownload]);
 
   function requestDownload() {
+    if (blockedDownloadMessage) {
+      setDownloadNotice(blockedDownloadMessage);
+    }
+
     if (canDownload) {
       void startDownload();
       return;
@@ -198,6 +285,11 @@ export function ResourceDetailPage({
                 {resource.featured && (
                   <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[11px] font-black text-emerald-700">
                     Featured
+                  </span>
+                )}
+                {isPremium && (
+                  <span className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-[11px] font-black text-amber-700 dark:border-amber-900/50 dark:bg-amber-900/30 dark:text-amber-500">
+                    Paid Content
                   </span>
                 )}
               </div>
@@ -244,12 +336,22 @@ export function ResourceDetailPage({
                 <ResourceCover resource={resource} />
                 <Button
                   type="button"
-                  onClick={requestDownload}
-                  disabled={isDownloading}
+                  onClick={() => {
+                    if (hasDownloadedResource) {
+                      window.location.href = "/dashboard/my-downloads";
+                    } else {
+                      requestDownload();
+                    }
+                  }}
+                  disabled={isDownloading && !hasDownloadedResource}
+                  title={tooltipMessage || "Download"}
+                  aria-label={tooltipMessage || "Download"}
                   className="mt-4 h-12 w-full rounded-md bg-[#00A651] text-sm font-black text-white hover:bg-[#008b44]"
                 >
-                  <Download className="mr-2 h-4 w-4" />
-                  {isDownloading ? "Preparing..." : "Download"}
+                  <DownloadActionIcon className="mr-2 h-4 w-4" />
+                  <span className="whitespace-nowrap">
+                    {isDownloading ? "Preparing..." : downloadButtonLabel}
+                  </span>
                 </Button>
               </div>
             </div>
@@ -317,11 +419,21 @@ export function ResourceDetailPage({
           className="fixed bottom-5 right-5 z-[70] max-w-[calc(100vw-2rem)] rounded-lg border border-emerald-200 bg-white px-4 py-3 text-sm font-semibold text-zinc-900 shadow-2xl shadow-emerald-950/10 dark:border-emerald-900 dark:bg-zinc-900 dark:text-zinc-100"
         >
           <span className="inline-flex items-center gap-2">
-            <CheckCircle2 className="h-4 w-4 text-[#00A651]" />
+            {downloadNoticeIsLock ? (
+              <Lock className="h-4 w-4 text-[#00A651]" />
+            ) : (
+              <CheckCircle2 className="h-4 w-4 text-[#00A651]" />
+            )}
             {downloadNotice}
           </span>
         </motion.div>
       )}
+
+      <PremiumPaywall 
+        isOpen={premiumPaywallOpen} 
+        onClose={() => setPremiumPaywallOpen(false)} 
+        resource={resource} 
+      />
     </main>
   );
 }
