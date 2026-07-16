@@ -75,6 +75,37 @@ function buildAbstractBlocks(value: unknown) {
     ];
 }
 
+function normalizeCoAuthors(value: unknown) {
+    if (!Array.isArray(value)) {
+        return [];
+    }
+
+    return value
+        .map((item) => {
+            if (!item || typeof item !== "object") {
+                return null;
+            }
+
+            const coAuthor = item as { name?: unknown; email?: unknown };
+            const name = typeof coAuthor.name === "string" ? coAuthor.name.trim() : "";
+            const email = typeof coAuthor.email === "string" ? coAuthor.email.trim() : "";
+
+            if (!name || !email) {
+                return null;
+            }
+
+            return { name, email };
+        })
+        .filter((coAuthor): coAuthor is { name: string; email: string } => coAuthor !== null);
+}
+
+function buildStrapiCoAuthorComponents(coAuthors: Array<{ name: string; email: string }>) {
+    return coAuthors.map((coAuthor) => ({
+        co_author_name: coAuthor.name,
+        co_author_email: coAuthor.email,
+    }));
+}
+
 async function createPaperEntry(basePayload: Record<string, unknown>) {
     const createResponse = await fetch(`${STRAPI_URL}/api/paper-submissions?status=draft`, {
         method: "POST",
@@ -633,6 +664,9 @@ export async function POST(request: NextRequest) {
         if (data.affiliation !== undefined) {
             strapiData.institution = data.affiliation;
         }
+
+        const coAuthors = normalizeCoAuthors(data.co_authors);
+        strapiData.co_author = buildStrapiCoAuthorComponents(coAuthors);
 
         const abstractBlocks = buildAbstractBlocks(data.abstract);
         if (abstractBlocks) {
