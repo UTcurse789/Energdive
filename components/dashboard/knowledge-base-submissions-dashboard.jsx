@@ -126,7 +126,7 @@ export default function KnowledgeBaseSubmissionsDashboard({
                         return (
                             <article
                                 key={abstract.id}
-                                className="w-full"
+                                className={`w-full ${isExpanded ? 'col-span-full' : ''}`}
                             >
                                 <div
                                     className="flex flex-col rounded-[24px] border p-5 transition-shadow hover:shadow-[0_12px_40px_rgba(0,0,0,0.18)]"
