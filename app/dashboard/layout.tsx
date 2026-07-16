@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { ensureUserProfileRow, getUserProfile, hasUserDownloads } from "@/lib/queries";
+import { getUserDownloads } from "@/lib/queries/downloads";
+import { listSavedArticles } from "@/lib/queries/saved-articles";
+import { fetchAbstractSubmissions } from "@/lib/paper-submissions-server";
 import DashboardShell from "@/components/dashboard/dashboard-shell";
 
 export const metadata: Metadata = {
@@ -91,9 +94,6 @@ export default async function DashboardLayout({
         });
     }
 
-    // Onboarding enforcement is now handled client-side by the OnboardingModal
-    // popup in the root layout. No server-side redirect needed here.
-    // Provide a fallback profile so the shell can render while the modal is active.
     const fallbackProfile = {
         id: 0,
         clerk_id: userId,
@@ -121,11 +121,39 @@ export default async function DashboardLayout({
     };
 
     const profileForShell = effectiveProfile || fallbackProfile;
-
     const downloadsExist = await hasUserDownloads(userId);
 
+    let badgeCounts = {
+        downloads: 0,
+        saved: 0,
+        abstracts: 0,
+        finalPaper: 0,
+        resubmission: 0
+    };
+
+    try {
+        const [downloadsList, savedList, abstractsList] = await Promise.all([
+            getUserDownloads(userId).catch(() => []),
+            listSavedArticles({ clerkId: userId, email }).catch(() => []),
+            fetchAbstractSubmissions(email ? `filters[author_email][$eq]=${encodeURIComponent(email)}` : "").catch(() => [])
+        ]);
+
+        badgeCounts = {
+            downloads: downloadsList?.length || 0,
+            saved: savedList?.length || 0,
+            abstracts: (abstractsList || []).filter((a: any) => {
+                const s = String(a.status || "").toLowerCase();
+                return s !== 'accepted' && s !== 'rejected' && !a.hasAcceptedFinalPaper;
+            }).length,
+            finalPaper: (abstractsList || []).filter((a: any) => String(a.status || "").toLowerCase() === 'accepted').length,
+            resubmission: (abstractsList || []).filter((a: any) => String(a.status || "").toLowerCase() === 'rejected').length
+        };
+    } catch (err) {
+        console.error("Failed to fetch badge counts:", err);
+    }
+
     return (
-        <DashboardShell initialProfile={{ ...profileForShell, hasDownloads: downloadsExist }}>
+        <DashboardShell initialProfile={{ ...profileForShell, hasDownloads: downloadsExist }} initialBadgeCounts={badgeCounts}>
             {children}
         </DashboardShell>
     );

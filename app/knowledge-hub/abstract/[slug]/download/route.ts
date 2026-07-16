@@ -19,6 +19,7 @@ type PaperSubmission = {
     hasAcceptedFinalPaper?: boolean;
     status?: string;
     finalPaperPdf?: unknown;
+    finalPaperSubmissions?: { final_status?: string; final_submission_date?: string; fullPaper?: unknown }[];
 };
 
 function getRelationData(relation: unknown) {
@@ -94,7 +95,21 @@ export async function GET(
         return new NextResponse("Paper not found", { status: 404 });
     }
 
-    const documentUrl = extractPdfUrl(paper.finalPaperPdf) || extractPdfUrl(paper.pdf);
+    // Prefer final paper (full paper) over abstract PDF
+    // First try the accepted final paper, then any final paper that has a file, then fall back to abstract
+    let documentUrl = extractPdfUrl(paper.finalPaperPdf);
+    if (!documentUrl && Array.isArray(paper.finalPaperSubmissions) && paper.finalPaperSubmissions.length > 0) {
+        for (const fp of paper.finalPaperSubmissions) {
+            const fpUrl = extractPdfUrl(fp.fullPaper);
+            if (fpUrl) {
+                documentUrl = fpUrl;
+                break;
+            }
+        }
+    }
+    if (!documentUrl) {
+        documentUrl = extractPdfUrl(paper.pdf);
+    }
     if (!documentUrl) {
         return new NextResponse("Document not found for this paper", { status: 404 });
     }

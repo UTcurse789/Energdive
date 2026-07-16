@@ -440,7 +440,7 @@ export default async function EnergdiveInsightsExchangePage() {
                                 Learn about the current topics of interest, accepted submission streams, and how you can share your insights.
                             </p>
                             <Link
-                                href="/energdive-insights-exchange/call-for-papers"
+                                href="/insights-exchange/call-for-papers"
                                 className="mt-4 inline-flex items-center gap-1 text-xs font-bold uppercase tracking-wider text-[#00A651] hover:text-[#008c43] group"
                             >
                                 Learn More
@@ -457,7 +457,7 @@ export default async function EnergdiveInsightsExchangePage() {
                                 Check document formatting guidelines, recommended word limits, required biography details, and evaluation criteria.
                             </p>
                             <Link
-                                href="/energdive-insights-exchange/author-guidelines"
+                                href="/insights-exchange/author-guidelines"
                                 className="mt-4 inline-flex items-center gap-1 text-xs font-bold uppercase tracking-wider text-[#00A651] hover:text-[#008c43] group"
                             >
                                 Learn More
@@ -474,7 +474,7 @@ export default async function EnergdiveInsightsExchangePage() {
                                 Understand our staged review process, timeline from abstract submission to publication, and review parameters.
                             </p>
                             <Link
-                                href="/energdive-insights-exchange/editorial-review-process"
+                                href="/insights-exchange/editorial-review-process"
                                 className="mt-4 inline-flex items-center gap-1 text-xs font-bold uppercase tracking-wider text-[#00A651] hover:text-[#008c43] group"
                             >
                                 Learn More

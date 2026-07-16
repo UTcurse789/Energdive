@@ -78,7 +78,7 @@ export default function AuthorGuidelinesPage() {
                                 <ArrowRight className="h-3.5 w-3.5" />
                             </Link>
                             <Link
-                                href="/energdive-insights-exchange/call-for-papers"
+                                href="/insights-exchange/call-for-papers"
                                 className="inline-flex items-center justify-center gap-2 border border-zinc-950 bg-white px-4 py-2.5 text-xs font-bold uppercase tracking-[0.12em] text-zinc-950 transition-colors hover:border-[#00A651] hover:text-[#00A651]"
                             >
                                 Call for Papers
@@ -159,7 +159,7 @@ export default function AuthorGuidelinesPage() {
                             <ArrowRight className="h-3.5 w-3.5" />
                         </Link>
                         <Link
-                            href="/energdive-insights-exchange/editorial-review-process"
+                            href="/insights-exchange/editorial-review-process"
                             className="inline-flex items-center justify-center gap-2 border border-white/20 bg-white/[0.05] px-4 py-2.5 text-xs font-bold uppercase tracking-[0.12em] text-white transition-colors hover:bg-white/[0.1] hover:border-white/40"
                         >
                             Editorial Review Process

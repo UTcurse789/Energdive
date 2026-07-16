@@ -1,12 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useUser } from "@clerk/nextjs";
+import { useUser, UserProfile, useClerk } from "@clerk/nextjs";
+import { useSearchParams } from "next/navigation";
 import { useDashboard } from "@/components/dashboard/dashboard-shell";
 import { DIGEST_FREQUENCY_OPTIONS, DIGEST_FORMAT_OPTIONS } from "@/lib/digest-preferences";
 import {
     Loader2, Check, AlertCircle, Shield, Briefcase, Globe,
-    Pencil, ChevronDown, Users, Layers, MapPin, Phone,
+    Pencil, ChevronDown, Users, Layers, MapPin, Phone, Mail,
+    AlertTriangle, Trash2, X
 } from "lucide-react";
 import { COUNTRIES } from "@/data/countries";
 import { STATES_BY_COUNTRY } from "@/data/states";
@@ -26,6 +28,17 @@ interface UserCommunity {
 export default function SettingsPage() {
     const { user } = useUser();
     const { profile, refreshProfile } = useDashboard();
+    const searchParams = useSearchParams();
+    const activeTab = searchParams.get('tab') || 'profile';
+    const { signOut } = useClerk();
+
+    /* Delete modal state */
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [deleteConfirmText, setDeleteConfirmText] = useState("");
+    const [deleteReasonText, setDeleteReasonText] = useState("");
+    const [deleteError, setDeleteError] = useState("");
+    const [deleting, setDeleting] = useState(false);
+    const DELETE_REASON_MIN_CHARS = 50;
 
     /* Profile fields */
     const [firstName, setFirstName] = useState("");
@@ -112,6 +125,15 @@ export default function SettingsPage() {
             .then(setSubIndustries)
             .catch(console.error);
     }, [selectedIndustryId]);
+
+    /* ── Handle Tab Hash Routing ─────────────────────────────────── */
+    useEffect(() => {
+        if (activeTab === 'security') {
+            window.location.hash = '/security';
+        } else if (activeTab === 'profile') {
+            window.location.hash = '/';
+        }
+    }, [activeTab]);
 
     /* ── Save profile ────────────────────────────────────────────── */
     const handleSave = async () => {
@@ -235,6 +257,46 @@ export default function SettingsPage() {
         }
     };
 
+    const isDeleteReady =
+        deleteConfirmText === "DELETE" &&
+        deleteReasonText.trim().length >= DELETE_REASON_MIN_CHARS;
+
+    const handleDeleteAccount = async () => {
+        if (!isDeleteReady) return;
+        setDeleting(true);
+        setDeleteError("");
+
+        try {
+            const res = await fetch("/api/user/delete-account", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    confirmation: "DELETE",
+                    reason: deleteReasonText.trim(),
+                }),
+            });
+            const data = await res.json();
+
+            if (data.success) {
+                await signOut({ redirectUrl: "/" });
+            } else {
+                setDeleteError(data.error || "Failed to delete account.");
+            }
+        } catch (err) {
+            console.error("Failed to delete account:", err);
+            setDeleteError("Network error. Please try again.");
+        } finally {
+            setDeleting(false);
+        }
+    };
+
+    const openDeleteModal = () => {
+        setShowDeleteModal(true);
+        setDeleteConfirmText("");
+        setDeleteError("");
+        setDeleteReasonText("");
+    };
+
     const cardStyle = { background: "var(--dash-card)", border: "1px solid var(--dash-border)" };
 
     /* ── Derived display data ────────────────────────────────────── */
@@ -276,7 +338,8 @@ export default function SettingsPage() {
 
             <div className="space-y-6">
                 {/* ───────── 1. Profile ─────────────────────────────── */}
-                <section className="rounded-xl overflow-hidden" style={cardStyle}>
+                {activeTab === 'profile' && (
+                <section id="profile" className="rounded-xl overflow-hidden animate-fade-in-up" style={cardStyle}>
                     <div className="p-6">
                         <div className="flex items-center gap-3 mb-6">
                             <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: "rgba(201,168,76,0.15)" }}>
@@ -285,7 +348,63 @@ export default function SettingsPage() {
                             <h2 className="text-lg font-bold" style={{ color: "var(--dash-text)" }}>Professional Profile</h2>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div className="clerk-profile-top">
+                            <UserProfile 
+                                routing="hash"
+                                appearance={{ 
+                                    variables: {
+                                        colorPrimary: "#C9A84C",
+                                        colorBackground: "#16161B",
+                                        colorInputBackground: "#1A1A1F",
+                                        colorInputText: "#F0EDE8",
+                                        colorText: "#F0EDE8",
+                                        colorTextSecondary: "#A8A29E",
+                                        colorTextOnPrimaryBackground: "#0A0A0B",
+                                        colorDanger: "#EF4444",
+                                        colorSuccess: "#4CAF50",
+                                        colorWarning: "#FFC107",
+                                        borderRadius: "0.75rem",
+                                    },
+                                    elements: { 
+                                        navbar: "!hidden", 
+                                        navbarMobileMenuRow: "!hidden",
+                                        navbarMobileMenuButton: "!hidden",
+                                        header: "!hidden",
+                                        headerTitle: "!hidden",
+                                        headerSubtitle: "!hidden",
+                                        pageScrollBox: "p-0", 
+                                        rootBox: "w-full shadow-none",
+                                        cardBox: "shadow-none w-full max-w-full p-0 bg-transparent rounded-none border-none",
+                                        card: "bg-transparent shadow-none border-none",
+                                        page: "gap-0",
+                                        profilePage: "gap-0",
+                                        profileSection: "border-[#2A2A32] bg-transparent p-0",
+                                        profileSectionContent: "bg-transparent",
+                                        profileSectionTitle: "border-[#2A2A32]",
+                                        profileSectionTitleText: "text-[#A8A29E] uppercase text-[10px] font-bold tracking-wider",
+                                        profileSectionPrimaryButton: "text-[#C9A84C] hover:text-[#D4B568]",
+                                        formButtonPrimary: "bg-[#C9A84C] hover:bg-[#D4B568] text-[#0A0A0B] font-bold shadow-none",
+                                        formButtonReset: "text-[#A8A29E] hover:text-[#F0EDE8]",
+                                        formFieldLabel: "text-[#A8A29E]",
+                                        formFieldInput: "bg-[#1A1A1F] border-[#2A2A32] text-[#F0EDE8] focus:border-[#C9A84C] focus:ring-[#C9A84C]/20",
+                                        formFieldInputShowPasswordButton: "text-[#6B6660] hover:text-[#A8A29E]",
+                                        formFieldAction: "text-[#C9A84C] hover:text-[#D4B568]",
+                                        avatarBox: "border-2 border-[#2A2A32]",
+                                        avatarImageActionsUpload: "text-[#C9A84C]",
+                                        badge: "text-[#C9A84C] bg-[#C9A84C]/10 border-[#C9A84C]/30",
+                                        tagInputContainer: "bg-[#1A1A1F] border-[#2A2A32]",
+                                        accordionTriggerButton: "text-[#F0EDE8] hover:bg-[#1A1A1F]",
+                                        accordionContent: "bg-transparent",
+                                        menuButton: "text-[#A8A29E] hover:text-[#F0EDE8] hover:bg-[#1A1A1F]",
+                                        menuList: "bg-[#16161B] border-[#2A2A32]",
+                                        menuItem: "text-[#F0EDE8] hover:bg-[#1A1A1F]",
+                                        footer: "!hidden",
+                                    } 
+                                }} 
+                            />
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 pt-6 border-t border-[var(--dash-border-subtle)]">
                             <DarkInput label="First Name" value={firstName} onChange={setFirstName} placeholder="e.g. Sankalp" />
                             <DarkInput label="Last Name" value={lastName} onChange={setLastName} placeholder="e.g. Gupta" />
                             <div className="md:col-span-2">
@@ -355,14 +474,14 @@ export default function SettingsPage() {
                             </div>
                             {/* Membership ID — read-only, full width */}
                             <div className="md:col-span-2">
-                                <label className="text-[10px] font-bold uppercase tracking-wider block mb-1.5" style={{ color: "#0AB996" }}>
+                                <label className="text-[10px] font-bold uppercase tracking-wider block mb-1.5" style={{ color: "var(--dash-accent)" }}>
                                     EnergClub Membership ID
                                 </label>
                                 <div
                                     className="w-full rounded-lg px-4 py-2.5 text-sm flex items-center justify-between gap-3"
-                                    style={{ background: "rgba(10,185,150,0.06)", border: "1px solid rgba(10,185,150,0.3)", color: "var(--dash-text)" }}
+                                    style={{ background: "rgba(201,168,76,0.05)", border: "1px solid rgba(201,168,76,0.2)", color: "var(--dash-text)" }}
                                 >
-                                    <span className="font-mono font-bold tracking-wide" style={{ color: profile?.membership_id ? "#0AB996" : "var(--dash-text-dim)" }}>
+                                    <span className="font-mono font-bold tracking-wide" style={{ color: profile?.membership_id ? "var(--dash-accent)" : "var(--dash-text-dim)" }}>
                                         {profile?.membership_id ?? "Pending verification…"}
                                     </span>
                                     {profile?.membership_id && (
@@ -370,13 +489,70 @@ export default function SettingsPage() {
                                             type="button"
                                             onClick={() => { navigator.clipboard.writeText(profile.membership_id ?? ""); setMsg({ type: "success", text: "Membership ID copied!" }); setTimeout(() => setMsg(null), 2000); }}
                                             className="text-[10px] font-bold px-2.5 py-1 rounded-md shrink-0 transition-all"
-                                            style={{ background: "rgba(10,185,150,0.15)", color: "#0AB996", border: "1px solid rgba(10,185,150,0.25)" }}
+                                            style={{ background: "rgba(201,168,76,0.12)", color: "var(--dash-accent)", border: "1px solid rgba(201,168,76,0.2)" }}
                                         >
                                             Copy
                                         </button>
                                     )}
                                 </div>
                             </div>
+                        </div>
+                        
+                        {/* Connected Accounts Only Section */}
+                        <div className="pt-6 mt-4 border-t border-[var(--dash-border-subtle)] clerk-connected-bottom">
+                            <UserProfile 
+                                routing="hash"
+                                appearance={{ 
+                                    variables: {
+                                        colorPrimary: "#C9A84C",
+                                        colorBackground: "#16161B",
+                                        colorInputBackground: "#1A1A1F",
+                                        colorInputText: "#F0EDE8",
+                                        colorText: "#F0EDE8",
+                                        colorTextSecondary: "#A8A29E",
+                                        colorTextOnPrimaryBackground: "#0A0A0B",
+                                        colorDanger: "#EF4444",
+                                        colorSuccess: "#4CAF50",
+                                        colorWarning: "#FFC107",
+                                        borderRadius: "0.75rem",
+                                    },
+                                    elements: { 
+                                        navbar: "!hidden", 
+                                        navbarMobileMenuRow: "!hidden",
+                                        navbarMobileMenuButton: "!hidden",
+                                        header: "!hidden",
+                                        headerTitle: "!hidden",
+                                        headerSubtitle: "!hidden",
+                                        pageScrollBox: "p-0", 
+                                        rootBox: "w-full shadow-none",
+                                        cardBox: "shadow-none w-full max-w-full p-0 bg-transparent rounded-none border-none",
+                                        card: "bg-transparent shadow-none border-none",
+                                        page: "gap-4",
+                                        profilePage: "gap-4",
+                                        profileSection: "border-[#2A2A32] bg-transparent",
+                                        profileSectionContent: "bg-transparent",
+                                        profileSectionTitle: "border-[#2A2A32]",
+                                        profileSectionTitleText: "text-[#A8A29E] uppercase text-[10px] font-bold tracking-wider",
+                                        profileSectionPrimaryButton: "text-[#C9A84C] hover:text-[#D4B568]",
+                                        formButtonPrimary: "bg-[#C9A84C] hover:bg-[#D4B568] text-[#0A0A0B] font-bold shadow-none",
+                                        formButtonReset: "text-[#A8A29E] hover:text-[#F0EDE8]",
+                                        formFieldLabel: "text-[#A8A29E]",
+                                        formFieldInput: "bg-[#1A1A1F] border-[#2A2A32] text-[#F0EDE8] focus:border-[#C9A84C] focus:ring-[#C9A84C]/20",
+                                        formFieldInputShowPasswordButton: "text-[#6B6660] hover:text-[#A8A29E]",
+                                        formFieldAction: "text-[#C9A84C] hover:text-[#D4B568]",
+                                        avatarBox: "border-2 border-[#2A2A32]",
+                                        avatarImageActionsUpload: "text-[#C9A84C]",
+                                        badge: "text-[#C9A84C] bg-[#C9A84C]/10 border-[#C9A84C]/30",
+                                        tagInputContainer: "bg-[#1A1A1F] border-[#2A2A32]",
+                                        accordionTriggerButton: "text-[#F0EDE8] hover:bg-[#1A1A1F]",
+                                        accordionContent: "bg-transparent",
+                                        menuButton: "text-[#A8A29E] hover:text-[#F0EDE8] hover:bg-[#1A1A1F]",
+                                        menuList: "bg-[#16161B] border-[#2A2A32]",
+                                        menuItem: "text-[#F0EDE8] hover:bg-[#1A1A1F]",
+                                        footer: "!hidden",
+                                    } 
+                                }} 
+                            />
                         </div>
                     </div>
                     <div className="px-6 py-4 flex items-center justify-end" style={{ borderTop: "1px solid var(--dash-border)" }}>
@@ -391,14 +567,17 @@ export default function SettingsPage() {
                         </button>
                     </div>
                 </section>
+                )}
 
                 {/* ───────── 2. Selected Communities ────────────────── */}
-                <section className="rounded-xl overflow-hidden" style={cardStyle}>
+                {activeTab === 'communities' && (
+                    <>
+                <section id="communities" className="rounded-xl overflow-hidden animate-fade-in-up" style={cardStyle}>
                     <div className="p-6">
                         <div className="flex items-center justify-between mb-6">
                             <div className="flex items-center gap-3">
-                                <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: "rgba(33,150,243,0.12)" }}>
-                                    <Users size={18} style={{ color: "#2196F3" }} />
+                                <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: "rgba(201,168,76,0.12)" }}>
+                                    <Users size={18} style={{ color: "var(--dash-accent)" }} />
                                 </div>
                                 <div>
                                     <h2 className="text-lg font-bold" style={{ color: "var(--dash-text)" }}>Selected Communities</h2>
@@ -439,7 +618,7 @@ export default function SettingsPage() {
                                                     </p>
                                                 )}
                                             </div>
-                                            <Check size={14} style={{ color: "#4CAF50" }} />
+                                            <Check size={14} style={{ color: "var(--dash-accent)" }} />
                                         </div>
                                     ))}
                                 </div>
@@ -533,8 +712,8 @@ export default function SettingsPage() {
                     <div className="p-6">
                         <div className="flex items-center justify-between mb-6">
                             <div className="flex items-center gap-3">
-                                <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: "rgba(156,39,176,0.12)" }}>
-                                    <Layers size={18} style={{ color: "#9C27B0" }} />
+                                <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: "rgba(201,168,76,0.12)" }}>
+                                    <Layers size={18} style={{ color: "var(--dash-accent)" }} />
                                 </div>
                                 <div>
                                     <h2 className="text-lg font-bold" style={{ color: "var(--dash-text)" }}>Industry & Specialization</h2>
@@ -628,14 +807,17 @@ export default function SettingsPage() {
                         )}
                     </div>
                 </section>
+                </>
+                )}
 
 
                 {/* ───────── 4. EnergClub Membership ────────────────── */}
-                <section className="rounded-xl overflow-hidden" style={cardStyle}>
+                {activeTab === 'membership' && (
+                <section id="membership" className="rounded-xl overflow-hidden animate-fade-in-up" style={cardStyle}>
                     <div className="p-6">
                         <div className="flex items-center gap-3 mb-5">
-                            <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: "rgba(10,185,150,0.15)" }}>
-                                <Globe size={18} style={{ color: "#0AB996" }} />
+                            <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: "rgba(201,168,76,0.12)" }}>
+                                <Globe size={18} style={{ color: "var(--dash-accent)" }} />
                             </div>
                             <div>
                                 <h2 className="text-lg font-bold" style={{ color: "var(--dash-text)" }}>EnergClub Membership</h2>
@@ -648,11 +830,11 @@ export default function SettingsPage() {
                                 {/* Membership ID card */}
                                 <div
                                     className="relative rounded-xl p-5 mb-4 overflow-hidden"
-                                    style={{ background: "linear-gradient(135deg, #0a2e1f 0%, #0d3d28 100%)", border: "1px solid rgba(10,185,150,0.3)" }}
+                                    style={{ background: "linear-gradient(135deg, #1E1E24 0%, #15151A 100%)", border: "1px solid rgba(201,168,76,0.25)" }}
                                 >
                                     {/* subtle glow */}
-                                    <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse at top right, rgba(10,185,150,0.12), transparent 70%)" }} />
-                                    <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: "#0AB996" }}>
+                                    <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse at top right, rgba(201,168,76,0.08), transparent 70%)" }} />
+                                    <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: "var(--dash-accent)" }}>
                                         Membership ID
                                     </p>
                                     <p className="text-3xl font-mono font-black tracking-wider mb-3" style={{ color: "#ffffff" }}>
@@ -660,14 +842,14 @@ export default function SettingsPage() {
                                     </p>
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-2">
-                                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold" style={{ background: "rgba(10,185,150,0.2)", color: "#0AB996", border: "1px solid rgba(10,185,150,0.3)" }}>
+                                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold" style={{ background: "rgba(201,168,76,0.12)", color: "var(--dash-accent)", border: "1px solid rgba(201,168,76,0.2)" }}>
                                                 <Check size={10} /> Verified Member
                                             </span>
                                         </div>
                                         <button
                                             onClick={() => { navigator.clipboard.writeText(profile.membership_id ?? ""); setMsg({ type: "success", text: "Membership ID copied!" }); setTimeout(() => setMsg(null), 2000); }}
                                             className="text-[11px] font-semibold px-3 py-1.5 rounded-lg transition-all"
-                                            style={{ background: "rgba(10,185,150,0.15)", color: "#0AB996", border: "1px solid rgba(10,185,150,0.25)" }}
+                                            style={{ background: "rgba(201,168,76,0.15)", color: "var(--dash-accent)", border: "1px solid rgba(201,168,76,0.25)" }}
                                         >
                                             Copy ID
                                         </button>
@@ -693,14 +875,15 @@ export default function SettingsPage() {
                         )}
                     </div>
                 </section>
+                )}
 
-                {/* ───────── 5. Security ────────────────────────────── */}
-
-                <section className="rounded-xl overflow-hidden" style={cardStyle}>
+                {/* ───────── 5. Email Briefings ────────────────────────────── */}
+                {activeTab === 'briefings' && (
+                <section id="briefings" className="rounded-xl overflow-hidden animate-fade-in-up" style={cardStyle}>
                     <div className="p-6">
                         <div className="flex items-center gap-3 mb-6">
-                            <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: "rgba(10,185,150,0.15)" }}>
-                                <Globe size={18} style={{ color: "#0AB996" }} />
+                            <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: "rgba(201,168,76,0.12)" }}>
+                                <Mail size={18} style={{ color: "var(--dash-accent)" }} />
                             </div>
                             <div>
                                 <h2 className="text-lg font-bold" style={{ color: "var(--dash-text)" }}>Email Briefings</h2>
@@ -726,7 +909,7 @@ export default function SettingsPage() {
                                     onClick={() => setDigestEnabled((prev) => !prev)}
                                     className="px-4 py-2 rounded-full text-xs font-bold transition-all"
                                     style={digestEnabled
-                                        ? { background: "rgba(10,185,150,0.16)", color: "#0AB996", border: "1px solid rgba(10,185,150,0.35)" }
+                                        ? { background: "rgba(201,168,76,0.15)", color: "var(--dash-accent)", border: "1px solid rgba(201,168,76,0.3)" }
                                         : { background: "var(--dash-surface)", color: "var(--dash-text-dim)", border: "1px solid var(--dash-border)" }}
                                 >
                                     {digestEnabled ? "Enabled" : "Paused"}
@@ -745,7 +928,7 @@ export default function SettingsPage() {
                                             onClick={() => setPreferredFrequency(option.value)}
                                             className="px-4 py-3 rounded-xl text-sm font-semibold border transition-all"
                                             style={preferredFrequency === option.value
-                                                ? { background: "rgba(10,185,150,0.12)", border: "1px solid #0AB996", color: "#0AB996" }
+                                                ? { background: "rgba(201,168,76,0.12)", border: "1px solid var(--dash-accent)", color: "var(--dash-accent)" }
                                                 : { background: "var(--dash-surface-2)", border: "1px solid var(--dash-border-subtle)", color: "var(--dash-text-muted)" }}
                                         >
                                             {option.label}
@@ -768,7 +951,7 @@ export default function SettingsPage() {
                                                 onClick={() => togglePreferredFormat(format)}
                                                 className="px-4 py-2 rounded-full text-xs font-bold transition-all"
                                                 style={active
-                                                    ? { background: "rgba(10,185,150,0.14)", color: "#0AB996", border: "1px solid rgba(10,185,150,0.3)" }
+                                                    ? { background: "rgba(201,168,76,0.12)", color: "var(--dash-accent)", border: "1px solid rgba(201,168,76,0.35)" }
                                                     : { background: "var(--dash-surface-2)", color: "var(--dash-text-muted)", border: "1px solid var(--dash-border)" }}
                                             >
                                                 {active ? "✓ " : ""}{format}
@@ -794,25 +977,218 @@ export default function SettingsPage() {
                         </button>
                     </div>
                 </section>
+                )}
 
-                <section className="rounded-xl overflow-hidden" style={cardStyle}>
+                {/* ───────── 6. Security ────────────────────────────── */}
+                {activeTab === 'security' && (
+                <section id="security" className="rounded-xl overflow-hidden animate-fade-in-up" style={cardStyle}>
                     <div className="p-6">
                         <div className="flex items-center gap-3 mb-6">
-                            <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: "rgba(33,150,243,0.12)" }}>
-                                <Shield size={18} style={{ color: "#2196F3" }} />
+                            <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: "rgba(201,168,76,0.12)" }}>
+                                <Shield size={18} style={{ color: "var(--dash-accent)" }} />
                             </div>
                             <h2 className="text-lg font-bold" style={{ color: "var(--dash-text)" }}>Security</h2>
                         </div>
-                        <p className="text-sm mb-4" style={{ color: "var(--dash-text-dim)" }}>
-                            Your account security is managed by ENERGClub. Use the profile button in the header to manage password and 2FA settings.
-                        </p>
-                        <div className="flex items-center gap-2 p-3 rounded-lg" style={{ background: "rgba(76,175,80,0.08)", border: "1px solid rgba(76,175,80,0.2)" }}>
-                            <Check size={14} style={{ color: "#4CAF50" }} />
-                            <span className="text-xs font-medium" style={{ color: "#4CAF50" }}>Your Account is end to end encrypted with ENERGClub</span>
+                        <div className="-mt-4">
+                            <UserProfile 
+                                routing="hash"
+                                appearance={{ 
+                                    variables: {
+                                        colorPrimary: "#C9A84C",
+                                        colorBackground: "#16161B",
+                                        colorInputBackground: "#1A1A1F",
+                                        colorInputText: "#F0EDE8",
+                                        colorText: "#F0EDE8",
+                                        colorTextSecondary: "#A8A29E",
+                                        colorTextOnPrimaryBackground: "#0A0A0B",
+                                        colorDanger: "#EF4444",
+                                        colorSuccess: "#4CAF50",
+                                        colorWarning: "#FFC107",
+                                        borderRadius: "0.75rem",
+                                    },
+                                    elements: { 
+                                        navbar: "!hidden", 
+                                        navbarMobileMenuRow: "!hidden",
+                                        navbarMobileMenuButton: "!hidden",
+                                        header: "!hidden",
+                                        headerTitle: "!hidden",
+                                        headerSubtitle: "!hidden",
+                                        pageScrollBox: "p-0", 
+                                        rootBox: "w-full shadow-none",
+                                        cardBox: "shadow-none w-full max-w-full p-0 bg-transparent rounded-none border-none",
+                                        card: "bg-transparent shadow-none border-none",
+                                        page: "gap-4",
+                                        profilePage: "gap-4",
+                                        profileSection: "border-[#2A2A32] bg-transparent",
+                                        profileSectionContent: "bg-transparent",
+                                        profileSectionTitle: "border-[#2A2A32]",
+                                        profileSectionTitleText: "text-[#A8A29E] uppercase text-[10px] font-bold tracking-wider",
+                                        profileSectionPrimaryButton: "text-[#C9A84C] hover:text-[#D4B568]",
+                                        formButtonPrimary: "bg-[#C9A84C] hover:bg-[#D4B568] text-[#0A0A0B] font-bold shadow-none",
+                                        formButtonReset: "text-[#A8A29E] hover:text-[#F0EDE8]",
+                                        formFieldLabel: "text-[#A8A29E]",
+                                        formFieldInput: "bg-[#1A1A1F] border-[#2A2A32] text-[#F0EDE8] focus:border-[#C9A84C] focus:ring-[#C9A84C]/20",
+                                        formFieldInputShowPasswordButton: "text-[#6B6660] hover:text-[#A8A29E]",
+                                        formFieldAction: "text-[#C9A84C] hover:text-[#D4B568]",
+                                        avatarBox: "border-2 border-[#2A2A32]",
+                                        avatarImageActionsUpload: "text-[#C9A84C]",
+                                        badge: "text-[#C9A84C] bg-[#C9A84C]/10 border-[#C9A84C]/30",
+                                        tagInputContainer: "bg-[#1A1A1F] border-[#2A2A32]",
+                                        accordionTriggerButton: "text-[#F0EDE8] hover:bg-[#1A1A1F]",
+                                        accordionContent: "bg-transparent",
+                                        menuButton: "text-[#A8A29E] hover:text-[#F0EDE8] hover:bg-[#1A1A1F]",
+                                        menuList: "bg-[#16161B] border-[#2A2A32]",
+                                        menuItem: "text-[#F0EDE8] hover:bg-[#1A1A1F]",
+                                        footer: "!hidden",
+                                    } 
+                                }} 
+                            />
+                        </div>
+
+                        {/* Custom Danger Zone card */}
+                        <div className="pt-5 border-t border-[var(--dash-border-subtle)] mt-6">
+                            <h3 className="text-xs font-bold uppercase tracking-wider text-red-500 mb-3">Danger Zone</h3>
+                            <div className="flex items-center justify-between py-4 px-5 bg-red-500/5 rounded-lg border border-red-500/20">
+                                <div>
+                                    <p className="text-sm font-semibold text-red-400">Delete Account</p>
+                                    <p className="text-xs text-gray-400 mt-0.5">Permanently delete your account and all data</p>
+                                </div>
+                                <button
+                                    onClick={openDeleteModal}
+                                    className="text-xs font-bold text-red-500 border border-red-500/30 px-4 py-2 rounded-lg hover:bg-red-500/10 transition-colors"
+                                >
+                                    Delete
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </section>
+                )}
             </div>
+
+            {/* ── Delete Account Confirmation Modal ── */}
+            {showDeleteModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                    {/* Backdrop */}
+                    <div
+                        className="absolute inset-0 bg-black/75 backdrop-blur-sm"
+                        onClick={() => !deleting && setShowDeleteModal(false)}
+                    />
+
+                    {/* Modal */}
+                    <div className="relative bg-[#16161B] border border-[#2A2A32] rounded-2xl shadow-2xl max-w-md w-full overflow-hidden animate-fade-in-up">
+                        {/* Header */}
+                        <div className="flex items-center justify-between px-6 py-4 border-b border-[#2A2A32]">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center">
+                                    <AlertTriangle className="w-5 h-5 text-red-500" />
+                                </div>
+                                <h3 className="text-lg font-bold text-[#F0EDE8]">Delete Account</h3>
+                            </div>
+                            {!deleting && (
+                                <button
+                                    onClick={() => setShowDeleteModal(false)}
+                                    className="p-1.5 rounded-lg hover:bg-white/5 transition-colors"
+                                >
+                                    <X className="w-4 h-4 text-gray-400" />
+                                </button>
+                            )}
+                        </div>
+
+                        {/* Body */}
+                        <div className="px-6 py-5 space-y-4">
+                            <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4">
+                                <p className="text-sm text-red-400 font-medium">
+                                    This action is <strong>permanent and irreversible</strong>. All your data, membership, communities, and preferences will be permanently deleted.
+                                </p>
+                            </div>
+
+                            {/* Reason Text Box */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-300 mb-2">
+                                    Why are you deleting your account? <span className="text-red-500">*</span>
+                                </label>
+                                <textarea
+                                    value={deleteReasonText}
+                                    onChange={(e) => setDeleteReasonText(e.target.value)}
+                                    placeholder="Please tell us why you're leaving — your feedback helps us improve…"
+                                    disabled={deleting}
+                                    rows={4}
+                                    className={`w-full px-4 py-3 bg-[#1A1A1F] border rounded-lg text-sm text-[#F0EDE8] placeholder:text-gray-500 focus:outline-none focus:ring-2 transition-all disabled:opacity-50 resize-none ${
+                                        deleteReasonText.trim().length > 0 && deleteReasonText.trim().length < DELETE_REASON_MIN_CHARS
+                                            ? "border-red-500/50 focus:ring-red-500/10 focus:border-red-500"
+                                            : deleteReasonText.trim().length >= DELETE_REASON_MIN_CHARS
+                                                ? "border-green-500/50 focus:ring-green-500/10 focus:border-green-500"
+                                                : "border-[#2A2A32] focus:ring-red-500/10 focus:border-red-500/50"
+                                    }`}
+                                />
+                                <div className="flex items-center justify-between mt-1.5">
+                                    <p className="text-xs text-gray-400">
+                                        Minimum {DELETE_REASON_MIN_CHARS} characters required
+                                    </p>
+                                    <p className={`text-xs font-medium tabular-nums ${
+                                        deleteReasonText.trim().length >= DELETE_REASON_MIN_CHARS
+                                            ? "text-green-500"
+                                            : deleteReasonText.trim().length > 0
+                                                ? "text-red-500"
+                                                : "text-gray-400"
+                                    }`}>
+                                        {deleteReasonText.trim().length}/{DELETE_REASON_MIN_CHARS}
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Confirmation Input */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-300 mb-2">
+                                    Type <span className="font-mono font-bold text-red-500 bg-red-500/10 px-1.5 py-0.5 rounded">DELETE</span> to confirm
+                                </label>
+                                <input
+                                    type="text"
+                                    value={deleteConfirmText}
+                                    onChange={(e) => setDeleteConfirmText(e.target.value)}
+                                    placeholder="Type DELETE here"
+                                    disabled={deleting}
+                                    className="w-full px-4 py-3 bg-[#1A1A1F] border border-[#2A2A32] rounded-lg text-sm text-[#F0EDE8] font-mono focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500/50 transition-all disabled:opacity-50"
+                                    autoFocus
+                                />
+                            </div>
+
+                            {deleteError && (
+                                <p className="text-sm text-red-500 font-medium">{deleteError}</p>
+                            )}
+                        </div>
+
+                        {/* Footer */}
+                        <div className="px-6 py-4 border-t border-[#2A2A32] flex items-center justify-end gap-3">
+                            <button
+                                onClick={() => setShowDeleteModal(false)}
+                                disabled={deleting}
+                                className="px-4 py-2.5 text-sm font-medium text-gray-400 hover:bg-white/5 rounded-lg transition-colors disabled:opacity-50"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleDeleteAccount}
+                                disabled={!isDeleteReady || deleting}
+                                className="flex items-center gap-2 px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white text-sm font-bold rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                            >
+                                {deleting ? (
+                                    <>
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                        Deleting...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Trash2 className="w-4 h-4" />
+                                        Delete My Account
+                                    </>
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

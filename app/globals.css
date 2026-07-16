@@ -361,6 +361,146 @@ h6 {
   animation: fade-in-up 0.5s ease-out forwards;
 }
 
+/* ── Force-hide Clerk's built-in navigation inside dashboard ── */
+.dashboard-theme .cl-navbar,
+.dashboard-theme .cl-navbarMobileMenuRow,
+.dashboard-theme .cl-navbarMobileMenuButton,
+.dashboard-theme .cl-header,
+.dashboard-theme .cl-headerTitle,
+.dashboard-theme .cl-headerSubtitle,
+.dashboard-theme .cl-footer,
+.dashboard-theme .cl-internal-b1ylls {
+  display: none !important;
+}
+
+.dashboard-theme .cl-rootBox {
+  width: 100% !important;
+  min-height: auto !important;
+  height: auto !important;
+}
+
+.dashboard-theme .cl-cardBox {
+  box-shadow: none !important;
+  max-width: 100% !important;
+  min-height: auto !important;
+  height: auto !important;
+  border: none !important;
+  background: transparent !important;
+}
+
+.dashboard-theme .cl-card {
+  background: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
+  min-height: auto !important;
+  height: auto !important;
+}
+
+.dashboard-theme .cl-pageScrollBox {
+  padding: 0 !important;
+  min-height: auto !important;
+  height: auto !important;
+}
+
+/* Hide "Add email address" button */
+.dashboard-theme .cl-profileSectionPrimaryButton__emailAddresses {
+  display: none !important;
+}
+
+/* In the top Clerk block: show ONLY Profile (hide Connected Accounts and Email Addresses) */
+.clerk-profile-top .cl-profileSection__connectedAccounts,
+.clerk-profile-top .cl-profileSection__emailAddresses {
+  display: none !important;
+}
+.clerk-profile-top .cl-profileSection {
+  border-bottom: none !important;
+}
+
+/* In the bottom Clerk block: show ONLY Connected Accounts (hide Profile and Email Addresses) */
+.clerk-connected-bottom .cl-profileSection__profile,
+.clerk-connected-bottom .cl-profileSection__emailAddresses {
+  display: none !important;
+}
+.clerk-connected-bottom .cl-profileSection {
+  border-bottom: none !important;
+}
+
+/* Avatar Update Buttons */
+.dashboard-theme .cl-avatarImageActionsUpload {
+  color: #0A0A0B !important;
+  background-color: #C9A84C !important;
+  border: none !important;
+}
+.dashboard-theme .cl-avatarImageActionsUpload:hover {
+  background-color: #D4B568 !important;
+}
+
+.dashboard-theme .cl-avatarImageActionsRemove {
+  color: #C9A84C !important;
+}
+.dashboard-theme .cl-avatarImageActionsRemove:hover {
+  color: #D4B568 !important;
+  background-color: transparent !important;
+}
+
+/* Restore Clerk's default side-by-side grid layout with clean padding and border overrides */
+.dashboard-theme .cl-profileSection {
+  padding: 1.5rem 0 !important;
+  border-bottom: 1px solid var(--dash-border-subtle) !important;
+}
+
+.dashboard-theme .cl-profileSection:last-child {
+  border-bottom: none !important;
+}
+
+/* Hide Clerk's native Delete Account/Danger section */
+.dashboard-theme .cl-profileSection__danger {
+  display: none !important;
+}
+
+/* Ensure Clerk Section titles match our custom form labels */
+.dashboard-theme .cl-profileSectionTitleText {
+  color: var(--dash-text-dim) !important;
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+}
+
+/* Style provider rows (like Google, LinkedIn) inside connected accounts */
+.dashboard-theme .cl-connectedAccountsSecondaryButton {
+  border: 1px solid var(--dash-border-subtle) !important;
+  background-color: var(--dash-surface-2) !important;
+  padding: 0.75rem 1rem !important;
+  border-radius: 0.5rem !important;
+  width: 100% !important;
+  justify-content: flex-start !important;
+  height: auto !important;
+}
+
+.dashboard-theme .cl-connectedAccountsSecondaryButton:hover {
+  background-color: var(--dash-surface-3) !important;
+}
+
+/* Connected Accounts Text Colors (e.g. LinkedIn, Google) */
+.dashboard-theme .cl-providerName,
+.dashboard-theme .cl-providerDetails,
+.dashboard-theme .cl-providerText,
+.dashboard-theme .cl-connectedAccountsSecondaryButtonText,
+.dashboard-theme .cl-identityPreviewText {
+  color: #F0EDE8 !important;
+}
+
+/* Remove extra gaps inside Clerk's profile page */
+.dashboard-theme .cl-profilePage {
+  gap: 0 !important;
+}
+
+.dashboard-theme .cl-profileSection {
+  padding: 0 !important;
+  margin-bottom: 0 !important;
+}
+
 /* ── Data Block Components (Charts & Tables) ────────────── */
 
 .data-block-card {

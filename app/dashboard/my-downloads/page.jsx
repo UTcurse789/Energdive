@@ -145,7 +145,7 @@ export default async function MyDownloadsPage() {
                                         style={{ background: "var(--dash-accent)", color: "#0A0A0B" }}
                                     >
                                         <Download className="h-4 w-4" />
-                                        Download PDF
+                                        Download File
                                     </a>
                                     <Link
                                         href={isResource ? `/resource-hub/${item.paper_slug}` : `/knowledge-base/abstract/${item.paper_slug}`}

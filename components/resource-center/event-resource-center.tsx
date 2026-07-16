@@ -699,7 +699,7 @@ function HeroSection({
                   <div>
                     <div className="text-sm text-slate-300 mb-1 uppercase tracking-wider font-semibold">Content Types</div>
                     <div className="text-2xl font-semibold text-white">
-                      Reports · Papers · Whitepapers
+                      Issue Magazine · Reports · Papers
                     </div>
                   </div>
                 </div>

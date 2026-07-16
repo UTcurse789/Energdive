@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { sendAbstractSubmissionAdminNotification } from "@/lib/email";
+import { auth } from "@clerk/nextjs/server";
+import { markUserAsAbstractSubmitter } from "@/lib/queries";
+import {
+    sendAbstractSubmissionAdminNotification,
+    sendAbstractSubmissionAuthorConfirmation,
+} from "@/lib/email";
 
 const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL;
 const STRAPI_API_TOKEN = process.env.STRAPI_API_TOKEN;
@@ -671,6 +676,28 @@ export async function POST(request: NextRequest) {
         } catch (emailError) {
             console.error("[SUBMIT-ABSTRACT] Failed to send admin email:", emailError);
             // Don't fail the request if email fails
+        }
+
+        try {
+            await sendAbstractSubmissionAuthorConfirmation(
+                (strapiData.author_email as string) || "",
+                (strapiData.author_name as string) || "",
+                (strapiData.title as string) || ""
+            );
+        } catch (emailError) {
+            console.error("[SUBMIT-ABSTRACT] Failed to send author confirmation email:", emailError);
+        }
+
+        try {
+            const { userId } = await auth();
+            if (userId) {
+                await markUserAsAbstractSubmitter(userId, {
+                    institution: strapiData.institution as string | undefined,
+                    profession: strapiData.Profession as string | undefined,
+                });
+            }
+        } catch (dbError) {
+            console.error("[SUBMIT-ABSTRACT] Failed to update user profile in DB:", dbError);
         }
 
         return NextResponse.json(createdEntry.body, { status: createdEntry.status });

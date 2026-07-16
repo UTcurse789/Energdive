@@ -246,7 +246,7 @@ export default async function CallForPapersPage() {
                             <ArrowRight className="h-4 w-4" />
                         </Link>
                         <Link
-                            href="/energdive-insights-exchange/author-guidelines"
+                            href="/insights-exchange/author-guidelines"
                             className="inline-flex items-center justify-center gap-2 border border-white/20 bg-white/[0.05] px-5 py-3 text-sm font-bold uppercase tracking-[0.12em] text-white transition-colors hover:bg-white/[0.1] hover:border-white/40"
                         >
                             Author Guidelines

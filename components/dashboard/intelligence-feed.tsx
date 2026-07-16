@@ -42,7 +42,7 @@ export function IntelligenceFeed() {
                 setLoading(true);
                 setError(null);
                 // Only fetch Articles
-                const res = await fetch(`/api/dashboard/feed?pageSize=15&type=Articles&_t=${feedKey}`);
+                const res = await fetch(`/api/dashboard/feed?pageSize=4&type=Articles&_t=${feedKey}`);
                 if (!res.ok) throw new Error(`Failed (${res.status})`);
                 setData(await res.json());
             } catch (err) {

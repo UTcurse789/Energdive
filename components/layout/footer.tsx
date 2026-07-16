@@ -21,7 +21,6 @@ const QUICK_LINKS = [
     { name: "Editorial Collaboration", href: "/editorial-collaboration" },
     { name: "Reports", href: "/reports" },
     { name: "Insights Exchange", href: "/insights-exchange" },
-    { name: "Knowledge Hub", href: "/knowledge-hub" },
     { name: "Videos", href: "/videos" },
     { name: "Events", href: "/events" },
 ];

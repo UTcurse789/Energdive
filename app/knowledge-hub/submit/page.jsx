@@ -23,6 +23,10 @@ export default async function KnowledgeBaseSubmitPage({ searchParams }) {
         redirect(`/onboarding?return_to=${encodeURIComponent("/knowledge-hub/submit")}`);
     }
 
+    if (profile?.has_submitted_abstract) {
+        redirect("/dashboard/my-submissions/new");
+    }
+
     const safeInstitution =
         typeof resolvedSearchParams?.institution === "string"
             ? resolvedSearchParams.institution
