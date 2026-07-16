@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import { AlertCircle, FileText, RefreshCcw, UploadCloud } from "lucide-react";
 
-const DEFAULT_MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
+const DEFAULT_MAX_FILE_SIZE_BYTES = 40 * 1024 * 1024;
 const DEFAULT_ALLOWED_EXTENSIONS = [".pdf", ".doc", ".docx"];
 const DEFAULT_ACCEPT = ".pdf,application/pdf,.doc,application/msword,.docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 
@@ -32,11 +32,11 @@ export default function UploadZone({
     onFileSelect,
     disabled = false,
     label = "Paper File",
-    helperText = "PDF, DOC, or DOCX up to 20 MB.",
+    helperText = "PDF, DOC, or DOCX up to 40 MB.",
     accept = DEFAULT_ACCEPT,
     allowedExtensions = DEFAULT_ALLOWED_EXTENSIONS,
     maxFileSizeBytes = DEFAULT_MAX_FILE_SIZE_BYTES,
-    maxFileSizeLabel = "20 MB",
+    maxFileSizeLabel = "40 MB",
 }) {
     const inputRef = useRef(null);
     const [isDragOver, setIsDragOver] = useState(false);

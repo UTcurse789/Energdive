@@ -17,7 +17,7 @@ import { SECTORS as FALLBACK_SECTORS } from "@/data/dummy";
 
 const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL;
 const PAPER_SUBMISSIONS_ENDPOINT = "/api/submit-paper";
-const ABSTRACT_MIN_LENGTH = 100;
+const ABSTRACT_MIN_WORDS = 200;
 
 // TODO: Replace this mock with the authenticated ENERGClub member profile.
 const currentUser = {
@@ -258,7 +258,8 @@ export default function SubmitPaperPage() {
         };
     }, [isSectorDropdownOpen]);
 
-    const abstractLength = abstract.length;
+    const abstractWordCount = abstract.trim() === "" ? 0 : abstract.trim().split(/\s+/).length;
+    const isAbstractTooShort = abstractWordCount < ABSTRACT_MIN_WORDS;
     const isSectorSelectionDisabled = isSubmitting || (isLoadingSectors && sectors.length === 0);
     const selectedSectors = sectors.filter((sector) => selectedSectorIds.includes(normalizeId(sector.id)));
     const availableSubSectors = selectedSectors.flatMap((sector) =>
@@ -348,8 +349,8 @@ export default function SubmitPaperPage() {
             return;
         }
 
-        if (normalizedAbstract.length < ABSTRACT_MIN_LENGTH) {
-            setFormError(`Abstract must be at least ${ABSTRACT_MIN_LENGTH} characters.`);
+        if (normalizedAbstract.split(/\s+/).filter(Boolean).length < ABSTRACT_MIN_WORDS) {
+            setFormError(`Abstract must be at least ${ABSTRACT_MIN_WORDS} words.`);
             return;
         }
 
@@ -766,9 +767,9 @@ export default function SubmitPaperPage() {
                             aside={
                                 <span
                                     className="text-xs font-medium"
-                                    style={{ color: abstractLength >= ABSTRACT_MIN_LENGTH ? "var(--dash-text-dim)" : "var(--dash-accent)" }}
+                                    style={{ color: isAbstractTooShort ? "var(--dash-accent)" : "var(--dash-text-dim)" }}
                                 >
-                                    {abstractLength} / {ABSTRACT_MIN_LENGTH} minimum
+                                    {abstractWordCount} / {ABSTRACT_MIN_WORDS} words minimum
                                 </span>
                             }
                         >
@@ -782,7 +783,6 @@ export default function SubmitPaperPage() {
                                 style={{ background: "var(--dash-surface-2)", borderColor: "var(--dash-border-subtle)", color: "var(--dash-text)" }}
                                 disabled={isSubmitting}
                                 required
-                                minLength={ABSTRACT_MIN_LENGTH}
                             />
                             <p className="mt-2 text-sm" style={{ color: "var(--dash-text-dim)" }}>
                                 A concise abstract helps the review team assess relevance quickly.
@@ -805,7 +805,7 @@ export default function SubmitPaperPage() {
                         </p>
                         <button
                             type="submit"
-                            disabled={isSubmitting}
+                            disabled={isSubmitting || isAbstractTooShort}
                             className="inline-flex w-full items-center justify-center gap-2 rounded-lg px-5 py-3 text-sm font-bold transition-all disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto"
                             style={{ background: "var(--dash-accent)", color: "#0A0A0B" }}
                         >

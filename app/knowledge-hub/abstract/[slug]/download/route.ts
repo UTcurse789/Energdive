@@ -55,27 +55,43 @@ function extractPdfUrl(pdf: unknown) {
     return url.startsWith("http") ? url : `${base}${url}`;
 }
 
+// Canonical app origin — avoids redirecting to localhost behind a proxy
+function getAppOrigin(request: NextRequest): string {
+    const envUrl = process.env.NEXT_PUBLIC_APP_URL;
+    if (envUrl) return envUrl.replace(/\/$/, "");
+    // Fallback: derive from x-forwarded-host header if present
+    const host = request.headers.get("x-forwarded-host") || request.headers.get("host") || "";
+    const proto = request.headers.get("x-forwarded-proto") || "https";
+    if (host && !host.includes("localhost") && !host.includes("127.0.0.1")) {
+        return `${proto}://${host}`;
+    }
+    // Last resort: use request URL origin (may be localhost in dev, that's fine)
+    return new URL(request.url).origin;
+}
+
 export async function GET(
     request: NextRequest,
     { params }: { params: Promise<{ slug: string }> }
 ) {
     const { slug } = await params;
     const requestUrl = new URL(request.url);
+    const appOrigin = getAppOrigin(request);
 
     // 1. Check user authentication
     const { userId } = await auth();
     if (!userId) {
         // Require login first, then return to this download URL.
-        const redirectUrl = `/auth?redirect_url=${encodeURIComponent(requestUrl.pathname)}`;
-        return NextResponse.redirect(new URL(redirectUrl, request.url));
+        const downloadPath = requestUrl.pathname;
+        const redirectUrl = `${appOrigin}/auth?redirect_url=${encodeURIComponent(downloadPath)}`;
+        return NextResponse.redirect(redirectUrl);
     }
 
     // 2. Check profile and onboarding completion
     const profile = await getUserProfile(userId);
     if (!profile || !profile.onboarding_completed) {
-        // Redirect to onboarding, returning to this exact URL afterwards
-        const redirectUrl = `/onboarding?return_to=${encodeURIComponent(requestUrl.pathname)}`;
-        return NextResponse.redirect(new URL(redirectUrl, request.url));
+        const downloadPath = requestUrl.pathname;
+        const redirectUrl = `${appOrigin}/onboarding?return_to=${encodeURIComponent(downloadPath)}`;
+        return NextResponse.redirect(redirectUrl);
     }
 
     // 3. Find the paper by slug
@@ -95,11 +111,21 @@ export async function GET(
         return new NextResponse("Paper not found", { status: 404 });
     }
 
-    // Prefer final paper (full paper) over abstract PDF
-    // First try the accepted final paper, then any final paper that has a file, then fall back to abstract
+    // Prefer final paper (full paper) over abstract PDF.
+    // Priority order:
+    //   1. Accepted/published final paper (finalPaperPdf)
+    //   2. ANY final paper submission that has a file (regardless of status, e.g. pending)
+    //   3. Abstract PDF as last resort
     let documentUrl = extractPdfUrl(paper.finalPaperPdf);
+
     if (!documentUrl && Array.isArray(paper.finalPaperSubmissions) && paper.finalPaperSubmissions.length > 0) {
-        for (const fp of paper.finalPaperSubmissions) {
+        // Try accepted submissions first, then any submission with a file
+        const sorted = [...paper.finalPaperSubmissions].sort((a, b) => {
+            const aAccepted = ["accepted", "published", "approved"].includes((a.final_status ?? "").toLowerCase()) ? 0 : 1;
+            const bAccepted = ["accepted", "published", "approved"].includes((b.final_status ?? "").toLowerCase()) ? 0 : 1;
+            return aAccepted - bAccepted;
+        });
+        for (const fp of sorted) {
             const fpUrl = extractPdfUrl(fp.fullPaper);
             if (fpUrl) {
                 documentUrl = fpUrl;
@@ -107,6 +133,8 @@ export async function GET(
             }
         }
     }
+
+    // Fall back to abstract PDF only if no final paper file found
     if (!documentUrl) {
         documentUrl = extractPdfUrl(paper.pdf);
     }
@@ -122,7 +150,6 @@ export async function GET(
         return new NextResponse("Failed to record download", { status: 500 });
     }
 
-    // 5. Redirect to user's dashboard My Downloads section
-    const targetUrl = new URL("/dashboard/my-downloads", request.url);
-    return NextResponse.redirect(targetUrl);
+    // 5. Redirect to user's dashboard My Downloads section (use canonical origin)
+    return NextResponse.redirect(`${appOrigin}/dashboard/my-downloads`);
 }
