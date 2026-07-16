@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 
 const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL;
 const STRAPI_API_TOKEN = process.env.STRAPI_API_TOKEN;
-const FINAL_PAPER_MAX_FILE_SIZE_BYTES = 20 * 1024 * 1024;
-const FINAL_PAPER_MAX_FILE_SIZE_LABEL = "20 MB";
+const FINAL_PAPER_MAX_FILE_SIZE_BYTES = 40 * 1024 * 1024;
+const FINAL_PAPER_MAX_FILE_SIZE_LABEL = "40 MB";
 
 type StrapiDataResponse = {
     data?: {

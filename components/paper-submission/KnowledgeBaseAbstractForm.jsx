@@ -21,9 +21,9 @@ import {
 } from "@/lib/post-auth-redirect";
 
 const SUBMISSIONS_ENDPOINT = "/api/submit-abstract";
-const ABSTRACT_MIN_LENGTH = 200;
-const ABSTRACT_FILE_MAX_FILE_SIZE_BYTES = 20 * 1024 * 1024;
-const ABSTRACT_FILE_MAX_FILE_SIZE_LABEL = "20 MB";
+const ABSTRACT_MIN_WORDS = 200;
+const ABSTRACT_FILE_MAX_FILE_SIZE_BYTES = 40 * 1024 * 1024;
+const ABSTRACT_FILE_MAX_FILE_SIZE_LABEL = "40 MB";
 const ABSTRACT_FILE_ACCEPT = ".pdf,application/pdf,.doc,application/msword,.docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 const ABSTRACT_FILE_ALLOWED_EXTENSIONS = [".pdf", ".doc", ".docx"];
 
@@ -160,9 +160,8 @@ export default function KnowledgeBaseAbstractForm({
     const isDashboardVariant = variant === "dashboard";
     const accentTextColor = isDashboardVariant ? "#0A0A0B" : "#ffffff";
 
-    const abstractLength = abstract.length;
-    const trimmedAbstractLength = abstract.trim().length;
-    const isAbstractTooShort = trimmedAbstractLength < ABSTRACT_MIN_LENGTH;
+    const abstractWordCount = abstract.trim() === "" ? 0 : abstract.trim().split(/\s+/).length;
+    const isAbstractTooShort = abstractWordCount < ABSTRACT_MIN_WORDS;
     const selectedSectors = useMemo(
         () => sectors.filter((sector) => selectedSectorIds.includes(normalizeId(sector.id))),
         [sectors, selectedSectorIds]
@@ -325,8 +324,8 @@ export default function KnowledgeBaseAbstractForm({
             setFormError(normalizedCoAuthors.error);
             return;
         }
-        if (normalizedAbstract.length < ABSTRACT_MIN_LENGTH) {
-            setFormError(`Abstract must be at least ${ABSTRACT_MIN_LENGTH} characters.`);
+        if (normalizedAbstract.split(/\s+/).filter(Boolean).length < ABSTRACT_MIN_WORDS) {
+            setFormError(`Abstract must be at least ${ABSTRACT_MIN_WORDS} words.`);
             return;
         }
         if (!pdfFile) {
@@ -758,9 +757,9 @@ export default function KnowledgeBaseAbstractForm({
                                             required
                                         />
                                         <div className="mt-1 flex items-center justify-between text-xs">
-                                            <span style={{ color: abstractLength < ABSTRACT_MIN_LENGTH ? "var(--dash-text-dim)" : "var(--dash-accent)" }}>
-                                                {abstractLength} character{abstractLength !== 1 ? "s" : ""}
-                                                {abstractLength < ABSTRACT_MIN_LENGTH ? ` (minimum ${ABSTRACT_MIN_LENGTH} required)` : ""}
+                                            <span style={{ color: abstractWordCount < ABSTRACT_MIN_WORDS ? "var(--dash-text-dim)" : "var(--dash-accent)" }}>
+                                                {abstractWordCount} word{abstractWordCount !== 1 ? "s" : ""}
+                                                {abstractWordCount < ABSTRACT_MIN_WORDS ? ` (minimum ${ABSTRACT_MIN_WORDS} words required)` : " ✓"}
                                             </span>
                                         </div>
                                     </Field>
@@ -794,8 +793,8 @@ export default function KnowledgeBaseAbstractForm({
                                 <div className="mt-8 flex flex-col items-end gap-3 border-t pt-6" style={{ borderColor: "var(--dash-border)" }}>
                                     {isAbstractTooShort ? (
                                         <p className="max-w-md text-right text-xs" style={{ color: "var(--dash-text-dim)" }}>
-                                            Add {ABSTRACT_MIN_LENGTH - trimmedAbstractLength} more character
-                                            {ABSTRACT_MIN_LENGTH - trimmedAbstractLength !== 1 ? "s" : ""} before submitting.
+                                            Add {ABSTRACT_MIN_WORDS - abstractWordCount} more word
+                                            {ABSTRACT_MIN_WORDS - abstractWordCount !== 1 ? "s" : ""} before submitting.
                                         </p>
                                     ) : null}
                                     <button

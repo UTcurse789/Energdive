@@ -5,6 +5,8 @@ import { sendAbstractSubmissionAuthorConfirmation } from "@/lib/email";
 
 const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL;
 const STRAPI_API_TOKEN = process.env.STRAPI_API_TOKEN;
+const ABSTRACT_FILE_MAX_FILE_SIZE_BYTES = 40 * 1024 * 1024;
+const ABSTRACT_FILE_MAX_FILE_SIZE_LABEL = "40 MB";
 
 function buildAuthHeaders(contentType = "application/json") {
     const headers: Record<string, string> = {};
@@ -602,6 +604,17 @@ export async function POST(request: NextRequest) {
         console.log("[SUBMIT-PAPER] sectorIds after normalization:", sectorIds);
         console.log("[SUBMIT-PAPER] sectorDocumentIds after normalization:", sectorDocumentIds);
 
+        if (pdfFile && pdfFile.size > ABSTRACT_FILE_MAX_FILE_SIZE_BYTES) {
+            return NextResponse.json(
+                {
+                    error: {
+                        message: `The selected file is too large. Please upload a file up to ${ABSTRACT_FILE_MAX_FILE_SIZE_LABEL}.`,
+                    },
+                },
+                { status: 400 }
+            );
+        }
+
         const strapiData: Record<string, unknown> = {};
         const scalarFields = [
             "title",
@@ -670,7 +683,7 @@ export async function POST(request: NextRequest) {
             if (!uploadedPdf.ok) {
                 const statusCode = uploadedPdf.statusCode || 500;
                 const message = statusCode === 413
-                    ? "File upload failed because the file is larger than the server upload limit. Please upload a smaller file."
+                    ? `File upload failed because the server rejected it. Please upload a file up to ${ABSTRACT_FILE_MAX_FILE_SIZE_LABEL}.`
                     : "File upload failed. Please try again with a smaller file or contact support.";
 
                 return NextResponse.json(
