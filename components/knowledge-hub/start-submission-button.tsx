@@ -5,11 +5,11 @@ import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { useAuthModal } from "@/hooks/use-auth-modal";
 
-export function KnowledgeBaseStartSubmissionButton() {
+export function KnowledgeHubStartSubmissionButton() {
   const { isLoaded, isSignedIn } = useAuth();
   const { openAuthModal } = useAuthModal();
 
-  const submitUrl = "/knowledge-base/submit";
+  const submitUrl = "/knowledge-hub/submit";
 
   const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     if (isLoaded && !isSignedIn) {
@@ -30,3 +30,6 @@ export function KnowledgeBaseStartSubmissionButton() {
     </Link>
   );
 }
+
+export const KnowledgeBaseStartSubmissionButton = KnowledgeHubStartSubmissionButton;
+export default KnowledgeHubStartSubmissionButton;

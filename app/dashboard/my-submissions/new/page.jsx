@@ -46,7 +46,7 @@ export default async function DashboardSubmitAbstractPage({ searchParams }) {
         : profile.organization ?? "";
     const initialProfession = typeof resolvedSearchParams?.profession === "string"
         ? resolvedSearchParams.profession
-        : previousProfession;
+        : (profile.job_title || previousProfession);
 
     return (
         <KnowledgeBaseDashboardFrame>

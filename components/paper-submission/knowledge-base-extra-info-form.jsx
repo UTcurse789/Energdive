@@ -38,12 +38,12 @@ export default function KnowledgeBaseExtraInfoForm({
                 <div className="container pt-12 pb-12 md:pt-16 md:pb-16">
                     <div className="mx-auto max-w-3xl">
                         <Link
-                            href="/knowledge-base"
+                            href="/knowledge-hub"
                             className="inline-flex items-center gap-2 text-sm transition-colors mt-10"
                             style={{ color: "var(--dash-text-dim)" }}
                         >
                             <ArrowLeft className="h-4 w-4" />
-                            Back to Knowledge Base
+                            Back to Knowledge Hub
                         </Link>
 
                         <div className="mt-6 mb-12 md:mb-20 rounded-[30px] border p-8 shadow-[0_24px_80px_rgba(0,0,0,0.06)] sm:p-10" style={{ background: "var(--dash-card)", borderColor: "var(--dash-border)" }}>

@@ -19,6 +19,7 @@ type PaperSubmission = {
     hasAcceptedFinalPaper?: boolean;
     status?: string;
     finalPaperPdf?: unknown;
+    finalPaperSubmissions?: { final_status?: string; final_submission_date?: string; fullPaper?: unknown }[];
 };
 
 function getRelationData(relation: unknown) {
@@ -64,8 +65,8 @@ export async function GET(
     // 1. Check user authentication
     const { userId } = await auth();
     if (!userId) {
-        // Redirect to the abstract page if not logged in
-        const redirectUrl = `/knowledge-base/abstract/${slug}`;
+        // Require login first, then return to this download URL.
+        const redirectUrl = `/auth?redirect_url=${encodeURIComponent(requestUrl.pathname)}`;
         return NextResponse.redirect(new URL(redirectUrl, request.url));
     }
 
@@ -87,20 +88,35 @@ export async function GET(
     }
 
     const paper = (papers as PaperSubmission[]).find((p) =>
-        p.hasAcceptedFinalPaper && slugify(p.title || "untitled-paper") === slug
+        String(p.status ?? "").toLowerCase() === "accepted" &&
+        slugify(p.title || "untitled-paper") === slug
     );
     if (!paper) {
         return new NextResponse("Paper not found", { status: 404 });
     }
 
-    const pdfUrl = extractPdfUrl(paper.finalPaperPdf);
-    if (!pdfUrl) {
-        return new NextResponse("PDF not found for this paper", { status: 404 });
+    // Prefer final paper (full paper) over abstract PDF
+    // First try the accepted final paper, then any final paper that has a file, then fall back to abstract
+    let documentUrl = extractPdfUrl(paper.finalPaperPdf);
+    if (!documentUrl && Array.isArray(paper.finalPaperSubmissions) && paper.finalPaperSubmissions.length > 0) {
+        for (const fp of paper.finalPaperSubmissions) {
+            const fpUrl = extractPdfUrl(fp.fullPaper);
+            if (fpUrl) {
+                documentUrl = fpUrl;
+                break;
+            }
+        }
+    }
+    if (!documentUrl) {
+        documentUrl = extractPdfUrl(paper.pdf);
+    }
+    if (!documentUrl) {
+        return new NextResponse("Document not found for this paper", { status: 404 });
     }
 
     // 4. Save download record in the database
     try {
-        await addPaperDownload(userId, slug, paper.title || "Untitled Paper", pdfUrl);
+        await addPaperDownload(userId, slug, paper.title || "Untitled Paper", documentUrl);
     } catch (error) {
         console.error("Failed to record paper download in database:", error);
         return new NextResponse("Failed to record download", { status: 500 });

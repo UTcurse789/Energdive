@@ -71,14 +71,14 @@ export default function AuthorGuidelinesPage() {
 
                         <div className="mt-7 flex flex-col gap-2.5 sm:flex-row justify-center w-full sm:w-auto">
                             <Link
-                                href="/knowledge-base/submit"
+                                href="/knowledge-hub/submit"
                                 className="inline-flex items-center justify-center gap-2 bg-zinc-950 px-4 py-2.5 text-xs font-bold uppercase tracking-[0.12em] text-white transition-colors hover:bg-[#00A651]"
                             >
                                 Submit Abstract
                                 <ArrowRight className="h-3.5 w-3.5" />
                             </Link>
                             <Link
-                                href="/energdive-insights-exchange/call-for-papers"
+                                href="/insights-exchange/call-for-papers"
                                 className="inline-flex items-center justify-center gap-2 border border-zinc-950 bg-white px-4 py-2.5 text-xs font-bold uppercase tracking-[0.12em] text-zinc-950 transition-colors hover:border-[#00A651] hover:text-[#00A651]"
                             >
                                 Call for Papers
@@ -152,14 +152,14 @@ export default function AuthorGuidelinesPage() {
                     </p>
                     <div className="mt-6 flex flex-col justify-center gap-2.5 sm:flex-row">
                         <Link
-                            href="/knowledge-base/submit"
+                            href="/knowledge-hub/submit"
                             className="inline-flex items-center justify-center gap-2 bg-[#00A651] px-4 py-2.5 text-xs font-bold uppercase tracking-[0.12em] text-white transition-colors hover:bg-emerald-600"
                         >
                             Submit Abstract
                             <ArrowRight className="h-3.5 w-3.5" />
                         </Link>
                         <Link
-                            href="/energdive-insights-exchange/editorial-review-process"
+                            href="/insights-exchange/editorial-review-process"
                             className="inline-flex items-center justify-center gap-2 border border-white/20 bg-white/[0.05] px-4 py-2.5 text-xs font-bold uppercase tracking-[0.12em] text-white transition-colors hover:bg-white/[0.1] hover:border-white/40"
                         >
                             Editorial Review Process

@@ -1,12 +1,11 @@
-import Link from "next/link";
-import { ArrowRight, LibraryBig } from "lucide-react";
+import { LibraryBig } from "lucide-react";
 import KnowledgeBaseArchiveGrid from "@/components/paper-submission/knowledge-base-archive-grid";
 import { formatSubmissionDate } from "@/lib/paper-submissions";
 import { fetchPaperSubmissions } from "@/lib/paper-submissions-server";
-import { KnowledgeBaseStartSubmissionButton } from "@/components/knowledge-base/start-submission-button";
+import KnowledgeHubStartSubmissionButton from "@/components/knowledge-hub/start-submission-button";
 
 export const metadata = {
-    title: "Knowledge Base",
+    title: "Knowledge Hub",
     description: "Explore submitted research papers shared with India's energy community.",
 };
 
@@ -83,7 +82,7 @@ export default async function KnowledgeBasePage() {
                                         paper submission workflow.
                                     </p>
 
-                                    <KnowledgeBaseStartSubmissionButton />
+                                    <KnowledgeHubStartSubmissionButton />
                                 </div>
                             </div>
                         </aside>

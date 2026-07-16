@@ -4,18 +4,16 @@ import { useAuth } from "@clerk/nextjs";
 import { Download } from "lucide-react";
 import Link from "next/link";
 import { useAuthModal } from "@/hooks/use-auth-modal";
-import { usePathname } from "next/navigation";
 
-export function KnowledgeBaseDownloadButton({ 
+export function KnowledgeHubDownloadButton({ 
   slug 
 }: { 
   slug: string 
 }) {
   const { isLoaded, isSignedIn } = useAuth();
   const { openAuthModal } = useAuthModal();
-  const pathname = usePathname();
 
-  const downloadUrl = `/knowledge-base/abstract/${slug}/download`;
+  const downloadUrl = `/knowledge-hub/abstract/${slug}/download`;
 
   const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     if (isLoaded && !isSignedIn) {
@@ -36,3 +34,6 @@ export function KnowledgeBaseDownloadButton({
     </Link>
   );
 }
+
+export const KnowledgeBaseDownloadButton = KnowledgeHubDownloadButton;
+export default KnowledgeHubDownloadButton;

@@ -4,6 +4,14 @@ import { useRef, useState } from "react";
 import { AlertCircle, FileText, RefreshCcw, UploadCloud } from "lucide-react";
 
 const DEFAULT_MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
+const DEFAULT_ALLOWED_EXTENSIONS = [".pdf", ".doc", ".docx"];
+const DEFAULT_ACCEPT = ".pdf,application/pdf,.doc,application/msword,.docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+
+function formatAllowedExtensions(allowedExtensions) {
+    return allowedExtensions
+        .map((extension) => extension.replace(/^\./, "").toUpperCase())
+        .join(", ");
+}
 
 function formatFileSize(bytes) {
     if (!bytes) return "0 KB";
@@ -23,10 +31,10 @@ export default function UploadZone({
     file,
     onFileSelect,
     disabled = false,
-    label = "Paper PDF",
-    helperText = "PDF only, maximum size 20 MB.",
-    accept = ".pdf,application/pdf",
-    allowedExtensions = [".pdf"],
+    label = "Paper File",
+    helperText = "PDF, DOC, or DOCX up to 20 MB.",
+    accept = DEFAULT_ACCEPT,
+    allowedExtensions = DEFAULT_ALLOWED_EXTENSIONS,
     maxFileSizeBytes = DEFAULT_MAX_FILE_SIZE_BYTES,
     maxFileSizeLabel = "20 MB",
 }) {
@@ -38,7 +46,7 @@ export default function UploadZone({
         if (!nextFile) return;
 
         if (!isValidFile(nextFile, allowedExtensions)) {
-            setError(`Only ${allowedExtensions.join(", ")} files are allowed.`);
+            setError(`Only ${formatAllowedExtensions(allowedExtensions)} files are allowed.`);
             return;
         }
 
@@ -170,7 +178,7 @@ export default function UploadZone({
                                 style={{ color: isDragOver ? "var(--dash-accent)" : "var(--dash-text-muted)" }}
                             />
                         </div>
-                        <p className="text-base font-semibold" style={{ color: "var(--dash-text)" }}>Drag and drop your PDF here</p>
+                        <p className="text-base font-semibold" style={{ color: "var(--dash-text)" }}>Drag and drop your file here</p>
                         <p className="mt-2 text-sm" style={{ color: "var(--dash-text-dim)" }}>or click to browse from your device</p>
                     </div>
                 )}

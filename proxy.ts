@@ -21,8 +21,9 @@ export default clerkMiddleware(async (auth, req) => {
     // Forward client IP to downstream API routes via custom header.
     // On Vercel Edge, req.ip is the real client IP.
     // Locally, x-forwarded-for won't be set, so IP stays null (expected).
+    const requestWithIp = req as typeof req & { ip?: string };
     const clientIp =
-        (req as any).ip ||
+        requestWithIp.ip ||
         req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
         req.headers.get("x-real-ip") ||
         null;
@@ -37,7 +38,7 @@ export default clerkMiddleware(async (auth, req) => {
 export const config = {
     matcher: [
         // Skip Next.js internals and all static files, unless found in search params
-        '/((?!api/paper-submissions|_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
+        '/((?!api/(?:paper-submissions|submit-abstract|submit-paper|submit-final-paper)|_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
         '/trpc/(.*)',
     ],
 };

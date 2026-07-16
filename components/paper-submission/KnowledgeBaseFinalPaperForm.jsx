@@ -46,8 +46,8 @@ export default function KnowledgeBaseFinalPaperForm({
     abstract,
     variant = "public",
     returnHref = "/dashboard/my-submissions",
-    secondarySuccessHref = "/knowledge-base",
-    secondarySuccessLabel = "View Knowledge Base",
+    secondarySuccessHref = "/knowledge-hub",
+    secondarySuccessLabel = "View Knowledge Hub",
 }) {
     const [pdfFile, setPdfFile] = useState(null);
     const [formError, setFormError] = useState("");

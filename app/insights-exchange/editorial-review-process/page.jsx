@@ -78,14 +78,14 @@ export default function EditorialReviewProcessPage() {
 
                         <div className="mt-7 flex flex-col gap-2.5 sm:flex-row justify-center w-full sm:w-auto">
                             <Link
-                                href="/knowledge-base/submit"
+                                href="/knowledge-hub/submit"
                                 className="inline-flex items-center justify-center gap-2 bg-zinc-950 px-4 py-2.5 text-xs font-bold uppercase tracking-[0.12em] text-white transition-colors hover:bg-[#00A651]"
                             >
                                 Submit Abstract
                                 <ArrowRight className="h-3.5 w-3.5" />
                             </Link>
                             <Link
-                                href="/energdive-insights-exchange/author-guidelines"
+                                href="/insights-exchange/author-guidelines"
                                 className="inline-flex items-center justify-center gap-2 border border-zinc-950 bg-white px-4 py-2.5 text-xs font-bold uppercase tracking-[0.12em] text-zinc-950 transition-colors hover:border-[#00A651] hover:text-[#00A651]"
                             >
                                 Author Guidelines
@@ -97,54 +97,54 @@ export default function EditorialReviewProcessPage() {
             </section>
 
             {/* Editorial Methodology Section */}
-            <section className="bg-zinc-950 py-16 text-white md:py-20">
+            <section className="bg-[#f8faf9] py-16 text-[#1A1A1A] md:py-20">
                 <div className="mx-auto w-full max-w-[1400px] px-6 md:px-10 lg:px-16 xl:px-24 2xl:px-12 grid gap-12 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
                     <div>
                         <div className="inline-flex h-12 w-12 items-center justify-center bg-[#00A651] text-white">
                             <ShieldCheck className="h-6 w-6" />
                         </div>
-                        <p className="mt-6 text-[11px] font-black uppercase tracking-[0.28em] text-emerald-300">
+                        <p className="mt-6 text-[11px] font-black uppercase tracking-[0.28em] text-[#00A651]">
                             Editorial Methodology
                         </p>
                         <h2 className="mt-3 text-3xl font-black sm:text-4xl">
                             Editor-reviewed for relevance and practical value
                         </h2>
-                        <p className="mt-5 text-base leading-8 text-zinc-300">
+                        <p className="mt-5 text-base leading-8 text-zinc-700">
                             All submissions are reviewed for relevance, originality, clarity, accuracy, and alignment
                             with the objectives of the platform. The process focuses on practical value, quality, and
                             industry relevance rather than academic peer review.
                         </p>
-                        <p className="mt-5 border-l-4 border-[#00A651] pl-5 text-sm font-semibold leading-7 text-zinc-200">
+                        <p className="mt-5 border-l-4 border-[#00A651] pl-5 text-sm font-semibold leading-7 text-zinc-800">
                             EIX is an editor-reviewed knowledge platform and not a peer-reviewed academic journal.
                         </p>
                     </div>
 
                     <div className="grid gap-8 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
                         <div>
-                            <h3 className="text-sm font-black uppercase tracking-[0.18em] text-zinc-400">
+                            <h3 className="text-sm font-black uppercase tracking-[0.18em] text-zinc-500">
                                 Review assesses
                             </h3>
                             <div className="mt-5 grid gap-3">
                                 {editorialChecks.map((item) => (
-                                    <div key={item} className="flex items-center gap-3 border border-white/10 bg-white/[0.04] p-3">
-                                        <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-300" />
-                                        <span className="text-sm font-semibold text-zinc-100">{item}</span>
+                                    <div key={item} className="flex items-center gap-3 border border-zinc-200 bg-white p-3 shadow-[0_14px_36px_rgba(15,23,42,0.04)]">
+                                        <CheckCircle2 className="h-4 w-4 shrink-0 text-[#00A651]" />
+                                        <span className="text-sm font-semibold text-zinc-800">{item}</span>
                                     </div>
                                 ))}
                             </div>
                         </div>
 
                         <div>
-                            <h3 className="text-sm font-black uppercase tracking-[0.18em] text-zinc-400">
+                            <h3 className="text-sm font-black uppercase tracking-[0.18em] text-zinc-500">
                                 Process
                             </h3>
                             <ol className="mt-5 space-y-4">
                                 {editorialSteps.map((step, index) => (
                                     <li key={step} className="flex gap-4">
-                                        <span className="flex h-8 w-8 shrink-0 items-center justify-center bg-white text-sm font-black text-zinc-950">
+                                        <span className="flex h-8 w-8 shrink-0 items-center justify-center bg-zinc-950 text-sm font-black text-white">
                                             {index + 1}
                                         </span>
-                                        <p className="pt-1 text-sm leading-7 text-zinc-300">{step}</p>
+                                        <p className="pt-1 text-sm leading-7 text-zinc-700">{step}</p>
                                     </li>
                                 ))}
                             </ol>
@@ -179,7 +179,7 @@ export default function EditorialReviewProcessPage() {
                                         <div>
                                             <h3 className="text-xl font-black text-zinc-950">{stage.title}</h3>
                                             <p className="mt-2 text-sm leading-7 text-zinc-600">{stage.description}</p>
-                                            <div className="mt-4 flex flex-wrap gap-2">
+                                            {/* <div className="mt-4 flex flex-wrap gap-2">
                                                 {stage.items.map((item) => (
                                                     <span
                                                         key={item}
@@ -188,7 +188,7 @@ export default function EditorialReviewProcessPage() {
                                                         {item}
                                                     </span>
                                                 ))}
-                                            </div>
+                                            </div> */}
                                         </div>
                                     </div>
                                 </article>
@@ -217,14 +217,14 @@ export default function EditorialReviewProcessPage() {
 
                         <div className="flex flex-col gap-3 sm:flex-row lg:flex-col">
                             <Link
-                                href="/knowledge-base"
+                                href="/knowledge-hub"
                                 className="inline-flex items-center justify-center gap-2 bg-zinc-950 px-5 py-3 text-sm font-bold uppercase tracking-[0.12em] text-white transition-colors hover:bg-[#00A651]"
                             >
                                 Browse Papers
                                 <ArrowRight className="h-4 w-4" />
                             </Link>
                             <Link
-                                href="/knowledge-base/submit"
+                                href="/knowledge-hub/submit"
                                 className="inline-flex items-center justify-center gap-2 border border-zinc-950 bg-white px-5 py-3 text-sm font-bold uppercase tracking-[0.12em] text-zinc-950 transition-colors hover:border-[#00A651] hover:text-[#00A651]"
                             >
                                 Submit Abstract

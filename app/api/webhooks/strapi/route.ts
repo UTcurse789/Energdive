@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { sendAbstractAcceptedEmail } from "@/lib/email";
+import {
+    sendAbstractAcceptedEmail,
+    sendAbstractRejectedEmail,
+    sendPaperPublishedEmail
+} from "@/lib/email";
 
 function getStringValue(...values: unknown[]) {
     for (const value of values) {
@@ -50,6 +54,26 @@ function isAccepted(value: string): boolean {
         lower === "approved" ||
         lower === "accept" ||
         lower === "approve"
+    );
+}
+
+function isRejected(status: string): boolean {
+    if (!status) return false;
+    const lower = status.trim().toLowerCase();
+    return (
+        lower === "rejected" ||
+        lower === "reject" ||
+        lower === "declined"
+    );
+}
+
+function isPublished(status: string): boolean {
+    if (!status) return false;
+    const lower = status.trim().toLowerCase();
+    return (
+        lower === "published" ||
+        lower === "publish" ||
+        lower === "final accepted"
     );
 }
 
@@ -139,13 +163,6 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ success: true, message: "Ignored event" });
         }
 
-        if (!isAccepted(paperStatus)) {
-            console.log("[STRAPI-WEBHOOK] Submission not accepted yet. Status found:", JSON.stringify(paperStatus));
-            // Log what the status fields actually contain for debugging
-            console.log("[STRAPI-WEBHOOK] Status field values → paper_status:", entry.paper_status, "| paperStatus:", entry.paperStatus, "| status:", entry.status);
-            return NextResponse.json({ success: true, message: "Submission not accepted" });
-        }
-
         if (!authorEmail || !title) {
             console.warn("[STRAPI-WEBHOOK] Accepted submission missing email/title:", {
                 model,
@@ -154,13 +171,33 @@ export async function POST(request: NextRequest) {
                 title: Boolean(title),
                 entryKeys: Object.keys(entry),
             });
-            return NextResponse.json({ success: true, message: "Accepted submission missing email or title" });
+            return NextResponse.json({ success: true, message: "Submission missing email or title" });
         }
 
-        console.log(`[STRAPI-WEBHOOK] ✅ Abstract "${title}" accepted! Sending notification to ${authorEmail}`);
-        await sendAbstractAcceptedEmail(authorEmail, authorName, title);
-        console.log(`[STRAPI-WEBHOOK] ✅ Email sent successfully to ${authorEmail}`);
-        return NextResponse.json({ success: true, message: "Accepted email sent successfully" });
+        if (isAccepted(paperStatus)) {
+            console.log(`[STRAPI-WEBHOOK] ✅ Abstract "${title}" accepted! Sending notification to ${authorEmail}`);
+            await sendAbstractAcceptedEmail(authorEmail, authorName, title);
+            console.log(`[STRAPI-WEBHOOK] ✅ Accepted Email sent successfully to ${authorEmail}`);
+            return NextResponse.json({ success: true, message: "Accepted email sent successfully" });
+        } 
+        
+        if (isRejected(paperStatus)) {
+            console.log(`[STRAPI-WEBHOOK] ❌ Abstract "${title}" rejected! Sending notification to ${authorEmail}`);
+            await sendAbstractRejectedEmail(authorEmail, authorName, title);
+            console.log(`[STRAPI-WEBHOOK] ✅ Rejected Email sent successfully to ${authorEmail}`);
+            return NextResponse.json({ success: true, message: "Rejected email sent successfully" });
+        }
+
+        if (isPublished(paperStatus)) {
+            console.log(`[STRAPI-WEBHOOK] 🎉 Final Paper "${title}" published! Sending notification to ${authorEmail}`);
+            await sendPaperPublishedEmail(authorEmail, authorName, title);
+            console.log(`[STRAPI-WEBHOOK] ✅ Published Email sent successfully to ${authorEmail}`);
+            return NextResponse.json({ success: true, message: "Published email sent successfully" });
+        }
+
+        console.log("[STRAPI-WEBHOOK] Submission not in a target state. Status found:", JSON.stringify(paperStatus));
+        console.log("[STRAPI-WEBHOOK] Status field values → paper_status:", entry.paper_status, "| paperStatus:", entry.paperStatus, "| status:", entry.status);
+        return NextResponse.json({ success: true, message: "Submission not in a target state for email" });
     } catch (error) {
         console.error("[STRAPI-WEBHOOK] ❌ Error processing webhook:", error);
         return NextResponse.json({ error: "Internal server error" }, { status: 500 });

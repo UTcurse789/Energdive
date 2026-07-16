@@ -118,7 +118,7 @@ export default function KnowledgeBaseSubmissionsDashboard({
                     </p>
                 </div>
             ) : (
-                <div className="flex flex-col gap-5">
+                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 items-start">
                     {filteredAbstracts.map((abstract) => {
                         const actionKey = `${lane}:${abstract.documentId || abstract.id}`;
                         const isExpanded = inlineAction === actionKey;
@@ -132,31 +132,38 @@ export default function KnowledgeBaseSubmissionsDashboard({
                                     className="flex flex-col rounded-[24px] border p-5 transition-shadow hover:shadow-[0_12px_40px_rgba(0,0,0,0.18)]"
                                     style={{ background: "var(--dash-card)", borderColor: "var(--dash-border)" }}
                                 >
-                                    <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                                        <div className="space-y-3 min-w-0 flex-1">
-                                            <div className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em]" style={{ background: "var(--dash-accent-dim)", color: "var(--dash-accent)" }}>
-                                                <FileText className="h-3.5 w-3.5" />
-                                                {abstract.primarySector}
-                                            </div>
-                                            <h2 className="text-xl font-bold leading-tight break-words" style={{ color: "var(--dash-text)" }}>
-                                                {abstract.title || "Untitled Abstract"}
-                                            </h2>
-                                            <p className="text-xs" style={{ color: "var(--dash-text-dim)" }}>
-                                                Submitted on {formatSubmissionDate(abstract.submittedDate)}
-                                            </p>
+                                    {/* Card Header Row: Category on Left, Statuses on Right */}
+                                    <div className="flex items-center justify-between gap-3 mb-4 pb-3 border-b border-[var(--dash-border-subtle)]">
+                                        <div className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em] whitespace-nowrap shrink-0" style={{ background: "var(--dash-accent-dim)", color: "var(--dash-accent)" }}>
+                                            <FileText className="h-3 w-3" />
+                                            {abstract.primarySector}
                                         </div>
-                                        <div className="flex flex-col items-start gap-2 sm:items-end">
-                                            <span className="text-[9px] uppercase font-bold tracking-wider text-slate-500">Abstract Status</span>
-                                            <PaperStatusBadge status={abstract.status} />
+                                        <div className="flex items-center gap-2.5 flex-wrap justify-end">
+                                            {/* Abstract Status */}
+                                            <div className="flex items-center gap-1">
+                                                <span className="text-[8px] uppercase font-bold tracking-wider text-slate-500">Abstract:</span>
+                                                <PaperStatusBadge status={abstract.status} />
+                                            </div>
+                                            {/* Final Paper Status */}
                                             {lane === "submissions" && (
-                                                <>
-                                                    <span className="mt-2 text-[9px] uppercase font-bold tracking-wider text-slate-500">Final Paper Status</span>
+                                                <div className="flex items-center gap-1">
+                                                    <span className="text-[8px] uppercase font-bold tracking-wider text-slate-500">Paper:</span>
                                                     <PaperStatusBadge status="accepted" />
-                                                </>
+                                                </div>
                                             )}
+                                        </div>
+                                    </div>
+
+                                    {/* Card Body: Full-width Title */}
+                                    <div className="space-y-2.5 min-w-0 flex-1">
+                                        <h2 className="text-lg font-bold leading-snug break-words" style={{ color: "var(--dash-text)" }}>
+                                            {abstract.title || "Untitled Abstract"}
+                                        </h2>
+                                        <div className="flex items-center justify-between text-xs" style={{ color: "var(--dash-text-dim)" }}>
+                                            <span>Submitted {formatSubmissionDate(abstract.submittedDate)}</span>
                                             {lane === "submissions" && abstract.finalPaperSubmissions?.length > 0 && (
-                                                <span className="mt-1 text-[9px] text-slate-500">
-                                                    {abstract.finalPaperSubmissions.length} version{abstract.finalPaperSubmissions.length !== 1 ? "s" : ""} submitted
+                                                <span className="font-semibold text-slate-400">
+                                                    {abstract.finalPaperSubmissions.length} version{abstract.finalPaperSubmissions.length !== 1 ? "s" : ""} uploaded
                                                 </span>
                                             )}
                                         </div>
@@ -164,11 +171,11 @@ export default function KnowledgeBaseSubmissionsDashboard({
 
                                     {abstract.abstract && (
                                         <div
-                                            className="mt-4 max-w-full overflow-hidden rounded-xl p-4 text-sm leading-relaxed"
-                                            style={{ background: "var(--dash-surface-2)", color: "var(--dash-text-muted)" }}
+                                            className="mt-4 max-w-full overflow-hidden rounded-xl p-3 text-xs leading-relaxed border-l-2 border-[var(--dash-accent)]"
+                                            style={{ background: "rgba(255, 255, 255, 0.02)", color: "var(--dash-text-muted)" }}
                                         >
-                                            <p className="font-semibold text-xs uppercase tracking-wider mb-1" style={{ color: "var(--dash-text-dim)" }}>Abstract Summary</p>
-                                            <p className="line-clamp-2 break-words [overflow-wrap:anywhere]">
+                                            <p className="font-semibold text-[9px] uppercase tracking-wider mb-1" style={{ color: "var(--dash-text-dim)" }}>Abstract Summary</p>
+                                            <p className="line-clamp-2 break-words [overflow-wrap:anywhere] text-[11px] text-slate-400">
                                                 {abstract.abstract.length > 140 ? `${abstract.abstract.slice(0, 140)}...` : abstract.abstract}
                                             </p>
                                         </div>
@@ -178,7 +185,7 @@ export default function KnowledgeBaseSubmissionsDashboard({
                                         <button
                                             type="button"
                                             onClick={() => setInlineAction(isExpanded ? null : actionKey)}
-                                            className="mt-5 inline-flex items-center justify-center gap-2 self-start rounded-xl px-4 py-2.5 text-xs font-bold transition-all"
+                                            className="mt-5 inline-flex items-center justify-center gap-2 self-start rounded-lg px-4 py-2.5 text-xs font-bold transition-all hover:opacity-90"
                                             style={{ background: "var(--dash-accent)", color: "#0A0A0B" }}
                                         >
                                             <FileCheck2 className="h-3.5 w-3.5" />
@@ -191,7 +198,7 @@ export default function KnowledgeBaseSubmissionsDashboard({
                                         <button
                                             type="button"
                                             onClick={() => setInlineAction(isExpanded ? null : actionKey)}
-                                            className="mt-5 inline-flex items-center justify-center gap-2 self-start rounded-xl px-4 py-2.5 text-xs font-bold transition-all"
+                                            className="mt-5 inline-flex items-center justify-center gap-2 self-start rounded-lg px-4 py-2.5 text-xs font-bold transition-all hover:opacity-90"
                                             style={{ background: "var(--dash-accent)", color: "#0A0A0B" }}
                                         >
                                             <Repeat2 className="h-3.5 w-3.5" />
@@ -204,7 +211,7 @@ export default function KnowledgeBaseSubmissionsDashboard({
                                         <button
                                             type="button"
                                             onClick={() => setInlineAction(isExpanded ? null : actionKey)}
-                                            className="mt-5 inline-flex items-center justify-center gap-2 self-start rounded-xl px-4 py-2.5 text-xs font-bold transition-all"
+                                            className="mt-5 inline-flex items-center justify-center gap-2 self-start rounded-lg px-4 py-2.5 text-xs font-bold transition-all hover:opacity-90"
                                             style={{ background: "var(--dash-accent)", color: "#0A0A0B" }}
                                         >
                                             <UploadCloud className="h-3.5 w-3.5" />

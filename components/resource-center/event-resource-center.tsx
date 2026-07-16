@@ -513,10 +513,14 @@ export function EventResourceCenter({
   }
 
   return (
-    <div className="min-h-screen bg-[#f6f8f7] text-zinc-950 dark:bg-zinc-950 dark:text-zinc-50">
-      <HeroSection />
+    <div className="min-h-screen bg-[#F8FAFC] text-zinc-950 dark:bg-zinc-950 dark:text-zinc-50">
+      <HeroSection
+        totalCount={listedResources.length}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+      />
 
-      <section className="border-t border-zinc-200/80 bg-white py-6 dark:border-zinc-800 dark:bg-zinc-950 lg:py-8">
+      <section className="border-t border-zinc-200/80 bg-white py-6 dark:border-zinc-800 dark:bg-zinc-950 lg:py-8 mt-4">
         <div className="container mx-auto max-w-[1680px] px-4 sm:px-6 lg:px-6 xl:px-8">
           <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
             <div>
@@ -528,20 +532,6 @@ export function EventResourceCenter({
               </h2>
             </div>
             <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center lg:w-auto">
-              <label className="sr-only" htmlFor="resource-library-search">
-                Search resources
-              </label>
-              <div className="relative w-full sm:w-80">
-                <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
-                <input
-                  id="resource-library-search"
-                  type="search"
-                  value={searchQuery}
-                  onChange={(event) => setSearchQuery(event.target.value)}
-                  placeholder="Search resources..."
-                  className="h-10 w-full rounded-md border border-zinc-200 bg-white pl-10 pr-3 text-sm font-semibold text-zinc-900 outline-none transition placeholder:text-zinc-400 focus:border-[#00A651] focus:ring-2 focus:ring-[#00A651]/15 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100"
-                />
-              </div>
               <button
                 type="button"
                 onClick={() => setMobileFiltersOpen(true)}
@@ -561,8 +551,8 @@ export function EventResourceCenter({
             </div>
           </div>
 
-          <div className="grid items-start gap-4 lg:grid-cols-[240px_minmax(0,1fr)] xl:grid-cols-[260px_minmax(0,1fr)] xl:gap-5">
-            <aside className="hidden self-start lg:sticky lg:top-[128px] lg:block lg:h-[calc(100vh-148px)]">
+          <div className="grid items-start gap-8 lg:grid-cols-[288px_minmax(0,1fr)]">
+            <aside className="hidden self-start lg:sticky lg:top-28 lg:block lg:h-[calc(100vh-148px)]">
               <FilterPanel
                 counts={filterCounts}
                 events={events}
@@ -652,36 +642,90 @@ export function EventResourceCenter({
   );
 }
 
-function HeroSection() {
+function HeroSection({
+  totalCount,
+  searchQuery,
+  onSearchChange,
+}: {
+  totalCount: number;
+  searchQuery: string;
+  onSearchChange: (value: string) => void;
+}) {
   return (
-    <section className="relative isolate overflow-hidden bg-zinc-950 text-white">
-      <div className="absolute inset-0 -z-10">
-        <Image
-          src="/hero-banner-bg.jpg"
-          alt=""
-          fill
-          priority
-          sizes="100vw"
-          className="object-cover opacity-30 saturate-75"
-        />
-        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(9,9,11,0.96)_0%,rgba(9,9,11,0.82)_48%,rgba(9,9,11,0.5)_100%)]" />
-        <div className="absolute inset-x-0 bottom-0 h-px bg-white/10" />
-      </div>
+    <section className="relative w-full">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-[1680px] pt-6 pb-0">
+        <div className="relative pb-10">
+          <div className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-slate-900 via-[#0a1f16] to-[#004d26] shadow-2xl">
+            {/* Abstract background elements */}
+            <div className="absolute top-0 right-0 -translate-y-12 translate-x-1/3 w-[600px] h-[600px] bg-[#00A651] rounded-full blur-[120px] opacity-20" />
+            <div className="absolute bottom-0 left-0 translate-y-1/3 -translate-x-1/4 w-[400px] h-[400px] bg-emerald-400 rounded-full blur-[100px] opacity-10" />
+            <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10 mix-blend-overlay" />
 
-      <div className="container mx-auto flex min-h-[360px] max-w-[1440px] items-center px-4 py-14 sm:min-h-[400px] sm:px-6 sm:py-16 lg:min-h-[440px] lg:px-8 lg:py-20">
-        <div className="max-w-5xl">
-          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[11px] font-black uppercase tracking-[0.18em] text-emerald-200 backdrop-blur">
-            <ShieldCheck className="h-3.5 w-3.5" />
-            RESOURCE HUB
+            <div className="relative z-10 px-8 py-16 md:pt-24 md:pb-28 md:px-16 flex flex-col lg:flex-row items-center justify-between gap-12">
+
+              <div className="max-w-3xl">
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
+                  <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-md border border-white/20 mb-6 text-white text-sm font-semibold">
+                    <ShieldCheck className="h-3.5 w-3.5" />
+                    RESOURCE HUB
+                  </div>
+                  <h1 className="text-4xl md:text-6xl font-bold tracking-tight text-white leading-tight mb-6">
+                    ENERGDIVE <br/>
+                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 to-[#00A651]">
+                      Resource Hub
+                    </span>
+                  </h1>
+                  <p className="text-lg text-slate-300 leading-relaxed max-w-2xl font-light">
+                    Access industry reports, technical papers, whitepapers, event publications, presentations, and other valuable resources from across the global energy sector.
+                  </p>
+                </motion.div>
+              </div>
+
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+                className="w-full lg:w-auto min-w-[300px] bg-white/10 backdrop-blur-xl border border-white/20 p-8 rounded-3xl"
+              >
+                <h3 className="text-white font-semibold mb-6 text-lg">Library Overview</h3>
+                <div className="space-y-6">
+                  <div>
+                    <div className="text-sm text-slate-300 mb-1 uppercase tracking-wider font-semibold">Total Resources</div>
+                    <div className="text-4xl font-bold text-white flex items-baseline gap-2">
+                      {totalCount} <span className="text-emerald-400 text-lg">Available</span>
+                    </div>
+                  </div>
+                  <div className="h-px bg-white/10 w-full" />
+                  <div>
+                    <div className="text-sm text-slate-300 mb-1 uppercase tracking-wider font-semibold">Content Types</div>
+                    <div className="text-2xl font-semibold text-white">
+                      Issue Magazine · Reports · Papers
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+
+            </div>
           </div>
 
-          <h1 className="max-w-4xl text-4xl font-black leading-[1.02] tracking-tight sm:text-5xl lg:text-6xl">
-            ENERGDIVE Resource Hub
-          </h1>
-
-          <p className="mt-4 max-w-3xl text-base leading-7 text-zinc-200 sm:text-lg">
-            Access ENERGDIVE magazines, industry reports, technical papers, whitepapers, case studies, event publications, presentations, and other valuable resources from across the global energy sector.
-          </p>
+          {/* Floating Search Bar */}
+          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-full max-w-4xl px-4 z-20">
+            <div className="bg-white rounded-2xl shadow-[0_20px_40px_-15px_rgba(0,0,0,0.15)] border border-slate-100 p-2 flex items-center">
+              <div className="pl-6 pr-4 text-slate-400">
+                <Search className="w-6 h-6" />
+              </div>
+              <input
+                type="text"
+                placeholder="Search resources by title, event, sector..."
+                value={searchQuery}
+                onChange={(e) => onSearchChange(e.target.value)}
+                className="flex-1 bg-transparent py-4 outline-none text-lg text-slate-700 placeholder:text-slate-400"
+              />
+              <button className="bg-[#00A651] hover:bg-emerald-600 text-white px-8 py-4 rounded-xl font-bold transition-all shadow-md shadow-emerald-500/20 ml-2">
+                Search
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -725,31 +769,29 @@ function FilterPanel({
   ) => void;
 }) {
   return (
-    <div className="flex h-full flex-col overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-      <div className="border-b border-zinc-100 p-4 dark:border-zinc-800">
+    <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <div className="border-b border-slate-100 p-6">
         <div className="flex items-center justify-between gap-3">
-          <div>
-            <p className="text-xs font-black uppercase tracking-[0.18em] text-[#00A651]">
-              Filters
-            </p>
-            <p className="mt-1 text-sm font-semibold text-zinc-500 dark:text-zinc-400">
-              {resultCount} of {totalCount} resources
-            </p>
+          <div className="flex items-center gap-2 font-bold text-slate-900 text-lg">
+            <Filter className="w-5 h-5 text-[#00A651]" />
+            Filter Results
           </div>
           <button
             type="button"
             onClick={onReset}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-zinc-200 text-zinc-500 transition hover:border-zinc-300 hover:text-zinc-950 dark:border-zinc-700 dark:hover:text-white"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition hover:border-[#00A651] hover:text-[#00A651]"
             title="Reset filters"
           >
             <RotateCcw className="h-4 w-4" />
           </button>
         </div>
+        <p className="mt-2 text-sm font-semibold text-slate-500">
+          {resultCount} of {totalCount} resources
+        </p>
       </div>
 
-      <div className="flex-1 space-y-4 overflow-y-auto p-4 dashboard-scrollbar">
+      <div className="flex-1 space-y-8 overflow-y-auto p-6 dashboard-scrollbar">
         <SortControl value={filters.sort} onChange={onSortChange} />
-
 
         <FilterGroup
           title="Content Type"
@@ -1014,33 +1056,33 @@ function FilterGroup({
 }) {
   return (
     <div>
-      <p className="mb-2 text-xs font-black uppercase tracking-[0.16em] text-zinc-500 dark:text-zinc-400">
+      <h4 className="text-sm font-semibold uppercase tracking-wider text-slate-500 mb-4">
         {title}
-      </p>
-      <div className="space-y-1">
+      </h4>
+      <div className="space-y-2">
         {options.map((option) => {
           const checked = selectedValues.includes(option.value);
           return (
             <label
               key={option.value}
-              className="group flex min-h-8 cursor-pointer items-center justify-between gap-3 rounded-md px-2 py-1 transition hover:bg-zinc-50 dark:hover:bg-zinc-800"
+              className="group flex min-h-9 cursor-pointer items-center justify-between gap-3 rounded-lg px-3 py-1.5 transition hover:bg-slate-50"
             >
               <span className="flex min-w-0 items-center gap-3">
                 <Checkbox
                   checked={checked}
                   onCheckedChange={() => onToggle(option.value)}
-                  className="h-4 w-4 rounded border-zinc-300 data-[state=checked]:border-[#00A651] data-[state=checked]:bg-[#00A651]"
+                  className="h-4 w-4 rounded border-slate-300 data-[state=checked]:border-[#00A651] data-[state=checked]:bg-[#00A651]"
                 />
                 <span
                   className={cn(
-                    "truncate text-[13px] font-semibold text-zinc-700 dark:text-zinc-300",
-                    checked && "text-zinc-950 dark:text-white"
+                    "truncate text-sm font-medium text-slate-600",
+                    checked && "text-slate-900 font-semibold"
                   )}
                 >
                   {option.label}
                 </span>
               </span>
-              <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-[11px] font-bold text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400">
+              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-bold text-slate-500">
                 {option.count}
               </span>
             </label>

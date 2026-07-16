@@ -17,6 +17,9 @@ const nextConfig: NextConfig = {
 
   // Tree-shake heavy client-side libraries
   experimental: {
+    // Abstract/final paper uploads allow PDFs up to 20 MB. Keep proxy body cloning
+    // above that limit so multipart boundaries are not truncated in dev/proxy.
+    proxyClientMaxBodySize: "25mb",
     optimizePackageImports: [
       "lucide-react",
       "framer-motion",

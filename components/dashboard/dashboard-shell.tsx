@@ -43,6 +43,13 @@ interface DashboardContextType {
     sidebarOpen: boolean;
     setSidebarOpen: React.Dispatch<React.SetStateAction<boolean>>;
     feedKey: number;
+    badgeCounts?: {
+        downloads: number;
+        saved: number;
+        abstracts: number;
+        finalPaper: number;
+        resubmission: number;
+    };
 }
 
 const DashboardContext = createContext<DashboardContextType | null>(null);
@@ -54,13 +61,16 @@ export function useDashboard() {
 }
 
 import { EditProfileModal } from "./edit-profile-modal";
+import { DashboardSidebar } from "./dashboard-sidebar";
 
 // ── Shell ────────────────────────────────────────────────────────
 export default function DashboardShell({
     initialProfile,
+    initialBadgeCounts,
     children,
 }: {
     initialProfile: DashboardProfile;
+    initialBadgeCounts?: DashboardContextType["badgeCounts"];
     children: React.ReactNode;
 }) {
     const [profile, setProfile] = useState<DashboardProfile>(initialProfile);
@@ -90,16 +100,21 @@ export default function DashboardShell({
                 sidebarOpen,
                 setSidebarOpen,
                 feedKey,
+                badgeCounts: initialBadgeCounts,
             }}
         >
-            <div className="dashboard-theme min-h-screen flex flex-col font-sans" style={{ background: "var(--dash-bg)", color: "var(--dash-text)" }}>
+            <div className="dashboard-theme h-screen flex flex-col font-sans overflow-hidden" style={{ background: "var(--dash-bg)", color: "var(--dash-text)" }}>
                 {/* Fixed Header */}
                 <DashboardHeader />
 
-                {/* Main Scrollable Body */}
-                <main className="flex-1 w-full max-w-[1400px] mx-auto px-4 lg:px-8 py-8">
-                    {children}
-                </main>
+                <div className="flex flex-1 overflow-hidden">
+                    <DashboardSidebar />
+                    
+                    {/* Main Scrollable Body */}
+                    <main className="flex-1 overflow-y-auto w-full max-w-[1400px] mx-auto px-4 lg:px-8 py-8 transition-all duration-300">
+                        {children}
+                    </main>
+                </div>
 
                 {/* Global Modals */}
                 <EditProfileModal open={editOpen} onClose={() => setEditOpen(false)} />

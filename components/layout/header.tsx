@@ -1037,7 +1037,7 @@ export function Header() {
                                                     <Link href="/energdive-insights-exchange" onClick={closeMenus} className="inline-flex items-center gap-1.5 text-[11px] font-bold text-[#00A651] uppercase tracking-widest hover:underline">
                                                         Explore EIX <ArrowRight size={13} />
                                                     </Link>
-                                                    <Link href="/knowledge-base/submit" onClick={closeMenus} className="inline-flex items-center gap-1.5 text-[11px] font-bold text-zinc-900 uppercase tracking-widest hover:underline">
+                                                    <Link href="/knowledge-hub/submit" onClick={closeMenus} className="inline-flex items-center gap-1.5 text-[11px] font-bold text-zinc-900 uppercase tracking-widest hover:underline">
                                                         Submit a Paper <ArrowRight size={13} />
                                                     </Link>
                                                 </div>
