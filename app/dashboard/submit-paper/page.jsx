@@ -11,6 +11,8 @@ import {
     FileText,
     Loader2,
     Send,
+    Plus,
+    X,
 } from "lucide-react";
 import UploadZone from "@/components/paper-submission/UploadZone";
 import { SECTORS as FALLBACK_SECTORS } from "@/data/dummy";
@@ -24,6 +26,44 @@ const currentUser = {
     name: "John Doe",
     email: "john@example.com",
 };
+
+function createEmptyCoAuthor() {
+    return { name: "", email: "" };
+}
+
+function normalizeCoAuthorsForSubmission(coAuthors) {
+    const normalizedCoAuthors = [];
+
+    for (let index = 0; index < coAuthors.length; index += 1) {
+        const name = String(coAuthors[index]?.name ?? "").trim();
+        const email = String(coAuthors[index]?.email ?? "").trim();
+
+        if (!name && !email) {
+            continue;
+        }
+
+        if (name && !email) {
+            return {
+                error: `Co-author #${index + 1} (${name}) requires an email address.`,
+                coAuthors: [],
+            };
+        }
+
+        if (!name && email) {
+            return {
+                error: `Co-author #${index + 1} (${email}) requires a name.`,
+                coAuthors: [],
+            };
+        }
+
+        normalizedCoAuthors.push({ name, email });
+    }
+
+    return {
+        error: null,
+        coAuthors: normalizedCoAuthors,
+    };
+}
 
 function readStrapiAttributes(item) {
     return item?.attributes ?? item ?? {};
@@ -168,6 +208,7 @@ export default function SubmitPaperPage() {
     const [title, setTitle] = useState("");
     const [authorName, setAuthorName] = useState(currentUser.name);
     const [authorEmail, setAuthorEmail] = useState(currentUser.email);
+    const [coAuthors, setCoAuthors] = useState([createEmptyCoAuthor()]);
     const [affiliation, setAffiliation] = useState("");
     const [selectedSectorIds, setSelectedSectorIds] = useState([]);
     const [selectedSubSectorIds, setSelectedSubSectorIds] = useState([]);
@@ -258,8 +299,27 @@ export default function SubmitPaperPage() {
         };
     }, [isSectorDropdownOpen]);
 
+    const updateCoAuthor = (index, field, value) => {
+        setCoAuthors((previous) =>
+            previous.map((coAuthor, coAuthorIndex) =>
+                coAuthorIndex === index ? { ...coAuthor, [field]: value } : coAuthor
+            )
+        );
+    };
+
+    const addCoAuthor = () => {
+        setCoAuthors((previous) => [...previous, createEmptyCoAuthor()]);
+    };
+
+    const removeCoAuthor = (index) => {
+        setCoAuthors((previous) => {
+            const nextCoAuthors = previous.filter((_, coAuthorIndex) => coAuthorIndex !== index);
+            return nextCoAuthors.length > 0 ? nextCoAuthors : [createEmptyCoAuthor()];
+        });
+    };
+
     const abstractWordCount = abstract.trim() === "" ? 0 : abstract.trim().split(/\s+/).length;
-    const isAbstractTooShort = abstractWordCount < ABSTRACT_MIN_WORDS;
+    const isAbstractTooShort = abstractWordCount < 200;
     const isSectorSelectionDisabled = isSubmitting || (isLoadingSectors && sectors.length === 0);
     const selectedSectors = sectors.filter((sector) => selectedSectorIds.includes(normalizeId(sector.id)));
     const availableSubSectors = selectedSectors.flatMap((sector) =>
@@ -315,6 +375,7 @@ export default function SubmitPaperPage() {
         setTitle("");
         setAuthorName(currentUser.name);
         setAuthorEmail(currentUser.email);
+        setCoAuthors([createEmptyCoAuthor()]);
         setAffiliation("");
         setSelectedSectorIds([]);
         setSelectedSubSectorIds([]);
@@ -349,8 +410,16 @@ export default function SubmitPaperPage() {
             return;
         }
 
-        if (normalizedAbstract.split(/\s+/).filter(Boolean).length < ABSTRACT_MIN_WORDS) {
-            setFormError(`Abstract must be at least ${ABSTRACT_MIN_WORDS} words.`);
+        const normalizedCoAuthors = normalizeCoAuthorsForSubmission(coAuthors);
+        if (normalizedCoAuthors.error) {
+            setFormError(normalizedCoAuthors.error);
+            setIsSubmitting(false);
+            return;
+        }
+
+        if (normalizedAbstract.split(/\s+/).filter(Boolean).length < 200) {
+            setFormError("Abstract must be at least 200 words.");
+            setIsSubmitting(false);
             return;
         }
 
@@ -373,7 +442,8 @@ export default function SubmitPaperPage() {
             const basePayload = {
                 title: normalizedTitle,
                 author_name: normalizedAuthorName,
-                author_email: normalizedAuthorEmail,
+                author_email: authorEmail.trim(),
+                co_authors: normalizedCoAuthors.coAuthors,
                 affiliation: normalizedAffiliation,
                 abstract: normalizedAbstract,
                 submitted_date: new Date().toISOString(),
@@ -609,6 +679,88 @@ export default function SubmitPaperPage() {
                                 />
                                 {/* TODO: Hydrate this field from the authenticated user instead of the mock currentUser object. */}
                             </Field>
+                        </div>
+
+                        <div className="space-y-4">
+                            <div className="flex items-center justify-between">
+                                <label className="text-[10px] font-bold uppercase tracking-wider" style={{ color: "var(--dash-text-dim)" }}>
+                                    Co-authors <span className="font-normal normal-case">(Optional)</span>
+                                </label>
+                                {coAuthors.length < 5 ? (
+                                    <button
+                                        type="button"
+                                        onClick={addCoAuthor}
+                                        disabled={isSubmitting}
+                                        className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-50"
+                                        style={{ color: "var(--dash-accent)" }}
+                                    >
+                                        <Plus className="h-3.5 w-3.5" />
+                                        Add Co-author
+                                    </button>
+                                ) : null}
+                            </div>
+
+                            <div className="space-y-3">
+                                {coAuthors.map((coAuthor, index) => {
+                                    const coAuthorNameId = `co-author-name-${index}`;
+                                    const coAuthorEmailId = `co-author-email-${index}`;
+                                    const isNameRequired = Boolean(coAuthor.email.trim());
+                                    const isEmailRequired = Boolean(coAuthor.name.trim());
+                                    const showRemove = coAuthors.length > 1 || coAuthor.name || coAuthor.email;
+
+                                    return (
+                                        <div
+                                            key={index}
+                                            className="relative flex items-start gap-4 rounded-xl border p-4 transition-all"
+                                            style={{ background: "var(--dash-surface-2)", borderColor: "var(--dash-border-subtle)" }}
+                                        >
+                                            <div className="grid w-full gap-5 md:grid-cols-2">
+                                                <Field label="Co-author Name" htmlFor={coAuthorNameId} required={isNameRequired}>
+                                                    <input
+                                                        id={coAuthorNameId}
+                                                        type="text"
+                                                        value={coAuthor.name}
+                                                        onChange={(event) => updateCoAuthor(index, "name", event.target.value)}
+                                                        placeholder="Name"
+                                                        className="w-full rounded-lg border px-4 py-2.5 text-sm outline-none transition-all placeholder:text-[#6B6660] focus:border-[var(--dash-accent)]"
+                                                        style={{ background: "var(--dash-card)", borderColor: "var(--dash-border-subtle)", color: "var(--dash-text)" }}
+                                                        disabled={isSubmitting}
+                                                        required={isNameRequired}
+                                                    />
+                                                </Field>
+
+                                                <Field label="Co-author Email" htmlFor={coAuthorEmailId} required={isEmailRequired}>
+                                                    <input
+                                                        id={coAuthorEmailId}
+                                                        type="email"
+                                                        value={coAuthor.email}
+                                                        onChange={(event) => updateCoAuthor(index, "email", event.target.value)}
+                                                        placeholder="Email address"
+                                                        className="w-full rounded-lg border px-4 py-2.5 text-sm outline-none transition-all placeholder:text-[#6B6660] focus:border-[var(--dash-accent)]"
+                                                        style={{ background: "var(--dash-card)", borderColor: "var(--dash-border-subtle)", color: "var(--dash-text)" }}
+                                                        disabled={isSubmitting}
+                                                        required={isEmailRequired}
+                                                    />
+                                                </Field>
+                                            </div>
+                                            {showRemove ? (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => removeCoAuthor(index)}
+                                                    disabled={isSubmitting}
+                                                    className="mt-[26px] shrink-0 rounded-lg p-2 text-red-400 opacity-60 transition-all hover:bg-red-400/10 hover:opacity-100 disabled:cursor-not-allowed disabled:opacity-30"
+                                                    aria-label={`Remove co-author ${index + 1}`}
+                                                    title="Remove co-author"
+                                                >
+                                                    <X className="h-4 w-4" />
+                                                </button>
+                                            ) : (
+                                                <div className="w-8 shrink-0"></div>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                            </div>
                         </div>
 
                         <Field label="Sectors" htmlFor="paper-sector-groups">
