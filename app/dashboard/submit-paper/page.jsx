@@ -505,7 +505,7 @@ export default function SubmitPaperPage() {
                         Back to dashboard
                     </Link>
                     <h1 className="text-3xl font-bold sm:text-4xl" style={{ color: "var(--dash-text)" }}>
-                        Submit <span style={{ color: "var(--dash-accent)" }}>Paper</span>
+                        Submit <span style={{ color: "var(--dash-accent)" }}>Abstract</span>
                     </h1>
                     <p className="mt-2 max-w-2xl text-sm leading-6 sm:text-base" style={{ color: "var(--dash-text-dim)" }}>
                         Send strategic energy research to the ENERGClub editorial team for review. All submissions enter the
