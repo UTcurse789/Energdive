@@ -451,7 +451,7 @@ export default function FindJobsBoard({ jobs }: FindJobsBoardProps) {
 
   return (
     <main className="min-h-screen bg-[linear-gradient(180deg,#f7fbfa_0%,#fbfcfb_28%,#ffffff_100%)] text-[#111111]">
-      <section className="mx-auto w-full max-w-[1200px] px-5 pb-8 pt-10 sm:px-6 lg:px-8 lg:pt-14">
+      <section className="mx-auto w-full max-w-[1120px] px-5 pb-8 pt-10 sm:px-6 lg:px-8 lg:pt-14">
         <div className="overflow-hidden rounded-[38px] border border-[#09B697]/10 bg-white shadow-[0_28px_70px_rgba(20,63,82,0.08)]">
           <div className="relative px-5 py-12 sm:px-8 lg:px-12 lg:py-16">
             <div className="pointer-events-none absolute inset-0 opacity-80">

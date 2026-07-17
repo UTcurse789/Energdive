@@ -32,12 +32,12 @@ const HEADING_TAGS: Record<number, "h2" | "h3" | "h4" | "h5" | "h6"> = {
 };
 
 const HEADING_CLASSES: Record<number, string> = {
-  1: "mt-6 text-2xl font-black tracking-[-0.04em] text-[#091d3a] sm:text-[1.9rem]",
-  2: "mt-6 text-xl font-black tracking-[-0.03em] text-[#091d3a] sm:text-[1.55rem]",
-  3: "mt-5 text-lg font-black tracking-[-0.02em] text-[#10253f] sm:text-[1.3rem]",
-  4: "mt-5 text-base font-black uppercase tracking-[0.14em] text-[#11624f]",
-  5: "mt-4 text-sm font-black uppercase tracking-[0.18em] text-[#11624f]",
-  6: "mt-4 text-sm font-black uppercase tracking-[0.18em] text-[#11624f]",
+  1: "mt-5 text-xl font-extrabold tracking-[-0.03em] text-[#091d3a] sm:text-[1.6rem]",
+  2: "mt-4 text-lg font-bold tracking-[-0.02em] text-[#091d3a] sm:text-[1.35rem]",
+  3: "mt-4 text-base font-bold tracking-[-0.01em] text-[#10253f] sm:text-[1.15rem]",
+  4: "mt-4 text-sm font-bold uppercase tracking-[0.12em] text-[#11624f]",
+  5: "mt-3 text-xs font-bold uppercase tracking-[0.15em] text-[#11624f]",
+  6: "mt-3 text-xs font-bold uppercase tracking-[0.15em] text-[#11624f]",
 };
 
 function getNodeText(node: RichTextNode | null | undefined): string {
@@ -128,7 +128,7 @@ export default function EnergJobRichText({
   className = "",
 }: EnergJobRichTextProps) {
   if (!Array.isArray(content) || content.length === 0) {
-    return <p className="text-[15px] leading-7 text-black/70">{emptyFallback}</p>;
+    return <p className="text-[14px] leading-6 text-black/70">{emptyFallback}</p>;
   }
 
   const renderedBlocks = content
@@ -156,7 +156,7 @@ export default function EnergJobRichText({
           return (
             <ListTag
               key={`list-${index}`}
-              className={`space-y-2.5 pl-5 text-[15px] leading-7 text-black/72 marker:text-[#09B697] ${
+              className={`space-y-2 pl-5 text-[14px] leading-6 text-black/72 marker:text-[#09B697] ${
                 isOrdered ? "list-decimal" : "list-disc"
               }`}
             >
@@ -173,7 +173,7 @@ export default function EnergJobRichText({
           return (
             <blockquote
               key={`quote-${index}`}
-              className="rounded-r-2xl border-l-4 border-[#09B697] bg-[#eef8f5] px-5 py-4 text-[15px] italic leading-7 text-[#27445c]"
+              className="rounded-r-2xl border-l-4 border-[#09B697] bg-[#eef8f5] px-4 py-3 text-[14px] italic leading-6 text-[#27445c]"
             >
               {renderInlineChildren(block.children, `quote-${index}`)}
             </blockquote>
@@ -182,7 +182,7 @@ export default function EnergJobRichText({
         case "paragraph":
         default:
           return (
-            <p key={`paragraph-${index}`} className="text-[15px] leading-7 text-black/72">
+            <p key={`paragraph-${index}`} className="text-[14px] leading-6 text-black/72">
               {renderInlineChildren(block.children, `paragraph-${index}`)}
             </p>
           );
@@ -191,7 +191,7 @@ export default function EnergJobRichText({
     .filter(Boolean);
 
   if (renderedBlocks.length === 0) {
-    return <p className="text-[15px] leading-7 text-black/70">{emptyFallback}</p>;
+    return <p className="text-[14px] leading-6 text-black/70">{emptyFallback}</p>;
   }
 
   return <div className={`space-y-4 ${className}`.trim()}>{renderedBlocks}</div>;

@@ -69,7 +69,7 @@ export default async function EnergyJobsPage() {
       />
 
       {/* ── Hero Section ── */}
-      <main className="relative min-h-screen overflow-hidden bg-white text-[#111111]">
+      <main className="relative overflow-hidden bg-white text-[#111111]">
         <div className="pointer-events-none absolute inset-0">
           <DarkVeil
             hueShift={0}
@@ -82,7 +82,7 @@ export default async function EnergyJobsPage() {
           />
         </div>
 
-        <section className="relative mx-auto flex min-h-[calc(100vh-140px)] w-full max-w-[1440px] items-center px-6 py-14 lg:px-12 lg:py-20 gsap-stagger-container">
+        <section className="relative mx-auto flex min-h-[520px] w-full max-w-[1200px] items-center px-6 py-10 lg:px-12 lg:py-14 gsap-stagger-container">
           <div className="mx-auto max-w-5xl text-center">
             <h1 className="mt-5 font-sans text-4xl font-black leading-[0.94] tracking-[-0.06em] text-[#142020] sm:text-5xl lg:text-7xl gsap-stagger-item">
               Where energy innovation and talent connect
