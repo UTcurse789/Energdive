@@ -126,6 +126,18 @@ function absoluteWebsite(url: string | null) {
   return `https://${url}`;
 }
 
+function appendUtmParams(url: string, campaign: string = "job_listing") {
+  try {
+    const urlObj = new URL(url);
+    urlObj.searchParams.set("utm_source", "energdive");
+    urlObj.searchParams.set("utm_medium", "energyjobs");
+    urlObj.searchParams.set("utm_campaign", campaign);
+    return urlObj.toString();
+  } catch {
+    return url;
+  }
+}
+
 function buildKeywords(job: PublicEnergJob) {
   return Array.from(
     new Set(
@@ -286,7 +298,7 @@ export default async function EnergJobDetailPage({
     notFound();
   }
 
-  const relatedJobs = await loadRelatedPublicEnergJobs(job, 3);
+  const relatedJobs = await loadRelatedPublicEnergJobs(job, 6);
   const company = job.companyName || job.recruiterName || "Energy ecosystem employer";
   const salary = formatSalary(job.salaryMin, job.salaryMax);
   const experience = formatExperience(job.experienceMin, job.experienceMax);
@@ -341,7 +353,7 @@ export default async function EnergJobDetailPage({
       />
 
       <section className="border-b border-black/6 bg-white/80 backdrop-blur-sm">
-        <div className="mx-auto w-full max-w-[1380px] px-5 py-4 sm:px-6 lg:px-10">
+        <div className="mx-auto w-full max-w-[1240px] px-5 py-4 sm:px-6 lg:px-10">
           <Link
             href="/energyjobs"
             className="group inline-flex items-center gap-2 text-sm font-bold text-[#143f52] transition-all duration-200 hover:text-[#09B697] hover:gap-3"
@@ -352,7 +364,8 @@ export default async function EnergJobDetailPage({
         </div>
       </section>
 
-      <section className="mx-auto w-full max-w-[1380px] px-5 pt-8 sm:px-6 lg:px-10 lg:pt-10 gsap-fade-up">
+      <section className="mx-auto w-full max-w-[1240px] px-5 pt-8 sm:px-6 lg:px-10 lg:pt-10 gsap-fade-up">
+        <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
         <article className="overflow-hidden rounded-[30px] border border-black/6 bg-white shadow-[0_24px_60px_rgba(20,63,82,0.07)]">
           <div className="relative border-b border-black/6 bg-gradient-to-br from-white via-[#fcfefd] to-[#f4faf8] px-5 py-6 sm:px-8 lg:px-10 lg:py-7">
             <div className="pointer-events-none absolute -right-20 -top-20 h-44 w-44 rounded-full bg-[#09B697]/8 blur-3xl" />
@@ -378,7 +391,7 @@ export default async function EnergJobDetailPage({
                       </span>
                     </div>
 
-                    <h1 className="mt-3 text-[2rem] font-black tracking-[-0.05em] text-[#091d3a] sm:text-[2.5rem] lg:text-[3rem] lg:leading-[1.02]">
+                    <h1 className="mt-3 text-[1.5rem] font-extrabold tracking-[-0.04em] text-[#091d3a] sm:text-[2rem] lg:text-[2.5rem] lg:leading-[1.1]">
                       {job.title}
                     </h1>
 
@@ -439,7 +452,7 @@ export default async function EnergJobDetailPage({
                     ) : null}
                   </div>
 
-                  <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                  <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-3 items-start">
                     {quickFacts.map((item) => (
                       <div
                         key={item.label}
@@ -465,7 +478,7 @@ export default async function EnergJobDetailPage({
                     <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#8de6d6]">
                       Shareable job page
                     </p>
-                    <h2 className="mt-2 text-[1.75rem] font-black tracking-[-0.04em]">
+                    <h2 className="mt-2 text-xl font-bold tracking-[-0.03em]">
                       Ready to apply?
                     </h2>
                     <p className="mt-2.5 max-w-[24rem] text-[13px] leading-6 text-white/68">
@@ -495,7 +508,7 @@ export default async function EnergJobDetailPage({
                 </section>
 
                 <section className="rounded-[24px] border border-black/6 bg-white p-5 shadow-sm">
-                  <h2 className="text-xl font-black tracking-[-0.03em] text-[#091d3a]">
+                  <h2 className="text-lg font-bold tracking-[-0.02em] text-[#091d3a]">
                     Publisher profile
                   </h2>
                   <div className="mt-4 rounded-[20px] border border-black/6 bg-[#fbfcfb] p-4">
@@ -509,7 +522,7 @@ export default async function EnergJobDetailPage({
                         <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#09B697]">
                           Publisher
                         </p>
-                        <h3 className="mt-1 text-xl font-black leading-tight tracking-[-0.03em] text-[#121417]">
+                        <h3 className="mt-1 text-base font-bold leading-tight tracking-[-0.02em] text-[#121417]">
                           {job.recruiterName || company}
                         </h3>
                         <p className="mt-1 text-sm leading-6 text-black/62">{company}</p>
@@ -525,7 +538,7 @@ export default async function EnergJobDetailPage({
                       ) : null}
                       {website ? (
                         <a
-                          href={website}
+                          href={appendUtmParams(website)}
                           target="_blank"
                           rel="noreferrer"
                           className="flex items-center gap-3 rounded-2xl border border-black/8 bg-white px-3 py-3 transition-colors hover:border-[#09B697] hover:text-[#09B697]"
@@ -543,7 +556,7 @@ export default async function EnergJobDetailPage({
 
           <div className="grid gap-4 px-5 py-6 sm:px-8 xl:grid-cols-2 lg:px-10 lg:py-7">
             <section className="rounded-[24px] border border-black/6 bg-gradient-to-br from-[#fbfcfb] to-[#f8fbfa] p-6 shadow-sm xl:col-span-2">
-              <h2 className="text-2xl font-black tracking-[-0.04em] text-[#091d3a] sm:text-[2rem]">
+              <h2 className="text-xl font-bold tracking-[-0.03em] text-[#091d3a] sm:text-2xl">
                 About the job
               </h2>
               <div className="mt-4">
@@ -578,10 +591,10 @@ export default async function EnergJobDetailPage({
 
             {job.keyResponsibilityLines.length > 0 ? (
               <section className="rounded-[24px] border border-black/6 bg-white p-6 shadow-sm">
-                <h2 className="text-xl font-black tracking-[-0.03em] text-[#091d3a]">
+                <h2 className="text-lg font-bold tracking-[-0.02em] text-[#091d3a]">
                   What you&apos;ll do
                 </h2>
-                <ul className="mt-4 space-y-2.5 pl-5 text-[15px] leading-7 text-black/72 marker:text-[#09B697]">
+                <ul className="mt-3 space-y-2 pl-5 text-[14px] leading-6 text-black/72 marker:text-[#09B697]">
                   {job.keyResponsibilityLines.map((item, index) => (
                     <li key={index}>{item}</li>
                   ))}
@@ -591,10 +604,10 @@ export default async function EnergJobDetailPage({
 
             {job.requiredSkillLines.length > 0 ? (
               <section className="rounded-[24px] border border-black/6 bg-white p-6 shadow-sm">
-                <h2 className="text-xl font-black tracking-[-0.03em] text-[#091d3a]">
+                <h2 className="text-lg font-bold tracking-[-0.02em] text-[#091d3a]">
                   What we&apos;re looking for
                 </h2>
-                <ul className="mt-4 space-y-2.5 pl-5 text-[15px] leading-7 text-black/72 marker:text-[#09B697]">
+                <ul className="mt-3 space-y-2 pl-5 text-[14px] leading-6 text-black/72 marker:text-[#09B697]">
                   {job.requiredSkillLines.map((item, index) => (
                     <li key={index}>{item}</li>
                   ))}
@@ -604,14 +617,14 @@ export default async function EnergJobDetailPage({
 
             {job.goodToHaveLines.length > 0 ? (
               <section className="rounded-[24px] border border-black/6 bg-white p-6 shadow-sm">
-                <h2 className="text-xl font-black tracking-[-0.03em] text-[#091d3a]">
+                <h2 className="text-lg font-bold tracking-[-0.02em] text-[#091d3a]">
                   Good to have
                 </h2>
                 <div className="mt-4 flex flex-wrap gap-2">
                   {job.goodToHaveLines.map((item, index) => (
                     <span
                       key={`${item}-${index}`}
-                      className="rounded-full bg-gradient-to-br from-[#f5eefb] to-[#ede3f7] px-4 py-2 text-sm font-semibold text-[#6a477f]"
+                      className="rounded-full bg-gradient-to-br from-[#f5eefb] to-[#ede3f7] px-3.5 py-1.5 text-xs font-semibold text-[#6a477f]"
                     >
                       {item}
                     </span>
@@ -623,7 +636,7 @@ export default async function EnergJobDetailPage({
             <section className="rounded-[24px] border border-black/6 bg-white p-6 shadow-sm xl:col-span-2">
               <div className="flex items-center gap-2 text-[#09B697]">
                 <Sparkles className="h-5 w-5" />
-                <h2 className="text-2xl font-black tracking-[-0.04em] text-[#091d3a]">
+                <h2 className="text-xl font-bold tracking-[-0.03em] text-[#091d3a]">
                   About the company
                 </h2>
               </div>
@@ -643,7 +656,7 @@ export default async function EnergJobDetailPage({
                 ) : null}
                 {website ? (
                   <a
-                    href={website}
+                    href={appendUtmParams(website)}
                     target="_blank"
                     rel="noreferrer"
                     className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-[#fbfcfb] px-4 py-2 text-sm font-medium text-[#24344b] transition-colors hover:border-[#09B697] hover:text-[#09B697]"
@@ -656,12 +669,76 @@ export default async function EnergJobDetailPage({
             </section>
           </div>
         </article>
+
+        {/* ── Right Sidebar: Related Jobs ── */}
+        {relatedJobs.length > 0 ? (
+          <aside className="hidden xl:block">
+            <div className="sticky top-24 space-y-4">
+              <div className="rounded-[24px] border border-black/6 bg-white p-5 shadow-[0_16px_40px_rgba(20,63,82,0.06)]">
+                <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-[#09B697]">
+                  More opportunities
+                </p>
+                <h3 className="mt-1 text-lg font-black tracking-[-0.03em] text-[#091d3a]">
+                  Related jobs
+                </h3>
+                <div className="mt-4 space-y-3">
+                  {relatedJobs.slice(0, 5).map((item) => {
+                    const relatedCompany =
+                      item.companyName || item.recruiterName || "Energy ecosystem employer";
+
+                    return (
+                      <Link
+                        key={item.routeSlug}
+                        href={`/energyjobs/${item.routeSlug}`}
+                        className="group block rounded-[18px] border border-black/6 bg-[#fcfdfc] p-4 transition-all duration-200 hover:-translate-y-0.5 hover:border-[#09B697]/25 hover:shadow-[0_8px_24px_rgba(20,63,82,0.08)]"
+                      >
+                        <div className="flex items-start gap-3">
+                          <CompanyMark
+                            name={relatedCompany}
+                            logoUrl={item.companyLogoUrl}
+                            size="h-11 w-11"
+                          />
+                          <div className="min-w-0 flex-1">
+                            <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#09B697]">
+                              {relatedCompany}
+                            </p>
+                            <h4 className="mt-0.5 line-clamp-2 text-sm font-black leading-tight tracking-[-0.02em] text-[#121417] group-hover:text-[#09B697]">
+                              {item.title}
+                            </h4>
+                            <p className="mt-1 text-[11px] leading-5 text-black/52">
+                              {[
+                                formatLabel(item.workMode),
+                                item.location,
+                              ]
+                                .filter(Boolean)
+                                .join(" · ")}
+                            </p>
+                          </div>
+                          <ArrowRight className="mt-1 h-3.5 w-3.5 shrink-0 text-black/30 transition-colors group-hover:text-[#09B697]" />
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+
+                <Link
+                  href="/energyjobs"
+                  className="mt-4 flex items-center justify-center gap-1.5 rounded-2xl border border-black/8 bg-[#fbfcfb] px-4 py-3 text-xs font-bold text-[#143f52] transition-colors hover:border-[#09B697] hover:text-[#09B697]"
+                >
+                  Browse all jobs
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </Link>
+              </div>
+            </div>
+          </aside>
+        ) : null}
+        </div>
       </section>
 
       {relatedJobs.length > 0 ? (
-        <section className="mx-auto mt-8 w-full max-w-[1380px] px-5 sm:px-6 lg:px-10 gsap-stagger-container">
+        <section className="mx-auto mt-8 w-full max-w-[1240px] px-5 sm:px-6 lg:px-10 gsap-stagger-container">
           <div className="rounded-[30px] border border-black/6 bg-white p-6 shadow-[0_22px_55px_rgba(20,63,82,0.05)] lg:p-8">
-            <h2 className="text-3xl font-black tracking-[-0.04em] text-[#091d3a] gsap-stagger-item">
+            <h2 className="text-xl font-bold tracking-[-0.03em] text-[#091d3a] gsap-stagger-item">
               Similar jobs
             </h2>
             <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -682,7 +759,7 @@ export default async function EnergJobDetailPage({
                       />
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-semibold text-[#09B697]">{relatedCompany}</p>
-                        <h3 className="mt-1 text-xl font-black leading-tight tracking-[-0.03em] text-[#121417]">
+                        <h3 className="mt-1 text-base font-bold leading-snug tracking-[-0.02em] text-[#121417]">
                           {item.title}
                         </h3>
                       </div>

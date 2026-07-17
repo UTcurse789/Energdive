@@ -277,9 +277,22 @@ export default function JobApplyFlow({
     if (!jobSnapshot || !jobSnapshot.externalApplyUrl) {
       return null;
     }
-    const val = String(jobSnapshot.externalApplyUrl).trim();
+    let val = String(jobSnapshot.externalApplyUrl).trim();
     if (!val || val.toLowerCase() === "null" || val.toLowerCase() === "undefined") {
       return null;
+    }
+    if (!/^https?:\/\//i.test(val)) {
+      val = `https://${val}`;
+    }
+    // Append UTM parameters so employers can identify traffic from Energdive
+    try {
+      const urlObj = new URL(val);
+      urlObj.searchParams.set("utm_source", "energdive");
+      urlObj.searchParams.set("utm_medium", "energyjobs");
+      urlObj.searchParams.set("utm_campaign", "job_apply");
+      return urlObj.toString();
+    } catch {
+      // URL parsing failed, return as-is
     }
     return val;
   }, [jobSnapshot?.externalApplyUrl]);
