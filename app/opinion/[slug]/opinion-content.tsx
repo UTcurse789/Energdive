@@ -181,7 +181,7 @@ export default function OpinionContent({ opinion, recommended = [] }: OpinionCon
                             className="relative w-full aspect-square lg:aspect-auto lg:h-[540px] overflow-hidden rounded-2xl shadow-3xl bg-zinc-100"
                         >
                             {opinion.featuredImage && (
-                                <Image src={opinion.featuredImage} alt={opinion.title} fill className="object-cover grayscale hover:grayscale-0 transition-all duration-1000" priority />
+                                <Image src={opinion.featuredImage} alt={opinion.title} fill className="object-cover object-top grayscale hover:grayscale-0 transition-all duration-1000" priority />
                             )}
                         </motion.div>
                     </div>
