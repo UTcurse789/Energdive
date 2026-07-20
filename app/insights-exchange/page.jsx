@@ -170,7 +170,7 @@ export default async function EnergdiveInsightsExchangePage() {
                                 href="/knowledge-hub/submit"
                                 className="inline-flex items-center justify-center gap-2 border border-zinc-950 bg-white px-4 py-2.5 text-xs font-bold uppercase tracking-[0.12em] text-zinc-950 transition-colors hover:border-[#00A651] hover:text-[#00A651]"
                             >
-                                Submit a Paper
+                                Submit a Abstract
                                 <ArrowRight className="h-3.5 w-3.5" />
                             </Link>
                         </div>
