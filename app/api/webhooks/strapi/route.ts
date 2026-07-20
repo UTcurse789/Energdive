@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import {
     sendAbstractAcceptedEmail,
     sendAbstractRejectedEmail,
-    sendPaperPublishedEmail
+    sendPaperPublishedEmail,
+    sendFinalPaperAcceptedEmail,
+    sendFinalPaperRejectedEmail
 } from "@/lib/email";
 
 function getStringValue(...values: unknown[]) {
@@ -13,6 +15,15 @@ function getStringValue(...values: unknown[]) {
     }
 
     return "";
+}
+
+function isFinalPaperModel(value: string) {
+    const lower = value.toLowerCase();
+    return (
+        lower === "final-paper-submission" ||
+        lower.endsWith("final-paper-submission") ||
+        lower.includes("final-paper-submission.")
+    );
 }
 
 function isSubmissionModel(value: string) {
@@ -114,24 +125,9 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ success: true, message: "No entry data in payload" });
         }
 
-        const isAbstractModel = isSubmissionModel(model);
-
         // Log all entry fields to help debug field name issues
         console.log("[STRAPI-WEBHOOK] Entry keys:", Object.keys(entry));
         console.log("[STRAPI-WEBHOOK] Entry id:", entry.id, "| documentId:", entry.documentId);
-
-        // Try all possible status field names
-        const paperStatus = getStringValue(
-            entry.paper_status,
-            entry.paperStatus,
-            entry.status,
-            entry.paper_Status,
-            entry.Paper_status,
-            entry.abstractStatus,
-            entry.abstract_status,
-            entry.submission_status,
-            entry.submissionStatus
-        ).toLowerCase();
 
         const authorEmail = getStringValue(
             entry.author_email,
@@ -151,12 +147,64 @@ export async function POST(request: NextRequest) {
 
         const title = getStringValue(entry.title, entry.Title);
 
-        console.log("[STRAPI-WEBHOOK] Parsed entry → paperStatus:", paperStatus, "| authorEmail:", authorEmail ? "✓" : "✗", "| title:", title ? "✓" : "✗", "| model match:", isAbstractModel);
+        // --- FINAL PAPER WORKFLOW ---
+        if (isFinalPaperModel(model)) {
+            console.log("[STRAPI-WEBHOOK] Processing Final Paper model");
+
+            // Prevent duplicate emails by only triggering on entry.update
+            if (event !== "entry.update") {
+                console.log("[STRAPI-WEBHOOK] Final Paper event ignored (not update):", event);
+                return NextResponse.json({ success: true, message: "Ignored Final Paper event" });
+            }
+
+            if (!authorEmail || !title) {
+                console.warn("[STRAPI-WEBHOOK] Final Paper submission missing email/title");
+                return NextResponse.json({ success: true, message: "Submission missing email or title" });
+            }
+
+            const finalStatus = getStringValue(entry.final_status, entry.finalStatus, entry.status).toLowerCase();
+
+            if (isAccepted(finalStatus)) {
+                console.log(`[STRAPI-WEBHOOK] ✅ Final Paper "${title}" accepted! Sending notification to ${authorEmail}`);
+                await sendFinalPaperAcceptedEmail(authorEmail, authorName, title);
+                console.log(`[STRAPI-WEBHOOK] ✅ Final Paper Accepted Email sent successfully to ${authorEmail}`);
+                return NextResponse.json({ success: true, message: "Final Paper Accepted email sent successfully" });
+            }
+
+            if (isRejected(finalStatus)) {
+                console.log(`[STRAPI-WEBHOOK] ❌ Final Paper "${title}" rejected! Sending notification to ${authorEmail}`);
+                await sendFinalPaperRejectedEmail(authorEmail, authorName, title);
+                console.log(`[STRAPI-WEBHOOK] ✅ Final Paper Rejected Email sent successfully to ${authorEmail}`);
+                return NextResponse.json({ success: true, message: "Final Paper Rejected email sent successfully" });
+            }
+
+            console.log("[STRAPI-WEBHOOK] Final Paper not in a target state. Status found:", JSON.stringify(finalStatus));
+            return NextResponse.json({ success: true, message: "Final Paper not in a target state for email" });
+        }
+        // --- END FINAL PAPER WORKFLOW ---
+
+        const isAbstractModel = isSubmissionModel(model);
+
+        // Try all possible status field names
+        const paperStatus = getStringValue(
+            entry.paper_status,
+            entry.paperStatus,
+            entry.status,
+            entry.paper_Status,
+            entry.Paper_status,
+            entry.abstractStatus,
+            entry.abstract_status,
+            entry.submission_status,
+            entry.submissionStatus
+        ).toLowerCase();
+
+        console.log("[STRAPI-WEBHOOK] Parsed abstract entry → paperStatus:", paperStatus, "| authorEmail:", authorEmail ? "✓" : "✗", "| title:", title ? "✓" : "✗", "| model match:", isAbstractModel);
 
         if (!isAbstractModel) {
             console.log("[STRAPI-WEBHOOK] Ignored non-submission model:", model || "(missing)");
             return NextResponse.json({ success: true, message: "Ignored non-submission model" });
         }
+
 
         if (event && event !== "entry.update" && event !== "entry.publish" && event !== "entry.create") {
             console.log("[STRAPI-WEBHOOK] Ignored event:", event);

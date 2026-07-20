@@ -2478,3 +2478,195 @@ export async function sendPaperPublishedEmail(
         htmlContent,
     });
 }
+
+export async function sendFinalPaperSubmissionEmail(
+    email: string,
+    name: string,
+    title: string
+): Promise<void> {
+    const subject = `Final Paper Submission Received — ${title}`;
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://www.energdive.com";
+    const logoUrl = `${appUrl}/logo2-removebg-preview.png`;
+
+    const htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>${subject}</title>
+</head>
+<body style="margin:0;padding:0;background-color:#0B0F19;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#0B0F19;padding:40px 20px;">
+        <tr>
+            <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 20px 40px rgba(0,0,0,0.3);">
+                    <tr>
+                        <td style="background:#0a2e1f;padding:40px;text-align:center;border-bottom:4px solid #09B697;">
+                            <img src="${logoUrl}" alt="EnergDive Logo" width="180" style="display:block;margin:0 auto;max-width:200px;height:auto;" />
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding:48px 40px;">
+                            <h2 style="margin:0 0 16px;color:#111827;font-size:24px;font-weight:800;letter-spacing:-0.5px;">
+                                We've received your final paper
+                            </h2>
+                            <p style="margin:0 0 24px;color:#4B5563;font-size:16px;line-height:1.7;">
+                                Dear ${escapeHtml(name)},<br><br>
+                                Thank you for submitting your final paper titled <strong style="color:#111827;">"${escapeHtml(title)}"</strong>.
+                                Our team will review your submission and notify you of any updates.
+                            </p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="background-color:#F9FAFB;padding:24px 40px;text-align:center;border-top:1px solid #F3F4F6;">
+                            <p style="margin:0 0 8px;color:#111827;font-size:13px;font-weight:700;">ENERGDIVE Intelligence</p>
+                            <p style="margin:0;color:#9CA3AF;font-size:11px;">&copy; ${new Date().getFullYear()} ENERGDIVE. All rights reserved.</p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>`;
+
+    await sendEmail({
+        to: email,
+        toName: name,
+        subject,
+        htmlContent,
+    });
+}
+
+export async function sendFinalPaperAcceptedEmail(
+    email: string,
+    name: string,
+    title: string
+): Promise<void> {
+    const subject = `Your final paper has been accepted! — ${title}`;
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://www.energdive.com";
+    const logoUrl = `${appUrl}/logo2-removebg-preview.png`;
+
+    const htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>${subject}</title>
+</head>
+<body style="margin:0;padding:0;background-color:#0B0F19;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#0B0F19;padding:40px 20px;">
+        <tr>
+            <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 20px 40px rgba(0,0,0,0.3);">
+                    <tr>
+                        <td style="background:#0a2e1f;padding:40px;text-align:center;border-bottom:4px solid #09B697;">
+                            <img src="${logoUrl}" alt="EnergDive Logo" width="180" style="display:block;margin:0 auto;max-width:200px;height:auto;" />
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding:48px 40px;">
+                            <h2 style="margin:0 0 16px;color:#111827;font-size:24px;font-weight:800;letter-spacing:-0.5px;">
+                                Congratulations, ${escapeHtml(name)}! 🌟
+                            </h2>
+                            <p style="margin:0 0 24px;color:#4B5563;font-size:16px;line-height:1.7;">
+                                We are thrilled to inform you that your final paper titled <strong style="color:#111827;">"${escapeHtml(title)}"</strong> has been accepted.
+                            </p>
+                            <div style="background:#F9FAFB;border:1px solid #E5E7EB;border-radius:12px;padding:24px;margin-bottom:24px;">
+                                <p style="margin:0;color:#6B7280;font-size:14px;line-height:1.7;">
+                                    Your paper will soon be processed for publication in the ENERGDIVE Knowledge Base. 
+                                    Thank you for your hard work and valuable insights.
+                                </p>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="background-color:#F9FAFB;padding:24px 40px;text-align:center;border-top:1px solid #F3F4F6;">
+                            <p style="margin:0 0 8px;color:#111827;font-size:13px;font-weight:700;">ENERGDIVE Intelligence</p>
+                            <p style="margin:0;color:#9CA3AF;font-size:11px;">&copy; ${new Date().getFullYear()} ENERGDIVE. All rights reserved.</p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>`;
+
+    await sendEmail({
+        to: email,
+        toName: name,
+        subject,
+        htmlContent,
+    });
+}
+
+export async function sendFinalPaperRejectedEmail(
+    email: string,
+    name: string,
+    title: string
+): Promise<void> {
+    const subject = `Update on your final paper — ${title}`;
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://www.energdive.com";
+    const logoUrl = `${appUrl}/logo2-removebg-preview.png`;
+
+    const htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>${subject}</title>
+</head>
+<body style="margin:0;padding:0;background-color:#0B0F19;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#0B0F19;padding:40px 20px;">
+        <tr>
+            <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 20px 40px rgba(0,0,0,0.3);">
+                    <tr>
+                        <td style="background:#0a2e1f;padding:40px;text-align:center;border-bottom:4px solid #09B697;">
+                            <img src="${logoUrl}" alt="EnergDive Logo" width="180" style="display:block;margin:0 auto;max-width:200px;height:auto;" />
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding:48px 40px;">
+                            <h2 style="margin:0 0 16px;color:#111827;font-size:24px;font-weight:800;letter-spacing:-0.5px;">
+                                Update on your submission
+                            </h2>
+                            <p style="margin:0 0 24px;color:#4B5563;font-size:16px;line-height:1.7;">
+                                Dear ${escapeHtml(name)},<br><br>
+                                Thank you for submitting your final paper titled <strong style="color:#111827;">"${escapeHtml(title)}"</strong>.
+                                We appreciate the time and effort you put into your work.
+                            </p>
+                            <div style="background:#F9FAFB;border:1px solid #E5E7EB;border-radius:12px;padding:24px;margin-bottom:24px;">
+                                <p style="margin:0;color:#6B7280;font-size:14px;line-height:1.7;">
+                                    After careful consideration, we regret to inform you that we are unable to accept your final paper for publication at this time.
+                                </p>
+                            </div>
+                            <p style="margin:0 0 24px;color:#4B5563;font-size:16px;line-height:1.7;">
+                                We encourage you to continue your valuable research and look forward to your future submissions.
+                            </p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="background-color:#F9FAFB;padding:24px 40px;text-align:center;border-top:1px solid #F3F4F6;">
+                            <p style="margin:0 0 8px;color:#111827;font-size:13px;font-weight:700;">ENERGDIVE Intelligence</p>
+                            <p style="margin:0;color:#9CA3AF;font-size:11px;">&copy; ${new Date().getFullYear()} ENERGDIVE. All rights reserved.</p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>`;
+
+    await sendEmail({
+        to: email,
+        toName: name,
+        subject,
+        htmlContent,
+    });
+}
