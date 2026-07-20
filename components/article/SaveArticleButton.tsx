@@ -1,12 +1,11 @@
 "use client";
 
 import { useRef } from "react";
-import { usePathname } from "next/navigation";
 import { BookmarkPlus, CheckCircle2 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { SaveLoginPrompt } from "@/components/onboarding/save-login-prompt";
 import { useArticleSave } from "@/hooks/use-article-save";
-import { ONBOARDING_KEYS, isArticlePath, isSessionFlagSet, setSessionFlag } from "@/lib/onboarding-storage";
+import { SAVED_ARTICLE_TOAST_MESSAGE } from "@/lib/pending-saved-article";
 
 interface SaveArticleButtonProps {
     title: string;
@@ -15,16 +14,17 @@ interface SaveArticleButtonProps {
 
 export function SaveArticleButton({ title, url }: SaveArticleButtonProps) {
     const buttonRef = useRef<HTMLButtonElement | null>(null);
-    const pathname = usePathname();
     const {
+        authRedirectUrl,
         handleSave,
+        handleLoginPromptContinue,
+        handleLoginPromptDismiss,
         isGuest,
         isSaving,
         isSaved,
         loginHref,
         showLoginPrompt,
         showToast,
-        setShowLoginPrompt,
     } = useArticleSave({ title, url });
 
     const handleSaveClick = () => {
@@ -55,9 +55,11 @@ export function SaveArticleButton({ title, url }: SaveArticleButtonProps) {
 
             <SaveLoginPrompt
                 anchorRef={buttonRef}
+                authRedirectUrl={authRedirectUrl}
                 loginHref={loginHref}
                 open={showLoginPrompt}
-                onClose={() => setShowLoginPrompt(false)}
+                onClose={handleLoginPromptDismiss}
+                onLogin={handleLoginPromptContinue}
             />
 
             <AnimatePresence>
@@ -69,7 +71,7 @@ export function SaveArticleButton({ title, url }: SaveArticleButtonProps) {
                         className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-gray-900 text-white px-5 py-3 rounded-full shadow-xl flex items-center gap-2.5"
                     >
                         <CheckCircle2 className="w-5 h-5 text-[#00A651]" />
-                        <span className="font-medium text-sm">Your article is saved</span>
+                        <span className="font-medium text-sm">{SAVED_ARTICLE_TOAST_MESSAGE}</span>
                     </motion.div>
                 )}
             </AnimatePresence>

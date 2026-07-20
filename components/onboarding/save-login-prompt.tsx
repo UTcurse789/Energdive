@@ -1,7 +1,6 @@
 "use client";
 
 import { type RefObject, useEffect, useState } from "react";
-import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import { Lock, Sparkles, X } from "lucide-react";
 import { usePostHog } from "@posthog/react";
@@ -10,9 +9,11 @@ import { useAuthModal } from "@/hooks/use-auth-modal";
 
 interface SaveLoginPromptProps {
   anchorRef: RefObject<HTMLElement | null>;
+  authRedirectUrl: string;
   loginHref: string;
   open: boolean;
   onClose: () => void;
+  onLogin: () => void;
 }
 
 type PromptPosition = {
@@ -29,9 +30,11 @@ type PromptPosition = {
 
 export function SaveLoginPrompt({
   anchorRef,
+  authRedirectUrl,
   loginHref,
   open,
   onClose,
+  onLogin,
 }: SaveLoginPromptProps) {
   const [position, setPosition] = useState<PromptPosition | null>(null);
   const { openAuthModal } = useAuthModal();
@@ -166,11 +169,12 @@ export function SaveLoginPrompt({
               </div>
 
               <div className="flex flex-col gap-2 sm:flex-row">
-                <button
-                  type="button"
-                  onClick={() => {
-                    onClose();
-                    openAuthModal(window.location.href);
+                <a
+                  href={loginHref}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    onLogin();
+                    openAuthModal(authRedirectUrl);
                     if (posthog) {
                       posthog.capture("login_clicked", {
                         timestamp: new Date().toISOString(),
@@ -180,8 +184,8 @@ export function SaveLoginPrompt({
                   }}
                   className="inline-flex flex-1 items-center justify-center rounded-full bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition-all duration-200 hover:shadow-[0_0_0_1px_rgba(255,255,255,0.12),0_16px_40px_rgba(15,23,42,0.22)] cursor-pointer"
                 >
-                  Login to Save
-                </button>
+                  Login / Sign up to Save
+                </a>
                 <button
                   type="button"
                   onClick={onClose}
