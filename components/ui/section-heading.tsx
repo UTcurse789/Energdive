@@ -15,7 +15,13 @@ interface SectionHeadingProps {
 
 export function SectionHeading({ title, linkText, linkHref, className, adPlacement }: SectionHeadingProps) {
     return (
-        <div className={cn("flex flex-wrap md:flex-nowrap items-end justify-between border-b border-slate-100 pb-4 mb-10 relative gap-y-4 gap-x-2 md:gap-4", className)}>
+        <div className="w-full flex flex-col">
+            {adPlacement && (
+                <div className="w-full flex justify-center mb-6 empty:hidden [&>div]:w-full">
+                    <AdBanner placement={adPlacement} variant="banner" maxItems={1} className="w-full" />
+                </div>
+            )}
+            <div className={cn("flex flex-wrap md:flex-nowrap items-end justify-between border-b border-slate-100 pb-4 mb-10 relative gap-y-4 gap-x-2 md:gap-4", className)}>
             {/* The Bottom Accent Line */}
             <div className="absolute bottom-0 left-0 w-24 h-1 bg-[#09B697]" />
 
@@ -31,12 +37,6 @@ export function SectionHeading({ title, linkText, linkHref, className, adPlaceme
                 </h2>
             </div>
 
-            {adPlacement && (
-                <div className="flex-1 flex justify-center w-full md:w-auto order-3 md:order-2 empty:hidden [&>div]:w-full">
-                    <AdBanner placement={adPlacement} variant="banner" maxItems={1} className="w-full" />
-                </div>
-            )}
-
             {linkText && linkHref && (
                 <Link
                     href={linkHref}
@@ -49,6 +49,7 @@ export function SectionHeading({ title, linkText, linkHref, className, adPlaceme
                     />
                 </Link>
             )}
+            </div>
         </div>
     );
 }
