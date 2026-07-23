@@ -259,7 +259,7 @@ export default async function Home() {
       <Hero topStories={heroTopStories} />
 
       {/* Featured Bento */}
-      <section className="pt-8 pb-12 bg-white relative overflow-hidden">
+      <section className="pt-8 pb-8 bg-white relative overflow-hidden">
         <div
           className="absolute inset-0 pointer-events-none opacity-[0.03]"
           style={{

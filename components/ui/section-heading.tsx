@@ -3,21 +3,23 @@
 import { cn } from "@/lib/utils";
 import Link from "next/link"; // Use Next.js Link for better performance
 import { ArrowUpRight } from "lucide-react";
+import { AdBanner } from "@/components/ads/AdBanner";
 
 interface SectionHeadingProps {
     title: string;
     linkText?: string;
     linkHref?: string;
     className?: string;
+    adPlacement?: string;
 }
 
-export function SectionHeading({ title, linkText, linkHref, className }: SectionHeadingProps) {
+export function SectionHeading({ title, linkText, linkHref, className, adPlacement }: SectionHeadingProps) {
     return (
-        <div className={cn("flex items-end justify-between border-b border-slate-100 pb-4 mb-10 relative", className)}>
+        <div className={cn("flex flex-wrap md:flex-nowrap items-end justify-between border-b border-slate-100 pb-4 mb-10 relative gap-y-4 gap-x-2 md:gap-4", className)}>
             {/* The Bottom Accent Line */}
             <div className="absolute bottom-0 left-0 w-24 h-1 bg-[#09B697]" />
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 shrink-0 order-1">
                 {/* Live Indicator Dot */}
                 <span className="relative flex h-3 w-3">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#09B697] opacity-20"></span>
@@ -29,10 +31,16 @@ export function SectionHeading({ title, linkText, linkHref, className }: Section
                 </h2>
             </div>
 
+            {adPlacement && (
+                <div className="flex-1 flex justify-center w-full md:w-auto order-3 md:order-2 empty:hidden [&>div]:w-full">
+                    <AdBanner placement={adPlacement} variant="banner" maxItems={1} className="w-full" />
+                </div>
+            )}
+
             {linkText && linkHref && (
                 <Link
                     href={linkHref}
-                    className="group flex items-center gap-1.5 text-[11px] font-black text-slate-400 hover:text-[#09B697] uppercase tracking-[0.2em] transition-all duration-300"
+                    className="group flex items-center gap-1.5 text-[11px] font-black text-slate-400 hover:text-[#09B697] uppercase tracking-[0.2em] transition-all duration-300 shrink-0 order-2 md:order-3 ml-auto md:ml-0"
                 >
                     {linkText}
                     <ArrowUpRight
