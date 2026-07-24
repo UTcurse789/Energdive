@@ -18,7 +18,7 @@ export function SectionHeading({ title, linkText, linkHref, className, adPlaceme
         <div className="w-full flex flex-col">
             {adPlacement && (
                 <div className="w-full flex justify-center mb-6 empty:hidden [&>div]:w-full">
-                    <AdBanner placement={adPlacement} variant="banner" maxItems={1} className="w-full" />
+                    <AdBanner placement={adPlacement} variant="banner" className="w-full" />
                 </div>
             )}
             <div className={cn("flex flex-wrap md:flex-nowrap items-end justify-between border-b border-slate-100 pb-4 mb-10 relative gap-y-4 gap-x-2 md:gap-4", className)}>
