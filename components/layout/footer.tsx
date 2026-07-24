@@ -231,7 +231,7 @@ export function Footer() {
 
                     {/* Newsletter */}
                     <div className="lg:col-span-2 xl:col-span-3">
-                        <h4 className="text-[10px] font-black uppercase tracking-[0.15em] text-gray-500 mb-5 pb-2 border-b border-white/[0.06]">Subscribe</h4>
+                        <h4 className="text-[10px] font-black uppercase tracking-[0.15em] text-gray-500 mb-5 pb-2 border-b border-white/[0.06]">Newsletter Subscribe</h4>
                         <p className="text-gray-400 text-[12px] mb-4 leading-relaxed">
                             Get our daily insights and market intelligence delivered directly to your inbox.
                         </p>

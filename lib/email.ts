@@ -15,6 +15,7 @@ const DIGEST_FROM_NAME = process.env.DIGEST_FROM_NAME || "ENERGDIVE Intelligence
 
 import { buildMembershipCardHtml } from "./_card-template";
 import { generateMembershipCardPdf } from "./membership-pdf";
+import { getAdvertisements, getAdImageUrl } from "./api/getAdvertisements";
 
 interface SendEmailOptions {
     to: string;
@@ -1021,10 +1022,10 @@ export async function sendNewsletterSubscriptionThanksEmail(to: string): Promise
     const subject = "Thanks for subscribing to ENERGDIVE Daily Briefing";
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://www.energdive.com";
     const isDev = process.env.NODE_ENV === "development";
-    
+
     // In dev/local testing, fallback to temporary CDN urls so images render properly in user email clients.
     // In production, use standard public path urls served by the next app.
-    const logoUrl = isDev 
+    const logoUrl = isDev
         ? "https://tmpfiles.org/dl/wMwTWkdz090m/energdive-logo-white-rr.png"
         : `${appUrl}/energdive-logo-white-rr.png`;
     const headerBgUrl = isDev
@@ -1267,6 +1268,34 @@ export async function sendPreferenceDigestEmail(
         timeZone: "Asia/Kolkata",
     }).format(new Date()).toUpperCase();
 
+    /* ── Fetch Ads ─────────────────────────────────────────────── */
+    let opinionAdUrl: string | null = null;
+    let opinionAdTarget: string = appUrl;
+    let sectorHeroAdUrl: string | null = null;
+    let sectorHeroAdTarget: string = appUrl;
+
+    try {
+        const opinionAds = await getAdvertisements({ placement: "home_opinion" });
+        if (opinionAds && opinionAds.length > 0) {
+            const ad = opinionAds[0];
+            opinionAdUrl = getAdImageUrl(ad.creative?.[0] || ad.logo?.[0]);
+            opinionAdTarget = ad.target_url || appUrl;
+        }
+    } catch (err) {
+        console.error("[Email] Failed to fetch home_opinion ad for digest:", err);
+    }
+
+    try {
+        const sectorHeroAds = await getAdvertisements({ placement: "sector_hero" });
+        if (sectorHeroAds && sectorHeroAds.length > 0) {
+            const ad = sectorHeroAds[0];
+            sectorHeroAdUrl = getAdImageUrl(ad.creative?.[0] || ad.logo?.[0]);
+            sectorHeroAdTarget = ad.target_url || appUrl;
+        }
+    } catch (err) {
+        console.error("[Email] Failed to fetch sector_hero ad for digest:", err);
+    }
+
     /* ── Separate sections by format ─────────────────────────────── */
     const newsSection = sections.find((s) => s.format === "News Briefing");
     const opinionSection = sections.find((s) => s.format === "Opinion");
@@ -1275,42 +1304,67 @@ export async function sendPreferenceDigestEmail(
         (s) => s.format !== "News Briefing" && s.format !== "Opinion" && s.format !== "Insights"
     );
 
-    /* ── Top Stories: 3-column numbered cards ────────────────────── */
-    const categoryLabels = ["POLICY", "MARKET", "ENERGY SECURITY", "INDUSTRY", "RENEWABLES", "TECH"];
+    /* ── Top Stories: 2-column grid with in-between opinion ad ────── */
     let topStoriesHtml = "";
     if (newsSection && newsSection.items.length > 0) {
-        const topItems = newsSection.items;
+        const topItems = newsSection.items.slice(0, 4);
 
-        const rowsHtml = [];
-        for (let i = 0; i < topItems.length; i += 3) {
-            const rowItems = topItems.slice(i, i + 3);
-            const cols = rowItems.map((item, idx) => {
-                return `<td class="story-col" width="33%" valign="top" style="padding:0 ${idx === 1 ? '8' : '0'}px; padding-bottom:16px;">
-                    <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #f3f4f6;border-radius:12px;background:#ffffff;box-shadow:0 4px 6px rgba(0,0,0,0.02);">
-                        <tr><td style="position:relative;">
-                            ${item.imageUrl ? `<img src="${item.imageUrl}" alt="${escapeHtml(item.title)}" width="186" style="display:block;width:100%;height:140px;object-fit:cover;border-top-left-radius:12px;border-top-right-radius:12px;" />` : `<div style="width:100%;height:140px;background:#f3f4f6;border-top-left-radius:12px;border-top-right-radius:12px;"></div>`}
-                        </td></tr>
-                        <tr><td style="padding:16px;">
-                            <p style="margin:0 0 12px;color:#111827;font-size:13px;font-weight:700;line-height:1.4;"><a href="${item.href}" style="color:#111827;text-decoration:none;">${escapeHtml(item.title)}</a></p>
-                            <a href="${item.href}" style="display:inline-block;padding:6px 12px;background-color:#0a6c4c;color:#ffffff;font-size:12px;font-weight:700;text-decoration:none;border-radius:4px;">Read more &rarr;</a>
+        const renderNewsCard = (item: any, isRight = false) => {
+            if (!item) return `<td class="story-col" width="50%" valign="top" style="padding-bottom:16px;"></td>`;
+            return `<td class="story-col" width="50%" valign="top" style="padding:0 ${isRight ? '0 0 0 8px' : '0 8px 0 0'}; padding-bottom:16px;">
+                <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #f3f4f6;border-radius:12px;background:#ffffff;box-shadow:0 4px 6px rgba(0,0,0,0.02);overflow:hidden;">
+                    <tr><td style="position:relative;">
+                        ${item.imageUrl ? `<img src="${item.imageUrl}" alt="${escapeHtml(item.title)}" width="270" style="display:block;width:100%;height:150px;object-fit:cover;border-top-left-radius:12px;border-top-right-radius:12px;" />` : `<div style="width:100%;height:150px;background:#f3f4f6;border-top-left-radius:12px;border-top-right-radius:12px;"></div>`}
+                    </td></tr>
+                    <tr><td style="padding:16px;">
+                        <p style="margin:0 0 12px;color:#111827;font-size:13px;font-weight:700;line-height:1.4;"><a href="${item.href}" style="color:#111827;text-decoration:none;">${escapeHtml(item.title)}</a></p>
+                        <a href="${item.href}" style="display:inline-block;padding:6px 12px;background-color:#0a6c4c;color:#ffffff;font-size:12px;font-weight:700;text-decoration:none;border-radius:4px;">Read more &rarr;</a>
+                    </td></tr>
+                </table>
+            </td>`;
+        };
+
+        const news1_2 = `
+            <tr>
+                ${renderNewsCard(topItems[0], false)}
+                ${renderNewsCard(topItems[1], true)}
+            </tr>
+        `;
+
+        let opinionAdHtml = "";
+        if (opinionAdUrl) {
+            opinionAdHtml = `
+                <tr><td colspan="2" style="padding:8px 0 24px 0;">
+                    <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #f3f4f6;border-radius:12px;background:#ffffff;box-shadow:0 4px 6px rgba(0,0,0,0.02);overflow:hidden;">
+
+                        <tr><td style="padding:0;">
+                            <a href="${opinionAdTarget}" target="_blank" style="display:block;">
+                                <img src="${opinionAdUrl}" alt="Sponsored Ad" style="display:block;width:100%;max-width:100%;height:auto;" />
+                            </a>
                         </td></tr>
                     </table>
-                </td>`;
-            }).join("");
+                </td></tr>
+            `;
+        }
 
-            let filler = "";
-            if (rowItems.length < 3) {
-                for (let f = rowItems.length; f < 3; f++) {
-                    filler += `<td class="story-col" width="33%" valign="top" style="padding:0"></td>`;
-                }
-            }
-            rowsHtml.push(`<tr>${cols}${filler}</tr>`);
+        let news3_4 = "";
+        if (topItems.length > 2) {
+            news3_4 = `
+                <tr>
+                    ${renderNewsCard(topItems[2], false)}
+                    ${renderNewsCard(topItems[3], true)}
+                </tr>
+            `;
         }
 
         topStoriesHtml = `
             <tr><td class="section-pad" style="padding:0 40px 16px;">
                 <h3 style="margin:0 0 20px;color:#111827;font-size:18px;font-weight:800;">Top Stories</h3>
-                <table width="100%" cellpadding="0" cellspacing="0">${rowsHtml.join("")}</table>
+                <table width="100%" cellpadding="0" cellspacing="0">
+                    ${news1_2}
+                    ${opinionAdHtml}
+                    ${news3_4}
+                </table>
                 <div style="text-align:center;margin-top:16px;margin-bottom:16px;">
                     <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://www.energdive.com'}/news" style="display:inline-block;padding:12px 24px;background-color:#111827;color:#ffffff;font-size:14px;font-weight:700;text-decoration:none;border-radius:6px;">Check more</a>
                 </div>
@@ -1351,7 +1405,7 @@ export async function sendPreferenceDigestEmail(
             .map((item) => {
                 const badgeLabel = escapeHtml(item.badge).toUpperCase();
                 return `<tr><td style="padding:0 0 16px;">
-                    <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #f3f4f6;border-radius:12px;overflow:hidden;background:#ffffff;box-shadow:0 4px 6px rgba(0,0,0,0.02);">
+                    <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #f3f4f6;border-radius:12px;overflow:hidden;background:#ffffff;box-shadow:0 4px 6px rgba(0,0,0,0.02);overflow:hidden;">
                         <tr>
                             ${item.imageUrl ? `<td class="insight-img" width="160" style="padding:0;"><img src="${item.imageUrl}" alt="${escapeHtml(item.title)}" width="160" style="display:block;width:160px;height:120px;object-fit:cover;" /></td>` : ""}
                             <td class="insight-text" style="padding:16px 20px;" valign="middle">
@@ -1377,7 +1431,7 @@ export async function sendPreferenceDigestEmail(
         .map((section) => {
             const cards = section.items
                 .map((item) => `<tr><td style="padding:0 0 14px;">
-                    <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #f3f4f6;border-radius:12px;overflow:hidden;background:#ffffff;box-shadow:0 4px 6px rgba(0,0,0,0.02);">
+                    <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #f3f4f6;border-radius:12px;overflow:hidden;background:#ffffff;box-shadow:0 4px 6px rgba(0,0,0,0.02);overflow:hidden;">
                         <tr>
                             ${item.imageUrl ? `<td class="other-img" width="140" style="padding:0;"><img src="${item.imageUrl}" alt="${escapeHtml(item.title)}" width="140" style="display:block;width:140px;height:auto;object-fit:contain;" /></td>` : ""}
                             <td class="other-text" style="padding:16px 20px;" valign="middle">
@@ -1439,6 +1493,20 @@ export async function sendPreferenceDigestEmail(
         <tr><td align="center">
             <table class="email-container" width="640" cellpadding="0" cellspacing="0" style="width:100%;max-width:640px;background-color:#ffffff;overflow:hidden;">
 
+                <!-- ═══ HERO ADVERTISEMENT (home_platform_hero) ═══ -->
+                ${sponsor ? `
+                <tr><td style="padding:10px 40px 10px 40px;" class="section-pad">
+                    <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #f3f4f6;border-radius:12px;background:#ffffff;box-shadow:0 4px 6px rgba(0,0,0,0.02);overflow:hidden;">
+
+                        <tr><td style="padding:0;">
+                            <a href="${sponsor.targetUrl}" target="_blank" style="display:block;">
+                                <img src="${sponsor.imageUrl}" alt="Sponsored" style="display:block;width:100%;max-width:100%;height:auto;" />
+                            </a>
+                        </td></tr>
+                    </table>
+                </td></tr>
+                ` : ""}
+
                 <!-- ═══ HERO BANNER ═══ -->
                 <tr><td style="background:#ffffff;padding:0;">
                     <table width="100%" cellpadding="0" cellspacing="0"><tr>
@@ -1469,22 +1537,23 @@ export async function sendPreferenceDigestEmail(
                 <!-- ═══ OTHER SECTIONS ═══ -->
                 ${otherHtml}
 
+                <!-- ═══ SECTOR HERO ADVERTISEMENT (sector_hero) ═══ -->
+                ${sectorHeroAdUrl ? `
+                <tr><td class="section-pad" style="padding:0 40px 32px;">
+                    <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #f3f4f6;border-radius:12px;background:#ffffff;box-shadow:0 4px 6px rgba(0,0,0,0.02);overflow:hidden;">
+
+                        <tr><td style="padding:0;">
+                            <a href="${sectorHeroAdTarget}" target="_blank" style="display:block;">
+                                <img src="${sectorHeroAdUrl}" alt="Sponsored" style="display:block;width:100%;max-width:100%;height:auto;" />
+                            </a>
+                        </td></tr>
+                    </table>
+                </td></tr>
+                ` : ""}
+
                 <!-- ═══ FOOTER ═══ -->
                 <tr><td style="background:#ffffff;padding:24px 40px 40px;" class="section-pad">
                     <table width="100%" cellpadding="0" cellspacing="0"><tr><td style="border-top:1px solid #f3f4f6;padding-top:32px;">
-                        ${sponsor ? `
-                        <!-- SPONSOR BANNER -->
-                        <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:32px;border:1px solid #f3f4f6;border-radius:12px;background:#ffffff;box-shadow:0 4px 6px rgba(0,0,0,0.02);overflow:hidden;">
-                            <tr><td style="padding:8px 16px;border-bottom:1px solid #f3f4f6;">
-                                <p style="margin:0;color:#6b7280;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">Sponsored</p>
-                            </td></tr>
-                            <tr><td style="padding:0;">
-                                <a href="${sponsor.targetUrl}" target="_blank" style="display:block;">
-                                    <img src="${sponsor.imageUrl}" alt="Sponsor Banner" style="display:block;width:100%;max-width:100%;height:auto;" />
-                                </a>
-                            </td></tr>
-                        </table>
-                        ` : ""}
                         <table width="100%" cellpadding="0" cellspacing="0">
                             <tr>
                                 <td class="footer-left" valign="top" style="width:60%;">
