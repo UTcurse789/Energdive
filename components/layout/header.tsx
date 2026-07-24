@@ -454,7 +454,23 @@ export function Header() {
                         <div className="relative flex items-center gap-x-3 md:gap-x-5 xl:gap-x-7 flex-1 justify-end">
                             <nav className="hidden sm:flex items-center gap-x-3 md:gap-x-5 xl:gap-x-7">
                                 <Link href="/energclub" target="_blank" className="text-[12px] xl:text-[13px] font-bold uppercase tracking-[1px] hover:opacity-70 whitespace-nowrap" onClick={closeMenus}>ENERGCLUB</Link>
-                                <Link href="/subscribe" style={{ color: brandGreen }} className="text-[12px] xl:text-[13px] font-bold uppercase tracking-[1px] hover:opacity-70 whitespace-nowrap" onClick={closeMenus}>SUBSCRIBE</Link>
+                                <div className="relative group cursor-pointer" onMouseEnter={() => { setActiveMenu(null); }}>
+                                    <span style={{ color: brandGreen }} className="flex items-center gap-1 text-[12px] xl:text-[13px] font-bold uppercase tracking-[1px] hover:opacity-70 whitespace-nowrap py-2">
+                                        SUBSCRIBE <ChevronDown className="w-3 h-3 transition-transform group-hover:rotate-180" />
+                                    </span>
+                                    
+                                    {/* Dropdown wrapper with top padding to bridge the hover gap and push it below the header border */}
+                                    <div className="absolute top-full right-0 pt-[10px] w-max opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-[60]">
+                                        <div className="bg-white border border-gray-100 shadow-xl overflow-hidden rounded-b-md">
+                                            <Link href="/subscribe" onClick={closeMenus} className="block px-6 py-4 text-[12px] font-bold uppercase tracking-wider text-gray-800 hover:bg-[#00A651] hover:text-white transition-colors border-b border-gray-50 whitespace-nowrap">
+                                                Print Subscription
+                                            </Link>
+                                            <Link href="/newsletter" onClick={closeMenus} className="block px-6 py-4 text-[12px] font-bold uppercase tracking-wider text-gray-800 hover:bg-[#00A651] hover:text-white transition-colors whitespace-nowrap">
+                                                Newsletter Subscription
+                                            </Link>
+                                        </div>
+                                    </div>
+                                </div>
                             </nav>
 
                             <div className="relative">
@@ -1419,9 +1435,33 @@ export function Header() {
                                     <Link href="/energclub" onClick={closeAll} className="px-6 py-4 text-[13px] font-bold uppercase tracking-[1px] hover:bg-gray-50 transition-colors block">
                                         ENERGCLUB
                                     </Link>
-                                    <Link href="/subscribe" onClick={closeAll} className="px-6 py-4 text-[13px] font-bold uppercase tracking-[1px] block" style={{ color: brandGreen }}>
-                                        SUBSCRIBE
-                                    </Link>
+                                    <div className="border-t border-gray-100 mt-2">
+                                        <button 
+                                            onClick={() => setMobileExpanded(mobileExpanded === 'subscribe' ? null : 'subscribe')}
+                                            className="w-full flex items-center justify-between px-6 py-4"
+                                        >
+                                            <span className="text-[13px] font-bold uppercase tracking-[1px]" style={{ color: brandGreen }}>SUBSCRIBE</span>
+                                            <ChevronDown className={cn("w-4 h-4 transition-transform text-[#00A651]", mobileExpanded === 'subscribe' && "rotate-180")} />
+                                        </button>
+                                        <AnimatePresence>
+                                            {mobileExpanded === 'subscribe' && (
+                                                <motion.div
+                                                    initial={{ height: 0, opacity: 0 }}
+                                                    animate={{ height: "auto", opacity: 1 }}
+                                                    exit={{ height: 0, opacity: 0 }}
+                                                    transition={{ duration: 0.2 }}
+                                                    className="overflow-hidden bg-gray-50"
+                                                >
+                                                    <Link href="/subscribe" onClick={closeAll} className="block px-10 py-3 text-[13px] font-medium text-gray-700 hover:text-[#00A651] hover:bg-white transition-colors border-b border-gray-100">
+                                                        Print Subscription
+                                                    </Link>
+                                                    <Link href="/newsletter" onClick={closeAll} className="block px-10 py-3 text-[13px] font-medium text-gray-700 hover:text-[#00A651] hover:bg-white transition-colors border-b border-gray-100">
+                                                        Newsletter Subscription
+                                                    </Link>
+                                                </motion.div>
+                                            )}
+                                        </AnimatePresence>
+                                    </div>
                                 </div>
 
                                 {/* Login CTA on mobile */}

@@ -340,6 +340,10 @@ export async function POST(req: NextRequest) {
             subscribedFromPage,
         });
 
+        // --- Non-blocking: Brevo, email, PostHog ---
+        // DB insert is the source of truth. If any of these fail,
+        // the user still gets a success response.
+
         try {
             await axios.post(
                 BREVO_API,
@@ -364,29 +368,37 @@ export async function POST(req: NextRequest) {
             );
         } catch (brevoErr: unknown) {
             if (!isExistingBrevoContactError(brevoErr)) {
-                throw brevoErr;
+                console.warn("[subscribe] Brevo sync failed (non-blocking):", (brevoErr as BrevoRequestError).response?.data || (brevoErr as BrevoRequestError).message);
             }
         }
 
-        await sendNewsletterSubscriptionThanksEmail(email);
+        try {
+            await sendNewsletterSubscriptionThanksEmail(email);
+        } catch (emailErr) {
+            console.warn("[subscribe] Thank-you email failed (non-blocking):", emailErr);
+        }
 
-        getPostHogClient().capture({
-            distinctId: email,
-            event: "newsletter_subscribed",
-            properties: {
-                email,
-                frequency,
-                preferences,
-                source,
-                location,
-                subscribed_from_url: subscribedFromUrl,
-                subscribed_from_title: subscribedFromTitle,
-                subscribed_from_page: subscribedFromPage,
-                community_count: communities.length,
-                sub_community_count: subCommunities.length,
-                communities,
-            },
-        });
+        try {
+            getPostHogClient().capture({
+                distinctId: email,
+                event: "newsletter_subscribed",
+                properties: {
+                    email,
+                    frequency,
+                    preferences,
+                    source,
+                    location,
+                    subscribed_from_url: subscribedFromUrl,
+                    subscribed_from_title: subscribedFromTitle,
+                    subscribed_from_page: subscribedFromPage,
+                    community_count: communities.length,
+                    sub_community_count: subCommunities.length,
+                    communities,
+                },
+            });
+        } catch (phErr) {
+            console.warn("[subscribe] PostHog capture failed (non-blocking):", phErr);
+        }
 
         return NextResponse.json({
             success: true,
