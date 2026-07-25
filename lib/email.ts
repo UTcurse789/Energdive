@@ -1493,20 +1493,6 @@ export async function sendPreferenceDigestEmail(
         <tr><td align="center">
             <table class="email-container" width="640" cellpadding="0" cellspacing="0" style="width:100%;max-width:640px;background-color:#ffffff;overflow:hidden;">
 
-                <!-- ═══ HERO ADVERTISEMENT (home_platform_hero) ═══ -->
-                ${sponsor ? `
-                <tr><td style="padding:10px 40px 10px 40px;" class="section-pad">
-                    <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #f3f4f6;border-radius:12px;background:#ffffff;box-shadow:0 4px 6px rgba(0,0,0,0.02);overflow:hidden;">
-
-                        <tr><td style="padding:0;">
-                            <a href="${sponsor.targetUrl}" target="_blank" style="display:block;">
-                                <img src="${sponsor.imageUrl}" alt="Sponsored" style="display:block;width:100%;max-width:100%;height:auto;" />
-                            </a>
-                        </td></tr>
-                    </table>
-                </td></tr>
-                ` : ""}
-
                 <!-- ═══ HERO BANNER ═══ -->
                 <tr><td style="background:#ffffff;padding:0;">
                     <table width="100%" cellpadding="0" cellspacing="0"><tr>
@@ -1521,6 +1507,20 @@ export async function sendPreferenceDigestEmail(
                         </td>
                     </tr></table>
                 </td></tr>
+
+                <!-- ═══ HERO ADVERTISEMENT (home_platform_hero) ═══ -->
+                ${sponsor ? `
+                <tr><td style="padding:10px 40px 10px 40px;" class="section-pad">
+                    <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #f3f4f6;border-radius:12px;background:#ffffff;box-shadow:0 4px 6px rgba(0,0,0,0.02);overflow:hidden;">
+
+                        <tr><td style="padding:0;">
+                            <a href="${sponsor.targetUrl}" target="_blank" style="display:block;">
+                                <img src="${sponsor.imageUrl}" alt="Sponsored" style="display:block;width:100%;max-width:100%;height:auto;" />
+                            </a>
+                        </td></tr>
+                    </table>
+                </td></tr>
+                ` : ""}
 
                 <!-- ═══ SPACING ═══ -->
                 <tr><td style="height:32px;font-size:0;line-height:0;">&nbsp;</td></tr>
