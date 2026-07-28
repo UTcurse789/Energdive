@@ -839,7 +839,7 @@ export interface AbstractSubmissionAdminNotificationPayload {
 export async function sendAbstractSubmissionAdminNotification(
     payload: AbstractSubmissionAdminNotificationPayload
 ): Promise<void> {
-    const adminEmails = ["utkarsh@encis.in", "sankalp@itenmedia.in"];
+    const adminEmails = ["Kunal@itenmedia.in", "mrinmoy@energdive.com"];
     const subject = `New Abstract Submission: ${payload.title}`;
 
     const htmlContent = `
