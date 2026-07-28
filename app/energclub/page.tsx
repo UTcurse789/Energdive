@@ -195,33 +195,33 @@ export default function EnergClubPage() {
             }
 
             // --- OUR EDGE section ---
-            if (edgeSectionRef.current) {
-                gsap.from(edgeSectionRef.current.querySelector("h3"), {
-                    scrollTrigger: {
-                        trigger: edgeSectionRef.current,
-                        start: "top 80%",
-                        toggleActions: "play none none none",
-                    },
-                    opacity: 0,
-                    y: 30,
-                    duration: 0.8,
-                    ease: "power3.out",
-                });
+            // if (edgeSectionRef.current) {
+            //     gsap.from(edgeSectionRef.current.querySelector("h3"), {
+            //         scrollTrigger: {
+            //             trigger: edgeSectionRef.current,
+            //             start: "top 80%",
+            //             toggleActions: "play none none none",
+            //         },
+            //         opacity: 0,
+            //         y: 30,
+            //         duration: 0.8,
+            //         ease: "power3.out",
+            //     });
 
-                gsap.from(edgeSectionRef.current.querySelectorAll(".gsap-feature-card"), {
-                    scrollTrigger: {
-                        trigger: edgeSectionRef.current,
-                        start: "top 75%",
-                        toggleActions: "play none none none",
-                    },
-                    opacity: 0,
-                    y: 50,
-                    scale: 0.95,
-                    duration: 0.8,
-                    stagger: 0.15,
-                    ease: "power3.out",
-                });
-            }
+            //     gsap.from(edgeSectionRef.current.querySelectorAll(".gsap-feature-card"), {
+            //         scrollTrigger: {
+            //             trigger: edgeSectionRef.current,
+            //             start: "top 75%",
+            //             toggleActions: "play none none none",
+            //         },
+            //         opacity: 0,
+            //         y: 50,
+            //         scale: 0.95,
+            //         duration: 0.8,
+            //         stagger: 0.15,
+            //         ease: "power3.out",
+            //     });
+            // }
 
             // --- KEY OUTCOMES section ---
             if (outcomesImageRef.current) {
@@ -445,7 +445,7 @@ export default function EnergClubPage() {
                         Join an exclusive network of industry leaders, policymakers, and innovators shaping the future of energy and sustainability in India.
                     </p>
                     <button type="button" onClick={openDashboardAuth} className="inline-flex items-center gap-2 bg-[#E5B866] text-black px-8 py-4 rounded-full font-bold uppercase tracking-widest hover:bg-white transition-colors duration-300 cursor-pointer">
-                        Explore Now <ArrowRight size={18} />
+                        Join Now <ArrowRight size={18} />
                     </button>
                 </div>
             </section>
