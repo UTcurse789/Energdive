@@ -11,6 +11,7 @@ import { AdRenderer } from "@/components/ads/AdRenderer";
 import { getLatestIssue } from "@/lib/api/getLatestIssue";
 import { slugify } from "@/lib/utils";
 import NewsFeedClient from "./NewsFeedClient";
+import { ORGANIZATION_SCHEMA } from "@/lib/organization-schema";
 
 const STRAPI_BASE_URL = "https://cms.energdive.com";
 
@@ -142,7 +143,6 @@ export default async function NewsPage(props: { searchParams: Promise<{ [key: st
 
     // Structured Data Schemas
     const breadcrumbSchema = {
-        "@context": "https://schema.org",
         "@type": "BreadcrumbList",
         "itemListElement": [
             { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.energdive.com/" },
@@ -150,9 +150,7 @@ export default async function NewsPage(props: { searchParams: Promise<{ [key: st
         ]
     };
 
-
     const itemListSchema = {
-        "@context": "https://schema.org",
         "@type": "ItemList",
         "itemListElement": articles.map((a, i) => {
             const isOrgAuthor = !a.author || /\b(desk|editorial|team|energdive|newsroom)\b/i.test(a.author);
@@ -181,11 +179,19 @@ export default async function NewsPage(props: { searchParams: Promise<{ [key: st
         })
     };
 
+    const newsGraphSchema = {
+        "@context": "https://schema.org",
+        "@graph": [
+            ORGANIZATION_SCHEMA,
+            itemListSchema,
+            breadcrumbSchema
+        ]
+    };
+
     return (
         <div className="min-h-screen bg-white text-slate-900 selection:bg-emerald-600 selection:text-white font-sans overflow-x-clip">
             {/* Inject JSON-LD */}
-            <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema).replace(/</g, '\\u003c') }} />
-            <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListSchema).replace(/</g, '\\u003c') }} />
+            <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(newsGraphSchema).replace(/</g, '\\u003c') }} />
             
             {/* Inject Pagination Links */}
             {page > 1 && <link rel="prev" href={page === 2 ? "/news" : `/news?page=${page - 1}`} />}

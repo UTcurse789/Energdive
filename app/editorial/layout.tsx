@@ -2,6 +2,7 @@ import { Metadata } from "next";
 import { toIsoDate } from "@/lib/date";
 import { slugify } from "@/lib/utils";
 import { strapiImageUrl } from "@/lib/strapi-image";
+import { ORGANIZATION_SCHEMA } from "@/lib/organization-schema";
 
 export const metadata: Metadata = {
   title: {
@@ -73,7 +74,6 @@ async function getEditorialListSchemas() {
         if (items.length === 0) return null;
 
         const breadcrumb = {
-            "@context": "https://schema.org",
             "@type": "BreadcrumbList",
             itemListElement: [
                 { "@type": "ListItem", position: 1, name: "Home", item: `${SITE}/` },
@@ -82,7 +82,6 @@ async function getEditorialListSchemas() {
         };
 
         const itemList = {
-            "@context": "https://schema.org",
             "@type": "ItemList",
             itemListElement: items.map((item, i) => {
                 const imgUrl = item?.FeaturedImage?.url ? strapiImageUrl(item.FeaturedImage.url) : null;
@@ -113,21 +112,26 @@ async function getEditorialListSchemas() {
                 };
             }),
         };
-        return { breadcrumb, itemList };
+
+        return {
+            "@context": "https://schema.org",
+            "@graph": [
+                ORGANIZATION_SCHEMA,
+                itemList,
+                breadcrumb
+            ]
+        };
     } catch {
         return null;
     }
 }
 
 export default async function EditorialLayout({ children }: { children: React.ReactNode }) {
-    const schemas = await getEditorialListSchemas();
+    const graphSchema = await getEditorialListSchemas();
     return (
         <>
-            {schemas && (
-                <>
-                    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schemas.breadcrumb).replace(/</g, "\\u003c") }} />
-                    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schemas.itemList).replace(/</g, "\\u003c") }} />
-                </>
+            {graphSchema && (
+                <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(graphSchema).replace(/</g, "\\u003c") }} />
             )}
             {children}
         </>

@@ -3,6 +3,7 @@ import { toIsoDate } from "@/lib/date";
 import { slugify } from "@/lib/utils";
 import { strapiImageUrl } from "@/lib/strapi-image";
 import { getOpinionContentKind } from "@/lib/content-tags";
+import { ORGANIZATION_SCHEMA } from "@/lib/organization-schema";
 
 export const metadata = OPINION_PAGE_METADATA;
 
@@ -23,7 +24,6 @@ async function getOpinionListSchemas() {
         if (items.length === 0) return null;
 
         const breadcrumb = {
-            "@context": "https://schema.org",
             "@type": "BreadcrumbList",
             itemListElement: [
                 { "@type": "ListItem", position: 1, name: "Home", item: `${SITE}/` },
@@ -32,7 +32,6 @@ async function getOpinionListSchemas() {
         };
 
         const itemList = {
-            "@context": "https://schema.org",
             "@type": "ItemList",
             itemListElement: items.map((item, i) => {
                 const imgUrl = item?.FeaturedImage?.url ? strapiImageUrl(item.FeaturedImage.url) : null;
@@ -63,21 +62,26 @@ async function getOpinionListSchemas() {
                 };
             }),
         };
-        return { breadcrumb, itemList };
+
+        return {
+            "@context": "https://schema.org",
+            "@graph": [
+                ORGANIZATION_SCHEMA,
+                itemList,
+                breadcrumb
+            ]
+        };
     } catch {
         return null;
     }
 }
 
 export default async function OpinionLayout({ children }: { children: React.ReactNode }) {
-    const schemas = await getOpinionListSchemas();
+    const graphSchema = await getOpinionListSchemas();
     return (
         <>
-            {schemas && (
-                <>
-                    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schemas.breadcrumb).replace(/</g, "\\u003c") }} />
-                    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schemas.itemList).replace(/</g, "\\u003c") }} />
-                </>
+            {graphSchema && (
+                <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(graphSchema).replace(/</g, "\\u003c") }} />
             )}
             {children}
         </>
