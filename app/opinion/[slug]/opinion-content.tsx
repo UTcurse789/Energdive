@@ -18,6 +18,7 @@ import { TagBadge } from "@/components/ui/tag-badge";
 import { AdBanner } from "@/components/ads/AdBanner";
 import { SaveArticleButton } from "@/components/article/SaveArticleButton";
 import { ArticleStickyShare } from "@/components/article/ArticleStickyShare";
+import { formatContentDate } from "@/lib/date";
 
 type RichTextChild = {
     text?: string;
@@ -44,6 +45,7 @@ type OpinionArticle = {
     category?: string;
     featuredImage?: string | null;
     readTime?: string;
+    date?: string;
     sectorSlug?: string;
     sectionPath?: string;
     backLabel?: string;
@@ -167,6 +169,14 @@ export default function OpinionContent({ opinion, recommended = [] }: OpinionCon
                                     </div>
                                 </Link>
                                 <div className="h-[14px] w-px bg-zinc-200" />
+                                {opinion.date && (
+                                    <>
+                                        <div className="flex items-center gap-[7px] text-[9px] font-bold text-zinc-400 uppercase tracking-widest">
+                                            Published on {formatContentDate(opinion.date)}
+                                        </div>
+                                        <div className="h-[14px] w-px bg-zinc-200" />
+                                    </>
+                                )}
                                 <div className="flex items-center gap-[7px] text-[9px] font-bold text-zinc-400 uppercase tracking-widest">
                                     <Clock className="h-[11px] w-[11px]" /> {opinion.readTime}
                                 </div>

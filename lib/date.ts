@@ -29,3 +29,13 @@ export function formatFullISTDateTime(value?: string | Date | null): string {
         timeZone: "Asia/Kolkata",
     }).format(date).replace(",", "") + " IST";
 }
+
+export function toIsoDate(value: string | Date | null | undefined): string | undefined {
+    if (!value) return undefined;
+    try {
+        const d = new Date(value);
+        return Number.isNaN(d.getTime()) ? String(value) : d.toISOString();
+    } catch {
+        return String(value);
+    }
+}

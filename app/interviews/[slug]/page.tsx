@@ -286,6 +286,10 @@ export default async function OpinionDetailPage({ params }: { params: Promise<{ 
     ? sectorData[0]?.slug || undefined
     : sectorData?.slug || undefined;
 
+  // Raw date for JSON-LD (needs ISO-8601, not formatted display string)
+  const rawDate = article.Date || article.attributes?.Date || article.publishedAt || article.createdAt || "";
+  const modifiedDate = article.updatedAt || article.attributes?.updatedAt || rawDate;
+
   const opinion = {
     id: article.id,
     slug,
@@ -294,6 +298,7 @@ export default async function OpinionDetailPage({ params }: { params: Promise<{ 
     content: article?.Content || article.attributes?.Content || [],
     category: "Interview",
     readTime: "6 min read",
+    date: rawDate,
     tags: normalizedTags,
     sectorSlug,
     featuredImage: (article.FeaturedImage?.url || article.attributes?.FeaturedImage?.data?.attributes?.url)
@@ -317,9 +322,6 @@ export default async function OpinionDetailPage({ params }: { params: Promise<{ 
     author: { name: item?.author?.name }
   }));
 
-  // Raw date for JSON-LD (needs ISO-8601, not formatted display string)
-  const rawDate = article.Date || article.attributes?.Date || article.publishedAt || article.createdAt || "";
-  const modifiedDate = article.updatedAt || article.attributes?.updatedAt || rawDate;
 
   return (
     <>
