@@ -41,7 +41,7 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
     const pageStr = Array.isArray(params.page) ? params.page[0] : params.page;
     const page = parseInt(pageStr || "1", 10);
     return {
-        title: `Energy Dive News Hub${page > 1 ? ` - Page ${page}` : ''} | ENERGDIVE`,
+        title: `ENERGDIVE News Hub${page > 1 ? ` - Page ${page}` : ''} | ENERGDIVE`,
         description: "Editorial-grade energy news portal covering Oil & Gas, Power, Renewables, Policy, and Clean Tech.",
         alternates: {
             canonical: page === 1 ? "/news" : `/news?page=${page}`,
@@ -104,7 +104,7 @@ export default async function NewsPage(props: { searchParams: Promise<{ [key: st
                     ),
                     date: formatContentDate(attrs.Date || attrs.publishedAt || attrs.createdAt),
                     rawDate: attrs.Date || attrs.publishedAt || attrs.createdAt,
-                    author: attrs.Author?.name || "Energy Dive Desk",
+                    author: attrs.Author?.name || "ENERGDIVE News Desk",
                     readingTime: estimateReadingTime(excerptText + " " + (attrs.CONTENT || "")),
                 };
             });
@@ -145,25 +145,48 @@ export default async function NewsPage(props: { searchParams: Promise<{ [key: st
         "@context": "https://schema.org",
         "@type": "BreadcrumbList",
         "itemListElement": [
-            { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://energdive.com/" },
-            { "@type": "ListItem", "position": 2, "name": "News", "item": "https://energdive.com/news" }
+            { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.energdive.com/" },
+            { "@type": "ListItem", "position": 2, "name": "News", "item": "https://www.energdive.com/news" }
         ]
+    };
+
+    const toIsoDate = (value: string) => {
+        try {
+            const d = new Date(value);
+            return Number.isNaN(d.getTime()) ? value : d.toISOString();
+        } catch {
+            return value;
+        }
     };
 
     const itemListSchema = {
         "@context": "https://schema.org",
         "@type": "ItemList",
-        "itemListElement": articles.map((a, i) => ({
-            "@type": "ListItem",
-            "position": i + 1,
-            "item": {
-                "@type": "NewsArticle",
-                "url": `https://energdive.com/news/${a.slug}`,
-                "headline": a.title,
-                "datePublished": a.rawDate,
-                "author": { "@type": "Person", "name": a.author }
-            }
-        }))
+        "itemListElement": articles.map((a, i) => {
+            const isOrgAuthor = !a.author || /\b(desk|editorial|team|energdive|newsroom)\b/i.test(a.author);
+            
+            return {
+                "@type": "ListItem",
+                "position": i + 1,
+                "item": {
+                    "@type": "NewsArticle",
+                    "url": `https://www.energdive.com/news/${a.slug}`,
+                    "headline": a.title,
+                    "datePublished": toIsoDate(a.rawDate),
+                    "author": { 
+                        "@type": isOrgAuthor ? "Organization" : "Person", 
+                        "name": a.author,
+                        "url": `https://www.energdive.com/author/${slugify(a.author)}`
+                    },
+                    "image": a.image ? {
+                        "@type": "ImageObject",
+                        "url": a.image.startsWith('http') ? a.image : `https://www.energdive.com${a.image}`,
+                        "width": 1200,
+                        "height": 630
+                    } : undefined
+                }
+            };
+        })
     };
 
     return (
