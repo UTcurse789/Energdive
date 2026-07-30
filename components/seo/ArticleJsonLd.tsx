@@ -2,6 +2,7 @@ import React from "react";
 import { getCanonicalUrl } from "@/lib/seo";
 import { slugify } from "@/lib/utils";
 import { toIsoDate } from "@/lib/date";
+import { ORGANIZATION_SCHEMA } from "@/lib/organization-schema";
 
 interface ArticleJsonLdProps {
     title: string;
@@ -70,8 +71,7 @@ export function ArticleJsonLd({
             url: getCanonicalUrl(`/author/${slugify(effectiveAuthorName)}`),
         };
 
-    const newsArticleJsonLd = {
-        "@context": "https://schema.org",
+    const articleSchema = {
         "@type": schemaType,
         headline: title,
         description: normalizedDescription,
@@ -83,15 +83,7 @@ export function ArticleJsonLd({
         },
         author: authorSchema,
         publisher: {
-            "@type": "Organization",
-            name: "ENERGDIVE",
-            url: getCanonicalUrl("/"),
-            logo: {
-                "@type": "ImageObject",
-                url: getCanonicalUrl("/logo.png"),
-                width: 600,
-                height: 60,
-            },
+            "@id": "https://www.energdive.com/#organization",
         },
         image: {
             "@type": "ImageObject",
@@ -102,6 +94,7 @@ export function ArticleJsonLd({
         url: canonicalUrl,
     };
 
+    const sectionName = section.charAt(0).toUpperCase() + section.slice(1);
     const breadcrumbs = [
         {
             "@type": "ListItem",
@@ -112,8 +105,8 @@ export function ArticleJsonLd({
         {
             "@type": "ListItem",
             position: 2,
-            name: "News",
-            item: getCanonicalUrl("/news"),
+            name: sectionName,
+            item: getCanonicalUrl(`/${section}`),
         },
     ];
 
@@ -139,26 +132,27 @@ export function ArticleJsonLd({
         });
     }
 
-    const breadcrumbJsonLd = {
-        "@context": "https://schema.org",
+    const breadcrumbSchema = {
         "@type": "BreadcrumbList",
         itemListElement: breadcrumbs,
     };
 
+    const graphSchema = {
+        "@context": "https://schema.org",
+        "@graph": [
+            ORGANIZATION_SCHEMA,
+            articleSchema,
+            breadcrumbSchema
+        ]
+    };
+
     return (
-        <>
-            <script
-                type="application/ld+json"
-                dangerouslySetInnerHTML={{
-                    __html: JSON.stringify(newsArticleJsonLd).replace(/</g, "\\u003c"),
-                }}
-            />
-            <script
-                type="application/ld+json"
-                dangerouslySetInnerHTML={{
-                    __html: JSON.stringify(breadcrumbJsonLd).replace(/</g, "\\u003c"),
-                }}
-            />
-        </>
+        <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{
+                __html: JSON.stringify(graphSchema).replace(/</g, "\\u003c"),
+            }}
+        />
     );
 }
+
