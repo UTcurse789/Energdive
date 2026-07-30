@@ -4,7 +4,10 @@ import { getAdvertisements, getAdImageUrl, type Advertisement } from "@/lib/api/
 interface AdRendererProps {
     placement: string;
     sectorSlug?: string;
-    variant?: "hero" | "vertical" | "native";
+    variant?: "hero" | "vertical" | "native" | "banner" | "card";
+    className?: string;
+    adIndex?: number;
+    limit?: number;
 }
 
 /**
@@ -15,30 +18,49 @@ export async function AdRenderer({
     placement,
     sectorSlug,
     variant = "native",
+    className = "",
+    adIndex,
+    limit,
 }: AdRendererProps) {
-    const ads = await getAdvertisements({ placement, sectorSlug });
+    let ads = await getAdvertisements({ placement, sectorSlug });
 
     if (!ads.length) return null;
 
-    // Use highest priority ad
-    const ad = ads[0];
-
-    switch (variant) {
-        case "hero":
-            return <HeroAd ad={ad} />;
-        case "vertical":
-            return <VerticalAd ad={ad} />;
-        case "native":
-        default:
-            return <NativeAd ad={ad} />;
+    if (typeof adIndex === "number") {
+        const targetAd = ads[adIndex] || ads[adIndex % ads.length];
+        ads = targetAd ? [targetAd] : [];
+    } else if (limit && limit > 0) {
+        ads = ads.slice(0, limit);
     }
+
+    if (!ads.length) return null;
+
+    return (
+        <div className="space-y-6 w-full">
+            {ads.map((ad) => {
+                switch (variant) {
+                    case "hero":
+                        return <HeroAd key={ad.id} ad={ad} className={className} />;
+                    case "vertical":
+                        return <VerticalAd key={ad.id} ad={ad} className={className} />;
+                    case "banner":
+                        return <BannerAdServer key={ad.id} ad={ad} className={className} />;
+                    case "card":
+                        return <CardAdServer key={ad.id} ad={ad} className={className} />;
+                    case "native":
+                    default:
+                        return <NativeAd key={ad.id} ad={ad} className={className} />;
+                }
+            })}
+        </div>
+    );
 }
 
 /* ═══════════════════════════════════════════════════════
    HERO — Full-width banner
    ═══════════════════════════════════════════════════════ */
 
-function HeroAd({ ad }: { ad: Advertisement }) {
+function HeroAd({ ad, className = "" }: { ad: Advertisement; className?: string }) {
     const creative = ad.creative?.[0];
     const imageUrl = getAdImageUrl(creative);
 
@@ -52,7 +74,7 @@ function HeroAd({ ad }: { ad: Advertisement }) {
     return (
         <Wrapper
             {...wrapperProps}
-            className="block relative w-full overflow-hidden group rounded-none"
+            className={`block relative w-full overflow-hidden group rounded-none ${className}`}
             style={{ minHeight: 200 }}
         >
             <div className="relative w-full aspect-[21/6]">
@@ -73,7 +95,7 @@ function HeroAd({ ad }: { ad: Advertisement }) {
    VERTICAL — 300×600 style card for Featured grid
    ═══════════════════════════════════════════════════════ */
 
-function VerticalAd({ ad }: { ad: Advertisement }) {
+function VerticalAd({ ad, className = "" }: { ad: Advertisement; className?: string }) {
     const creative = ad.creative?.[0];
     const imageUrl = getAdImageUrl(creative);
     const logoMedia = ad.logo?.[0];
@@ -136,7 +158,7 @@ function VerticalAd({ ad }: { ad: Advertisement }) {
    NATIVE — End-of-article partner module
    ═══════════════════════════════════════════════════════ */
 
-function NativeAd({ ad }: { ad: Advertisement }) {
+function NativeAd({ ad, className = "" }: { ad: Advertisement; className?: string }) {
     const logoMedia = ad.logo?.[0];
     const logoUrl = getAdImageUrl(logoMedia);
 
@@ -192,5 +214,80 @@ function NativeAd({ ad }: { ad: Advertisement }) {
                 </div>
             </div>
         </Wrapper>
+    );
+}
+
+/* ═══════════════════════════════════════════════════════
+   BANNER SERVER — 728×90 leaderboard (Server Component)
+   ═══════════════════════════════════════════════════════ */
+
+function BannerAdServer({ ad, className = "" }: { ad: Advertisement; className?: string }) {
+    const creative = ad.creative?.[0];
+    const imageUrl = getAdImageUrl(creative);
+
+    if (!imageUrl) return null;
+
+    const Wrapper = ad.target_url ? "a" : "div";
+    const wrapperProps = ad.target_url
+        ? { href: ad.target_url, target: "_blank" as const, rel: "noopener sponsored" }
+        : {};
+
+    return (
+        <div className={`w-full flex justify-center items-center ${className}`}>
+            <Wrapper
+                {...wrapperProps}
+                className="block group relative overflow-hidden"
+                style={{ maxWidth: 728, width: "100%" }}
+            >
+                <div className="relative w-full" style={{ aspectRatio: "728/90" }}>
+                    <Image
+                        src={imageUrl}
+                        alt={ad.title || "Advertisement"}
+                        fill
+                        sizes="(max-width: 767px) 100vw, 728px"
+                        priority
+                        unoptimized
+                        className="object-contain transition-transform duration-500 group-hover:scale-[1.01]"
+                    />
+                </div>
+            </Wrapper>
+        </div>
+    );
+}
+
+/* ═══════════════════════════════════════════════════════
+   CARD SERVER — 300×250 sidebar card (Server Component)
+   ═══════════════════════════════════════════════════════ */
+
+function CardAdServer({ ad, className = "" }: { ad: Advertisement; className?: string }) {
+    const creative = ad.creative?.[0];
+    const imageUrl = getAdImageUrl(creative);
+
+    if (!imageUrl) return null;
+
+    const Wrapper = ad.target_url ? "a" : "div";
+    const wrapperProps = ad.target_url
+        ? { href: ad.target_url, target: "_blank" as const, rel: "noopener sponsored" }
+        : {};
+
+    return (
+        <div className={`w-full flex justify-center ${className}`}>
+            <Wrapper
+                {...wrapperProps}
+                className="block group relative overflow-hidden w-full max-w-[300px] mx-auto bg-white"
+            >
+                <div className="relative w-full aspect-[300/250]">
+                    <Image
+                        src={imageUrl}
+                        alt={ad.title || "Advertisement"}
+                        fill
+                        sizes="(max-width: 1024px) 100vw, 360px"
+                        loading="lazy"
+                        unoptimized
+                        className="object-contain bg-white transition-transform duration-500 group-hover:scale-[1.02]"
+                    />
+                </div>
+            </Wrapper>
+        </div>
     );
 }

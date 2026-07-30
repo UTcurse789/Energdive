@@ -1,243 +1,304 @@
-"use client";
-
-import React, { useEffect, useState } from "react";
+import React from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Header } from "@/components/layout/header";
-import { Plus, MoveRight, Bookmark, BarChart3, Zap, Globe2, ShieldCheck, ArrowUpRight } from "lucide-react";
-import { motion } from "framer-motion";
+import { Clock, Zap } from "lucide-react";
 import { DateChip } from "@/components/ui/date-chip";
 import { formatContentDate } from "@/lib/date";
-import { Skeleton } from "@/components/ui/skeleton";
 import { strapiImageUrl } from "@/lib/strapi-image";
 import { AdBanner } from "@/components/ads/AdBanner";
+import { AdRenderer } from "@/components/ads/AdRenderer";
+import { getLatestIssue } from "@/lib/api/getLatestIssue";
+import { slugify } from "@/lib/utils";
+import NewsFeedClient from "./NewsFeedClient";
 
 const STRAPI_BASE_URL = "https://cms.energdive.com";
 
-export default function ArchitectEditorialPage() {
-    const [articles, setArticles] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [visibleCount, setVisibleCount] = useState(30);
+function timeAgo(dateInput: string | Date) {
+    if (!dateInput) return "";
+    const d = new Date(dateInput);
+    if (Number.isNaN(d.getTime())) return "";
+    return new Intl.DateTimeFormat("en-GB", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+        timeZone: "Asia/Kolkata",
+    }).format(d).replace(",", "") + " IST";
+}
 
-    useEffect(() => {
-        async function fetchData() {
-            try {
-                // FIXED: Added pagination[pageSize]=100 to get all 34 entries
-                const url = `${STRAPI_BASE_URL}/api/contents?filters[type_of_content][name][$eq]=News&populate=*&pagination[pageSize]=100&sort=Date:desc`;
-                const res = await fetch(url);
-                const json = await res.json();
+function estimateReadingTime(text: string) {
+    const wordsPerMinute = 225;
+    const words = text ? text.split(/\s+/).length : 200; // fallback length
+    const minutes = Math.ceil(words / wordsPerMinute);
+    return Math.max(2, minutes);
+}
 
-                if (json.data) {
-                    const formattedData = json.data.map((item: any) => {
-                        // Extract attributes correctly for Strapi v4/v5
-                        const attrs = item.attributes || item;
-
-                        // Extract excerpt text logic
-                        let excerptText = "Strategic insights into the global energy transition.";
-                        if (attrs.Excerpt && Array.isArray(attrs.Excerpt)) {
-                            const paragraph = attrs.Excerpt.find((block: any) => block.type === 'paragraph');
-                            if (paragraph?.children?.[0]?.text) {
-                                excerptText = paragraph.children[0].text;
-                            }
-                        } else if (typeof attrs.description === 'string') {
-                            excerptText = attrs.description;
-                        }
-
-                        return {
-                            id: item.id,
-                            title: attrs.TITLE || attrs.Title || "Untitled",
-                            slug: attrs.slug,
-                            image: attrs.FEATUREDIMAGE?.data?.attributes?.url
-                                ? strapiImageUrl(attrs.FEATUREDIMAGE.data.attributes.url)
-                                : attrs.FeaturedImage?.url
-                                    ? strapiImageUrl(attrs.FeaturedImage.url)
-                                    : "/placeholder.jpg",
-                            excerpt: excerptText,
-                            category: attrs.type_of_content?.data?.attributes?.name || "NEWS",
-                            sector: (
-                                attrs.sectors?.[0]?.name ||
-                                attrs.sectors?.data?.[0]?.attributes?.name ||
-                                attrs.sector?.name ||
-                                attrs.sector?.data?.attributes?.name ||
-                                "Energy"
-                            ),
-                            date: formatContentDate(attrs.Date || attrs.publishedAt || attrs.createdAt),
-                            rawDate: attrs.Date || attrs.publishedAt || attrs.createdAt,
-                        };
-                    });
-
-                    // Explicitly sort articles by raw date descending
-                    formattedData.sort((a: any, b: any) => {
-                        return new Date(b.rawDate).getTime() - new Date(a.rawDate).getTime();
-                    });
-
-                    setArticles(formattedData);
-                }
-            } catch (error) {
-                console.error("Error fetching news:", error);
-            } finally {
-                setLoading(false);
-            }
+export async function generateMetadata({ searchParams }: { searchParams: Promise<{ [key: string]: string | string[] | undefined }> }) {
+    const params = await searchParams;
+    const pageStr = Array.isArray(params.page) ? params.page[0] : params.page;
+    const page = parseInt(pageStr || "1", 10);
+    return {
+        title: `Energy Dive News Hub${page > 1 ? ` - Page ${page}` : ''} | ENERGDIVE`,
+        description: "Editorial-grade energy news portal covering Oil & Gas, Power, Renewables, Policy, and Clean Tech.",
+        alternates: {
+            canonical: page === 1 ? "/news" : `/news?page=${page}`,
         }
-        fetchData();
-    }, []);
+    }
+}
 
-    if (loading) return (
-        <main className="min-h-screen bg-white py-16">
-            <div className="container mx-auto px-4 max-w-[1400px]">
-                <div className="flex justify-between items-end mb-12 border-b pb-6">
-                    <Skeleton className="h-10 w-48" />
-                    <Skeleton className="h-5 w-32" />
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    {[...Array(9)].map((_, i) => (
-                        <div key={i} className="space-y-4">
-                            <Skeleton className="aspect-video w-full rounded-2xl" />
-                            <div className="space-y-2">
-                                <Skeleton className="h-4 w-24" />
-                                <Skeleton className="h-6 w-full" />
-                                <Skeleton className="h-6 w-3/4" />
-                            </div>
-                        </div>
-                    ))}
+export default async function NewsPage(props: { searchParams: Promise<{ [key: string]: string | string[] | undefined }> }) {
+    const searchParams = await props.searchParams;
+    const pageStr = Array.isArray(searchParams.page) ? searchParams.page[0] : searchParams.page;
+    const page = parseInt(pageStr || "1", 10);
+    
+    const isFirstPage = page === 1;
+    // On first page we need: 1 Hero + 5 Top Stories + 12 Feed = 18 articles.
+    const limit = isFirstPage ? 18 : 12;
+    const start = isFirstPage ? 0 : 18 + (page - 2) * 12;
+
+    let articles: any[] = [];
+    let totalCount = 0;
+    const latestIssue = await getLatestIssue();
+
+    try {
+        const url = `${STRAPI_BASE_URL}/api/contents?filters[type_of_content][name][$eq]=News&populate=*&pagination[start]=${start}&pagination[limit]=${limit}&sort=Date:desc`;
+        const res = await fetch(url, { next: { revalidate: 60 } });
+        const json = await res.json();
+        
+        totalCount = json?.meta?.pagination?.total || 0;
+
+        if (json.data) {
+            articles = json.data.map((item: any) => {
+                const attrs = item.attributes || item;
+
+                let excerptText = "Strategic insights into the global energy transition.";
+                if (attrs.Excerpt && Array.isArray(attrs.Excerpt)) {
+                    const paragraph = attrs.Excerpt.find((block: any) => block.type === 'paragraph');
+                    if (paragraph?.children?.[0]?.text) {
+                        excerptText = paragraph.children[0].text;
+                    }
+                } else if (typeof attrs.description === 'string') {
+                    excerptText = attrs.description;
+                }
+
+                const imgUrl = attrs.FEATUREDIMAGE?.data?.attributes?.url || attrs.FeaturedImage?.url;
+                let finalImage = imgUrl ? strapiImageUrl(imgUrl) : null;
+                if (finalImage && finalImage.includes("placeholder")) finalImage = null;
+
+                return {
+                    id: item.id,
+                    title: attrs.TITLE || attrs.Title || "Untitled",
+                    slug: attrs.slug,
+                    image: finalImage,
+                    excerpt: excerptText,
+                    category: attrs.type_of_content?.data?.attributes?.name || "NEWS",
+                    sector: (
+                        attrs.sectors?.[0]?.name ||
+                        attrs.sectors?.data?.[0]?.attributes?.name ||
+                        attrs.sector?.name ||
+                        attrs.sector?.data?.attributes?.name ||
+                        "Energy"
+                    ),
+                    date: formatContentDate(attrs.Date || attrs.publishedAt || attrs.createdAt),
+                    rawDate: attrs.Date || attrs.publishedAt || attrs.createdAt,
+                    author: attrs.Author?.name || "Energy Dive Desk",
+                    readingTime: estimateReadingTime(excerptText + " " + (attrs.CONTENT || "")),
+                };
+            });
+            
+            articles.sort((a: any, b: any) => {
+                return new Date(b.rawDate).getTime() - new Date(a.rawDate).getTime();
+            });
+        }
+    } catch (error) {
+        console.error("Error fetching news:", error);
+    }
+
+    if (articles.length === 0) {
+        return (
+            <div className="min-h-screen bg-white">
+                <Header />
+                <div className="min-h-[50vh] flex flex-col items-center justify-center">
+                    <p className="text-xl font-bold text-slate-500">No news found.</p>
+                    {page > 1 && (
+                        <Link href="/news" className="mt-4 text-emerald-600 hover:underline font-bold">
+                            Return to Page 1
+                        </Link>
+                    )}
                 </div>
             </div>
-        </main>
-    );
-    if (articles.length === 0) return <div className="min-h-screen flex items-center justify-center">No news found.</div>;
+        );
+    }
 
-    const heroArticle = articles[0];
-    const topInsights = articles.slice(1, 5); // Side bar mein 4 news
-    const allNews = articles.slice(5);
-    const visibleNews = allNews.slice(0, visibleCount);
+    const heroArticle = isFirstPage ? articles[0] : null;
+    const topStories = isFirstPage ? articles.slice(1, 6) : [];
+    const gridArticles = isFirstPage ? articles.slice(6) : articles;
+
+    const hasMore = start + limit < totalCount;
+    const totalPages = 1 + (totalCount > 18 ? Math.ceil((totalCount - 18) / 12) : 0);
+
+    // Structured Data Schemas
+    const breadcrumbSchema = {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+            { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://energdive.com/" },
+            { "@type": "ListItem", "position": 2, "name": "News", "item": "https://energdive.com/news" }
+        ]
+    };
+
+    const itemListSchema = {
+        "@context": "https://schema.org",
+        "@type": "ItemList",
+        "itemListElement": articles.map((a, i) => ({
+            "@type": "ListItem",
+            "position": i + 1,
+            "item": {
+                "@type": "NewsArticle",
+                "url": `https://energdive.com/news/${a.slug}`,
+                "headline": a.title,
+                "datePublished": a.rawDate,
+                "author": { "@type": "Person", "name": a.author }
+            }
+        }))
+    };
 
     return (
-        <div className="min-h-screen bg-[#FDFDFD] text-[#1A1A1A] selection:bg-black selection:text-white font-sans overflow-x-hidden">
+        <div className="min-h-screen bg-white text-slate-900 selection:bg-emerald-600 selection:text-white font-sans overflow-x-clip">
+            {/* Inject JSON-LD */}
+            <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema).replace(/</g, '\\u003c') }} />
+            <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListSchema).replace(/</g, '\\u003c') }} />
+            
+            {/* Inject Pagination Links */}
+            {page > 1 && <link rel="prev" href={page === 2 ? "/news" : `/news?page=${page - 1}`} />}
+            {hasMore && <link rel="next" href={`/news?page=${page + 1}`} />}
+
             <Header />
 
-            <main className="pt-[10px]">
-                <AdBanner placement="new_top" variant="banner" className="py-4" />
-
-                {/* 1. HERO BANNER */}
-                <section className="w-full py-12 md:py-20 bg-white border-b border-black">
-                    <div className="container mx-auto px-4 sm:px-6 lg:px-12">
-                        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8">
-                            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex-1">
-
-                                <h1 className="text-3xl sm:text-5xl md:text-7xl lg:text-[8vw] font-black tracking-tighter leading-[0.85] uppercase italic">
-                                    News
-                                </h1>
-                            </motion.div>
-                            <div className="lg:w-1/3 border-l-2 border-black pl-6 py-2">
-                                <p className="text-sm md:text-base font-bold tracking-widest text-gray-500 leading-relaxed italic">
-                                    Track daily energy developments with ENERGDIVE News - from regulatory announcements and industry moves to innovations and sector-wide trends.
-                                </p>
-                            </div>
-                        </div>
+            {/* 1. TOP BREAKING NEWS BAR */}
+            <div className="bg-slate-900 text-slate-200 border-b border-emerald-500 overflow-hidden text-xs font-medium tracking-wide">
+                <div className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-16 flex items-center h-full">
+                    <div className="bg-red-600 text-white px-3 sm:px-4 py-2 font-black uppercase tracking-widest shrink-0 shadow-[0_0_15px_rgba(220,38,38,0.5)] z-10 flex items-center h-full">
+                        <span className="relative flex h-2 w-2 mr-2">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
+                        </span>
+                        Breaking
                     </div>
-                </section>
-
-                {/* 2. TICKER BAR */}
-                <div className="border-b border-gray-200 py-4 overflow-hidden sticky top-[80px] z-40 backdrop-blur-md bg-white/90 hidden sm:block">
-                    <div className="container mx-auto px-6 lg:px-12 flex items-center">
-                        <div className="flex gap-16 items-center animate-marquee whitespace-nowrap text-[11px] font-bold text-gray-400 uppercase">
+                    <div className="overflow-hidden whitespace-nowrap flex-1 h-full flex items-center relative mask-image-edges">
+                        <div className="animate-marquee flex gap-8 items-center pl-4 py-2">
                             {articles.slice(0, 10).map((a, i) => (
-                                <Link key={i} href={`/news/${a.slug}`} className="hover:text-black flex items-center gap-3 transition-colors">
-                                    <Plus size={10} className="text-[#00A651]" /> {a.title}
+                                <Link key={i} href={`/news/${a.slug}`} className="hover:text-emerald-400 transition-colors inline-block text-slate-300">
+                                    {a.title}
                                 </Link>
                             ))}
                         </div>
                     </div>
                 </div>
+            </div>
 
-                <div className="container mx-auto px-4 sm:px-6 lg:px-12 py-10 sm:py-16">
-                    {/* 3. EDITORIAL GRID (8:4) */}
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 mt-10 mb-24">
-                        <div className="lg:col-span-8 group">
-                            <Link href={`/news/${heroArticle.slug}`} className="block">
-                                <div className="relative aspect-video overflow-hidden bg-gray-100 mb-6 border border-gray-100 shadow-xl">
-                                    <Image src={heroArticle.image} alt={heroArticle.title} fill priority className="object-cover group-hover:scale-105 transition-transform duration-1000" />
-                                    <div className="absolute top-0 right-0 bg-[#00A651] text-white p-4 md:p-6 z-10">
-                                        <ArrowUpRight size={28} />
-                                    </div>
-                                    <div className="absolute inset-0 bg-linear-to-t from-black/90 via-transparent to-transparent flex flex-col justify-end p-6 md:p-10">
-                                        <div className="mb-4">
-                                            <DateChip value={heroArticle.date} className="text-[10px] md:text-sm bg-black/40 backdrop-blur-sm text-white border border-white/20 inline-flex" />
-                                        </div>
-                                        <h2 className="text-3xl md:text-5xl lg:text-6xl font-black text-white tracking-tighter leading-[0.9]">
-                                            {heroArticle.title}
-                                        </h2>
-                                    </div>
-                                </div>
-                                <p className="text-lg md:text-xl text-gray-500 font-serif italic leading-relaxed line-clamp-3">{heroArticle.excerpt}</p>
-                            </Link>
-                        </div>
+            {/* AD: new_top — Full-width leaderboard between ticker and main content */}
+            <div className="w-full bg-white border-b border-slate-100 pt-2 pb-0">
+                <div className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-16 flex justify-center">
+                    <AdRenderer placement="new_top" variant="banner" />
+                </div>
+            </div>
 
-                        <div className="lg:col-span-4 flex flex-col border-t lg:border-t-0 lg:border-l border-gray-200 pt-10 lg:pt-0 lg:pl-10">
-                            <h3 className="text-sm md:text-base font-black uppercase tracking-[4px] mb-10 border-b-2 border-black pb-4">
-                                Latest Analysis
-                            </h3>
-                            <div className="space-y-8">
-                                {topInsights.map((item, idx) => (
-                                    <Link href={`/news/${item.slug}`} key={idx} className="flex gap-5 group items-start">
-                                        <div className="relative w-24 h-24 shrink-0 overflow-hidden bg-gray-50 border border-gray-100">
-                                            <Image src={item.image} alt="" fill className="object-cover grayscale group-hover:grayscale-0 transition-all duration-500" />
-                                        </div>
-                                        <div className="flex flex-col">
-                                            <span className="text-[9px] font-black text-[#00A651] uppercase tracking-widest mb-1">{item.sector}</span>
-                                            <DateChip value={item.date} className="mb-1 text-[10px]" />
-                                            <h4 className="font-bold text-base leading-tight group-hover: transition-colors line-clamp-3">{item.title}</h4>
-                                        </div>
+            <main className={`max-w-7xl mx-auto px-6 sm:px-10 lg:px-16 ${isFirstPage ? 'pt-2 pb-8' : 'pt-2 pb-8'}`}>
+                <h1 className="sr-only">Energy Dive News Hub - Latest Energy Sector News, Policy & Markets</h1>
+
+                {/* 2. HERO / FEATURED NEWS SECTION (3:1 Asymmetric Grid) */}
+                {isFirstPage && heroArticle && (
+                    <section className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 mb-6 lg:mb-8 border-b border-slate-200 py-1 md:py-8">
+                        
+                        {/* Left: Main Featured (8 cols) */}
+                        <article className="lg:col-span-8 flex flex-col group relative">
+                            <div className="relative aspect-[16/8.7] rounded-xl overflow-hidden bg-slate-900 border border-slate-200 shadow-sm mb-3">
+                                {heroArticle.image ? (
+                                    <Image src={heroArticle.image} alt={heroArticle.title} fill priority sizes="(max-width: 1024px) 100vw, 66vw" className="object-cover group-hover:scale-[1.02] transition-transform duration-700" />
+                                ) : (
+                                    <div className="absolute inset-0 bg-linear-to-br from-slate-800 to-slate-950 flex items-center justify-center">
+                                        <Zap size={64} className="text-white/10" />
+                                    </div>
+                                )}
+                                <div className="absolute top-4 left-4 z-10">
+                                    <Link href={`/sectors/${slugify(heroArticle.sector)}`} className="bg-emerald-600 text-white text-[10px] sm:text-xs font-black uppercase tracking-widest px-3 py-1.5 rounded-sm shadow-md hover:bg-emerald-700 transition-colors">
+                                        {heroArticle.sector}
                                     </Link>
+                                </div>
+                                <div className="absolute inset-0 bg-linear-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
+                            </div>
+                            
+                            <div className="px-1 flex-1 flex flex-col">
+                                <Link href={`/news/${heroArticle.slug}`} className="before:absolute before:inset-0 z-10">
+                                    <h2 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-slate-900 leading-tight tracking-tight hover:text-emerald-700 transition-colors" style={{ fontFamily: 'var(--font-playfair, serif)' }}>
+                                        {heroArticle.title}
+                                    </h2>
+                                </Link>
+                                <p className="text-lg text-slate-600 mt-4 leading-relaxed font-light line-clamp-2">
+                                    {heroArticle.excerpt}
+                                </p>
+                                <div className="mt-5 flex items-center gap-3 text-xs sm:text-sm text-slate-500 font-medium">
+                                    <span className="text-slate-900 font-bold">By {heroArticle.author}</span>
+                                    <span>•</span>
+                                    <time dateTime={heroArticle.rawDate}>{timeAgo(heroArticle.rawDate)}</time>
+                                </div>
+                            </div>
+                        </article>
+
+                        {/* Right: Top Stories Sidebar (4 cols) */}
+                        <aside className="lg:col-span-4 flex flex-col pt-8 lg:pt-0 lg:pl-8">
+                            <div className="flex flex-col gap-6">
+                                {topStories.map((item, idx) => (
+                                    <article key={idx} className="flex gap-5 group relative">
+                                        <div className="flex flex-col flex-1">
+                                            <Link href={`/sectors/${slugify(item.sector)}`} className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1 relative z-20 hover:underline">
+                                                {item.sector}
+                                            </Link>
+                                            <Link href={`/news/${item.slug}`} className="before:absolute before:inset-0 z-10">
+                                                <h4 className="font-bold text-slate-900 leading-tight group-hover:text-emerald-600 transition-colors line-clamp-3">
+                                                    {item.title}
+                                                </h4>
+                                            </Link>
+                                            <div className="mt-2 text-[10px] text-slate-500 font-medium">
+                                                <time dateTime={item.rawDate}>{timeAgo(item.rawDate)}</time>
+                                            </div>
+                                        </div>
+                                        <div className="relative w-28 sm:w-36 aspect-[4/3] shrink-0 overflow-hidden bg-slate-200 rounded-sm border border-slate-100">
+                                            {item.image ? (
+                                                <Image src={item.image} alt="" fill sizes="(max-width: 640px) 112px, 144px" className="object-cover group-hover:scale-110 transition-transform duration-500" loading="lazy" />
+                                            ) : (
+                                                <div className="absolute inset-0 bg-linear-to-br from-slate-800 to-slate-950 flex items-center justify-center">
+                                                    <Zap size={16} className="text-white/20" />
+                                                </div>
+                                            )}
+                                        </div>
+                                    </article>
                                 ))}
                             </div>
-                        </div>
-                    </div>
-
-                    {/* 4. MARKET INTELLIGENCE (The rest of 34 entries) */}
-                    <section className="mb-32">
-                        <div className="flex items-center gap-4 mb-12">
-                            <h2 className="text-4xl font-black uppercase italic">News </h2>
-                            <div className="flex-1 h-1px bg-gray-200"></div>
-                            {/* <span className="text-xs font-black text-gray-400 uppercase">{articles.length} Total Reports</span> */}
-                        </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-16">
-                            {visibleNews.map((item, idx) => (
-                                <div key={idx} className="group flex flex-col border-t border-gray-100 pt-6 hover:border-black transition-all duration-500">
-                                    <div className="relative aspect-4/3 mb-6 overflow-hidden bg-gray-100 border border-gray-100">
-                                        <Image src={item.image} alt="" fill className="object-cover group-hover:scale-110 transition-transform duration-700" />
-                                    </div>
-                                    <div className="flex flex-col flex-1">
-                                        <div className="flex justify-between text-[9px] font-black uppercase text-gray-400 mb-3">
-                                            <span>{item.sector}</span>
-                                            <DateChip value={item.date} className="text-[9px]" />
-                                        </div>
-                                        <h4 className="font-bold text-lg leading-tight line-clamp-4 group-hover:text-[#00A651] transition-colors mb-4">{item.title}</h4>
-                                        <Link href={`/news/${item.slug}`} className="mt-auto inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest hover:gap-4 transition-all text-black">
-                                            Read More <MoveRight size={14} className="text-[#00A651]" />
-                                        </Link>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-
-                        {visibleCount < allNews.length && (
-                            <div className="mt-12 flex justify-center">
-                                <button
-                                    type="button"
-                                    onClick={() => setVisibleCount((prev) => prev + 30)}
-                                    className="inline-flex items-center gap-2 border border-black px-6 py-3 text-xs font-black uppercase tracking-widest text-black transition-colors hover:bg-black hover:text-white"
-                                >
-                                    Load More
-                                </button>
-                            </div>
-                        )}
+                        </aside>
                     </section>
-                </div>
+                )}
+
+                {/* 3 & 4. PRIMARY NEWS STREAM (Filter Bar + Asymmetric Grid) */}
+                <NewsFeedClient 
+                    initialArticles={gridArticles} 
+                    page={page} 
+                    totalPages={totalPages} 
+                    isFirstPage={isFirstPage} 
+                    sidebarAd={<AdRenderer placement="new_sidebar" variant="card" />}
+                    mobileTopAd={<AdRenderer placement="new_sidebar" variant="card" adIndex={0} />}
+                    mobileFeedAd={<AdRenderer placement="new_sidebar" variant="card" adIndex={1} />}
+                    latestIssue={latestIssue}
+                />
+
             </main>
 
-            <style jsx global>{`
+            <style dangerouslySetInnerHTML={{
+                __html: `
                 @keyframes marquee {
                     0% { transform: translateX(0); }
                     100% { transform: translateX(-50%); }
@@ -245,7 +306,11 @@ export default function ArchitectEditorialPage() {
                 .animate-marquee {
                     animation: marquee 40s linear infinite;
                 }
-            `}</style>
+                .mask-image-edges {
+                    mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent);
+                }
+                `
+            }} />
         </div>
     );
 }
