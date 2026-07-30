@@ -171,6 +171,10 @@ export default async function EditorialDetailPage({ params }: { params: Promise<
         ? attrs.Excerpt[0]?.children?.[0]?.text || ""
         : "";
 
+    // Raw date for JSON-LD and display (prioritizing publishedAt for accurate automatic time)
+    const rawDate = attrs.publishedAt || attrs.createdAt || attrs.Date || "";
+    const modifiedDate = attrs.updatedAt || rawDate;
+
     const article = {
         id: articleData.id,
         slug,
@@ -179,6 +183,7 @@ export default async function EditorialDetailPage({ params }: { params: Promise<
         content: attrs.Content || [],
         category: "Editorial",
         readTime: "6 min read",
+        date: rawDate,
         tags: normalizedTags,
         sectorSlug,
         sectionPath: "/editorial",
@@ -205,9 +210,6 @@ export default async function EditorialDetailPage({ params }: { params: Promise<
         };
     });
 
-    // Raw date for JSON-LD and display (prioritizing publishedAt for accurate automatic time)
-    const rawDate = attrs.publishedAt || attrs.createdAt || attrs.Date || "";
-    const modifiedDate = attrs.updatedAt || rawDate;
 
     return (
         <>
@@ -220,6 +222,7 @@ export default async function EditorialDetailPage({ params }: { params: Promise<
                 imageUrl={article.featuredImage}
                 section="editorial"
                 description={excerptText}
+                schemaType="OpinionNewsArticle"
             />
             <OpinionContent opinion={article} recommended={recommended} />
         </>

@@ -4,7 +4,7 @@ import Image from "next/image";
 import { Header } from "@/components/layout/header";
 import { Clock, Zap } from "lucide-react";
 import { DateChip } from "@/components/ui/date-chip";
-import { formatContentDate } from "@/lib/date";
+import { formatContentDate, toIsoDate } from "@/lib/date";
 import { strapiImageUrl } from "@/lib/strapi-image";
 import { AdBanner } from "@/components/ads/AdBanner";
 import { AdRenderer } from "@/components/ads/AdRenderer";
@@ -150,14 +150,6 @@ export default async function NewsPage(props: { searchParams: Promise<{ [key: st
         ]
     };
 
-    const toIsoDate = (value: string) => {
-        try {
-            const d = new Date(value);
-            return Number.isNaN(d.getTime()) ? value : d.toISOString();
-        } catch {
-            return value;
-        }
-    };
 
     const itemListSchema = {
         "@context": "https://schema.org",

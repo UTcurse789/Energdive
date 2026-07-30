@@ -1,6 +1,7 @@
 import React from "react";
 import { getCanonicalUrl } from "@/lib/seo";
 import { slugify } from "@/lib/utils";
+import { toIsoDate } from "@/lib/date";
 
 interface ArticleJsonLdProps {
     title: string;
@@ -22,6 +23,8 @@ interface ArticleJsonLdProps {
     category?: string;
     /** Category / Sector URL slug */
     categorySlug?: string;
+    /** Override the root schema type, defaults to NewsArticle */
+    schemaType?: "NewsArticle" | "OpinionNewsArticle" | "Article";
 }
 
 const GENERIC_DESK_REGEX = /\b(desk|editorial|team|energdive|newsroom)\b/i;
@@ -37,16 +40,8 @@ export function ArticleJsonLd({
     description,
     category,
     categorySlug,
+    schemaType = "NewsArticle",
 }: ArticleJsonLdProps) {
-    const toIsoDate = (value: string) => {
-        try {
-            const d = new Date(value);
-            return Number.isNaN(d.getTime()) ? value : d.toISOString();
-        } catch {
-            return value;
-        }
-    };
-
     const toAbsoluteUrl = (value: string) => {
         if (!value) return getCanonicalUrl("/fav.jpg");
         if (value.startsWith("http://") || value.startsWith("https://")) return value;
@@ -77,7 +72,7 @@ export function ArticleJsonLd({
 
     const newsArticleJsonLd = {
         "@context": "https://schema.org",
-        "@type": "NewsArticle",
+        "@type": schemaType,
         headline: title,
         description: normalizedDescription,
         datePublished: publishedIsoDate,
