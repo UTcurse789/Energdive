@@ -63,10 +63,10 @@ const itemVariants: Variants = {
 
 export function Publication2({ variant = "full", latestCoverImage, latestIssueSlug }: { variant?: "full" | "compact"; latestCoverImage?: string; latestIssueSlug?: string }) {
     return (
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <section className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-16 py-16 lg:py-8">
 
             {/* 1. COMPACT HERO SECTION */}
-            <div className="bg-zinc-900 rounded-[1.5rem] md:rounded-[2.5rem] p-6 sm:p-8 md:p-14 border border-zinc-800 text-white relative overflow-hidden shadow-2xl mb-16">
+            <div className="bg-zinc-900 p-6 sm:p-8 md:p-14 text-white relative overflow-hidden mb-8">
 
                 <div className="absolute top-0 right-0 w-full h-full opacity-10 pointer-events-none"
                     style={{ background: 'radial-gradient(circle at 70% 30%, #00A651 0%, transparent 60%)' }}
@@ -85,7 +85,7 @@ export function Publication2({ variant = "full", latestCoverImage, latestIssueSl
                         </h2>
 
                         {/* Two Column Text for space efficiency */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+                        <div className="flex gap-8 items-start">
                             <p className="text-base font-serif text-zinc-300 leading-relaxed border-l-2 border-[#00A651] pl-4">
                                 ENERGDIVE Magazine delivers in-depth stories, expert viewpoints, and sector intelligence each month, capturing the trends and decisions driving India’s evolving energy landscape. It is your trusted source for credible, well-curated knowledge.
                             </p>

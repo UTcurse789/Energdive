@@ -1,36 +1,23 @@
-
-
 "use client";
 
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState, useCallback, useRef } from "react";
-import { ChevronLeft, ChevronRight, ArrowRight } from "lucide-react";
-import { DateChip } from "@/components/ui/date-chip";
+import { ChevronLeft, ChevronRight, Zap, ArrowRight } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { strapiImageUrl } from "@/lib/strapi-image";
 import { buildContentUrl } from "@/lib/content-routes";
 import { formatContentDate } from "@/lib/date";
 
 const STRAPI_BASE = "https://cms.energdive.com";
 
-type HeroTextNode = {
-    text?: string | null;
-};
+// ── Types ─────────────────────────────────────────────────────────────────────
 
-type HeroExcerptBlock = {
-    children?: HeroTextNode[] | null;
-};
-
-type HeroImage = {
-    url?: string | null;
-};
-
-type HeroSector = {
-    name?: string | null;
-};
-
-type HeroContentType = {
-    name?: string | null;
-};
+type HeroTextNode = { text?: string | null };
+type HeroExcerptBlock = { children?: HeroTextNode[] | null };
+type HeroImage = { url?: string | null };
+type HeroSector = { name?: string | null };
+type HeroContentType = { name?: string | null };
 
 type HeroItem = {
     id: number | string;
@@ -43,252 +30,64 @@ type HeroItem = {
     content_tag?: unknown;
     Date?: string | null;
     createdAt?: string | null;
+    author?: { name?: string | null } | null;
 };
-
-function getImageUrl(article: HeroItem): string {
-    const img = article.FeaturedImage;
-    if (!img) return "/placeholder.jpg";
-    // const url = img.formats?.large?.url || img.formats?.medium?.url || img.url;
-    const url = img.url;
-    if (!url) return "/placeholder.jpg";
-    return strapiImageUrl(url);
-}
-
-function getExcerpt(excerpt?: HeroExcerptBlock[] | null): string {
-    return (
-        excerpt?.map((paragraph) =>
-            (paragraph.children || [])
-                .map((child) => child.text || "")
-                .join("")
-        ).join(" ") || ""
-    );
-}
-
-
 
 interface HeroProps {
     heroStories?: HeroItem[];
     topStories?: HeroItem[];
 }
 
-export function Hero({ heroStories: propHeroStories, topStories: propTopStories }: HeroProps) {
-    const [coverStories, setCoverStories] = useState<HeroItem[]>([]);
-    const [articles, setArticles] = useState<HeroItem[]>([]);
-    const [loading, setLoading] = useState(!(propHeroStories?.length));
-    const [currentSlide, setCurrentSlide] = useState(0);
-    const [isTransitioning, setIsTransitioning] = useState(false);
-    const autoPlayRef = useRef<NodeJS.Timeout | null>(null);
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
-    useEffect(() => {
-        if (propHeroStories?.length) {
-            return;
-        }
+function getImageUrl(article: HeroItem): string {
+    const url = article.FeaturedImage?.url;
+    if (!url) return "/placeholder.jpg";
+    return strapiImageUrl(url);
+}
 
-        // Hero banner content for carousel
-        fetch(`${STRAPI_BASE}/api/contents?filters[show_hero_banner][$eq]=true&populate=*&pagination[pageSize]=10&sort=publishedAt:desc`)
-            .then((res) => res.json())
-            .then((data) => setCoverStories(data?.data || []))
-            .catch(console.error)
-            .finally(() => {
-                if (propTopStories) setLoading(false);
-            });
-
-        // If topStories is passed as prop, we don't need to fetch featured local content
-        if (!propTopStories) {
-            fetch(`${STRAPI_BASE}/api/contents?filters[featured][$eq]=true&pagination[pageSize]=10&populate=*&sort=publishedAt:desc`)
-                .then((res) => res.json())
-                .then((data) => setArticles(data?.data || []))
-                .catch(console.error)
-                .finally(() => setLoading(false));
-        }
-    }, [propHeroStories, propTopStories]);
-
-    const carouselArticles = propHeroStories?.length ? propHeroStories : coverStories;
-    const topStories = propTopStories || articles.slice(0, 6);
-
-    const goToSlide = useCallback((index: number) => {
-        if (isTransitioning || index === currentSlide) return;
-        setIsTransitioning(true);
-        setTimeout(() => {
-            setCurrentSlide(index);
-            setIsTransitioning(false);
-        }, 500);
-    }, [isTransitioning, currentSlide]);
-
-    const nextSlide = useCallback(() => {
-        if (carouselArticles.length === 0) return;
-        goToSlide((currentSlide + 1) % carouselArticles.length);
-    }, [currentSlide, carouselArticles.length, goToSlide]);
-
-    useEffect(() => {
-        if (carouselArticles.length > 0) {
-            autoPlayRef.current = setInterval(nextSlide, 5000);
-        }
-        return () => {
-            if (autoPlayRef.current) clearInterval(autoPlayRef.current);
-        };
-    }, [nextSlide, carouselArticles.length]);
-
-    if (loading && !propHeroStories?.length) return <HeroSkeleton />;
-    if (carouselArticles.length === 0) return null;
-
-    const featured = carouselArticles[currentSlide] || carouselArticles[0];
-
+function getExcerpt(excerpt?: HeroExcerptBlock[] | null): string {
     return (
-        <section className="pt-4 pb-4 bg-white">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-3">
+        excerpt
+            ?.map((p) => (p.children || []).map((c) => c.text || "").join(""))
+            .join(" ") || ""
+    );
+}
 
-                    {/* === LEFT (2 Cols) === */}
-                    <div className="lg:col-span-2 flex flex-col">
+function slugify(str: string) {
+    return str
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/(^-|-$)/g, "");
+}
 
-                        {/* Banner */}
-                        <div className="relative aspect-[16/8.5] w-full overflow-hidden rounded-3xl bg-black group/img shadow-md">
-                            <Image
-                                src={getImageUrl(featured)}
-                                alt={featured.Title || "Feature story"}
-                                fill
-                                priority
-                                quality={80}
-                                sizes="(max-width: 1024px) 100vw, 850px"
-                                className={`object-cover transition-all duration-700 ${isTransitioning ? "opacity-40 scale-105" : "opacity-100 scale-100"
-                                    } group-hover/img:scale-110`}
-                            />
+// ── Skeleton ──────────────────────────────────────────────────────────────────
 
-                            {/* Slide indicator dots */}
-                            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
-                                {carouselArticles.map((_, i) => (
-                                    <button
-                                        key={i}
-                                        type="button"
-                                        aria-label={`Go to slide ${i + 1}`}
-                                        aria-current={i === currentSlide ? "true" : undefined}
-                                        onClick={() => goToSlide(i)}
-                                        className="relative flex h-6 w-6 items-center justify-center rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-white/90"
-                                    >
-                                        <span
-                                            className={`h-2 rounded-full transition-all duration-300 ${i === currentSlide
-                                                ? "w-6 bg-[#09B697]"
-                                                : "w-2 bg-white/50"
-                                                }`}
-                                        />
-                                    </button>
-                                ))}
-                            </div>
-
-                            {/* Nav Arrows */}
-                            <div className="absolute inset-y-0 left-0 right-0 flex justify-between items-center px-3 md:px-6 opacity-100 lg:opacity-0 group-hover/img:opacity-100 transition-opacity">
-                                <button
-                                    type="button"
-                                    aria-label="Previous hero slide"
-                                    onClick={() => goToSlide((currentSlide - 1 + carouselArticles.length) % carouselArticles.length)}
-                                    className="p-2 md:p-3 bg-white/30 md:bg-white/20 backdrop-blur-lg rounded-full text-white hover:bg-white hover:text-black transition-all"
-                                >
-                                    <ChevronLeft size={24} />
-                                </button>
-                                <button
-                                    type="button"
-                                    aria-label="Next hero slide"
-                                    onClick={nextSlide}
-                                    className="p-2 md:p-3 bg-white/30 md:bg-white/20 backdrop-blur-lg rounded-full text-white hover:bg-white hover:text-black transition-all"
-                                >
-                                    <ChevronRight size={24} />
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* Content below banner */}
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mt-10">
-                            <div className="md:col-span-3 space-y-5">
-                                <div className="flex flex-wrap gap-2">
-                                    {featured.sectors?.[0] && (
-                                        <span className="px-3 py-1.5 bg-[#1a4731] text-white text-[10px] font-black uppercase tracking-widest rounded-md">
-                                            {featured.sectors[0].name}
-                                        </span>
-                                    )}
-                                    {/* Content type badge */}
-                                    {featured.type_of_content?.name && (
-                                        <span className="px-3 py-1.5 bg-[#09B697] text-white text-[10px] font-black uppercase tracking-widest rounded-md">
-                                            {featured.type_of_content.name}
-                                        </span>
-                                    )}
-                                </div>
-
-                                <Link href={buildContentUrl({ slug: featured.slug || "", type_of_content: featured.type_of_content, content_tag: featured.content_tag })} className="block group/title">
-                                    <h1 className="text-2xl sm:text-3xl md:text-5xl font-serif font-bold leading-[1.15] text-[#1a1a1a] transition-colors duration-300 group-hover/title:text-[#09B697]">
-                                        {featured.Title}
-                                    </h1>
-                                </Link>
-
-                                <p className="text-[#555] font-serif text-lg leading-relaxed line-clamp-3">
-                                    {getExcerpt(featured.Excerpt)}
-                                </p>
-                            </div>
-
-                            {/* Metadata Sidebar */}
-                            <div className="md:col-span-1 md:border-l border-slate-100 md:pl-8 space-y-4 md:space-y-8">
-                                {/* <div className="space-y-3">
-                                    <p className="text-[10px] font-black uppercase tracking-tighter text-slate-400">Author</p>
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-12 h-12 rounded-full bg-[#1a4731] flex items-center justify-center text-white font-bold text-lg">
-                                            {featured.author?.name?.charAt(0) || "T"}
-                                        </div>
-                                        <Link href={`/author/${slugify(featured.author?.name || "team-energdive")}`} className="font-bold text-sm text-[#1a1a1a] leading-tight hover:text-[#09B697] transition-colors">
-                                            {featured.author?.name || "Team EnergyDive"}
-                                        </Link>
-                                    </div>
-                                </div> */}
-                                <div className="space-y-3">
-                                    <p className="text-[10px] font-black uppercase tracking-tighter text-slate-400">Published on</p>
-                                    <DateChip value={formatContentDate(featured.Date || featured.createdAt || "")} />
-                                </div>
-                            </div>
-                        </div>
+function HeroSkeleton() {
+    return (
+        <section className="py-8 lg:py-12 bg-white border-b border-slate-200">
+            <div className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-16">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
+                    <div className="lg:col-span-8 flex flex-col">
+                        <Skeleton className="aspect-[16/8.7] w-full rounded-xl mb-3" />
+                        <Skeleton className="h-8 w-3/4 mt-4" />
+                        <Skeleton className="h-5 w-full mt-3" />
+                        <Skeleton className="h-5 w-5/6 mt-2" />
+                        <Skeleton className="h-4 w-48 mt-5" />
                     </div>
-
-                    {/* === RIGHT SIDEBAR (1 Col) === */}
-                    <div className="lg:col-span-1">
-                        <div className="relative flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
-                            <h2 className="text-sm font-black uppercase tracking-[0.2em] text-[#1a1a1a] flex items-center gap-2">
-                                <span className="w-2 h-2 rounded-full bg-red-600 animate-pulse" />
-                                Latest News
-                            </h2>
-                            <Link href="/news" className="text-[10px] font-black text-[#1a4731] flex items-center gap-1 hover:text-[#09B697] transition-colors">
-                                EXPLORE <ArrowRight size={12} />
-                            </Link>
-                        </div>
-
-                        <div className="space-y-3">
-                            {topStories.map((story) => {
-                                const storyHref = buildContentUrl({ slug: story.slug || "", type_of_content: story.type_of_content, content_tag: story.content_tag });
-
-                                return (
-                                    <Link
-                                        key={story.id}
-                                        href={storyHref}
-                                        className="group flex gap-4 items-start border-b border-slate-50 pb-4 last:border-0"
-                                    >
-                                        <div className="relative h-20 w-28 shrink-0 overflow-hidden rounded-2xl bg-slate-100">
-                                            <Image
-                                                src={getImageUrl(story)}
-                                                alt={story.Title || "Latest news image"}
-                                                fill
-                                                sizes="112px"
-                                                className="object-cover transition-transform duration-500 group-hover:scale-105"
-                                            />
-                                        </div>
-                                        <div className="min-w-0 space-y-1.5">
-                                            <p className="text-[9px] font-black text-[#09B697] uppercase tracking-widest">
-                                                {story.sectors?.[0]?.name}
-                                            </p>
-                                            <h4 className="font-serif text-[15px] font-bold leading-snug text-[#1a1a1a] group-hover:text-[#09B697] transition-colors line-clamp-2">
-                                                {story.Title}
-                                            </h4>
-                                            <DateChip value={formatContentDate(story.Date || story.createdAt || "")} className="text-[10px]" />
-                                        </div>
-                                    </Link>
-                                );
-                            })}
+                    <div className="lg:col-span-4 flex flex-col pt-8 lg:pt-0 lg:pl-8">
+                        <Skeleton className="h-6 w-full mb-5 border-b pb-3" />
+                        <div className="flex flex-col gap-6">
+                            {[...Array(5)].map((_, i) => (
+                                <div key={i} className="flex gap-5">
+                                    <div className="flex-1 space-y-2">
+                                        <Skeleton className="h-3 w-20" />
+                                        <Skeleton className="h-5 w-full" />
+                                        <Skeleton className="h-3 w-24" />
+                                    </div>
+                                    <Skeleton className="w-28 aspect-[4/3] rounded-sm shrink-0" />
+                                </div>
+                            ))}
                         </div>
                     </div>
                 </div>
@@ -297,38 +96,256 @@ export function Hero({ heroStories: propHeroStories, topStories: propTopStories 
     );
 }
 
-import { Skeleton } from "@/components/ui/skeleton";
-import { strapiImageUrl } from "@/lib/strapi-image";
+// ── Main Component ────────────────────────────────────────────────────────────
 
-function HeroSkeleton() {
+export function Hero({ heroStories: propHeroStories, topStories: propTopStories }: HeroProps) {
+    const [coverStories, setCoverStories] = useState<HeroItem[]>([]);
+    const [articles, setArticles] = useState<HeroItem[]>([]);
+    const [loading, setLoading] = useState(!propHeroStories?.length);
+    const [currentSlide, setCurrentSlide] = useState(0);
+    const [isTransitioning, setIsTransitioning] = useState(false);
+    const autoPlayRef = useRef<NodeJS.Timeout | null>(null);
+
+    useEffect(() => {
+        if (propHeroStories?.length) return;
+
+        fetch(
+            `${STRAPI_BASE}/api/contents?filters[show_hero_banner][$eq]=true&populate=*&pagination[pageSize]=10&sort=publishedAt:desc`
+        )
+            .then((r) => r.json())
+            .then((d) => setCoverStories(d?.data || []))
+            .catch(console.error)
+            .finally(() => { if (propTopStories) setLoading(false); });
+
+        if (!propTopStories) {
+            fetch(
+                `${STRAPI_BASE}/api/contents?filters[featured][$eq]=true&pagination[pageSize]=10&populate=*&sort=publishedAt:desc`
+            )
+                .then((r) => r.json())
+                .then((d) => setArticles(d?.data || []))
+                .catch(console.error)
+                .finally(() => setLoading(false));
+        }
+    }, [propHeroStories, propTopStories]);
+
+    const carouselArticles = propHeroStories?.length ? propHeroStories : coverStories;
+    const topStories = propTopStories || articles.slice(0, 6);
+
+    const goToSlide = useCallback(
+        (index: number) => {
+            if (isTransitioning || index === currentSlide) return;
+            setIsTransitioning(true);
+            setTimeout(() => {
+                setCurrentSlide(index);
+                setIsTransitioning(false);
+            }, 400);
+        },
+        [isTransitioning, currentSlide]
+    );
+
+    const nextSlide = useCallback(() => {
+        if (!carouselArticles.length) return;
+        goToSlide((currentSlide + 1) % carouselArticles.length);
+    }, [currentSlide, carouselArticles.length, goToSlide]);
+
+    useEffect(() => {
+        if (carouselArticles.length > 1) {
+            autoPlayRef.current = setInterval(nextSlide, 6000);
+        }
+        return () => { if (autoPlayRef.current) clearInterval(autoPlayRef.current); };
+    }, [nextSlide, carouselArticles.length]);
+
+    if (loading && !propHeroStories?.length) return <HeroSkeleton />;
+    if (!carouselArticles.length) return null;
+
+    const featured = carouselArticles[currentSlide] || carouselArticles[0];
+    const featuredHref = buildContentUrl({
+        slug: featured.slug || "",
+        type_of_content: featured.type_of_content,
+        content_tag: featured.content_tag,
+    });
+
     return (
-        <section className="pt-4 pb-4 bg-white">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-3">
-                    <div className="lg:col-span-2 flex flex-col">
-                        <Skeleton className="aspect-[16/8.5] w-full rounded-3xl" />
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mt-10">
-                            <div className="md:col-span-3 space-y-5">
-                                <Skeleton className="h-6 w-32" />
-                                <Skeleton className="h-12 w-full" />
-                                <Skeleton className="h-20 w-full" />
-                            </div>
-                        </div>
-                    </div>
-                    <div className="lg:col-span-1">
-                        <Skeleton className="mb-4 h-8 w-full border-b pb-3" />
-                        <div className="space-y-3">
-                        {[...Array(5)].map((_, i) => (
-                            <div key={i} className="flex gap-4 pb-4 border-b last:border-0">
-                                <Skeleton className="h-20 w-28 rounded-2xl shrink-0" />
-                                <div className="flex-1 space-y-2">
-                                    <Skeleton className="h-3 w-24" />
-                                    <Skeleton className="h-5 w-full" />
+        <section className="bg-white border-b border-slate-200">
+            <div className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-16">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 py-1 md:py-8 border-b border-slate-200">
+
+                    {/* ── LEFT: Hero Featured (8 cols) ── */}
+                    <article className="lg:col-span-8 flex flex-col group relative">
+
+                        {/* Image */}
+                        <div className="relative aspect-[16/8.7] rounded-xl overflow-hidden bg-slate-900 border border-slate-200 shadow-sm mb-3">
+                            {featured.FeaturedImage?.url ? (
+                                <Image
+                                    src={getImageUrl(featured)}
+                                    alt={featured.Title || "Featured energy story"}
+                                    fill
+                                    priority
+                                    sizes="(max-width: 1024px) 100vw, 66vw"
+                                    className={`object-cover transition-transform duration-700 ${
+                                        isTransitioning ? "opacity-50 scale-105" : "opacity-100 scale-100"
+                                    } group-hover:scale-[1.02]`}
+                                />
+                            ) : (
+                                <div className="absolute inset-0 bg-gradient-to-br from-slate-800 to-slate-950 flex items-center justify-center">
+                                    <Zap size={64} className="text-white/10" />
                                 </div>
+                            )}
+
+                            {/* Sector + Content-type badges */}
+                            <div className="absolute top-4 left-4 z-10 flex flex-wrap gap-2">
+                                {featured.sectors?.[0]?.name && (
+                                    <Link
+                                        href={`/sectors/${slugify(featured.sectors[0].name)}`}
+                                        className="bg-emerald-600 text-white text-[10px] sm:text-xs font-black uppercase tracking-widest px-3 py-1.5 rounded-sm shadow-md hover:bg-emerald-700 transition-colors"
+                                    >
+                                        {featured.sectors[0].name}
+                                    </Link>
+                                )}
+                                {featured.type_of_content?.name && (
+                                    <span className="bg-slate-900/85 backdrop-blur-sm text-emerald-400 text-[10px] sm:text-xs font-black uppercase tracking-widest px-3 py-1.5 rounded-sm border border-white/10 shadow-md">
+                                        {featured.type_of_content.name}
+                                    </span>
+                                )}
                             </div>
-                        ))}
+
+                            {/* Hover overlay */}
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+
+                            {/* Carousel controls — only when multiple slides */}
+                            {carouselArticles.length > 1 && (
+                                <>
+                                    {/* Dots */}
+                                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-10">
+                                        {carouselArticles.map((_, i) => (
+                                            <button
+                                                key={i}
+                                                type="button"
+                                                aria-label={`Slide ${i + 1}`}
+                                                aria-current={i === currentSlide ? "true" : undefined}
+                                                onClick={() => goToSlide(i)}
+                                                className="relative flex h-6 w-6 items-center justify-center rounded-full focus:outline-none"
+                                            >
+                                                <span
+                                                    className={`h-2 rounded-full transition-all duration-300 ${
+                                                        i === currentSlide ? "w-6 bg-emerald-500" : "w-2 bg-white/50"
+                                                    }`}
+                                                />
+                                            </button>
+                                        ))}
+                                    </div>
+
+                                    {/* Arrows */}
+                                    <div className="absolute inset-y-0 left-0 right-0 flex justify-between items-center px-4 opacity-100 lg:opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <button
+                                            type="button"
+                                            aria-label="Previous slide"
+                                            onClick={() => goToSlide((currentSlide - 1 + carouselArticles.length) % carouselArticles.length)}
+                                            className="p-2.5 bg-black/40 backdrop-blur-md rounded-full text-white hover:bg-emerald-600 transition-all"
+                                        >
+                                            <ChevronLeft size={20} />
+                                        </button>
+                                        <button
+                                            type="button"
+                                            aria-label="Next slide"
+                                            onClick={nextSlide}
+                                            className="p-2.5 bg-black/40 backdrop-blur-md rounded-full text-white hover:bg-emerald-600 transition-all"
+                                        >
+                                            <ChevronRight size={20} />
+                                        </button>
+                                    </div>
+                                </>
+                            )}
                         </div>
-                    </div>
+
+                        {/* Text */}
+                        <div className="px-1 flex-1 flex flex-col">
+                            <Link href={featuredHref} className="before:absolute before:inset-0 z-10">
+                                <h2
+                                    className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-slate-900 leading-tight tracking-tight hover:text-emerald-700 transition-colors"
+                                    style={{ fontFamily: "var(--font-playfair, serif)" }}
+                                >
+                                    {featured.Title}
+                                </h2>
+                            </Link>
+                            <p className="text-lg text-slate-600 mt-4 leading-relaxed font-light line-clamp-2">
+                                {getExcerpt(featured.Excerpt)}
+                            </p>
+                            <div className="mt-5 flex items-center gap-3 text-xs sm:text-sm text-slate-500 font-medium">
+                                <span className="text-slate-900 font-bold">
+                                    By {featured.author?.name || "ENERGDIVE Desk"}
+                                </span>
+                                <span>•</span>
+                                <time dateTime={featured.Date || featured.createdAt || ""}>
+                                    {formatContentDate(featured.Date || featured.createdAt || "")}
+                                </time>
+                            </div>
+                        </div>
+                    </article>
+
+                    {/* ── RIGHT: Top Stories Sidebar (4 cols) ── */}
+                    <aside className="lg:col-span-4 flex flex-col pt-8 lg:pt-0 lg:pl-6">
+                        {/* Sidebar heading */}
+                        <div className="flex items-center justify-between pb-3 border-b-2 border-slate-900 mb-5">
+                            <h2 className="text-xs font-black uppercase tracking-[0.2em] text-slate-900 flex items-center gap-2">
+                                <span className="w-2.5 h-2.5 rounded-full bg-red-600 animate-pulse" />
+                                Latest Stories
+                            </h2>
+                            <Link href="/news" className="text-[10px] font-black text-emerald-600 flex items-center gap-1 hover:text-emerald-700 transition-colors tracking-widest">
+                                ALL NEWS <ArrowRight size={12} />
+                            </Link>
+                        </div>
+                        <div className="flex flex-col gap-5">
+                            {topStories.slice(0, 5).map((item, idx) => {
+                                const href = buildContentUrl({
+                                    slug: item.slug || "",
+                                    type_of_content: item.type_of_content,
+                                    content_tag: item.content_tag,
+                                });
+                                return (
+                                    <article key={item.id} className="flex gap-5 group relative">
+                                        <div className="flex flex-col flex-1">
+                                            {item.sectors?.[0]?.name && (
+                                                <Link
+                                                    href={`/sectors/${slugify(item.sectors[0].name)}`}
+                                                    className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1 relative z-20 hover:underline"
+                                                >
+                                                    {item.sectors[0].name}
+                                                </Link>
+                                            )}
+                                            <Link href={href} className="before:absolute before:inset-0 z-10">
+                                                <h4 className="font-bold text-slate-900 leading-tight group-hover:text-emerald-600 transition-colors line-clamp-3">
+                                                    {item.Title}
+                                                </h4>
+                                            </Link>
+                                            <div className="mt-2 text-[10px] text-slate-500 font-medium">
+                                                <time dateTime={item.Date || item.createdAt || ""}>
+                                                    {formatContentDate(item.Date || item.createdAt || "")}
+                                                </time>
+                                            </div>
+                                        </div>
+                                        <div className="relative w-28 sm:w-36 aspect-[4/3] shrink-0 overflow-hidden bg-slate-200 rounded-sm border border-slate-100">
+                                            {item.FeaturedImage?.url ? (
+                                                <Image
+                                                    src={getImageUrl(item)}
+                                                    alt=""
+                                                    fill
+                                                    sizes="(max-width: 640px) 112px, 144px"
+                                                    className="object-cover group-hover:scale-110 transition-transform duration-500"
+                                                    loading="lazy"
+                                                />
+                                            ) : (
+                                                <div className="absolute inset-0 bg-gradient-to-br from-slate-800 to-slate-950 flex items-center justify-center">
+                                                    <Zap size={16} className="text-white/20" />
+                                                </div>
+                                            )}
+                                        </div>
+                                    </article>
+                                );
+                            })}
+                        </div>
+                    </aside>
+
                 </div>
             </div>
         </section>

@@ -502,7 +502,7 @@ function VerticalBannerAd({
 
     const inner = (
         <div
-            className={`relative overflow-hidden border border-gray-100/60 bg-white shadow-sm shrink-0 ${className} rounded-none`}
+            className={`relative mx-auto overflow-hidden bg-white shadow-sm border border-gray-100/60 group ${className} rounded-none`}
             style={{ width, height }}
         >
             <div className="relative h-full w-full">

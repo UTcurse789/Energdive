@@ -1,7 +1,6 @@
 import { HOME_PAGE_METADATA } from "@/lib/route-metadata";
 import { Hero } from "@/components/sections/hero";
 import { AdBanner } from "@/components/ads/AdBanner";
-// import { SpotlightSection } from "@/components/sections/spotlight-section";
 import { BentoGrid } from "@/components/ui/bento-grid";
 import { SectorBlock } from "@/components/ui/sector-block";
 import { OpinionSection } from "@/components/sections/opinion";
@@ -18,7 +17,9 @@ import { strapiImageUrl } from "@/lib/strapi-image";
 import { buildContentUrl } from "@/lib/content-routes";
 import { buildSectorArticlesUrl } from "@/lib/sector-content";
 import { getOpinionContentKind } from "@/lib/content-tags";
+import { ORGANIZATION_SCHEMA } from "@/lib/organization-schema";
 import Link from "next/link";
+import { ArrowRight, TrendingUp } from "lucide-react";
 
 export const metadata = HOME_PAGE_METADATA;
 
@@ -30,7 +31,6 @@ const HOMEPAGE_SECTORS = [
   { title: "New Energies", slug: "new-energies" },
   { title: "Sustainability & Safety", slug: "sustainability-and-safety" },
 ];
-
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -110,7 +110,7 @@ async function getAllContents() {
   try {
     const res = await fetch(
       `${STRAPI_BASE}/api/contents?pagination[pageSize]=100&populate=*&sort=Date:desc`,
-      { next: { revalidate: 600 } } // 10 min ISR
+      { next: { revalidate: 600 } }
     );
     if (!res.ok) return null;
     const json = await res.json();
@@ -125,7 +125,7 @@ async function getFeaturedContents() {
   try {
     const res = await fetch(
       `${STRAPI_BASE}/api/contents?filters[featured][$eq]=true&populate=*&sort[0]=updatedAt:desc&sort[1]=publishedAt:desc&pagination[pageSize]=10`,
-      { next: { revalidate: 60 } } // Keep featured picks fresh on the homepage
+      { next: { revalidate: 60 } }
     );
     if (!res.ok) return [];
     const json = await res.json();
@@ -191,6 +191,41 @@ async function getOpinionBuckets() {
   }
 }
 
+// ─── Ticker Bar Component ─────────────────────────────────────────────────────
+
+function BreakingNewsTicker({ news }: { news: { title: string; href: string }[] }) {
+  if (!news || news.length === 0) return null;
+
+  return (
+    <div className="w-full bg-slate-950 text-slate-100 border-b border-emerald-500/30 overflow-hidden text-xs font-medium tracking-wide">
+      <div className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-16 flex items-center h-11">
+        <div className="bg-red-600 text-white px-3 py-1 font-black uppercase tracking-widest text-[10px] shrink-0 flex items-center gap-1.5 shadow-sm rounded-sm mr-4 z-10">
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
+          </span>
+          LATEST UPDATES
+        </div>
+        <div className="overflow-hidden whitespace-nowrap flex-1 flex items-center relative mask-gradient">
+          <div className="animate-marquee flex gap-8 items-center pl-2">
+            {news.concat(news).map((item, idx) => (
+              <Link
+                key={idx}
+                href={item.href}
+                className="hover:text-emerald-400 transition-colors inline-block text-slate-200 font-medium truncate max-w-md"
+              >
+                {item.title}
+              </Link>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Main Homepage ─────────────────────────────────────────────────────────────
+
 export default async function Home() {
   const [allContents, featuredContents, heroBannerContents, latestIssue, { opinions, interviews }] = await Promise.all([
     getAllContents(),
@@ -200,7 +235,16 @@ export default async function Home() {
     getOpinionBuckets(),
   ]);
 
-  // ── Bento: Featured articles fetched directly from Strapi ──
+  // Ticker News Items (Top 8 latest news)
+  const tickerItems = (allContents || [])
+    .slice(0, 8)
+    .map((item: any) => ({
+      title: item.Title || "",
+      href: buildContentUrl({ slug: item.slug || "", type_of_content: item.type_of_content }),
+    }))
+    .filter((t: any) => t.title && t.href);
+
+  // Bento: Featured articles
   const finalBentoItems = featuredContents.length > 0
     ? featuredContents
       .sort((a: any, b: any) => {
@@ -217,18 +261,22 @@ export default async function Home() {
         image: extractImageUrl(article),
         slug: article.slug || "",
         excerpt: extractExcerpt(article),
+        authorName: article.author?.name || article.authorName || "Energy Dive Intelligence",
+        date: article.Date || article.publishedAt || article.createdAt,
       }))
       .slice(0, 6)
-    : ARTICLES.slice(0, 6).map((a) => ({
+    : ARTICLES.slice(0, 6).map((a: any) => ({
       id: a.id,
       title: a.title,
       category: a.category,
       image: a.image,
       slug: a.slug,
       excerpt: a.excerpt,
+      authorName: a.author?.name || a.authorName || "Energy Dive Intelligence",
+      date: a.date,
     }));
 
-  // ── Hero Sidebar: Random 6 from All News (Swapped from Bento) ──
+  // Hero Sidebar: Top 6 News items
   const heroTopStories = allContents
     ? allContents
       .filter((a: any) => a.type_of_content?.name === "News")
@@ -255,7 +303,6 @@ export default async function Home() {
   const sectorsWithArticles = HOMEPAGE_SECTORS.map((sector, idx) => {
     const sectorArticles = sectorFetchResults[idx];
     const finalArticles = sectorArticles.slice(0, 4);
-
     const articles = finalArticles.map((article: any) => mapArticle(article, sector.title));
 
     return {
@@ -265,34 +312,74 @@ export default async function Home() {
     };
   }).filter((s) => s.articles.length > 0);
 
+  // Structured Data / Schema.org JSON-LD
+  const homeJsonLd = {
+    "@context": "https://schema.org",
+    "@graph": [
+      ORGANIZATION_SCHEMA,
+      {
+        "@type": "WebSite",
+        "@id": "https://www.energdive.com/#website",
+        "url": "https://www.energdive.com",
+        "name": "ENERGDIVE",
+        "description": "India's High-Authority Digital Media & Energy Market Intelligence Platform",
+        "publisher": {
+          "@id": "https://www.energdive.com/#organization"
+        }
+      },
+      {
+        "@type": "ItemList",
+        "name": "Latest Energy News & Market Intelligence",
+        "itemListElement": (allContents || []).slice(0, 10).map((article: any, index: number) => ({
+          "@type": "ListItem",
+          "position": index + 1,
+          "item": {
+            "@type": "NewsArticle",
+            "headline": article.Title || "",
+            "url": `https://www.energdive.com${buildContentUrl({ slug: article.slug || "", type_of_content: article.type_of_content })}`,
+            "datePublished": article.publishedAt || article.Date || article.createdAt || "",
+            "dateModified": article.updatedAt || article.publishedAt || article.createdAt || ""
+          }
+        }))
+      }
+    ]
+  };
+
   return (
-    <>
-      {/* Homepage Hero Ad Banner */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4">
+    <main className="min-h-screen bg-white text-slate-900 font-sans selection:bg-emerald-500/20">
+      {/* Structured Data */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(homeJsonLd).replace(/</g, "\\u003c") }}
+      />
+
+      {/* Breaking News Ticker */}
+      <BreakingNewsTicker news={tickerItems} />
+
+      {/* Homepage Platform Hero Ad Banner */}
+      <div className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-16 pt-6 pb-2">
         <AdBanner placement="home_platform_hero" variant="banner" className="py-0" />
       </div>
 
-      {/* Cover Story (left) + Trending (right) — the original Hero */}
+      {/* Hero Section (Split Grid 12 Columns - 8 col lead story with H1 + 4 col Trending stack) */}
       <Hero heroStories={heroBannerContents} topStories={heroTopStories} />
 
-      {/* Featured Bento */}
-      <section className="pt-8 pb-8 bg-white relative overflow-hidden">
+      {/* Curated Spotlight & Feature Bento Grid */}
+      <section className="py-14 lg:py-20 bg-white relative overflow-hidden border-b border-slate-100">
         <div
-          className="absolute inset-0 pointer-events-none opacity-[0.03]"
+          className="absolute inset-0 pointer-events-none opacity-[0.02]"
           style={{
-            backgroundImage: "radial-gradient(rgba(9, 182, 151, 1) 1px, transparent 1px)",
-            backgroundSize: "40px 40px",
+            backgroundImage: "radial-gradient(rgba(0, 166, 81, 1) 1px, transparent 1px)",
+            backgroundSize: "32px 32px",
           }}
         />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <SectionHeading
-            title="Featured"
-          />
-          <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-12 xl:gap-10">
-            <div className="min-w-0 lg:col-span-9">
+        <div className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-16 relative z-10">
+          <SectionHeading title="Curated Spotlight" />
+          <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-12">
+            <div className="min-w-0 lg:col-span-8">
               <BentoGrid items={finalBentoItems} className="py-0" />
             </div>
-            <div className="w-full lg:col-span-3 lg:flex lg:justify-end">
+            <div className="w-full lg:col-span-4 flex justify-center lg:justify-end">
               <AdBanner
                 placement="home_featured_partner"
                 variant="vertical"
@@ -303,19 +390,20 @@ export default async function Home() {
         </div>
       </section>
 
+      {/* Executive Opinion & Interviews Vertical */}
       <OpinionSection opinions={opinions} interviews={interviews} />
 
-      {/* Sector Blocks */}
-      <div className="border-b border-border">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      {/* Sector Intelligence Hubs (Oil & Gas, Power, New Energies, Sustainability) */}
+      <section className="border-b border-slate-200 py-10 lg:py-6">
+        <div className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-16">
           {sectorsWithArticles.map((sector) => (
-            <div key={sector.slug}>
+            <div key={sector.slug} className="mb-7 last:mb-0">
               <AdBanner
                 placement="sector_hero"
                 sectorSlug={sector.slug}
                 variant="banner"
                 showSkeleton={false}
-                className="py-6"
+                className="py-4"
               />
               <SectorBlock
                 title={sector.title}
@@ -325,23 +413,27 @@ export default async function Home() {
             </div>
           ))}
 
-          {/* View All Sectors Button */}
-          <div className="flex justify-center py-5">
+          {/* View All Sectors Action Callout */}
+          <div className="flex justify-center">
             <Link
               href="/sectors"
-              className="group inline-flex items-center gap-3 px-8 py-4 bg-[#09B697] text-white text-[12px] font-black uppercase tracking-[0.2em] rounded-full hover:bg-[#078a72] transition-all duration-300 shadow-lg shadow-[#09B697]/20 hover:shadow-xl hover:shadow-[#09B697]/30 hover:-translate-y-0.5"
+              className="group inline-flex items-center gap-3 px-8 py-4 bg-emerald-600 text-white text-xs font-black uppercase tracking-[0.2em] rounded-full hover:bg-emerald-700 transition-all duration-300 shadow-md hover:shadow-xl hover:-translate-y-0.5"
             >
-              View All Sectors
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="transition-transform duration-300 group-hover:translate-x-1"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg>
+              Explore All Sectors
+              <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
             </Link>
           </div>
         </div>
-      </div>
+      </section>
 
-
+      {/* Multimedia & Video Coverage (Dark Slate Theme) */}
       <HomepageVideos />
+
+      {/* Market Intelligence & Lead Generation Callout / Digital Magazine */}
       <Publication2 variant="compact" latestCoverImage={latestIssue?.coverImage} latestIssueSlug={latestIssue?.slug} />
+
+      {/* Upcoming Global Industry Events Strip */}
       <EventsSection />
-    </>
+    </main>
   );
 }
