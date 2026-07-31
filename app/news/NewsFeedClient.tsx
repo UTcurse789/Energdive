@@ -3,28 +3,13 @@
 import React, { useState, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Search, LayoutGrid, List, Bookmark, Share2, ShieldCheck, Zap, ArrowRight, Mail, Calendar } from "lucide-react";
+import { Search, LayoutGrid, List, Bookmark, Share2, ShieldCheck, Zap, ArrowRight } from "lucide-react";
 import { slugify } from "@/lib/utils";
 import { AdBanner } from "@/components/ads/AdBanner";
 import { LatestIssueWidget } from "@/components/news/LatestIssueWidget";
 import { SidebarNewsletterForm } from "@/components/news/SidebarNewsletterForm";
 import { StickySidebar } from "@/components/ui/StickySidebar";
 import type { LatestIssueData } from "@/lib/api/getLatestIssue";
-
-function timeAgo(dateInput: string | Date) {
-    if (!dateInput) return "";
-    const d = new Date(dateInput);
-    if (Number.isNaN(d.getTime())) return "";
-    return new Intl.DateTimeFormat("en-GB", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: false,
-        timeZone: "Asia/Kolkata",
-    }).format(d).replace(",", "") + " IST";
-}
 
 export default function NewsFeedClient({ 
     initialArticles, 
@@ -218,7 +203,7 @@ export default function NewsFeedClient({
                                                     </span>
                                                 </div>
                                                 <time dateTime={item.rawDate} className="bg-slate-50 px-2 py-0.5 rounded-sm border border-slate-100 text-[10px] tracking-wider uppercase">
-                                                    {timeAgo(item.rawDate)}
+                                                    {item.date}
                                                 </time>
                                             </div>
                                         </div>

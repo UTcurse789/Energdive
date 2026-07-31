@@ -10,11 +10,10 @@ import { LatestIssueWidget } from "@/components/news/LatestIssueWidget";
 import { SidebarNewsletterForm } from "@/components/news/SidebarNewsletterForm";
 import { TagBadge } from "@/components/ui/tag-badge";
 import { ScrollProgress } from "@/components/ui/scroll-progress";
-import { DateChip } from "@/components/ui/date-chip";
 import { ShareButton } from "@/components/ui/share-button";
 import { getLatestIssue } from "@/lib/api/getLatestIssue";
-import { ArrowRight, Calendar, Mail, Printer } from "lucide-react";
-import { formatContentDate, formatFullISTDateTime } from "@/lib/date";
+import { Printer } from "lucide-react";
+import { formatContentDate } from "@/lib/date";
 import ArticleBody from "@/components/ArticleBody";
 import { fetchDataBlocks } from "@/lib/parse-content-blocks";
 import { ArticleJsonLd } from "@/components/seo/ArticleJsonLd";
@@ -361,7 +360,7 @@ export default async function NewsDetailPage({
                                         </Link>
                                     </div>
                                     <div className="text-gray-400 text-[12px] mt-0.5">
-                                        {formatFullISTDateTime(rawDate) || article.date}
+                                        {formatContentDate(rawDate) || article.date}
                                     </div>
                                 </div>
                             </div>
@@ -486,7 +485,7 @@ first:prose-p:first-letter:text-6xl first:prose-p:first-letter:font-serif first:
                                                 ? strapiImageUrl(r.FeaturedImage.url)
                                                 : "/magazine-default.jpg";
                                             const rawItemDate = r.Date || r.publishedAt || item.publishedAt || "";
-                                            const itemDate = formatFullISTDateTime(rawItemDate);
+                                            const itemDate = formatContentDate(rawItemDate);
                                             const rSector = r.sectors?.[0]?.name || r.sectors?.data?.[0]?.attributes?.name || "";
                                             return (
                                                 <Link

@@ -1,221 +1,342 @@
-"use client";
-
-import React from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Header } from "@/components/layout/header";
-import { Footer } from "@/components/layout/footer";
-import { motion } from "framer-motion";
-import LogoLoop from "@/components/ui/logo-loop";
-import { Flame, Zap, Wind, Globe, ArrowUpRight } from "lucide-react";
-import { PublicationShowcase } from "@/components/sections/PublicationShowcase";
+import {
+    ArrowUpRight,
+    BarChart3,
+    FileText,
+    Flame,
+    Globe,
+    Layers,
+    Lightbulb,
+    Map,
+    PenTool,
+    Wind,
+    Zap,
+    type LucideIcon,
+} from "lucide-react";
 
-// Partner Logos Data
-const partnerLogos = [
+const brandGreen = "#00A859";
+
+type FeatureHighlight = {
+    title: string;
+    desc: string;
+    Icon: LucideIcon;
+};
+
+type Sector = {
+    title: string;
+    Icon: LucideIcon;
+};
+
+type EditorialProfile = {
+    initials: string;
+    name: string;
+    href: string;
+    role: string;
+    bio: string;
+    image?: string; // Added optional image field
+};
+
+const sectors: Sector[] = [
+    { title: "Oil & Gas", Icon: Flame },
+    { title: "Power & Utilities", Icon: Zap },
+    { title: "Renewables", Icon: Wind },
+    { title: "Climate Action", Icon: Globe },
+];
+
+const featureHighlights: FeatureHighlight[] = [
     {
-        id: "1",
-        src: "/Loop/energniti-removebg-preview.png",
-        alt: "EnergNiti Dialogue",
-        href: "#"
+        title: "Leadership Perspectives",
+        desc: "Vision statements and forewords from global leaders.",
+        Icon: PenTool,
     },
     {
-        id: "2",
-        src: "/Loop/oil-spill-removebg-preview.png",
-        alt: "Oil Spill India",
-        href: "#"
+        title: "Cover Features",
+        desc: "Deep-dive narratives on transformation and impact.",
+        Icon: Layers,
     },
     {
-        id: "3",
-        src: "/Loop/bharat-electricity-removebg-preview.png",
-        alt: "Bharat Electricity Forum",
-        href: "#"
+        title: "Strategic Essays",
+        desc: "Columns from policymakers, CMDs, and CEOs.",
+        Icon: FileText,
     },
     {
-        id: "4",
-        src: "/Loop/transform-hse-removebg-preview.png",
-        alt: "Transform HSE",
-        href: "#"
+        title: "Innovation & Research",
+        desc: "Stories from the frontier of technology and R&D.",
+        Icon: Lightbulb,
     },
     {
-        id: "5",
-        src: "/Loop/grpc-removebg-preview.png",
-        alt: "Global Refining & Petrochemicals Congress",
-        href: "#"
+        title: "State Spotlights",
+        desc: "Ground-level data on reform implementation.",
+        Icon: Map,
     },
     {
-        id: "6",
-        src: "/Loop/bharat-fire-removebg-preview.png",
-        alt: "Bharat Fire & Safety Congress",
-        href: "#"
-    },
-    {
-        id: "7",
-        src: "/Loop/ipsc-removebg-preview.png",
-        alt: "International Process Safety Conference",
-        href: "#"
+        title: "Visual Intelligence",
+        desc: "Infographics that decode complexity into clarity.",
+        Icon: BarChart3,
     },
 ];
 
-// Sectors Data
-const sectors = [
-    { id: 1, title: "Oil & Gas", icon: <Flame size={18} /> },
-    { id: 2, title: "Power & Utilities", icon: <Zap size={18} /> },
-    { id: 3, title: "Renewables", icon: <Wind size={18} /> },
-    { id: 4, title: "Climate Action", icon: <Globe size={18} /> },
+const editorialProfiles: EditorialProfile[] = [
+    {
+        initials: "AB",
+        name: "Abhishek Bhatnagar",
+        href: "https://energdive.com/author/abhishek-bhatnagar",
+        role: "EDITOR-IN-CHIEF",
+        image: "/abhishek-bhatnagar.jpg", // Update path as per public folder
+        bio: "Abhishek's nearly twenty-five-year journey is defined by a commitment to building institutions, ideas, and ecosystems that strengthen India's energy transition, sustainability agenda, and long-term development priorities. An engineer with a strategist's clarity and an entrepreneur's instinct, he has founded and shaped platforms that sit at the intersection of policy, industry, innovation, and public purpose — enabling leaders to transform insight into influence, and influence into impact.",
+    },
+    {
+        initials: "MB",
+        name: "Mrinmoy Bhattacharjee",
+        href: "https://energdive.com/author/mrinmoy-bhattacharjee",
+        role: "SENIOR EDITOR",
+        image: "/mrinmoy-bhattacharjee.jpg", // Update path as per public folder
+        bio: "Mrinmoy Bhattacharjee is Senior Editor at ENERGDIVE with over 16 years of experience in energy-business journalism across print and digital media. His work covers oil and gas, power and utilities, new energies, energy efficiency, sustainability, and climate change. He has produced research-driven reporting and analysis for industry and institutional audiences. He holds a master's degree in Communication Studies from the University of Pune.",
+    },
 ];
+
+/* Mercom-Style Heading */
+function SectionHeading({ title }: { title: string }) {
+    return (
+        <div className="mb-6">
+            <h2 className="text-xl font-extrabold uppercase tracking-wide text-zinc-900 sm:text-2xl">
+                {title}
+            </h2>
+            <div className="mt-2 h-1 w-12" style={{ backgroundColor: brandGreen }} />
+        </div>
+    );
+}
+
+/* Section Container */
+function SectionBand({
+    children,
+    background = "white",
+}: {
+    children: React.ReactNode;
+    background?: "white" | "gray";
+}) {
+    return (
+        <section className={background === "gray" ? "bg-[#F4F5F7]" : "bg-white"}>
+            <div className="mx-auto max-w-[1140px] px-4 py-12 sm:px-6 lg:px-8 lg:py-14">
+                {children}
+            </div>
+        </section>
+    );
+}
+
+/* Editorial Card with Author Image Support */
+function EditorialProfileCard({ profile }: { profile: EditorialProfile }) {
+    return (
+        <article className="flex flex-col gap-5 sm:flex-row sm:items-start sm:gap-6">
+            {/* Author Avatar / Image */}
+            <Link
+                href={profile.href}
+                className="group relative flex h-28 w-28 shrink-0 overflow-hidden bg-zinc-900 transition-opacity hover:opacity-90"
+                aria-label={`Read ${profile.name}'s author profile`}
+            >
+                {profile.image ? (
+                    <Image
+                        src={profile.image}
+                        alt={profile.name}
+                        fill
+                        sizes="112px"
+                        className="object-cover object-center grayscale transition-all duration-300 group-hover:grayscale-0"
+                    />
+                ) : (
+                    <div className="flex h-full w-full items-center justify-center text-white">
+                        <span className="text-2xl font-black">{profile.initials}</span>
+                    </div>
+                )}
+            </Link>
+
+            {/* Profile Content */}
+            <div className="space-y-1.5">
+                <Link href={profile.href} className="group inline-flex items-center gap-1.5">
+                    <h3 className="text-lg font-bold text-zinc-900 transition-colors group-hover:text-[#00A859]">
+                        {profile.name}
+                    </h3>
+                    <ArrowUpRight className="h-4 w-4 text-zinc-400 group-hover:text-[#00A859]" />
+                </Link>
+
+                <p className="text-xs font-bold uppercase tracking-wider text-[#00A859]">
+                    {profile.role}
+                </p>
+
+                <p className="pt-1 text-sm leading-relaxed text-zinc-700">
+                    {profile.bio}
+                </p>
+            </div>
+        </article>
+    );
+}
 
 export default function AboutPage() {
     return (
-        <div className="min-h-screen bg-[#FDFDFD] font-sans text-zinc-900 selection:bg-[#00A651]/30">
-            <Header />
+        <div className="bg-white font-sans text-zinc-800 antialiased selection:bg-[#00A859]/20">
+            {/* 1. HERO SECTION */}
+            <section className="relative isolate min-h-[320px] overflow-hidden bg-zinc-900 sm:min-h-[380px]">
+                <Image
+                    src="/the club.jpg"
+                    alt="Energy leaders with industrial, wind, and solar infrastructure"
+                    fill
+                    priority
+                    sizes="100vw"
+                    className="object-cover opacity-40"
+                />
+                <div className="relative z-10 mx-auto flex min-h-[320px] max-w-[1140px] items-center justify-center px-4 text-center sm:min-h-[380px]">
+                    <h1 className="max-w-4xl text-3xl font-extrabold leading-tight tracking-tight text-white sm:text-5xl">
+                        At the forefront of India&apos;s clean energy transformation.
+                    </h1>
+                </div>
+            </section>
 
-            <main className="relative pt-[140px] pb-32">
+            {/* 2. FOREWORD */}
+            <SectionBand background="white">
+                <SectionHeading title="About Energdive" />
+                <div className="space-y-4 text-sm leading-relaxed text-zinc-700 sm:text-base sm:leading-7">
+                    <p className="text-base font-semibold text-zinc-900 sm:text-lg">
+                        India is entering a defining decade—one that will shape not only its energy security but also its global influence in the age of sustainability.
+                    </p>
+                    <p>
+                        Over the past ten years, bold policy reforms, resilient public sector leadership, and a surge in private innovation have transformed India into one of the world’s most dynamic and diversified energy markets.
+                    </p>
+                    <p>
+                        Yet, as the nation accelerates toward its <strong className="font-semibold text-zinc-950">net-zero</strong> goals and the vision of <strong className="font-semibold text-zinc-950">Viksit Bharat 2047</strong>, the challenge has evolved—from access to advancement, from growth to green leadership.
+                    </p>
 
-                {/* 1. HERO HEADER */}
-                <section className="container mx-auto px-6 lg:px-12 mb-24">
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.6 }}
-                        className="max-w-5xl"
-                    >
-                        <div className="flex items-center gap-4 mb-8">
-                            <span className="h-[2px] w-12 bg-[#00A651]" />
-                            <span className="text-[10px] font-black uppercase tracking-[0.4em] text-[#00A651]">
-                                Our Mission
-                            </span>
-                        </div>
-                        <h1 className="text-6xl md:text-8xl lg:text-9xl font-black tracking-tighter text-zinc-900 leading-[0.85] uppercase italic">
-                            About
-                            <span className="text-[#00A651] not-italic">.</span>
-                        </h1>
-                    </motion.div>
-                </section>
-
-                {/* 2. FOREWORD SECTION */}
-                {/* Fixed: Added clear separation via border-t and padding */}
-                <section className="container mx-auto px-6 lg:px-12">
-                    <div className="border-t border-zinc-200 pt-24 pb-24 grid grid-cols-1 lg:grid-cols-12 gap-16">
-                        <div className="lg:col-span-4">
-                            <motion.div
-                                initial={{ opacity: 0, x: -20 }}
-                                whileInView={{ opacity: 1, x: 0 }}
-                                viewport={{ once: true }}
-                            >
-                                <h2 className="text-4xl font-black uppercase tracking-tight leading-none mb-6">
-                                    Foreword: <br />
-                                    <span className="text-zinc-400">A Decisive Decade</span>
-                                </h2>
-                                <div className="h-1 w-20 bg-[#00A651] mb-6" />
-                                <p className="text-xs font-bold uppercase tracking-[0.2em] text-zinc-500">
-                                    India's Energy Leadership
-                                </p>
-                            </motion.div>
-                        </div>
-                        <div className="lg:col-span-8">
-                            <motion.div
-                                initial={{ opacity: 0, y: 20 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                viewport={{ once: true }}
-                                transition={{ delay: 0.2 }}
-                            >
-                                <p className="text-2xl md:text-3xl font-serif text-zinc-700 leading-relaxed mb-10">
-                                    India is entering a defining decade—one that will shape not only its energy security but also its global influence in the age of sustainability. Over the past ten years, bold policy reforms, resilient public sector leadership, and a surge in private innovation have transformed India into one of the world’s most dynamic and diversified energy markets.
-                                </p>
-                                <div className="prose prose-lg text-zinc-500 mb-10">
-                                    <p>
-                                        Over the past ten years, bold policy reforms, resilient public sector leadership, and a surge in private innovation have transformed India into one of the world’s most dynamic and diversified energy markets.
-                                    </p>
-                                    <p>
-                                        Yet, as the nation accelerates toward its <strong>net-zero</strong> goals and the vision of <strong>Viksit Bharat 2047</strong>, the challenge has evolved—from access to advancement, from growth to green leadership.
-                                    </p>
-                                </div>
-                                <div className="bg-[#00A651]/5 border-l-4 border-[#00A651] p-8 rounded-r-2xl">
-                                    <p className="text-lg font-bold italic text-zinc-800 leading-relaxed">
-                                        ENERGDIVE emerges at this pivotal juncture as the definitive voice of India’s energy transformation—documenting not just the journey, but the leadership and ideas shaping it.
-                                    </p>
-                                </div>
-                            </motion.div>
-                        </div>
+                    <div className="mt-6 border-l-4 p-4 text-sm font-semibold italic text-zinc-900 bg-[#F4F5F7]" style={{ borderColor: brandGreen }}>
+                        ENERGDIVE emerges at this pivotal juncture as the definitive voice of India’s energy transformation—documenting not just the journey, but the leadership and ideas shaping it.
                     </div>
-                </section>
+                </div>
+            </SectionBand>
 
-                {/* 3. STRATEGIC PARTNERS LOOP */}
-                {/* <section className="w-full  border-y border-zinc-100 py-28 mb-32 overflow-hidden">
-                    <div className="container mx-auto px-6 mb-16 text-center">
-                        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-400">
-                            Our Strategic Initiatives
+            {/* 3. STRATEGIC INTELLIGENCE PLATFORM */}
+            <SectionBand background="gray">
+                <SectionHeading title="A Strategic Intelligence Platform for India’s Energy Future" />
+                <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 lg:items-start">
+                    <div className="space-y-4 text-sm leading-relaxed text-zinc-700 lg:col-span-7 sm:text-base sm:leading-7">
+                        <p>
+                            India’s energy transition is not a single narrative—it is a convergence of technologies, markets, and policies that must evolve in harmony. The pace and scale of this transformation demand more than coverage; they demand strategic intelligence.
+                        </p>
+                        <p>
+                            <strong className="font-bold text-[#00A859]">ENERGDIVE</strong> is designed to fill this critical void. Conceived as India’s foremost Strategic Intelligence Platform, it will unify diverse stakeholders—ministries, PSUs, industry leaders, investors, and global institutions—on one credible and data-driven platform.
+                        </p>
+                        <p>
+                            Its mission is to transform information into intelligence, insight into influence, and influence into impact. By curating high-quality thought leadership and evidence-based dialogue, ENERGDIVE will empower decision-makers to translate ambition into action.
                         </p>
                     </div>
 
-                    <div className="relative w-full">
-                        <div className="absolute inset-y-0 left-0 w-32 bg-linear-to-r from-zinc-50 to-transparent z-10 pointer-events-none" />
-                        <div className="absolute inset-y-0 right-0 w-32 bg-linear-to-l from-zinc-50 to-transparent z-10 pointer-events-none" />
-
-                        <LogoLoop
-                            logos={partnerLogos}
-                            speed={40}
-                            direction="left"
-                            logoHeight={80}
-                            gap={100}
-                            hoverSpeed={0}
-                            scaleOnHover={true}
-                            fadeOut={false}
-                            ariaLabel="Strategic Partners"
-                        />
-                    </div>
-                </section> */}
-
-                {/* 4. THE NEED SECTION */}
-                <section className="container mt-[120px] mx-auto px-6 lg:px-12">
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
-                        {/* Wrap in a div to control alignment and maximum width */}
-                        <div className="flex justify-center lg:justify-start">
-                            <motion.div
-                                initial={{ opacity: 0, scale: 0.95 }}
-                                whileInView={{ opacity: 1, scale: 1 }}
-                                viewport={{ once: true }}
-                                // Changed max-w to md (or sm) and aspect to 3/4 to reduce height
-                                className="relative w-full max-w-md aspect-[3/4] bg-zinc-100 rounded-[2.5rem] overflow-hidden shadow-2xl"
-                            >
-                                <Image
-                                    src="/energdive.jpg"
-                                    alt="Strategic Intelligence Platform"
-                                    fill
-                                    className="object-cover transition-all duration-1000"
-                                />
-                            </motion.div>
+                    <div className="border border-zinc-200 bg-white p-5 shadow-sm lg:col-span-5">
+                        <h3 className="mb-4 text-xs font-bold uppercase tracking-wider text-zinc-500">
+                            Coverage Priorities
+                        </h3>
+                        <div className="grid grid-cols-2 gap-2.5">
+                            {sectors.map(({ title, Icon }) => (
+                                <div key={title} className="flex items-center gap-3 border border-zinc-100 bg-[#F4F5F7] p-3">
+                                    <div className="flex h-8 w-8 shrink-0 items-center justify-center bg-[#00A859]/10 text-[#00A859]">
+                                        <Icon className="h-4 w-4" />
+                                    </div>
+                                    <span className="text-xs font-bold uppercase text-zinc-900">
+                                        {title}
+                                    </span>
+                                </div>
+                            ))}
                         </div>
-
-                        <div>
-                            <span className="inline-block px-4 py-1.5 border border-zinc-200 rounded-full text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 mb-6">
-                                The Need
-                            </span>
-                            <h2 className="text-4xl md:text-xl lg:text-4xl font-black uppercase italic leading-[0.9] mb-8 text-zinc-900">
-                                A Strategic  <br />
-                                Intelligence Platform for  <span className="text-[#00A651]">India’s Energy Future..</span>
-                            </h2>
-                            <p className="text-lg md:text-xl text-zinc-600 leading-relaxed mb-6 font-serif">
-                                India’s energy transition is not a single narrative—it is a convergence of technologies, markets, and policies that must evolve in harmony. The pace and scale of this transformation demand more than coverage; they demand strategic intelligence.
-                            </p>
-                            <p className="text-base text-zinc-500 leading-relaxed mb-8">
-                                <strong className="text-[#00A651]">ENERGDIVE</strong> is designed to fill this critical void. Conceived as India’s foremost Strategic Intelligence Platform, it will unify diverse stakeholders—ministries, PSUs, industry leaders, investors, and global institutions—on one credible and data-driven platform.
-                            </p>
-                            <p className="text-base text-zinc-500 leading-relaxed mb-8">
-                                Its mission is to transform information into intelligence, insight into influence, and influence into impact. By curating high-quality thought leadership and evidence-based dialogue, ENERGDIVE will empower decision-makers to translate ambition into action
-                            </p>
-                            <div className="flex items-center gap-4">
-                                <div className="h-[2px] w-12 bg-[#00A651]" />
-                                <span className="text-xs font-bold uppercase tracking-widest text-[#00A651]">Anchored in India’s national vision for sustainable and inclusive growth.</span>
-                            </div>
-                        </div>
+                        <p className="mt-5 border-t border-zinc-100 pt-4 text-xs font-semibold text-[#00A859]">
+                            Anchored in India’s national vision for sustainable and inclusive growth.
+                        </p>
                     </div>
-                </section>
-                <div className="mt-[120px]">
-                    <PublicationShowcase />
+                </div>
+            </SectionBand>
+
+            {/* 4. THE PUBLICATION */}
+            <SectionBand background="white">
+                <SectionHeading title="The Publication" />
+                <div className="grid grid-cols-1 gap-6 bg-zinc-900 p-6 text-white sm:p-8 lg:grid-cols-[1fr_220px] lg:items-center">
+                    <div className="space-y-4">
+                        <h3 className="text-2xl font-bold text-white sm:text-3xl">
+                            The Definitive Voice of India’s Energy Transition.
+                        </h3>
+                        <p className="text-sm leading-relaxed text-zinc-300">
+                            ENERGDIVE stands as India’s most premium energy leadership publication, blending the depth of a knowledge journal with the design sophistication of a global business review. Published by ClariSector Technologies Pvt. Ltd., a group company of ENCIS and ITEN Media, the magazine carries the intellectual and institutional credibility of India’s foremost voices in energy and sustainability.
+                        </p>
+                        <p className="text-sm leading-relaxed text-zinc-400">
+                            Positioned at the intersection of policy, enterprise, and innovation, ENERGDIVE chronicles India’s decisive decade of transformation—spotlighting reforms, investments, and breakthroughs across key energy sectors.
+                        </p>
+                    </div>
+
+                    <Link href="/issues" className="group block justify-self-center lg:justify-self-end">
+                        <div className="relative aspect-[3/4] w-[180px] border border-white/20 bg-zinc-800 shadow-md">
+                            <Image
+                                src="/current-magazine.jpg"
+                                alt="ENERGDIVE current issue cover"
+                                fill
+                                sizes="180px"
+                                className="object-cover transition-transform duration-300 group-hover:scale-105"
+                            />
+                        </div>
+                        <span className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#00A859]">
+                            View Issues
+                            <ArrowUpRight className="h-3.5 w-3.5" />
+                        </span>
+                    </Link>
                 </div>
 
-            </main>
+                <div className="mt-12">
+                    <h3 className="mb-4 text-xs font-bold uppercase tracking-wider text-zinc-500">
+                        Editorial Architecture & Highlights
+                    </h3>
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                        {featureHighlights.map(({ title, desc, Icon }) => (
+                            <div key={title} className="flex items-start gap-3.5 border border-zinc-200 bg-white p-4">
+                                <div className="flex h-9 w-9 shrink-0 items-center justify-center bg-[#00A859]/10 text-[#00A859]">
+                                    <Icon className="h-4 w-4" />
+                                </div>
+                                <div>
+                                    <h4 className="text-sm font-bold text-zinc-900">
+                                        {title}
+                                    </h4>
+                                    <p className="mt-1 text-xs leading-relaxed text-zinc-600">
+                                        {desc}
+                                    </p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </SectionBand>
+
+            {/* 5. EDITORIAL TEAM */}
+            <SectionBand background="gray">
+                <SectionHeading title="Editorial Team" />
+                <p className="mb-8 text-sm text-zinc-600 sm:text-base">
+                    ENERGDIVE&apos;s reporting and analysis is guided by an editorial team with deep, combined experience across energy-business journalism, policy, and industry strategy.
+                </p>
+
+                <div className="space-y-8">
+                    {editorialProfiles.map((profile) => (
+                        <EditorialProfileCard key={profile.name} profile={profile} />
+                    ))}
+                </div>
+            </SectionBand>
+
+            {/* 6. CORRECTIONS & EDITORIAL POLICY */}
+            <SectionBand background="white">
+                <SectionHeading title="Corrections & Editorial Policy" />
+                <div className="grid grid-cols-1 gap-6 text-sm leading-relaxed text-zinc-700 md:grid-cols-2 sm:text-base sm:leading-7">
+                    <p>
+                        ENERGDIVE is committed to accuracy, fairness, and editorial integrity in all its reporting. If you believe a factual error appears in any of our published content, please write to us at{" "}
+                        <a href="mailto:info@energdive.com" className="font-bold text-[#00A859] underline underline-offset-4 transition-colors hover:text-emerald-700">
+                            info@energdive.com
+                        </a>{" "}
+                        with details, and our editorial team will review and correct it promptly. Significant corrections will be noted transparently on the relevant article.
+                    </p>
+                    <p>
+                        Editorial decisions at ENERGDIVE are made independently of advertising, sponsorship, and commercial partnerships. Our news and analysis reflect the independent judgment of our editorial team.
+                    </p>
+                </div>
+            </SectionBand>
         </div>
     );
 }
