@@ -24,7 +24,7 @@ export function StickySidebar({
             const elementHeight = containerRef.current.offsetHeight;
             const vh = window.innerHeight;
 
-            if (elementHeight + topOffset > vh) {
+            if (elementHeight > 0 && elementHeight + topOffset > vh) {
                 // Sidebar is taller than viewport: stick so bottom widget stays pinned in view
                 const calculatedTop = vh - elementHeight - bottomPadding;
                 setStickyTop(`${calculatedTop}px`);
@@ -36,17 +36,41 @@ export function StickySidebar({
 
         updateStickyTop();
 
-        const observer = new ResizeObserver(updateStickyTop);
+        // 1. ResizeObserver for element dimension changes
+        const resizeObserver = new ResizeObserver(updateStickyTop);
         if (containerRef.current) {
-            observer.observe(containerRef.current);
+            resizeObserver.observe(containerRef.current);
         }
 
+        // 2. MutationObserver for DOM changes inside sidebar
+        const mutationObserver = new MutationObserver(updateStickyTop);
+        if (containerRef.current) {
+            mutationObserver.observe(containerRef.current, {
+                childList: true,
+                subtree: true,
+                attributes: true,
+            });
+        }
+
+        // 3. Window resize listener
         window.addEventListener("resize", updateStickyTop);
+
+        // 4. Image load listeners
+        const handleImageLoad = () => updateStickyTop();
+        const images = containerRef.current?.querySelectorAll("img");
+        images?.forEach((img) => {
+            if (!img.complete) {
+                img.addEventListener("load", handleImageLoad);
+            }
+        });
+
         return () => {
-            observer.disconnect();
+            resizeObserver.disconnect();
+            mutationObserver.disconnect();
             window.removeEventListener("resize", updateStickyTop);
+            images?.forEach((img) => img.removeEventListener("load", handleImageLoad));
         };
-    }, [topOffset, bottomPadding]);
+    }, [topOffset, bottomPadding, children]);
 
     return (
         <div

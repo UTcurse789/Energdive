@@ -3,12 +3,10 @@ import Image from "next/image";
 import { Header } from "@/components/layout/header";
 import { notFound } from "next/navigation";
 import { BlocksRenderer } from "@strapi/blocks-react-renderer";
-import { SidebarSubscribe } from "@/components/sidebar-subscribe";
 import { AdBanner } from "@/components/ads/AdBanner";
 import { AdRenderer } from "@/components/ads/AdRenderer";
 import { LatestIssueWidget } from "@/components/news/LatestIssueWidget";
 import { SidebarNewsletterForm } from "@/components/news/SidebarNewsletterForm";
-import { TagBadge } from "@/components/ui/tag-badge";
 import { ScrollProgress } from "@/components/ui/scroll-progress";
 import { ShareButton } from "@/components/ui/share-button";
 import { getLatestIssue } from "@/lib/api/getLatestIssue";
@@ -17,12 +15,15 @@ import { formatContentDate } from "@/lib/date";
 import ArticleBody from "@/components/ArticleBody";
 import { fetchDataBlocks } from "@/lib/parse-content-blocks";
 import { ArticleJsonLd } from "@/components/seo/ArticleJsonLd";
-
 import { AuthorBioBox } from "@/components/article/AuthorBioBox";
 import { ArticleStickyShare } from "@/components/article/ArticleStickyShare";
 import { SaveArticleButton } from "@/components/article/SaveArticleButton";
 import { getSectorSlugForTagOrCategory } from "@/lib/sector-mapping";
 import { StickySidebar } from "@/components/ui/StickySidebar";
+import type { Metadata } from "next";
+import { strapiImageUrl } from "@/lib/strapi-image";
+import { getCanonicalUrl } from "@/lib/seo";
+
 const STRAPI_BASE_URL = "https://cms.energdive.com";
 
 function slugify(text: string): string {
@@ -35,47 +36,6 @@ function normalizeTag(tag: any) {
     const slug = source?.slug || (name ? slugify(name) : "");
     if (!name) return null;
     return { name, slug };
-}
-
-function extractHighlights(attrs: any, excerptText: string, content: any[]): string[] {
-    if (Array.isArray(attrs.Highlights) && attrs.Highlights.length > 0) {
-        return attrs.Highlights.slice(0, 3).map((h: any) => typeof h === "string" ? h : h.text || String(h));
-    }
-    if (Array.isArray(attrs.KeyTakeaways) && attrs.KeyTakeaways.length > 0) {
-        return attrs.KeyTakeaways.slice(0, 3).map((h: any) => typeof h === "string" ? h : h.text || String(h));
-    }
-
-    const sentences: string[] = [];
-    const extractText = (node: any): string => {
-        if (!node) return "";
-        if (typeof node === "string") return node;
-        if (typeof node.text === "string") return node.text;
-        if (Array.isArray(node.children)) return node.children.map(extractText).join(" ");
-        return "";
-    };
-
-    if (excerptText && excerptText.length > 20) {
-        const parts = excerptText.split(/(?<=[.!?])\s+/).filter(s => s.trim().length > 15);
-        sentences.push(...parts);
-    }
-
-    if (sentences.length < 3 && Array.isArray(content)) {
-        for (const block of content) {
-            const txt = extractText(block).trim();
-            if (txt.length > 30) {
-                const parts = txt.split(/(?<=[.!?])\s+/).filter(s => s.trim().length > 20);
-                for (const p of parts) {
-                    if (!sentences.includes(p)) {
-                        sentences.push(p);
-                    }
-                    if (sentences.length >= 3) break;
-                }
-            }
-            if (sentences.length >= 3) break;
-        }
-    }
-
-    return sentences.slice(0, 3);
 }
 
 /* ================= FETCH ARTICLE ================= */
@@ -93,7 +53,6 @@ async function getArticle(slug: string) {
 /* ================= FETCH RELATED ================= */
 
 async function getRelated(tags: string[], currentSlug: string, sectorSlug?: string) {
-    // Try by tags first
     if (tags.length) {
         const tagFilters = tags
             .map((tag, i) => `filters[tags][slug][$in][${i}]=${tag}`)
@@ -105,7 +64,6 @@ async function getRelated(tags: string[], currentSlug: string, sectorSlug?: stri
             if ((json.data || []).length > 0) return json.data;
         }
     }
-    // Fallback: by sector
     if (sectorSlug) {
         const url = `${STRAPI_BASE_URL}/api/contents?filters[type_of_content][name][$eq]=News&filters[sectors][slug][$eq]=${sectorSlug}&filters[slug][$ne]=${currentSlug}&populate=*&pagination[limit]=5&sort=publishedAt:desc`;
         const res = await fetch(url, { next: { revalidate: 3600 } });
@@ -114,7 +72,6 @@ async function getRelated(tags: string[], currentSlug: string, sectorSlug?: stri
             if ((json.data || []).length > 0) return json.data;
         }
     }
-    // Final fallback: latest news
     const res = await fetch(
         `${STRAPI_BASE_URL}/api/contents?filters[type_of_content][name][$eq]=News&filters[slug][$ne]=${currentSlug}&pagination[limit]=5&populate=*&sort=publishedAt:desc`,
         { cache: "no-store" }
@@ -123,9 +80,6 @@ async function getRelated(tags: string[], currentSlug: string, sectorSlug?: stri
     const json = await res.json();
     return json.data || [];
 }
-import type { Metadata } from "next";
-import { strapiImageUrl } from "@/lib/strapi-image";
-import { getCanonicalUrl } from "@/lib/seo";
 
 /* ================= METADATA (OG tags for WhatsApp / social) ================= */
 
@@ -143,7 +97,7 @@ export async function generateMetadata({
 
     const attrs = articleData.attributes || articleData;
     const baseTitle = attrs.Title || "News";
-    const cleanBaseTitle = String(baseTitle).replace(/^['"“”‘’]+|['"“”‘’]+$/g, "").trim();
+    const cleanBaseTitle = String(baseTitle).replace(/^['"“'']+|['"“'']+$ /g, "").trim();
     const shareTitle = `${cleanBaseTitle} - ENERGDIVE`;
     const canonicalUrl = getCanonicalUrl(`/news/${slug}`);
     const excerptBlock = attrs.Excerpt;
@@ -208,7 +162,7 @@ export default async function NewsDetailPage({
         .map((t: any) => t.slug)
         .filter(Boolean);
 
-    // Extract sector name and sector slug (must come before getRelated)
+    // Extract sector name and sector slug
     const sectorData = attrs.sectors || attrs.sector?.data?.attributes || null;
     const sectorList = Array.isArray(sectorData) ? sectorData : (sectorData?.data || (sectorData ? [sectorData] : []));
     const firstSector = sectorList[0]?.attributes || sectorList[0] || null;
@@ -261,7 +215,6 @@ export default async function NewsDetailPage({
 
     const categorySectorSlug = getSectorSlugForTagOrCategory(sectorName || article.category, sectorSlug);
 
-    // Raw date for JSON-LD and display (prioritizing publishedAt for accurate automatic time)
     const rawDate = attrs.publishedAt || attrs.createdAt || attrs.Date || "";
     const modifiedDate = attrs.updatedAt || rawDate;
     const excerptText = Array.isArray(attrs.Excerpt)
@@ -299,7 +252,7 @@ export default async function NewsDetailPage({
                     </div>
                 </div>
 
-                <div className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-16 pt-6 grid grid-cols-1 lg:grid-cols-12 gap-8 sm:gap-12 lg:gap-12 items-start">
+                <div className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-16 pt-6 grid grid-cols-1 lg:grid-cols-12 gap-8 sm:gap-12 lg:gap-12">
 
                     {/* ═══════════════ MAIN COLUMN (8 cols) ═══════════════ */}
                     <div className="lg:col-span-8 min-w-0">
@@ -399,9 +352,6 @@ export default async function NewsDetailPage({
 
                         {/* Article Body */}
                         <article className="relative">
-                            {/* Decorative side line */}
-                            {/* <div className="absolute inset-x-0 bottom-0 h-2/3 bg-linear-to-t from-black/80 via-black/40 to-transparent flex flex-col justify-end p-8 md:p-12" /> */}
-
                             <div className="prose prose-lg max-w-none font-serif text-[18px] leading-[1.95] text-gray-800
 
 prose-headings:font-bold prose-headings:text-gray-900 prose-headings:tracking-tight
@@ -456,7 +406,7 @@ first:prose-p:first-letter:text-6xl first:prose-p:first-letter:font-serif first:
                     </div>
 
                     {/* ═══════════════ SIDEBAR (4 cols) ═══════════════ */}
-                    <aside className="lg:col-span-4 relative">
+                    <aside className="lg:col-span-4 relative h-full">
                         <StickySidebar className="flex flex-col space-y-8 pb-12">
 
                             {/* AD: new_sidebar */}
