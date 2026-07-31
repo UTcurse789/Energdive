@@ -67,18 +67,23 @@ function getExcerpt(excerpt?: HeroExcerptBlock[] | null): string {
 
 
 interface HeroProps {
+    heroStories?: HeroItem[];
     topStories?: HeroItem[];
 }
 
-export function Hero({ topStories: propTopStories }: HeroProps) {
+export function Hero({ heroStories: propHeroStories, topStories: propTopStories }: HeroProps) {
     const [coverStories, setCoverStories] = useState<HeroItem[]>([]);
     const [articles, setArticles] = useState<HeroItem[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(!(propHeroStories?.length));
     const [currentSlide, setCurrentSlide] = useState(0);
     const [isTransitioning, setIsTransitioning] = useState(false);
     const autoPlayRef = useRef<NodeJS.Timeout | null>(null);
 
     useEffect(() => {
+        if (propHeroStories?.length) {
+            return;
+        }
+
         // Hero banner content for carousel
         fetch(`${STRAPI_BASE}/api/contents?filters[show_hero_banner][$eq]=true&populate=*&pagination[pageSize]=10&sort=publishedAt:desc`)
             .then((res) => res.json())
@@ -96,9 +101,9 @@ export function Hero({ topStories: propTopStories }: HeroProps) {
                 .catch(console.error)
                 .finally(() => setLoading(false));
         }
-    }, [propTopStories]);
+    }, [propHeroStories, propTopStories]);
 
-    const carouselArticles = coverStories;        // 👈 Cover stories in carousel
+    const carouselArticles = propHeroStories?.length ? propHeroStories : coverStories;
     const topStories = propTopStories || articles.slice(0, 6);
 
     const goToSlide = useCallback((index: number) => {
@@ -124,10 +129,10 @@ export function Hero({ topStories: propTopStories }: HeroProps) {
         };
     }, [nextSlide, carouselArticles.length]);
 
-    if (loading) return <HeroSkeleton />;
+    if (loading && !propHeroStories?.length) return <HeroSkeleton />;
     if (carouselArticles.length === 0) return null;
 
-    const featured = carouselArticles[currentSlide];
+    const featured = carouselArticles[currentSlide] || carouselArticles[0];
 
     return (
         <section className="pt-4 pb-4 bg-white">
@@ -144,8 +149,8 @@ export function Hero({ topStories: propTopStories }: HeroProps) {
                                 alt={featured.Title || "Feature story"}
                                 fill
                                 priority
-                                quality={100}
-                                sizes="(max-width: 1024px) 100vw, 1200px"
+                                quality={80}
+                                sizes="(max-width: 1024px) 100vw, 850px"
                                 className={`object-cover transition-all duration-700 ${isTransitioning ? "opacity-40 scale-105" : "opacity-100 scale-100"
                                     } group-hover/img:scale-110`}
                             />
@@ -155,24 +160,35 @@ export function Hero({ topStories: propTopStories }: HeroProps) {
                                 {carouselArticles.map((_, i) => (
                                     <button
                                         key={i}
+                                        type="button"
+                                        aria-label={`Go to slide ${i + 1}`}
+                                        aria-current={i === currentSlide ? "true" : undefined}
                                         onClick={() => goToSlide(i)}
-                                        className={`w-2 h-2 rounded-full transition-all duration-300 ${i === currentSlide
-                                            ? "bg-[#09B697] w-6"
-                                            : "bg-white/50"
-                                            }`}
-                                    />
+                                        className="relative flex h-6 w-6 items-center justify-center rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-white/90"
+                                    >
+                                        <span
+                                            className={`h-2 rounded-full transition-all duration-300 ${i === currentSlide
+                                                ? "w-6 bg-[#09B697]"
+                                                : "w-2 bg-white/50"
+                                                }`}
+                                        />
+                                    </button>
                                 ))}
                             </div>
 
                             {/* Nav Arrows */}
                             <div className="absolute inset-y-0 left-0 right-0 flex justify-between items-center px-3 md:px-6 opacity-100 lg:opacity-0 group-hover/img:opacity-100 transition-opacity">
                                 <button
+                                    type="button"
+                                    aria-label="Previous hero slide"
                                     onClick={() => goToSlide((currentSlide - 1 + carouselArticles.length) % carouselArticles.length)}
                                     className="p-2 md:p-3 bg-white/30 md:bg-white/20 backdrop-blur-lg rounded-full text-white hover:bg-white hover:text-black transition-all"
                                 >
                                     <ChevronLeft size={24} />
                                 </button>
                                 <button
+                                    type="button"
+                                    aria-label="Next hero slide"
                                     onClick={nextSlide}
                                     className="p-2 md:p-3 bg-white/30 md:bg-white/20 backdrop-blur-lg rounded-full text-white hover:bg-white hover:text-black transition-all"
                                 >
@@ -233,10 +249,10 @@ export function Hero({ topStories: propTopStories }: HeroProps) {
                     {/* === RIGHT SIDEBAR (1 Col) === */}
                     <div className="lg:col-span-1">
                         <div className="relative flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
-                            <h3 className="text-sm font-black uppercase tracking-[0.2em] text-[#1a1a1a] flex items-center gap-2">
+                            <h2 className="text-sm font-black uppercase tracking-[0.2em] text-[#1a1a1a] flex items-center gap-2">
                                 <span className="w-2 h-2 rounded-full bg-red-600 animate-pulse" />
                                 Latest News
-                            </h3>
+                            </h2>
                             <Link href="/news" className="text-[10px] font-black text-[#1a4731] flex items-center gap-1 hover:text-[#09B697] transition-colors">
                                 EXPLORE <ArrowRight size={12} />
                             </Link>

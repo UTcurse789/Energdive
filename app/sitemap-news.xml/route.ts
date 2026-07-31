@@ -38,7 +38,7 @@ async function getRecentNews(): Promise<NewsArticle[]> {
             name: { $eq: 'News' },
           },
         },
-        fields: ['slug', 'Title', 'publishedAt', 'Date'],
+        fields: ['slug', 'Title', 'Date'],
         sort: ['publishedAt:desc'],
         pagination: { pageSize: 100 },
       },
@@ -56,7 +56,7 @@ async function getRecentNews(): Promise<NewsArticle[]> {
     const url =
       `${STRAPI_BASE_URL}/api/contents` +
       `?filters[type_of_content][name][$eq]=News` +
-      `&fields[0]=slug&fields[1]=Title&fields[2]=publishedAt&fields[3]=Date` +
+      `&fields[0]=slug&fields[1]=Title&fields[2]=Date` +
       `&sort=publishedAt:desc` +
       `&pagination[pageSize]=100`;
 
