@@ -186,7 +186,7 @@ export default function AboutPage() {
                 />
                 <div className="relative z-10 mx-auto flex min-h-[320px] max-w-[1140px] items-center justify-center px-4 text-center sm:min-h-[380px]">
                     <h1 className="max-w-4xl text-3xl font-extrabold leading-tight tracking-tight text-white sm:text-5xl">
-                        At the forefront of India&apos;s clean energy transformation.
+                        The definitive voice of India&apos;s energy transformation.
                     </h1>
                 </div>
             </section>
