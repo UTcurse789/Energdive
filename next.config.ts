@@ -165,6 +165,10 @@ const nextConfig: NextConfig = {
     contentSecurityPolicy:
       "default-src 'self'; script-src 'none'; sandbox;",
 
+    formats: ["image/avif", "image/webp"],
+    deviceSizes: [360, 414, 640, 768, 828, 1024, 1200, 1440],
+    imageSizes: [16, 32, 48, 64, 96, 112, 128, 160, 192, 256, 320, 384, 512],
+
     // Allowed external image sources
     remotePatterns: [
       {
@@ -224,7 +228,7 @@ const nextConfig: NextConfig = {
       },
 
     ],
-    qualities: [75, 100],
+    qualities: [75, 80, 100],
     unoptimized: false,
   },
 };

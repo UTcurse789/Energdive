@@ -18,6 +18,7 @@ import { strapiImageUrl } from "@/lib/strapi-image";
 import { buildContentUrl } from "@/lib/content-routes";
 import { buildSectorArticlesUrl } from "@/lib/sector-content";
 import { getOpinionContentKind } from "@/lib/content-tags";
+import Link from "next/link";
 
 export const metadata = HOME_PAGE_METADATA;
 
@@ -135,6 +136,21 @@ async function getFeaturedContents() {
   }
 }
 
+async function getHeroBannerContents() {
+  try {
+    const res = await fetch(
+      `${STRAPI_BASE}/api/contents?filters[show_hero_banner][$eq]=true&populate=*&pagination[pageSize]=10&sort=publishedAt:desc`,
+      { next: { revalidate: 60 } }
+    );
+    if (!res.ok) return [];
+    const json = await res.json();
+    return json.data || [];
+  } catch (err) {
+    console.error("Hero banner fetch error:", err);
+    return [];
+  }
+}
+
 async function getOpinionBuckets() {
   try {
     const res = await fetch(
@@ -176,9 +192,10 @@ async function getOpinionBuckets() {
 }
 
 export default async function Home() {
-  const [allContents, featuredContents, latestIssue, { opinions, interviews }] = await Promise.all([
+  const [allContents, featuredContents, heroBannerContents, latestIssue, { opinions, interviews }] = await Promise.all([
     getAllContents(),
     getFeaturedContents(),
+    getHeroBannerContents(),
     getLatestIssue(),
     getOpinionBuckets(),
   ]);
@@ -225,7 +242,7 @@ export default async function Home() {
   const sectorFetchResults = await Promise.all(
     HOMEPAGE_SECTORS.map(async (sector) => {
       try {
-        const res = await fetch(buildSectorArticlesUrl(sector.slug), { cache: "no-store" });
+        const res = await fetch(buildSectorArticlesUrl(sector.slug), { next: { revalidate: 300 } });
         if (!res.ok) return [];
         const json = await res.json();
         return json.data || [];
@@ -256,7 +273,7 @@ export default async function Home() {
       </div>
 
       {/* Cover Story (left) + Trending (right) — the original Hero */}
-      <Hero topStories={heroTopStories} />
+      <Hero heroStories={heroBannerContents} topStories={heroTopStories} />
 
       {/* Featured Bento */}
       <section className="pt-8 pb-8 bg-white relative overflow-hidden">
@@ -310,13 +327,13 @@ export default async function Home() {
 
           {/* View All Sectors Button */}
           <div className="flex justify-center py-5">
-            <a
+            <Link
               href="/sectors"
               className="group inline-flex items-center gap-3 px-8 py-4 bg-[#09B697] text-white text-[12px] font-black uppercase tracking-[0.2em] rounded-full hover:bg-[#078a72] transition-all duration-300 shadow-lg shadow-[#09B697]/20 hover:shadow-xl hover:shadow-[#09B697]/30 hover:-translate-y-0.5"
             >
               View All Sectors
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="transition-transform duration-300 group-hover:translate-x-1"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg>
-            </a>
+            </Link>
           </div>
         </div>
       </div>

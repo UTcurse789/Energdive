@@ -5,6 +5,40 @@
 
 @custom-variant dark (&:is(.dark *));
 
+@layer utilities {
+  .text-zinc-400 {
+    color: #71717a;
+  }
+
+  .text-slate-400 {
+    color: #64748b;
+  }
+
+  .text-\[\#00A651\] {
+    color: #007a3d;
+  }
+
+  .text-\[\#09B697\] {
+    color: #087A66;
+  }
+
+  .bg-\[\#00A651\] {
+    background-color: #007a3d;
+  }
+
+  .bg-\[\#09B697\] {
+    background-color: #087A66;
+  }
+
+  .border-\[\#00A651\] {
+    border-color: #007a3d;
+  }
+
+  .border-\[\#09B697\] {
+    border-color: #087A66;
+  }
+}
+
 
 :root {
   /* Brand Colors */
