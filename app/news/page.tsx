@@ -2,8 +2,7 @@ import React from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Header } from "@/components/layout/header";
-import { Clock, Zap } from "lucide-react";
-import { DateChip } from "@/components/ui/date-chip";
+import { Zap } from "lucide-react";
 import { formatContentDate, toIsoDate } from "@/lib/date";
 import { strapiImageUrl } from "@/lib/strapi-image";
 import { AdBanner } from "@/components/ads/AdBanner";
@@ -14,21 +13,6 @@ import NewsFeedClient from "./NewsFeedClient";
 import { ORGANIZATION_SCHEMA } from "@/lib/organization-schema";
 
 const STRAPI_BASE_URL = "https://cms.energdive.com";
-
-function timeAgo(dateInput: string | Date) {
-    if (!dateInput) return "";
-    const d = new Date(dateInput);
-    if (Number.isNaN(d.getTime())) return "";
-    return new Intl.DateTimeFormat("en-GB", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: false,
-        timeZone: "Asia/Kolkata",
-    }).format(d).replace(",", "") + " IST";
-}
 
 function estimateReadingTime(text: string) {
     const wordsPerMinute = 225;
@@ -265,7 +249,7 @@ export default async function NewsPage(props: { searchParams: Promise<{ [key: st
                                 <div className="mt-5 flex items-center gap-3 text-xs sm:text-sm text-slate-500 font-medium">
                                     <span className="text-slate-900 font-bold">By {heroArticle.author}</span>
                                     <span>•</span>
-                                    <time dateTime={heroArticle.rawDate}>{timeAgo(heroArticle.rawDate)}</time>
+                                    <time dateTime={heroArticle.rawDate}>{heroArticle.date}</time>
                                 </div>
                             </div>
                         </article>
@@ -285,7 +269,7 @@ export default async function NewsPage(props: { searchParams: Promise<{ [key: st
                                                 </h4>
                                             </Link>
                                             <div className="mt-2 text-[10px] text-slate-500 font-medium">
-                                                <time dateTime={item.rawDate}>{timeAgo(item.rawDate)}</time>
+                                                <time dateTime={item.rawDate}>{item.date}</time>
                                             </div>
                                         </div>
                                         <div className="relative w-28 sm:w-36 aspect-[4/3] shrink-0 overflow-hidden bg-slate-200 rounded-sm border border-slate-100">
