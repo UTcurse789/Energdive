@@ -135,6 +135,21 @@ async function getFeaturedContents() {
   }
 }
 
+async function getHeroBannerContents() {
+  try {
+    const res = await fetch(
+      `${STRAPI_BASE}/api/contents?filters[show_hero_banner][$eq]=true&populate=*&pagination[pageSize]=10&sort=publishedAt:desc`,
+      { next: { revalidate: 600 } }
+    );
+    if (!res.ok) return [];
+    const json = await res.json();
+    return json.data || [];
+  } catch (err) {
+    console.error("Hero banner fetch error:", err);
+    return [];
+  }
+}
+
 async function getOpinionBuckets() {
   try {
     const res = await fetch(
@@ -176,11 +191,12 @@ async function getOpinionBuckets() {
 }
 
 export default async function Home() {
-  const [allContents, featuredContents, latestIssue, { opinions, interviews }] = await Promise.all([
+  const [allContents, featuredContents, latestIssue, { opinions, interviews }, heroBannerContents] = await Promise.all([
     getAllContents(),
     getFeaturedContents(),
     getLatestIssue(),
     getOpinionBuckets(),
+    getHeroBannerContents(),
   ]);
 
   // ── Bento: Featured articles fetched directly from Strapi ──
@@ -256,7 +272,7 @@ export default async function Home() {
       </div>
 
       {/* Cover Story (left) + Trending (right) — the original Hero */}
-      <Hero topStories={heroTopStories} />
+      <Hero heroStories={heroBannerContents} topStories={heroTopStories} />
 
       {/* Featured Bento */}
       <section className="pt-8 pb-12 bg-white relative overflow-hidden">
