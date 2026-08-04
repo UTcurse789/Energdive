@@ -3,8 +3,10 @@
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { startTransition, useDeferredValue, useEffect, useState } from "react";
-import { ArrowRight, MapPin, Search, SlidersHorizontal } from "lucide-react";
+import { ArrowRight, CheckCircle2, MapPin, Search, SlidersHorizontal } from "lucide-react";
+import { useAuth } from "@clerk/nextjs";
 import type { PublicEnergJob } from "@/lib/energjob-public";
+import { getCanonicalUrl } from "@/lib/seo";
 import { slugify } from "@/lib/utils";
 import {
   EMPLOYMENT_FILTERS,
@@ -16,6 +18,12 @@ import {
   formatLabel,
 } from "@/lib/energjob-search";
 import FloatingLines from "@/components/FloatingLines";
+import { useAuthModal } from "@/hooks/use-auth-modal";
+import {
+  persistPendingSavedArticle,
+  SAVED_ARTICLE_REDIRECT_PATH,
+  SAVED_JOB_TOAST_MESSAGE,
+} from "@/lib/pending-saved-article";
 
 type FindJobsBoardProps = {
   jobs: PublicEnergJob[];
@@ -36,18 +44,43 @@ function formatSalary(min: number | null, max: number | null) {
   const maxValue = formatNumber(max);
 
   if (minValue && maxValue) {
-    return `Salary ${minValue} - ${maxValue}`;
+    return `₹${minValue} – ₹${maxValue}`;
   }
 
   if (minValue) {
-    return `Salary from ${minValue}`;
+    return `₹${minValue}+`;
   }
 
   if (maxValue) {
-    return `Salary up to ${maxValue}`;
+    return `₹${maxValue}`;
   }
 
   return null;
+}
+
+function formatRelativeTime(dateStr: string | null) {
+  if (!dateStr) {
+    return null;
+  }
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) {
+    return null;
+  }
+
+  const now = new Date();
+  const dateMidnight = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const nowMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  const diffTime = nowMidnight.getTime() - dateMidnight.getTime();
+  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+  if (diffDays <= 0) {
+    return "today";
+  }
+  if (diffDays === 1) {
+    return "yesterday";
+  }
+  return `${diffDays} days ago`;
 }
 
 function formatExperience(min: number | null, max: number | null) {
@@ -82,16 +115,18 @@ function getInitials(name: string) {
 function CompanyMark({
   name,
   logoUrl,
-  size = "h-[68px] w-[68px]",
+  size = "h-12 w-12",
+  rounded = "rounded-xl",
 }: {
   name: string;
   logoUrl: string | null;
   size?: string;
+  rounded?: string;
 }) {
   if (logoUrl) {
     return (
       <div
-        className={`${size} shrink-0 overflow-hidden rounded-[20px] border border-[#d7e3ea] bg-white shadow-[0_6px_18px_rgba(20,63,82,0.08)]`}
+        className={`${size} ${rounded} shrink-0 overflow-hidden border border-gray-200 bg-white`}
       >
         <img src={logoUrl} alt={name} className="h-full w-full object-contain p-1" />
       </div>
@@ -100,7 +135,7 @@ function CompanyMark({
 
   return (
     <div
-      className={`flex ${size} shrink-0 items-center justify-center rounded-[20px] bg-[#143f52] text-base font-black text-white`}
+      className={`flex ${size} ${rounded} shrink-0 items-center justify-center bg-gray-900 text-xs font-bold text-white`}
     >
       {getInitials(name)}
     </div>
@@ -123,6 +158,23 @@ function toAnchorId(value: string) {
 
 function getJobHref(job: PublicEnergJob) {
   return `/energyjobs/${job.routeSlug}`;
+}
+
+function getJobSaveUrl(job: PublicEnergJob) {
+  return getCanonicalUrl(getJobHref(job));
+}
+
+function getJobSaveTitle(job: PublicEnergJob) {
+  const companyName = job.companyName || job.recruiterName || "Energy ecosystem employer";
+  return `${job.title} at ${companyName}`;
+}
+
+function getSavedPath(value: string) {
+  try {
+    return new URL(value).pathname.replace(/\/+$/, "") || "/";
+  } catch {
+    return value.split(/[?#]/)[0].replace(/\/+$/, "") || "/";
+  }
 }
 
 function parseDelimitedValues<T extends string>(rawValue: string | null, allowedValues: readonly T[]) {
@@ -222,12 +274,16 @@ export default function FindJobsBoard({ jobs }: FindJobsBoardProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const { isLoaded, isSignedIn } = useAuth();
+  const { openAuthModal } = useAuthModal();
   const searchParamsKey = searchParams.toString();
   const initialState = buildStateFromParams(searchParams);
 
   const [titleQuery, setTitleQuery] = useState(initialState.titleQuery);
   const [locationQuery, setLocationQuery] = useState(initialState.locationQuery);
   const [savedJobIds, setSavedJobIds] = useState<string[]>([]);
+  const [savingJobId, setSavingJobId] = useState<string | null>(null);
+  const [showSaveToast, setShowSaveToast] = useState(false);
   const [draftExperienceFilters, setDraftExperienceFilters] = useState<ExperienceFilterId[]>(
     initialState.experienceFilters
   );
@@ -258,28 +314,46 @@ export default function FindJobsBoard({ jobs }: FindJobsBoardProps) {
   const deferredAppliedFilterLocation = useDeferredValue(appliedFilterLocation);
 
   useEffect(() => {
-    try {
-      const raw = window.localStorage.getItem("energjob-saved-jobs");
-      if (!raw) {
+    const loadSavedJobs = async () => {
+      if (!isLoaded) return;
+
+      if (!isSignedIn) {
+        setSavedJobIds([]);
         return;
       }
 
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed)) {
-        setSavedJobIds(parsed.map((value) => String(value)));
-      }
-    } catch (error) {
-      console.error("[FindJobsBoard] Failed to load saved jobs", error);
-    }
-  }, []);
+      try {
+        const res = await fetch("/api/user/saved-articles", {
+          method: "GET",
+          cache: "no-store",
+        });
+        if (!res.ok) throw new Error("Failed to load saved jobs");
 
-  useEffect(() => {
-    try {
-      window.localStorage.setItem("energjob-saved-jobs", JSON.stringify(savedJobIds));
-    } catch (error) {
-      console.error("[FindJobsBoard] Failed to persist saved jobs", error);
-    }
-  }, [savedJobIds]);
+        const data = await res.json();
+        const savedPaths = new Set(
+          (Array.isArray(data.articles) ? data.articles : [])
+            .map((item: { url?: string }) => (item.url ? getSavedPath(item.url) : null))
+            .filter(Boolean)
+        );
+
+        setSavedJobIds(
+          jobs
+            .filter((job) => savedPaths.has(getSavedPath(getJobSaveUrl(job))))
+            .map((job) => String(job.id))
+        );
+      } catch (error) {
+        console.error("[FindJobsBoard] Failed to load saved jobs", error);
+        setSavedJobIds([]);
+      }
+    };
+
+    void loadSavedJobs();
+    window.addEventListener("saved_articles_updated", loadSavedJobs);
+
+    return () => {
+      window.removeEventListener("saved_articles_updated", loadSavedJobs);
+    };
+  }, [isLoaded, isSignedIn, jobs]);
 
   useEffect(() => {
     const nextState = buildStateFromParams(searchParams);
@@ -369,13 +443,51 @@ export default function FindJobsBoard({ jobs }: FindJobsBoardProps) {
       appliedCategoryFilters.length > 0
   );
 
-  const toggleSaved = (jobId: number | string) => {
-    const normalizedId = String(jobId);
-    setSavedJobIds((currentIds) =>
-      currentIds.includes(normalizedId)
-        ? currentIds.filter((value) => value !== normalizedId)
-        : [...currentIds, normalizedId]
-    );
+  const toggleSaved = async (job: PublicEnergJob) => {
+    if (!isLoaded || savingJobId) return;
+
+    const normalizedId = String(job.id);
+    const url = getJobSaveUrl(job);
+    const title = getJobSaveTitle(job);
+
+    if (!isSignedIn) {
+      persistPendingSavedArticle({ title, url, kind: "job" });
+      openAuthModal(SAVED_ARTICLE_REDIRECT_PATH);
+      return;
+    }
+
+    const isSaved = savedJobIds.includes(normalizedId);
+    setSavingJobId(normalizedId);
+
+    try {
+      if (isSaved) {
+        const res = await fetch("/api/user/saved-articles", {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url }),
+        });
+        if (!res.ok) throw new Error("Failed to remove saved job");
+        setSavedJobIds((currentIds) => currentIds.filter((value) => value !== normalizedId));
+      } else {
+        const res = await fetch("/api/user/saved-articles", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title, url }),
+        });
+        if (!res.ok) throw new Error("Failed to save job");
+        setSavedJobIds((currentIds) =>
+          currentIds.includes(normalizedId) ? currentIds : [...currentIds, normalizedId]
+        );
+        setShowSaveToast(true);
+        window.setTimeout(() => setShowSaveToast(false), 3000);
+      }
+
+      window.dispatchEvent(new Event("saved_articles_updated"));
+    } catch (error) {
+      console.error("[FindJobsBoard] Failed to toggle saved job", error);
+    } finally {
+      setSavingJobId(null);
+    }
   };
 
   const scrollToResults = () => {
@@ -451,7 +563,7 @@ export default function FindJobsBoard({ jobs }: FindJobsBoardProps) {
 
   return (
     <main className="min-h-screen bg-[linear-gradient(180deg,#f7fbfa_0%,#fbfcfb_28%,#ffffff_100%)] text-[#111111]">
-      <section className="mx-auto w-full max-w-[1200px] px-5 pb-8 pt-10 sm:px-6 lg:px-8 lg:pt-14">
+      <section className="mx-auto w-full max-w-[1120px] px-5 pb-8 pt-10 sm:px-6 lg:px-8 lg:pt-14">
         <div className="overflow-hidden rounded-[38px] border border-[#09B697]/10 bg-white shadow-[0_28px_70px_rgba(20,63,82,0.08)]">
           <div className="relative px-5 py-12 sm:px-8 lg:px-12 lg:py-16">
             <div className="pointer-events-none absolute inset-0 opacity-80">
@@ -629,118 +741,98 @@ export default function FindJobsBoard({ jobs }: FindJobsBoardProps) {
             </div>
 
             {sections.length > 0 ? (
-              <div className="mt-5 space-y-5">
+              <div className="mt-5 space-y-6">
                 {sections.map(([sector, sectorJobs]) => (
                   <section
                     key={sector}
                     id={toAnchorId(sector)}
-                    className="rounded-[28px] border border-[#091d3a]/6 bg-white px-4 py-5 shadow-[0_18px_45px_rgba(20,63,82,0.05)] sm:px-5 lg:px-6 lg:py-6 gsap-stagger-container"
+                    className="rounded-[24px] border border-[#091d3a]/6 bg-white px-5 py-6 shadow-[0_12px_36px_rgba(20,63,82,0.04)] gsap-stagger-container"
                   >
-                    <div className="flex items-center justify-between gap-3 border-b border-black/8 pb-3">
-                      <div>
-                        <p className="text-xs font-bold uppercase tracking-[0.24em] text-[#09B697]">
-                          Sector
-                        </p>
-                        <h3 className="mt-1 text-xl font-black tracking-[-0.03em] text-[#091d3a]">
-                          {sector}
-                        </h3>
-                      </div>
-                      <div className="inline-flex items-center rounded-full bg-[#f4f7f8] px-3 py-1.5 text-xs font-bold uppercase tracking-[0.12em] text-[#24344b]">
-                        {sectorJobs.length} roles
-                      </div>
+                    <div className="flex items-baseline justify-between gap-3 border-b border-gray-100 pb-4 mb-2">
+                      <h3 className="text-xl font-bold tracking-tight text-gray-900 sm:text-2xl">
+                        {sector} jobs
+                      </h3>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          applySearchState({
+                            titleQuery: sector,
+                            locationQuery,
+                            filterLocation: draftFilterLocation,
+                            experienceFilters: draftExperienceFilters,
+                            employmentFilters: draftEmploymentFilters,
+                            categoryFilters: draftCategoryFilters,
+                          })
+                        }
+                        className="text-xs font-semibold text-[#1155cc] underline hover:text-[#09B697] sm:text-sm"
+                      >
+                        View all {sector.toLowerCase()} jobs
+                      </button>
                     </div>
 
-                    <div className="mt-4 space-y-3">
+                    <div className="divide-y divide-gray-100">
                       {sectorJobs.map(({ job }) => {
                         const companyName =
                           job.companyName || job.recruiterName || "Energy ecosystem employer";
-                        const primaryMeta = buildMetaLine([
-                          formatLabel(job.workMode),
-                          job.location,
-                        ]);
-                        const secondaryMeta = buildMetaLine([
-                          formatSalary(job.salaryMin, job.salaryMax),
-                          formatExperience(job.experienceMin, job.experienceMax),
-                          job.qualification,
-                        ]);
-                        const tags = [
-                          ...(job.sectors || []).slice(0, 2),
-                          formatLabel(job.jobType),
-                          formatLabel(job.roleCategory),
+                        
+                        const formattedSalary = formatSalary(job.salaryMin, job.salaryMax);
+                        const formattedExperience = formatExperience(job.experienceMin, job.experienceMax);
+                        const relativeTime = formatRelativeTime(job.publishedAt || job.createdAt);
+                        
+                        const metaParts = [
+                          companyName,
+                          job.location || formatLabel(job.workMode),
+                          formattedSalary,
+                          formattedExperience,
+                          relativeTime,
                         ].filter(Boolean);
+
                         const isSaved = savedJobIds.includes(String(job.id));
 
                         return (
                           <article
                             key={`${sector}-${job.id}`}
-                            className="flex flex-col gap-4 rounded-[24px] border border-black/8 bg-[#fcfdfc] px-4 py-5 shadow-[0_12px_34px_rgba(20,63,82,0.04)] sm:px-5 gsap-stagger-item"
+                            className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 py-5 gsap-stagger-item first:pt-3 last:pb-3"
                           >
-                            <div className="flex gap-4 items-start sm:gap-5">
+                            <div className="flex flex-1 items-start gap-4 sm:items-center min-w-0">
                               <CompanyMark
                                 name={companyName}
                                 logoUrl={job.companyLogoUrl}
-                                size="h-[78px] w-[78px] sm:h-[84px] sm:w-[84px]"
+                                size="h-12 w-12 sm:h-14 sm:w-14"
                               />
 
                               <div className="min-w-0 flex-1">
-                                <div className="flex flex-wrap items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-[#09B697]">
-                                  <span>{companyName}</span>
-                                  {job.openings ? (
-                                    <span className="rounded-full bg-[#eef4fb] px-2.5 py-1 text-[10px] tracking-[0.14em] text-[#2f5577]">
-                                      {job.openings} {job.openings === 1 ? "role" : "roles"}
-                                    </span>
-                                  ) : null}
-                                </div>
                                 <Link
                                   href={getJobHref(job)}
-                                  className="mt-1 block line-clamp-2 text-[1.4rem] font-black leading-tight tracking-[-0.04em] text-[#111111] transition-colors hover:text-[#09B697] sm:text-[1.6rem]"
+                                  className="block text-base font-bold leading-snug text-gray-900 transition-colors hover:text-[#09B697] sm:text-lg hover:underline"
                                 >
                                   {job.title}
                                 </Link>
-                                {primaryMeta ? (
-                                  <p className="mt-2 text-[15px] leading-7 text-black/68">
-                                    {primaryMeta}
-                                  </p>
-                                ) : null}
-                                {secondaryMeta ? (
-                                  <p className="text-[14px] leading-6 text-black/58">
-                                    {secondaryMeta}
-                                  </p>
-                                ) : null}
-                                {job.summary ? (
-                                  <p className="mt-2 line-clamp-2 max-w-2xl text-sm leading-6 text-black/54">
-                                    {job.summary}
-                                  </p>
-                                ) : null}
-                                {tags.length > 0 ? (
-                                  <div className="mt-3 flex flex-wrap gap-2">
-                                    {tags.slice(0, 3).map((tag) => (
-                                      <span
-                                        key={`${job.id}-${tag}`}
-                                        className="rounded-full bg-[#f4f7f8] px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#33415c]"
-                                      >
-                                        {tag}
-                                      </span>
-                                    ))}
-                                  </div>
-                                ) : null}
+                                <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-gray-500 sm:text-sm">
+                                  {metaParts.map((part, index) => (
+                                    <span key={index} className="flex items-center">
+                                      {index > 0 && <span className="mr-2 text-gray-300">•</span>}
+                                      {part}
+                                    </span>
+                                  ))}
+                                </div>
                               </div>
                             </div>
 
-                            <div className="flex items-center justify-end gap-3 border-t border-black/5 pt-4">
+                            <div className="flex items-center gap-3 shrink-0 self-end sm:self-auto">
                               <button
                                 type="button"
-                                onClick={() => toggleSaved(job.id)}
-                                className="inline-flex h-11 items-center justify-center rounded-[14px] border border-black/14 bg-white px-5 text-sm font-bold text-[#111111] transition-colors hover:border-[#09B697] hover:text-[#09B697]"
+                                onClick={() => toggleSaved(job)}
+                                disabled={!isLoaded || savingJobId === String(job.id)}
+                                className="inline-flex h-9 min-w-[76px] items-center justify-center rounded-lg border border-black bg-white px-4 text-sm font-semibold text-black hover:bg-gray-50 transition-colors disabled:cursor-not-allowed disabled:opacity-60"
                               >
-                                {isSaved ? "Saved" : "Save"}
+                                {savingJobId === String(job.id) ? "Saving" : isSaved ? "Saved" : "Save"}
                               </button>
                               <Link
                                 href={getJobHref(job)}
-                                className="inline-flex h-11 items-center justify-center gap-1 rounded-[14px] bg-[#121417] px-5 text-sm font-bold text-white transition-colors hover:bg-[#09B697]"
+                                className="inline-flex h-9 min-w-[76px] items-center justify-center rounded-lg bg-black px-4 text-sm font-semibold text-white hover:bg-neutral-800 transition-colors"
                               >
-                                View role
-                                <ArrowRight className="h-4 w-4" />
+                                Apply
                               </Link>
                             </div>
                           </article>
@@ -871,6 +963,13 @@ export default function FindJobsBoard({ jobs }: FindJobsBoardProps) {
           </aside>
         </div>
       </section>
+
+      {showSaveToast && (
+        <div className="fixed bottom-6 left-1/2 z-50 flex -translate-x-1/2 items-center gap-2.5 rounded-full bg-gray-900 px-5 py-3 text-white shadow-xl">
+          <CheckCircle2 className="h-5 w-5 text-[#00A651]" />
+          <span className="text-sm font-medium">{SAVED_JOB_TOAST_MESSAGE}</span>
+        </div>
+      )}
     </main>
   );
 }

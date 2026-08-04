@@ -59,6 +59,7 @@ import { PostHogProvider } from "./providers";
 import { PostHogIdentify } from "@/components/PostHogIdentify";
 import { AuthModalProvider } from "@/hooks/use-auth-modal";
 import AuthModal from "@/components/auth/auth-modal";
+import { ORGANIZATION_SCHEMA } from "@/lib/organization-schema";
 
 const sans = Inter({
   subsets: ["latin"],
@@ -109,6 +110,15 @@ export default function RootLayout({
         <link rel="preconnect" href="https://cms.energdive.com" />
         <link rel="preconnect" href="https://cdn.energdive.com" />
         <link rel="preconnect" href="https://clerk.energdive.com" />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              ...ORGANIZATION_SCHEMA,
+            }).replace(/</g, "\\u003c")
+          }}
+        />
       </head>
       <body className="antialiased font-sans" suppressHydrationWarning>
         <ClerkProvider>

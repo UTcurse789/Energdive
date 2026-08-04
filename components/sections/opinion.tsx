@@ -57,20 +57,21 @@ export function OpinionSection({
         <>
             {/* ─── OPINION SECTION ─── */}
             {opinions.length > 0 && (
-                <section className="py-12 md:py-8 bg-white border-b border-zinc-100">
+                <section className="py-6 md:py-8 bg-white border-b border-zinc-100">
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                         <SectionHeading
                             title="Opinion"
                             linkText="View All"
                             linkHref="/opinion"
+                            adPlacement="home_opinion"
                         />
 
                         {/* Carousel: Image LEFT, Content RIGHT */}
-                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-20 items-center mt-12 group">
+                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center mt-4 group">
                             {/* Image Column - LEFT */}
                             <div className="lg:col-span-4 flex justify-center lg:justify-start">
-                                <Link href={`/opinion/${currentOpinion.slug}`} className="relative w-full max-w-[400px] block cursor-pointer group/image">
-                                    <div className="relative w-full h-[320px] sm:h-[400px] lg:h-[500px] border border-zinc-800 p-2 bg-white transition-transform duration-500 group-hover/image:scale-[1.02]">
+                                <Link href={`/opinion/${currentOpinion.slug}`} className="relative w-full max-w-[320px] block cursor-pointer group/image">
+                                    <div className="relative w-full aspect-[4/5] border border-zinc-800 p-2 bg-white transition-transform duration-500 group-hover/image:scale-[1.02]">
                                         <div className="relative w-full h-full overflow-hidden border border-zinc-200">
                                             <Image
                                                 src={currentOpinion.image}
@@ -100,13 +101,13 @@ export function OpinionSection({
                             {/* Content Column - RIGHT */}
                             <div className="lg:col-span-8">
                                 <div className="flex flex-col items-start">
-                                    <Link href={`/opinion/${currentOpinion.slug}`} className="block mb-8">
+                                    <Link href={`/opinion/${currentOpinion.slug}`} className="block mb-4">
                                         <h3 className="font-serif text-2xl md:text-3xl lg:text-4xl font-bold leading-[1.15] tracking-tight text-zinc-900 group-hover:text-[#00A651] transition-colors duration-300">
                                             &ldquo;{currentOpinion.title}&rdquo;
                                         </h3>
                                     </Link>
 
-                                    <div className="relative pl-8 mb-10 border-l border-zinc-200">
+                                    <div className="relative pl-8 mb-6 border-l border-zinc-200">
                                         <p className="text-sm md:text-base text-zinc-500 font-serif leading-relaxed italic line-clamp-3">
                                             {currentOpinion.excerpt}
                                         </p>
@@ -149,7 +150,7 @@ export function OpinionSection({
 
                         {/* Dots indicator */}
                         {opinions.length > 1 && (
-                            <div className="flex justify-center gap-2 mt-10">
+                            <div className="flex justify-center gap-2 mt-4">
                                 {opinions.map((_, i) => (
                                     <button
                                         key={i}
@@ -165,26 +166,27 @@ export function OpinionSection({
 
             {/* ─── INTERVIEW SECTION ─── */}
             {interviews.length > 0 && (
-                <section className="py-12 md:py-8 bg-white border-b border-zinc-100">
+                <section className="py-6 md:py-8 bg-white border-b border-zinc-100">
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                         <SectionHeading
                             title="Interview"
                             linkText="View All"
                             linkHref="/interviews"
+                            adPlacement="home_interview"
                         />
 
                         {/* Carousel: Content LEFT, Image RIGHT (mirrored) */}
-                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-20 items-center mt-12 group">
+                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center mt-4 group">
                             {/* Content Column - LEFT */}
                             <div className="lg:col-span-8 order-2 lg:order-1">
                                 <div className="flex flex-col items-start">
-                                    <Link href={`/interviews/${currentInterview.slug}`} className="block mb-8">
+                                    <Link href={`/interviews/${currentInterview.slug}`} className="block mb-4">
                                         <h3 className="font-serif text-2xl md:text-3xl lg:text-4xl font-bold leading-[1.15] tracking-tight text-zinc-900 group-hover:text-[#00A651] transition-colors duration-300">
                                             &ldquo;{currentInterview.title}&rdquo;
                                         </h3>
                                     </Link>
 
-                                    <div className="relative pl-8 mb-10 border-l border-zinc-200">
+                                    <div className="relative pl-8 mb-6 border-l border-zinc-200">
                                         <p className="text-sm md:text-base text-zinc-500 font-serif leading-relaxed italic line-clamp-3">
                                             {currentInterview.excerpt}
                                         </p>
@@ -218,8 +220,8 @@ export function OpinionSection({
 
                             {/* Image Column - RIGHT */}
                             <div className="lg:col-span-4 flex justify-center lg:justify-end order-1 lg:order-2">
-                                <Link href={`/interviews/${currentInterview.slug}`} className="relative w-full max-w-[400px] block cursor-pointer group/image">
-                                    <div className="relative w-full h-[320px] sm:h-[400px] lg:h-[500px] border border-zinc-800 p-2 bg-white transition-transform duration-500 group-hover/image:scale-[1.02]">
+                                <Link href={`/interviews/${currentInterview.slug}`} className="relative w-full max-w-[320px] block cursor-pointer group/image">
+                                    <div className="relative w-full aspect-[4/5] border border-zinc-800 p-2 bg-white transition-transform duration-500 group-hover/image:scale-[1.02]">
                                         <div className="relative w-full h-full overflow-hidden border border-zinc-200">
                                             <Image
                                                 src={currentInterview.image}
@@ -249,7 +251,7 @@ export function OpinionSection({
 
                         {/* Dots indicator */}
                         {interviews.length > 1 && (
-                            <div className="flex justify-center gap-2 mt-10">
+                            <div className="flex justify-center gap-2 mt-4">
                                 {interviews.map((_, i) => (
                                     <button
                                         key={i}

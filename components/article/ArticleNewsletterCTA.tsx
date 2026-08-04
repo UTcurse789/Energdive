@@ -308,7 +308,7 @@ export function ArticleNewsletterCTA() {
                 <div className="w-16 h-[2px] bg-[#00C49A]/50 mb-6 rounded-full" />
 
                 <p className="text-gray-300 text-[15px] leading-relaxed max-w-[500px]">
-                    Join <span className="text-[#00C49A] font-semibold">5,000+</span> industry professionals
+                    Join <span className="text-[#00C49A] font-semibold">9,000+</span> industry professionals
                     who rely on our daily insights for Free
                 </p>
             </div>

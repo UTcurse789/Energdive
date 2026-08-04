@@ -307,7 +307,7 @@ export function DashboardSidebar() {
                         {!isCollapsed && (
                             <div className="flex flex-col min-w-0 pr-2 select-none">
                                 <p className="text-sm font-bold leading-none truncate" style={{ color: "var(--dash-text)" }}>
-                                    {firstName} {lastName}
+                                    {firstName}
                                 </p>
                                 <p className="text-xs mt-1 truncate" style={{ color: "var(--dash-text-dim)" }}>
                                     {role}

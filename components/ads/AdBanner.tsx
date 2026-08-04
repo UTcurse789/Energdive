@@ -138,9 +138,11 @@ const EXACT_VERTICAL_SIZE = {
 
 const CAROUSEL_PLACEMENTS = new Set([
     "home_featured_partner",
+    "home_opinion",
+    "home_interview",
 ]);
 
-const AD_CAROUSEL_INTERVAL_MS = 5000;
+const AD_CAROUSEL_INTERVAL_MS = 2000;
 
 /**
  * Client-side ad banner component.
@@ -265,26 +267,9 @@ export function AdBanner({
             const activeAd = selectedAds[visibleAdIndex];
 
             return (
-                <div className="w-full">
-                    <TrackedAdWrapper key={`${activeAd.id}-${visibleAdIndex}`} ad={activeAd}>
-                        {renderAd(activeAd, visibleAdIndex)}
-                    </TrackedAdWrapper>
-                    <div className="mt-3 flex justify-center gap-1.5" aria-label="Partner ads">
-                        {selectedAds.map((ad, index) => (
-                            <button
-                                key={`${ad.id}-dot`}
-                                type="button"
-                                aria-label={`Show partner ad ${index + 1}`}
-                                aria-current={index === visibleAdIndex}
-                                onClick={() => setActiveAdIndex(index)}
-                                className={`h-1.5 rounded-full transition-all duration-300 ${index === visibleAdIndex
-                                    ? "w-6 bg-[#09B697]"
-                                    : "w-1.5 bg-gray-300 hover:bg-gray-400"
-                                    }`}
-                            />
-                        ))}
-                    </div>
-                </div>
+                <TrackedAdWrapper key={`${activeAd.id}-${visibleAdIndex}`} ad={activeAd}>
+                    {renderAd(activeAd, visibleAdIndex)}
+                </TrackedAdWrapper>
             );
         }
 

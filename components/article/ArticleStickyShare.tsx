@@ -6,6 +6,7 @@ import { ShareButton } from "../ui/share-button";
 import { AnimatePresence, motion } from "framer-motion";
 import { SaveLoginPrompt } from "@/components/onboarding/save-login-prompt";
 import { useArticleSave } from "@/hooks/use-article-save";
+import { SAVED_ARTICLE_TOAST_MESSAGE } from "@/lib/pending-saved-article";
 
 interface ArticleStickyShareProps {
     title: string;
@@ -16,14 +17,16 @@ export function ArticleStickyShare({ title, url }: ArticleStickyShareProps) {
     const [isVisible, setIsVisible] = useState(false);
     const saveButtonRef = useRef<HTMLButtonElement | null>(null);
     const {
+        authRedirectUrl,
         handleSave,
+        handleLoginPromptContinue,
+        handleLoginPromptDismiss,
         isGuest,
         isSaving,
         isSaved,
         loginHref,
         showLoginPrompt,
         showToast,
-        setShowLoginPrompt,
     } = useArticleSave({ title, url });
 
     useEffect(() => {
@@ -83,16 +86,18 @@ export function ArticleStickyShare({ title, url }: ArticleStickyShareProps) {
                         className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 bg-gray-900 text-white px-5 py-3 rounded-full shadow-xl flex items-center gap-2.5 whitespace-nowrap"
                     >
                         <CheckCircle2 className="w-5 h-5 text-[#00A651]" />
-                        <span className="font-medium text-sm">Your article is saved</span>
+                        <span className="font-medium text-sm">{SAVED_ARTICLE_TOAST_MESSAGE}</span>
                     </motion.div>
                 )}
             </AnimatePresence>
 
             <SaveLoginPrompt
                 anchorRef={saveButtonRef}
+                authRedirectUrl={authRedirectUrl}
                 loginHref={loginHref}
                 open={showLoginPrompt}
-                onClose={() => setShowLoginPrompt(false)}
+                onClose={handleLoginPromptDismiss}
+                onLogin={handleLoginPromptContinue}
             />
         </>
     );

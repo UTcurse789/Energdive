@@ -1,26 +1,27 @@
-import { ArticleReadTime } from "@/components/article/ArticleReadTime";
-import { AuthorBioBox } from "@/components/article/AuthorBioBox";
-import { ArticleNewsletterCTA } from "@/components/article/ArticleNewsletterCTA";
-import { ArticleStickyShare } from "@/components/article/ArticleStickyShare";
-import { SaveArticleButton } from "@/components/article/SaveArticleButton";
-import { getCanonicalUrl } from "@/lib/seo";
 import Link from "next/link";
 import Image from "next/image";
 import { Header } from "@/components/layout/header";
 import { notFound } from "next/navigation";
 import { BlocksRenderer } from "@strapi/blocks-react-renderer";
-import ArticleBody from "@/components/ArticleBody";
-import { fetchDataBlocks } from "@/lib/parse-content-blocks";
-import { SidebarSubscribe } from "@/components/sidebar-subscribe";
 import { AdBanner } from "@/components/ads/AdBanner";
-import { TagBadge } from "@/components/ui/tag-badge";
+import { LatestIssueWidget } from "@/components/news/LatestIssueWidget";
+import { SidebarNewsletterForm } from "@/components/news/SidebarNewsletterForm";
 import { ScrollProgress } from "@/components/ui/scroll-progress";
-import { DateChip } from "@/components/ui/date-chip";
 import { ShareButton } from "@/components/ui/share-button";
 import { getLatestIssue } from "@/lib/api/getLatestIssue";
-import { ArrowRight, Calendar, ChevronRight, Printer } from "lucide-react";
+import { Printer } from "lucide-react";
 import { formatContentDate } from "@/lib/date";
+import ArticleBody from "@/components/ArticleBody";
+import { fetchDataBlocks } from "@/lib/parse-content-blocks";
 import { ArticleJsonLd } from "@/components/seo/ArticleJsonLd";
+import { AuthorBioBox } from "@/components/article/AuthorBioBox";
+import { ArticleStickyShare } from "@/components/article/ArticleStickyShare";
+import { SaveArticleButton } from "@/components/article/SaveArticleButton";
+import { getSectorSlugForTagOrCategory } from "@/lib/sector-mapping";
+import { StickySidebar } from "@/components/ui/StickySidebar";
+import type { Metadata } from "next";
+import { strapiImageUrl } from "@/lib/strapi-image";
+import { getCanonicalUrl } from "@/lib/seo";
 
 const STRAPI_BASE_URL = process.env.NEXT_PUBLIC_STRAPI_URL || "https://cms.energdive.com";
 
@@ -44,32 +45,34 @@ async function getArticle(slug: string) {
     return json.data?.[0] || null;
 }
 
-async function getRelated(tags: string[], currentSlug: string) {
-    if (!tags.length) {
-        const res = await fetch(
-            `${STRAPI_BASE_URL}/api/contents?filters[type_of_content][name][$eq]=Featured Stories&filters[slug][$ne]=${currentSlug}&pagination[limit]=4&populate=*&sort=publishedAt:desc`,
-            { cache: "no-store" }
-        );
-        if (!res.ok) return [];
-        const json = await res.json();
-        return json.data || [];
+async function getRelated(tags: string[], currentSlug: string, sectorSlug?: string) {
+    if (tags.length) {
+        const tagFilters = tags
+            .map((tag, i) => `filters[tags][slug][$in][${i}]=${tag}`)
+            .join("&");
+        const url = `${STRAPI_BASE_URL}/api/contents?filters[type_of_content][name][$eq]=Featured Stories&${tagFilters}&filters[slug][$ne]=${currentSlug}&populate=*&pagination[limit]=5`;
+        const res = await fetch(url, { next: { revalidate: 3600 } });
+        if (res.ok) {
+            const json = await res.json();
+            if ((json.data || []).length > 0) return json.data;
+        }
     }
-
-    const tagFilters = tags
-        .map((tag, i) => `filters[tags][slug][$in][${i}]=${tag}`)
-        .join("&");
-
-    const url = `${STRAPI_BASE_URL}/api/contents?filters[type_of_content][name][$eq]=Featured Stories&${tagFilters}&filters[slug][$ne]=${currentSlug}&populate=*&pagination[limit]=4`;
-
-    const res = await fetch(url, { next: { revalidate: 3600 } });
+    if (sectorSlug) {
+        const url = `${STRAPI_BASE_URL}/api/contents?filters[type_of_content][name][$eq]=Featured Stories&filters[sectors][slug][$eq]=${sectorSlug}&filters[slug][$ne]=${currentSlug}&populate=*&pagination[limit]=5&sort=publishedAt:desc`;
+        const res = await fetch(url, { next: { revalidate: 3600 } });
+        if (res.ok) {
+            const json = await res.json();
+            if ((json.data || []).length > 0) return json.data;
+        }
+    }
+    const res = await fetch(
+        `${STRAPI_BASE_URL}/api/contents?filters[type_of_content][name][$eq]=Featured Stories&filters[slug][$ne]=${currentSlug}&pagination[limit]=5&populate=*&sort=publishedAt:desc`,
+        { cache: "no-store" }
+    );
     if (!res.ok) return [];
-
     const json = await res.json();
     return json.data || [];
 }
-
-import type { Metadata } from "next";
-import { strapiImageUrl } from "@/lib/strapi-image";
 
 /* ================= METADATA (OG tags for WhatsApp / social) ================= */
 
@@ -87,8 +90,9 @@ export async function generateMetadata({
 
     const attrs = articleData.attributes || articleData;
     const baseTitle = attrs.Title || "Featured Stories";
-    const cleanBaseTitle = String(baseTitle).replace(/^['"“”‘’]+|['"“”‘’]+$/g, "").trim();
+    const cleanBaseTitle = String(baseTitle).replace(/^['"“'']+|['"“'']+$ /g, "").trim();
     const shareTitle = `${cleanBaseTitle} - ENERGDIVE`;
+    const canonicalUrl = getCanonicalUrl(`/featured-stories/${slug}`);
     const excerptBlock = attrs.Excerpt;
     const description =
         (Array.isArray(excerptBlock)
@@ -97,15 +101,18 @@ export async function generateMetadata({
 
     const imageUrl = attrs.FeaturedImage?.url
         ? strapiImageUrl(attrs.FeaturedImage.url)
-        : "https://www.energdive.com/fav.jpg";
+        : getCanonicalUrl("/fav.jpg");
 
     return {
         title: { absolute: shareTitle },
         description,
+        alternates: {
+            canonical: canonicalUrl,
+        },
         openGraph: {
             title: shareTitle,
             description,
-            url: `https://www.energdive.com/featured-stories/${slug}`,
+            url: canonicalUrl,
             siteName: "Energdive",
             images: [
                 {
@@ -148,13 +155,14 @@ export default async function FeaturedStoryDetailPage({
         .map((t: any) => t.slug)
         .filter(Boolean);
 
-    const relatedArticles = await getRelated(tagSlugs, slug);
-
-    // Extract sector slug for targeted ad
+    // Extract sector name and sector slug
     const sectorData = attrs.sectors || attrs.sector?.data?.attributes || null;
-    const sectorSlug: string | undefined = Array.isArray(sectorData)
-        ? sectorData[0]?.slug || undefined
-        : sectorData?.slug || undefined;
+    const sectorList = Array.isArray(sectorData) ? sectorData : (sectorData?.data || (sectorData ? [sectorData] : []));
+    const firstSector = sectorList[0]?.attributes || sectorList[0] || null;
+    const sectorName: string | undefined = firstSector?.name || firstSector?.Title || undefined;
+    const sectorSlug: string | undefined = firstSector?.slug || undefined;
+
+    const relatedArticles = await getRelated(tagSlugs, slug, sectorSlug);
 
     const authorRelation = attrs.author || attrs.Author;
     const author =
@@ -195,16 +203,18 @@ export default async function FeaturedStoryDetailPage({
             "Featured Stories",
     };
 
+    const categorySectorSlug = getSectorSlugForTagOrCategory(sectorName || article.category, sectorSlug);
     const dataBlocks = await fetchDataBlocks(article.content);
 
-    // Raw date for JSON-LD and display (prioritizing publishedAt for accurate automatic time)
     const rawDate = attrs.publishedAt || attrs.createdAt || attrs.Date || "";
     const modifiedDate = attrs.updatedAt || rawDate;
     const excerptText = Array.isArray(attrs.Excerpt)
         ? attrs.Excerpt[0]?.children?.[0]?.text || ""
-        : "";
-
+        : typeof attrs.Excerpt === "string" ? attrs.Excerpt : "";
     const canonicalUrl = getCanonicalUrl(`/featured-stories/${slug}`);
+
+    const displayAuthorName = article.author?.name || "ENERGDIVE Desk";
+    const authorSlug = slugify(displayAuthorName);
 
     return (
         <div className="min-h-screen bg-white">
@@ -212,118 +222,112 @@ export default async function FeaturedStoryDetailPage({
                 title={article.title}
                 datePublished={rawDate}
                 dateModified={modifiedDate}
-                authorName={article.author?.name}
+                authorName={displayAuthorName}
                 slug={slug}
                 imageUrl={article.image}
                 section="featured-stories"
                 description={excerptText}
+                category={article.category}
+                categorySlug={categorySectorSlug}
             />
             <ScrollProgress />
             <Header />
 
-            <main className="pt-20 pb-24">
+            <main className="pb-24 pt-6">
                 <ArticleStickyShare title={article.title} url={canonicalUrl} />
 
-                {/* ─── Breadcrumb ─── */}
-                <div className="mx-auto w-full max-w-[1300px] px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12 mb-6 sm:mb-8">
-                    <nav className="flex items-center gap-1.5 text-xs text-gray-400 font-sans">
-                        <Link href="/" className="hover:text-teal-600 transition-colors">Home</Link>
-                        <ChevronRight className="h-3 w-3" />
-                        <span className="text-gray-600 font-medium truncate max-w-[200px]">{article.category}</span>
-                    </nav>
-                </div>
+                <div className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-16 pt-6 grid grid-cols-1 lg:grid-cols-12 gap-8 sm:gap-12 lg:gap-12">
 
-                <div className="mx-auto w-full max-w-[1300px] px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12 grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_300px] gap-8 sm:gap-12 lg:gap-x-10 xl:gap-x-12 items-start">
+                    {/* ═══════════════ MAIN COLUMN (8 cols) ═══════════════ */}
+                    <div className="lg:col-span-8 min-w-0">
 
-                    {/* ═══════════════ MAIN COLUMN ═══════════════ */}
-                    <div className="min-w-0">
-
-                        {/* Category Label */}
-                        <div className="flex items-center mb-5">
-                            <span className="bg-[#00A651] text-white px-3 py-1 rounded-sm text-[11px] font-bold uppercase tracking-wider shadow-sm">
-                                {article.category}
-                            </span>
+                        {/* Category & Sector Badges */}
+                        <div className="flex flex-wrap items-center gap-2 mb-5">
+                            <Link
+                                href="/featured-stories"
+                                className="bg-[#00A651] text-white px-3 py-1 rounded-sm text-[11px] font-bold uppercase tracking-wider shadow-sm hover:bg-emerald-700 transition-colors"
+                            >
+                                {article.category || "Featured Stories"}
+                            </Link>
+                            {sectorName && sectorName.toLowerCase() !== (article.category || "").toLowerCase() && (
+                                <Link
+                                    href={`/sectors/${categorySectorSlug}`}
+                                    className="bg-slate-900 text-white px-3 py-1 rounded-sm text-[11px] font-bold uppercase tracking-wider shadow-sm hover:bg-emerald-800 transition-colors"
+                                >
+                                    {sectorName}
+                                </Link>
+                            )}
                         </div>
 
                         {/* Title */}
-                        <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-serif font-bold leading-[1.08] tracking-tight text-gray-900 mb-4 sm:mb-6">
+                        <h1 className="text-xl sm:text-3xl md:text-4xl lg:text-5xl font-serif font-bold leading-[1.1] tracking-tight text-gray-900 mb-4 sm:mb-6">
                             {article.title}
                         </h1>
 
                         {/* Excerpt */}
-                        <div className="text-base sm:text-xl text-gray-500 font-serif leading-relaxed mb-6 sm:mb-8 border-l-4 border-teal-500 pl-4 sm:pl-5">
-                            <BlocksRenderer content={article.excerpt} />
+                        <div className="text-sm sm:text-lg text-gray-500 font-serif leading-relaxed mb-6 sm:mb-8 border-l-4 border-teal-500 pl-4 sm:pl-5">
+                            {Array.isArray(article.excerpt) ? (
+                                <BlocksRenderer content={article.excerpt} />
+                            ) : (
+                                article.excerpt
+                            )}
                         </div>
 
                         {/* Author row */}
-                        {article.author && (
-                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-10 pb-6 border-b border-gray-100">
-                                <div className="flex items-center gap-3">
-                                    {article.author.avatar ? (
-                                        <Image
-                                            src={article.author.avatar}
-                                            width={36}
-                                            height={36}
-                                            alt={article.author.name || ""}
-                                            className="rounded-full object-cover w-9 h-9 shrink-0"
-                                        />
-                                    ) : (
-                                        <div className="w-9 h-9 rounded-full bg-teal-100 flex items-center justify-center text-teal-700 font-bold text-sm shrink-0">
-                                            {article.author.name?.charAt(0) || "A"}
-                                        </div>
-                                    )}
-                                    <div className="flex flex-col">
-                                        <div className="text-gray-600 text-[14px]">
-                                            By{" "}
-                                            <Link
-                                                href={`/author/${slugify(article.author.name)}`}
-                                                className="font-bold text-gray-900 hover:text-[#00A651] transition-colors"
-                                            >
-                                                {article.author.name}
-                                            </Link>
-                                        </div>
-                                        <div className="flex items-center flex-wrap gap-2 text-gray-400 text-[13px] mt-0.5">
-                                            <div className="flex items-center gap-1.5">
-                                                <Calendar className="w-3.5 h-3.5" />
-                                                <span>
-                                                    {(() => {
-                                                        const d = new Date(rawDate);
-                                                        if (Number.isNaN(d.getTime())) return article.date;
-                                                        return new Intl.DateTimeFormat("en-GB", {
-                                                            day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "Asia/Kolkata"
-                                                        }).format(d).replace(",", "") + " IST";
-                                                    })()}
-                                                </span>
-                                            </div>
-                                            <span className="text-gray-300 hidden sm:inline">|</span>
-                                            <ArticleReadTime content={article.content} className="text-gray-400" />
-                                        </div>
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-10 pb-6 border-b border-gray-100">
+                            <div className="flex items-center gap-3">
+                                {article.author?.avatar ? (
+                                    <Image
+                                        src={article.author.avatar}
+                                        width={36}
+                                        height={36}
+                                        alt={displayAuthorName}
+                                        loading="lazy"
+                                        className="rounded-full object-cover w-9 h-9 shrink-0"
+                                    />
+                                ) : (
+                                    <div className="w-9 h-9 rounded-full bg-teal-100 flex items-center justify-center text-teal-700 font-bold text-sm shrink-0">
+                                        {displayAuthorName.charAt(0)}
+                                    </div>
+                                )}
+                                <div className="flex flex-col">
+                                    <div className="text-gray-600 text-[14px]">
+                                        By{" "}
+                                        <Link
+                                            href={`/author/${authorSlug}`}
+                                            className="font-bold text-gray-900 hover:text-[#00A651] transition-colors"
+                                        >
+                                            {displayAuthorName}
+                                        </Link>
+                                    </div>
+                                    <div className="text-gray-400 text-[12px] mt-0.5">
+                                        {formatContentDate(rawDate) || article.date}
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-3 self-start sm:self-auto">
-                                    <Link
-                                        href={`/print/${slug}`}
-                                        target="_blank"
-                                        className="flex items-center gap-1.5 text-gray-600 hover:text-gray-900 font-medium text-sm border border-gray-200 px-4 py-2 rounded-full bg-white hover:bg-gray-50 shadow-sm transition-colors"
-                                        title="Print this article"
-                                    >
-                                        <Printer className="w-4 h-4" />
-                                        Print
-                                    </Link>
-                                    <ShareButton
-                                        title={article.title}
-                                        text={excerptText}
-                                        url={canonicalUrl}
-                                        className="text-gray-600 hover:text-gray-900 font-medium text-sm border border-gray-200 px-4 py-2 rounded-full bg-white hover:bg-gray-50 shadow-sm"
-                                        iconClassName="w-4 h-4"
-                                    />
-                                    <SaveArticleButton title={article.title} url={canonicalUrl} />
-                                </div>
                             </div>
-                        )}
+                            <div className="flex items-center gap-3 self-start sm:self-auto">
+                                <Link
+                                    href={`/print/${slug}`}
+                                    target="_blank"
+                                    className="flex items-center gap-1.5 text-gray-600 hover:text-gray-900 font-medium text-sm border border-gray-200 px-4 py-2 rounded-full bg-white hover:bg-gray-50 shadow-sm transition-colors"
+                                    title="Print this article"
+                                >
+                                    <Printer className="w-4 h-4" />
+                                    Print
+                                </Link>
+                                <ShareButton
+                                    title={article.title}
+                                    text={excerptText}
+                                    url={canonicalUrl}
+                                    className="text-gray-600 hover:text-gray-900 font-medium text-sm border border-gray-200 px-4 py-2 rounded-full bg-white hover:bg-gray-50 shadow-sm"
+                                    iconClassName="w-4 h-4"
+                                />
+                                <SaveArticleButton title={article.title} url={canonicalUrl} />
+                            </div>
+                        </div>
 
                         {/* Featured Image */}
-                        <div className="relative aspect-video mb-12 rounded-xl overflow-hidden shadow-lg shadow-black/10 group">
+                        <div className="relative aspect-video mb-10 rounded-xl overflow-hidden shadow-lg shadow-black/10 group">
                             <Image
                                 src={article.image}
                                 alt={article.title || ""}
@@ -336,9 +340,6 @@ export default async function FeaturedStoryDetailPage({
 
                         {/* Article Body */}
                         <article className="relative">
-                            {/* Decorative side line */}
-                            {/* <div className="absolute inset-x-0 bottom-0 h-2/3 bg-linear-to-t from-black/80 via-black/40 to-transparent flex flex-col justify-end p-8 md:p-12" /> */}
-
                             <div className="prose prose-lg max-w-none font-serif text-[18px] leading-[1.95] text-gray-800
 
 prose-headings:font-bold prose-headings:text-gray-900 prose-headings:tracking-tight
@@ -350,7 +351,6 @@ prose-strong:text-gray-900
 prose-blockquote:border-l-teal-500 prose-blockquote:bg-teal-50/30 prose-blockquote:rounded-r-lg prose-blockquote:py-2
 prose-img:rounded-lg prose-img:shadow-md
 prose-li:marker:text-teal-500
-
 first:prose-p:first-letter:text-6xl first:prose-p:first-letter:font-serif first:prose-p:first-letter:font-bold first:prose-p:first-letter:float-left first:prose-p:first-letter:mr-3 first:prose-p:first-letter:mt-1 first:prose-p:first-letter:text-teal-700 last:prose-p:mb-0"
                             >
                                 <ArticleBody content={article.content} enableSectionSharing={true} dataBlocks={dataBlocks} />
@@ -364,20 +364,21 @@ first:prose-p:first-letter:text-6xl first:prose-p:first-letter:font-serif first:
                                     Tags
                                 </h4>
                                 <div className="flex flex-wrap gap-2">
-                                    {article.tags.map((tag: any, i: number) => (
-                                        <TagBadge
-                                            key={`${tag.slug}-${i}`}
-                                            name={tag.name}
-                                            slug={tag.slug}
-                                            className="bg-teal-50 text-teal-700 px-3 py-1.5 text-xs font-medium uppercase tracking-wider rounded-full border border-teal-100 hover:bg-teal-600 hover:text-white hover:border-teal-600"
-                                        />
-                                    ))}
+                                    {article.tags.map((tag: any, i: number) => {
+                                        const targetSector = getSectorSlugForTagOrCategory(tag.name, tag.slug);
+                                        return (
+                                            <Link
+                                                key={`${tag.slug}-${i}`}
+                                                href={`/sectors/${targetSector}`}
+                                                className="bg-teal-50 text-teal-700 px-3 py-1.5 text-xs font-medium uppercase tracking-wider rounded-full border border-teal-100 hover:bg-teal-600 hover:text-white hover:border-teal-600 transition-colors"
+                                            >
+                                                {tag.name}
+                                            </Link>
+                                        );
+                                    })}
                                 </div>
                             </div>
                         )}
-
-                        {/* Newsletter CTA */}
-                        <ArticleNewsletterCTA />
 
                         {/* Author Bio Box */}
                         {article.author && (
@@ -392,16 +393,11 @@ first:prose-p:first-letter:text-6xl first:prose-p:first-letter:font-serif first:
                         />
                     </div>
 
-                    {/* ═══════════════ SIDEBAR ═══════════════ */}
-                    <aside>
-                        <div className="sticky top-24 space-y-8">
+                    {/* ═══════════════ SIDEBAR (4 cols) ═══════════════ */}
+                    <aside className="lg:col-span-4 relative h-full">
+                        <StickySidebar className="flex flex-col space-y-8 pb-12">
 
-                            {/* ── Subscribe CTA ── */}
-                            <div className="mx-auto w-full max-w-[300px]">
-                                <SidebarSubscribe />
-                            </div>
-
-                            {/* ── Sidebar Ad — 300×250 ── */}
+                            {/* AD: new_sidebar */}
                             <AdBanner
                                 placement="new_sidebar"
                                 sectorSlug={sectorSlug}
@@ -409,78 +405,53 @@ first:prose-p:first-letter:text-6xl first:prose-p:first-letter:font-serif first:
                                 maxItems={2}
                             />
 
-                            {/* ── Latest Issue ── */}
-                            {latestIssue && (
-                                <div className="mx-auto w-full max-w-[300px] rounded-xl border border-gray-100 bg-white p-2 shadow-sm">
-                                    <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-widest text-[#00A651] bg-white/90 backdrop-blur-md px-4 py-2 rounded-full w-fit shadow-lg bg-linear-to-b from-white to-zinc-50 border border-white/20">
-                                        <Calendar className="h-3.5 w-3.5 text-teal-500" />
-                                        Latest Issue
-                                    </div>
+                            {/* Widget: Latest Issue */}
+                            {latestIssue && <LatestIssueWidget latestIssue={latestIssue} />}
 
-                                    <Link href={`/issues/${latestIssue.slug}`} className="group block mt-3">
-                                        <div className="relative aspect-3/4 w-full overflow-hidden rounded-lg border border-gray-100 shadow-md mb-4 transition-all duration-500 group-hover:shadow-xl group-hover:-translate-y-0.5">
-                                            <Image
-                                                src={latestIssue.coverImage}
-                                                alt={latestIssue.title}
-                                                fill
-                                                className="object-contain bg-white p-1 transition-transform duration-700 group-hover:scale-[1.02]"
-                                            />
-                                            <div className="absolute inset-0 bg-linear-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                                        </div>
-
-                                        <h4 className="font-serif font-bold text-gray-900 group-hover:text-teal-600 transition-colors mb-1">
-                                            {latestIssue.month} {latestIssue.year}
-                                        </h4>
-
-                                        <span className="inline-flex items-center gap-1 text-xs font-bold text-teal-600 group-hover:gap-2 transition-all">
-                                            Read Issue
-                                            <ArrowRight className="h-3.5 w-3.5" />
-                                        </span>
-                                    </Link>
-                                </div>
-                            )}
+                            {/* Widget: Newsletter */}
+                            <SidebarNewsletterForm />
 
                             {/* ── Related Stories ── */}
                             {relatedArticles.length > 0 && (
-                                <div className="mx-auto w-full max-w-[300px]">
-                                    <h3 className="mb-5 flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">
+                                <div className="w-full">
+                                    <h3 className="mb-4 text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 flex items-center gap-2">
                                         <span className="h-px flex-1 bg-gray-200" />
-                                        Trending News
+                                        Related Stories
                                         <span className="h-px flex-1 bg-gray-200" />
                                     </h3>
-
-                                    <div className="space-y-5">
+                                    <div className="flex flex-col divide-y divide-gray-100">
                                         {relatedArticles.map((item: any) => {
                                             const r = item.attributes || item;
                                             const imgUrl = r.FeaturedImage?.url
                                                 ? strapiImageUrl(r.FeaturedImage.url)
                                                 : "/magazine-default.jpg";
-
-                                            const itemDate = formatContentDate(r.Date || r.publishedAt || item.publishedAt);
-
+                                            const rawItemDate = r.Date || r.publishedAt || item.publishedAt || "";
+                                            const itemDate = formatContentDate(rawItemDate);
+                                            const rSector = r.sectors?.[0]?.name || r.sectors?.data?.[0]?.attributes?.name || "";
                                             return (
                                                 <Link
                                                     key={item.id}
-                                                    href={`/news/${r.slug}`}
-                                                    className="group flex gap-4 rounded-lg p-2 -mx-2 transition-colors hover:bg-gray-50"
+                                                    href={`/featured-stories/${r.slug}`}
+                                                    className="group flex gap-3 py-4 hover:bg-gray-50 -mx-2 px-2 transition-colors"
                                                 >
-                                                    {/* Thumbnail */}
-                                                    <div className="relative w-24 h-20 shrink-0 overflow-hidden rounded-lg bg-gray-100">
+                                                    <div className="relative w-20 h-16 shrink-0 overflow-hidden rounded-sm bg-gray-100 border border-gray-100">
                                                         <Image
                                                             src={imgUrl}
                                                             alt=""
                                                             fill
-                                                            className="object-contain bg-white p-0.5 transition-transform duration-500 group-hover:scale-[1.02]"
+                                                            loading="lazy"
+                                                            className="object-cover transition-transform duration-500 group-hover:scale-[1.05]"
                                                         />
                                                     </div>
-
-                                                    {/* Text */}
                                                     <div className="flex-1 min-w-0">
-                                                        <h4 className="font-serif font-bold text-sm leading-snug text-gray-900 group-hover:text-teal-600 transition-colors line-clamp-2 mb-1">
+                                                        {rSector && (
+                                                            <div className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-0.5">{rSector}</div>
+                                                        )}
+                                                        <h4 className="font-bold text-sm leading-snug text-gray-900 group-hover:text-emerald-600 transition-colors line-clamp-2">
                                                             {r.Title}
                                                         </h4>
                                                         {itemDate && (
-                                                            <DateChip value={itemDate} className="text-[10px]" />
+                                                            <div className="mt-1 text-[10px] text-gray-400 font-medium">{itemDate}</div>
                                                         )}
                                                     </div>
                                                 </Link>
@@ -490,7 +461,7 @@ first:prose-p:first-letter:text-6xl first:prose-p:first-letter:font-serif first:
                                 </div>
                             )}
 
-                        </div>
+                        </StickySidebar>
                     </aside>
                 </div>
             </main>

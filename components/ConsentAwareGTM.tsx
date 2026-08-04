@@ -1,55 +1,40 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import Script from "next/script";
 
 interface ConsentAwareGTMProps {
     gtmId: string;
 }
 
-/**
- * Loads GTM only after the user has accepted cookies.
- * Listens for localStorage changes (from the CookieConsent banner)
- * and injects the GTM script + noscript iframe dynamically.
- */
 export default function ConsentAwareGTM({ gtmId }: ConsentAwareGTMProps) {
-    const [hasConsent, setHasConsent] = useState(true);
+    const hasConsent = true;
 
-    useEffect(() => {
-        // No longer need to check cookie consent as the banner has been removed.
-        setHasConsent(true);
-    }, []);
+    if (!hasConsent) return null;
 
-    useEffect(() => {
-        if (!hasConsent) return;
-
-        // Prevent duplicate injection
-        if (document.querySelector(`script[data-gtm-id="${gtmId}"]`)) return;
-
-        // Initialize dataLayer
-        (window as any).dataLayer = (window as any).dataLayer || [];
-        (window as any).dataLayer.push({
-            "gtm.start": new Date().getTime(),
-            event: "gtm.js",
-        });
-
-        // Inject GTM script
-        const script = document.createElement("script");
-        script.async = true;
-        script.src = `https://www.googletagmanager.com/gtm.js?id=${gtmId}`;
-        script.setAttribute("data-gtm-id", gtmId);
-        document.head.appendChild(script);
-
-        // Inject noscript iframe
-        const noscript = document.createElement("noscript");
-        const iframe = document.createElement("iframe");
-        iframe.src = `https://www.googletagmanager.com/ns.html?id=${gtmId}`;
-        iframe.height = "0";
-        iframe.width = "0";
-        iframe.style.display = "none";
-        iframe.style.visibility = "hidden";
-        noscript.appendChild(iframe);
-        document.body.insertBefore(noscript, document.body.firstChild);
-    }, [hasConsent, gtmId]);
-
-    return null;
+    return (
+        <>
+            <Script id="gtm-data-layer" strategy="lazyOnload">
+                {`
+                    window.dataLayer = window.dataLayer || [];
+                    window.dataLayer.push({
+                        "gtm.start": new Date().getTime(),
+                        event: "gtm.js"
+                    });
+                `}
+            </Script>
+            <Script
+                id="gtm-loader"
+                src={`https://www.googletagmanager.com/gtm.js?id=${gtmId}`}
+                strategy="lazyOnload"
+            />
+            <noscript>
+                <iframe
+                    src={`https://www.googletagmanager.com/ns.html?id=${gtmId}`}
+                    height="0"
+                    width="0"
+                    style={{ display: "none", visibility: "hidden" }}
+                />
+            </noscript>
+        </>
+    );
 }

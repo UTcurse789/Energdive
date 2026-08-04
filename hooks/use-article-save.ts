@@ -3,6 +3,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@clerk/nextjs";
 import posthog from "posthog-js";
+import {
+  clearPendingSavedArticle,
+  persistPendingSavedArticle,
+  SAVED_ARTICLE_REDIRECT_PATH,
+} from "@/lib/pending-saved-article";
 
 interface UseArticleSaveOptions {
   title: string;
@@ -14,16 +19,6 @@ type SavedArticle = {
   url: string;
   savedAt: string;
 };
-
-function readSavedArticles() {
-  try {
-    return JSON.parse(
-      window.localStorage.getItem("saved_articles") || "[]",
-    ) as SavedArticle[];
-  } catch {
-    return [] as SavedArticle[];
-  }
-}
 
 export function useArticleSave({ title, url }: UseArticleSaveOptions) {
   const [isSaved, setIsSaved] = useState(false);
@@ -53,8 +48,7 @@ export function useArticleSave({ title, url }: UseArticleSaveOptions) {
         return;
       }
 
-      const savedArticles = readSavedArticles();
-      setIsSaved(savedArticles.some((article) => article.url === url));
+      setIsSaved(false);
     };
 
     syncSavedState();
@@ -66,58 +60,37 @@ export function useArticleSave({ title, url }: UseArticleSaveOptions) {
   }, [isLoaded, isSignedIn, url]);
 
   const loginHref = useMemo(() => {
-    if (typeof window === "undefined") {
-      return `/auth?redirect_url=${encodeURIComponent(url)}`;
-    }
-
-    return `/auth?redirect_url=${encodeURIComponent(window.location.href)}`;
-  }, [url]);
+    return `/auth?redirect_url=${encodeURIComponent(SAVED_ARTICLE_REDIRECT_PATH)}`;
+  }, []);
 
   const handleSave = async () => {
-    if (isLoaded && !isSignedIn) {
+    if (!isLoaded || isSaving) return;
+
+    if (!isSignedIn) {
+      persistPendingSavedArticle({ title, url });
       setShowLoginPrompt(true);
+      posthog.capture("article_save_login_required", { article_title: title, article_url: url });
       return;
     }
-
-    if (isSaving) return;
 
     try {
       setIsSaving(true);
 
-      if (isSignedIn) {
-        if (isSaved) {
-          const res = await fetch("/api/user/saved-articles", {
-            method: "DELETE",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ url }),
-          });
-          if (!res.ok) throw new Error("Failed to remove saved article");
-          setIsSaved(false);
-        } else {
-          const res = await fetch("/api/user/saved-articles", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ title, url }),
-          });
-          if (!res.ok) throw new Error("Failed to save article");
-          setIsSaved(true);
-          setShowToast(true);
-          window.setTimeout(() => setShowToast(false), 3000);
-        }
-
-        window.dispatchEvent(new Event("saved_articles_updated"));
-        return;
-      }
-
-      const savedArticles = readSavedArticles();
-
       if (isSaved) {
-        const updated = savedArticles.filter((article) => article.url !== url);
-        window.localStorage.setItem("saved_articles", JSON.stringify(updated));
+        const res = await fetch("/api/user/saved-articles", {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url }),
+        });
+        if (!res.ok) throw new Error("Failed to remove saved article");
         setIsSaved(false);
       } else {
-        savedArticles.push({ title, url, savedAt: new Date().toISOString() });
-        window.localStorage.setItem("saved_articles", JSON.stringify(savedArticles));
+        const res = await fetch("/api/user/saved-articles", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title, url }),
+        });
+        if (!res.ok) throw new Error("Failed to save article");
         setIsSaved(true);
         setShowToast(true);
         window.setTimeout(() => setShowToast(false), 3000);
@@ -132,7 +105,19 @@ export function useArticleSave({ title, url }: UseArticleSaveOptions) {
     }
   };
 
+  const handleLoginPromptDismiss = () => {
+    clearPendingSavedArticle();
+    setShowLoginPrompt(false);
+  };
+
+  const handleLoginPromptContinue = () => {
+    setShowLoginPrompt(false);
+  };
+
   return {
+    authRedirectUrl: SAVED_ARTICLE_REDIRECT_PATH,
+    handleLoginPromptContinue,
+    handleLoginPromptDismiss,
     isGuest: isLoaded && !isSignedIn,
     isSaved,
     isSaving,

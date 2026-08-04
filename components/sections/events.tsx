@@ -46,8 +46,8 @@ type SectionEvent = {
 
 async function getEvents(): Promise<SectionEvent[]> {
     try {
-        const res = await fetch(`${STRAPI_BASE}/api/events?populate=*`, {
-            cache: 'no-store',
+        const res = await fetch(`${STRAPI_BASE}/api/events?populate=image`, {
+            next: { revalidate: 300 },
         });
         if (!res.ok) return [];
         const json = await res.json();

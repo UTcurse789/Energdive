@@ -8,8 +8,7 @@ import { COUNTRIES } from "@/data/countries";
 
 const SALUTATION_OPTIONS = [
     "Mr.", "Mrs.", "Ms.", "Dr.", "Prof.",
-    "Capt.", "Col.", "Admiral", "Vice Admiral", "Brig.",
-    "Shri.", "Smt.", "H.E. Mr.", "H.E. Ms.", "H.E. Dr.",
+    "Shri.", "Smt.",
 ];
 
 const personalSchema = z.object({

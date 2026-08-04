@@ -47,14 +47,8 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
 
             {!isEnergClub && <Footer />}
 
-            {/* Zoho Sales IQ - Only on specific pages */}
-            {(() => {
-                const allowedPaths = ["/about", "/energclub", "/subscribe", "/contact", "/reports"];
-                if (allowedPaths.some(path => pathname.startsWith(path))) {
-                    return <ZohoSalesIQ />;
-                }
-                return null;
-            })()}
+            {/* Zoho Sales IQ - Handles its own visibility across SPA navigations */}
+            <ZohoSalesIQ />
         </>
     );
 }

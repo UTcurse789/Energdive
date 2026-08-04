@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { sendFinalPaperSubmissionEmail } from "@/lib/email";
 
 const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL;
 const STRAPI_API_TOKEN = process.env.STRAPI_API_TOKEN;
@@ -258,6 +259,17 @@ export async function POST(request: NextRequest) {
                 documentId,
                 mediaId: uploadedFile.mediaId,
             });
+        }
+
+        try {
+            await sendFinalPaperSubmissionEmail(
+                strapiData.author_email as string,
+                strapiData.author_name as string,
+                strapiData.title as string
+            );
+            console.log("[SUBMIT-FINAL-PAPER] Confirmation email sent to", strapiData.author_email);
+        } catch (emailError) {
+            console.error("[SUBMIT-FINAL-PAPER] Failed to send confirmation email:", emailError);
         }
 
         return NextResponse.json(created, { status: createdEntry.status });
