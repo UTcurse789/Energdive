@@ -140,7 +140,7 @@ async function getHeroBannerContents() {
   try {
     const res = await fetch(
       `${STRAPI_BASE}/api/contents?filters[show_hero_banner][$eq]=true&populate=*&pagination[pageSize]=10&sort=publishedAt:desc`,
-      { next: { revalidate: 60 } }
+      { next: { revalidate: 600 } }
     );
     if (!res.ok) return [];
     const json = await res.json();
@@ -192,12 +192,13 @@ async function getOpinionBuckets() {
 }
 
 export default async function Home() {
-  const [allContents, featuredContents, heroBannerContents, latestIssue, { opinions, interviews }] = await Promise.all([
+  const [allContents, featuredContents, latestIssue, { opinions, interviews }, heroBannerContents] = await Promise.all([
     getAllContents(),
     getFeaturedContents(),
     getHeroBannerContents(),
     getLatestIssue(),
     getOpinionBuckets(),
+    getHeroBannerContents(),
   ]);
 
   // ── Bento: Featured articles fetched directly from Strapi ──
