@@ -101,7 +101,7 @@ export async function EventsSection() {
 
     return (
         <section className="py-12 lg:py-8 border-b border-border overflow-hidden">
-            <div className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-16">
+            <div className="max-w-6xl mx-auto px-6 sm:px-10 lg:px-16">
                 <SectionHeading
                     title="Upcoming Events"
                     linkText="View more"

@@ -42,7 +42,7 @@ export async function HomepageVideos() {
 
     return (
         <section className="py-16 lg:py-10 bg-white border-y border-slate-100">
-            <div className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-16">
+            <div className="max-w-6xl mx-auto px-6 sm:px-10 lg:px-16">
                 <div className="flex items-center justify-between mb-8 pb-3 border-b border-slate-200">
                     <div className="flex items-center gap-3">
                         <span className="w-3 h-3 bg-red-600 rounded-sm animate-pulse" />

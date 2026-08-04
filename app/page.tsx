@@ -198,7 +198,7 @@ function BreakingNewsTicker({ news }: { news: { title: string; href: string }[] 
 
   return (
     <div className="w-full bg-slate-950 text-slate-100 border-b border-emerald-500/30 overflow-hidden text-xs font-medium tracking-wide">
-      <div className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-16 flex items-center h-11">
+      <div className="max-w-6xl mx-auto px-6 sm:px-10 lg:px-16 flex items-center h-11">
         <div className="bg-red-600 text-white px-3 py-1 font-black uppercase tracking-widest text-[10px] shrink-0 flex items-center gap-1.5 shadow-sm rounded-sm mr-4 z-10">
           <span className="relative flex h-2 w-2">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
@@ -357,7 +357,7 @@ export default async function Home() {
       <BreakingNewsTicker news={tickerItems} />
 
       {/* Homepage Platform Hero Ad Banner */}
-      <div className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-16 pt-6 pb-2">
+      <div className="max-w-6xl mx-auto px-6 sm:px-10 lg:px-16 pt-6 pb-2">
         <AdBanner placement="home_platform_hero" variant="banner" className="py-0" />
       </div>
 
@@ -373,8 +373,8 @@ export default async function Home() {
             backgroundSize: "32px 32px",
           }}
         />
-        <div className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-16 relative z-10">
-          <SectionHeading title="Curated Spotlight" />
+        <div className="max-w-6xl mx-auto px-6 sm:px-10 lg:px-16 relative z-10">
+          <SectionHeading title="Featured" />
           <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-12">
             <div className="min-w-0 lg:col-span-8">
               <BentoGrid items={finalBentoItems} className="py-0" />
@@ -395,7 +395,7 @@ export default async function Home() {
 
       {/* Sector Intelligence Hubs (Oil & Gas, Power, New Energies, Sustainability) */}
       <section className="border-b border-slate-200 py-10 lg:py-6">
-        <div className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-16">
+        <div className="max-w-6xl mx-auto px-6 sm:px-10 lg:px-16">
           {sectorsWithArticles.map((sector) => (
             <div key={sector.slug} className="mb-7 last:mb-0">
               <AdBanner

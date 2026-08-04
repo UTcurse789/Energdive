@@ -61,7 +61,7 @@ export function OpinionSection({
                     aria-label="Opinion & Commentary"
                     className="py-6 lg:py-8 bg-[#FAFAF8] border-b border-zinc-200"
                 >
-                    <div className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-16">
+                    <div className="max-w-6xl mx-auto px-6 sm:px-10 lg:px-16">
 
                         {/* Section Heading */}
                         <SectionHeading
@@ -245,7 +245,7 @@ export function OpinionSection({
                     aria-label="Exclusive Interviews"
                     className="py-6 lg:py-8 bg-[#FAFAF8] border-b border-zinc-200"
                 >
-                    <div className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-16">
+                    <div className="max-w-6xl mx-auto px-6 sm:px-10 lg:px-16">
 
                         {/* Section Heading — light variant matching Opinion */}
                         <SectionHeading

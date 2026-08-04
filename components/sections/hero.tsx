@@ -66,7 +66,7 @@ function slugify(str: string) {
 function HeroSkeleton() {
     return (
         <section className="py-8 lg:py-12 bg-white border-b border-slate-200">
-            <div className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-16">
+            <div className="max-w-6xl mx-auto px-6 sm:px-10 lg:px-16">
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
                     <div className="lg:col-span-8 flex flex-col">
                         <Skeleton className="aspect-[16/8.7] w-full rounded-xl mb-3" />
@@ -77,15 +77,12 @@ function HeroSkeleton() {
                     </div>
                     <div className="lg:col-span-4 flex flex-col pt-8 lg:pt-0 lg:pl-8">
                         <Skeleton className="h-6 w-full mb-5 border-b pb-3" />
-                        <div className="flex flex-col gap-6">
+                        <div className="flex flex-col gap-5">
                             {[...Array(5)].map((_, i) => (
-                                <div key={i} className="flex gap-5">
-                                    <div className="flex-1 space-y-2">
-                                        <Skeleton className="h-3 w-20" />
-                                        <Skeleton className="h-5 w-full" />
-                                        <Skeleton className="h-3 w-24" />
-                                    </div>
-                                    <Skeleton className="w-28 aspect-[4/3] rounded-sm shrink-0" />
+                                <div key={i} className="space-y-2 border-b border-slate-100 pb-3 last:border-0">
+                                    <Skeleton className="h-3 w-20" />
+                                    <Skeleton className="h-5 w-full" />
+                                    <Skeleton className="h-3 w-24" />
                                 </div>
                             ))}
                         </div>
@@ -167,7 +164,7 @@ export function Hero({ heroStories: propHeroStories, topStories: propTopStories 
 
     return (
         <section className="bg-white border-b border-slate-200">
-            <div className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-16">
+            <div className="max-w-6xl mx-auto px-6 sm:px-10 lg:px-16">
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 py-1 md:py-8 border-b border-slate-200">
 
                     {/* ── LEFT: Hero Featured (8 cols) ── */}
@@ -295,16 +292,16 @@ export function Hero({ heroStories: propHeroStories, topStories: propTopStories 
                                 ALL NEWS <ArrowRight size={12} />
                             </Link>
                         </div>
-                        <div className="flex flex-col gap-5">
-                            {topStories.slice(0, 5).map((item, idx) => {
+                        <div className="flex flex-col gap-4">
+                            {topStories.slice(0, 5).map((item) => {
                                 const href = buildContentUrl({
                                     slug: item.slug || "",
                                     type_of_content: item.type_of_content,
                                     content_tag: item.content_tag,
                                 });
                                 return (
-                                    <article key={item.id} className="flex gap-5 group relative">
-                                        <div className="flex flex-col flex-1">
+                                    <article key={item.id} className="group relative border-b border-slate-100 last:border-0 pb-3.5 last:pb-0">
+                                        <div className="flex flex-col">
                                             {item.sectors?.[0]?.name && (
                                                 <Link
                                                     href={`/sectors/${slugify(item.sectors[0].name)}`}
@@ -314,31 +311,15 @@ export function Hero({ heroStories: propHeroStories, topStories: propTopStories 
                                                 </Link>
                                             )}
                                             <Link href={href} className="before:absolute before:inset-0 z-10">
-                                                <h4 className="font-bold text-slate-900 leading-tight group-hover:text-emerald-600 transition-colors line-clamp-3">
+                                                <h4 className="font-bold text-slate-900 leading-tight group-hover:text-emerald-600 transition-colors">
                                                     {item.Title}
                                                 </h4>
                                             </Link>
-                                            <div className="mt-2 text-[10px] text-slate-500 font-medium">
+                                            <div className="mt-1.5 text-[10px] text-slate-500 font-medium">
                                                 <time dateTime={item.Date || item.createdAt || ""}>
                                                     {formatContentDate(item.Date || item.createdAt || "")}
                                                 </time>
                                             </div>
-                                        </div>
-                                        <div className="relative w-28 sm:w-36 aspect-[4/3] shrink-0 overflow-hidden bg-slate-200 rounded-sm border border-slate-100">
-                                            {item.FeaturedImage?.url ? (
-                                                <Image
-                                                    src={getImageUrl(item)}
-                                                    alt=""
-                                                    fill
-                                                    sizes="(max-width: 640px) 112px, 144px"
-                                                    className="object-cover group-hover:scale-110 transition-transform duration-500"
-                                                    loading="lazy"
-                                                />
-                                            ) : (
-                                                <div className="absolute inset-0 bg-gradient-to-br from-slate-800 to-slate-950 flex items-center justify-center">
-                                                    <Zap size={16} className="text-white/20" />
-                                                </div>
-                                            )}
                                         </div>
                                     </article>
                                 );

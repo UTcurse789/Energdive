@@ -63,7 +63,7 @@ const itemVariants: Variants = {
 
 export function Publication2({ variant = "full", latestCoverImage, latestIssueSlug }: { variant?: "full" | "compact"; latestCoverImage?: string; latestIssueSlug?: string }) {
     return (
-        <section className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-16 py-16 lg:py-8">
+        <section className="max-w-6xl mx-auto px-6 sm:px-10 lg:px-16 py-16 lg:py-8">
 
             {/* 1. COMPACT HERO SECTION */}
             <div className="bg-zinc-900 p-6 sm:p-8 md:p-14 text-white relative overflow-hidden mb-8">
@@ -79,7 +79,7 @@ export function Publication2({ variant = "full", latestCoverImage, latestIssueSl
                         <span className="inline-block px-3 py-1 border border-zinc-700 rounded-full text-[9px] font-black uppercase tracking-[0.2em] text-[#00A651] mb-6">
                             The Publication
                         </span>
-                        <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black uppercase tracking-tighter text-white leading-tight mb-6 sm:mb-8">
+                        <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-4xl font-black uppercase tracking-tighter text-white leading-tight mb-6 sm:mb-8">
                             ENERGDIVE Insights and <br className="hidden md:inline" />
                             Market <span className="text-[#00A651] italic">Intelligence.</span>
                         </h2>
