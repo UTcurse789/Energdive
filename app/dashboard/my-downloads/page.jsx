@@ -148,7 +148,7 @@ export default async function MyDownloadsPage() {
                                         Download File
                                     </a>
                                     <Link
-                                        href={isResource ? `/resource-hub/${item.paper_slug}` : `/knowledge-base/abstract/${item.paper_slug}`}
+                                        href={isResource ? `/resource-hub/${item.paper_slug}` : `/knowledge-hub/abstract/${item.paper_slug}`}
                                         className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-zinc-200 hover:border-zinc-300 dark:border-zinc-800 dark:hover:border-zinc-700 bg-transparent px-4 py-2.5 text-sm font-semibold transition-all"
                                         style={{ color: "var(--dash-text)" }}
                                     >

@@ -1,32 +1,34 @@
-import Script from "next/script";
+import React from "react";
 import { getCanonicalUrl } from "@/lib/seo";
-
-/**
- * NewsArticle JSON-LD structured data component.
- *
- * Outputs a <script type="application/ld+json"> tag with schema.org
- * NewsArticle markup for Google Search rich results.
- *
- * @see https://developers.google.com/search/docs/appearance/structured-data/article
- */
+import { slugify } from "@/lib/utils";
+import { toIsoDate } from "@/lib/date";
+import { ORGANIZATION_SCHEMA } from "@/lib/organization-schema";
 
 interface ArticleJsonLdProps {
     title: string;
-    /** ISO-8601 date string (e.g. "2026-04-08") or raw Date string from Strapi */
+    /** ISO-8601 date string or raw Date string from Strapi */
     datePublished: string;
     /** ISO-8601 updated date string */
     dateModified?: string;
     /** Author display name */
     authorName?: string | null;
-    /** Article slug used to build the canonical URL */
+    /** Article slug used to build canonical URL */
     slug: string;
-    /** Absolute URL to the featured image */
+    /** Absolute or relative URL to featured image */
     imageUrl: string;
-    /** Route prefix, e.g. "news", "articles", "analysis" */
-    section: string;
+    /** Route prefix, e.g. "news" */
+    section?: string;
     /** Optional excerpt / description */
     description?: string;
+    /** Category / Sector display name */
+    category?: string;
+    /** Category / Sector URL slug */
+    categorySlug?: string;
+    /** Override the root schema type, defaults to NewsArticle */
+    schemaType?: "NewsArticle" | "OpinionNewsArticle" | "Article";
 }
+
+const GENERIC_DESK_REGEX = /\b(desk|editorial|team|energdive|newsroom)\b/i;
 
 export function ArticleJsonLd({
     title,
@@ -35,20 +37,14 @@ export function ArticleJsonLd({
     authorName,
     slug,
     imageUrl,
-    section,
+    section = "news",
     description,
+    category,
+    categorySlug,
+    schemaType = "NewsArticle",
 }: ArticleJsonLdProps) {
-    const toIsoDate = (value: string) => {
-        try {
-            const d = new Date(value);
-            return Number.isNaN(d.getTime()) ? value : d.toISOString();
-        } catch {
-            return value;
-        }
-    };
-
     const toAbsoluteUrl = (value: string) => {
-        if (!value) return getCanonicalUrl("/og-image.jpg");
+        if (!value) return getCanonicalUrl("/fav.jpg");
         if (value.startsWith("http://") || value.startsWith("https://")) return value;
         return getCanonicalUrl(value);
     };
@@ -57,36 +53,106 @@ export function ArticleJsonLd({
     const publishedIsoDate = toIsoDate(datePublished);
     const modifiedIsoDate = toIsoDate(dateModified || datePublished);
     const normalizedImageUrl = toAbsoluteUrl(imageUrl);
-    const normalizedDescription = description?.trim();
+    const normalizedDescription = description?.trim() || title;
 
-    const jsonLd = {
-        "@context": "https://schema.org",
-        "@type": "NewsArticle",
+    const rawAuthor = (authorName || "").trim();
+    const effectiveAuthorName = rawAuthor || "ENERGDIVE News Desk";
+    const isOrgAuthor = !rawAuthor || GENERIC_DESK_REGEX.test(rawAuthor);
+
+    const authorSchema = isOrgAuthor
+        ? {
+            "@type": "Organization",
+            name: effectiveAuthorName,
+            url: getCanonicalUrl(`/author/${slugify(effectiveAuthorName)}`),
+        }
+        : {
+            "@type": "Person",
+            name: effectiveAuthorName,
+            url: getCanonicalUrl(`/author/${slugify(effectiveAuthorName)}`),
+        };
+
+    const articleSchema = {
+        "@type": schemaType,
         headline: title,
+        description: normalizedDescription,
         datePublished: publishedIsoDate,
         dateModified: modifiedIsoDate,
-        author: {
-            "@type": "Person",
-            name: authorName || "EnergDive Editorial",
+        mainEntityOfPage: {
+            "@type": "WebPage",
+            "@id": canonicalUrl,
         },
+        author: authorSchema,
         publisher: {
-            "@type": "Organization",
-            name: "EnergDive",
-            logo: {
-                "@type": "ImageObject",
-                url: getCanonicalUrl("/logo.png"),
-            },
+            "@id": "https://www.energdive.com/#organization",
         },
-        image: normalizedImageUrl,
+        image: {
+            "@type": "ImageObject",
+            url: normalizedImageUrl,
+            width: 1200,
+            height: 630,
+        },
         url: canonicalUrl,
-        ...(normalizedDescription ? { description: normalizedDescription } : {}),
+    };
+
+    const sectionName = section.charAt(0).toUpperCase() + section.slice(1);
+    const breadcrumbs = [
+        {
+            "@type": "ListItem",
+            position: 1,
+            name: "Home",
+            item: getCanonicalUrl("/"),
+        },
+        {
+            "@type": "ListItem",
+            position: 2,
+            name: sectionName,
+            item: getCanonicalUrl(`/${section}`),
+        },
+    ];
+
+    if (category && categorySlug) {
+        breadcrumbs.push({
+            "@type": "ListItem",
+            position: 3,
+            name: category,
+            item: getCanonicalUrl(`/sectors/${categorySlug}`),
+        });
+        breadcrumbs.push({
+            "@type": "ListItem",
+            position: 4,
+            name: title,
+            item: canonicalUrl,
+        });
+    } else {
+        breadcrumbs.push({
+            "@type": "ListItem",
+            position: 3,
+            name: title,
+            item: canonicalUrl,
+        });
+    }
+
+    const breadcrumbSchema = {
+        "@type": "BreadcrumbList",
+        itemListElement: breadcrumbs,
+    };
+
+    const graphSchema = {
+        "@context": "https://schema.org",
+        "@graph": [
+            ORGANIZATION_SCHEMA,
+            articleSchema,
+            breadcrumbSchema
+        ]
     };
 
     return (
-        <Script
-            id={`news-article-json-ld-${section}-${slug}`}
+        <script
             type="application/ld+json"
-            dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+            dangerouslySetInnerHTML={{
+                __html: JSON.stringify(graphSchema).replace(/</g, "\\u003c"),
+            }}
         />
     );
 }
+

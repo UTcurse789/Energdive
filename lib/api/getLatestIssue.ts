@@ -30,7 +30,7 @@ export type LatestIssueData = {
     coverImage: string;
 };
 
-function toIssueSlug(month: string, year: string, fallbackId: unknown): string {
+export function toIssueSlug(month: string, year: string, fallbackId: unknown): string {
     if (!month || !year) return String(fallbackId ?? "").trim();
     const monthPart = month
         .toLowerCase()

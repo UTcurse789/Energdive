@@ -1,8 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Bookmark, Clock, ArrowRight, Trash2 } from "lucide-react";
+import { Bookmark, Clock, ArrowRight, Trash2, CheckCircle2 } from "lucide-react";
+import {
+    clearPendingSavedArticle,
+    clearPendingSaveQueryParam,
+    getSavedItemToastMessage,
+    readPendingSavedArticle,
+    SAVED_ARTICLE_TOAST_MESSAGE,
+} from "@/lib/pending-saved-article";
 
 interface SavedArticle {
     id: number;
@@ -14,10 +21,22 @@ interface SavedArticle {
 export default function SavedArticlesPage() {
     const [savedArticles, setSavedArticles] = useState<SavedArticle[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [saveError, setSaveError] = useState("");
+    const [showToast, setShowToast] = useState(false);
+    const [toastMessage, setToastMessage] = useState(SAVED_ARTICLE_TOAST_MESSAGE);
+    const processedPendingSaveRef = useRef(false);
 
     useEffect(() => {
-        const loadArticles = async () => {
+        let toastTimer: number | undefined;
+
+        const showSavedToast = () => {
+            setShowToast(true);
+            toastTimer = window.setTimeout(() => setShowToast(false), 3500);
+        };
+
+        const loadArticles = async (showLoading = true) => {
             try {
+                if (showLoading) setIsLoading(true);
                 const res = await fetch("/api/user/saved-articles", {
                     method: "GET",
                     cache: "no-store",
@@ -29,14 +48,61 @@ export default function SavedArticlesPage() {
             } catch (e) {
                 console.error("Error loading saved articles", e);
             } finally {
+                if (showLoading) setIsLoading(false);
+            }
+        };
+
+        const processPendingSave = async () => {
+            if (processedPendingSaveRef.current) return;
+            processedPendingSaveRef.current = true;
+
+            const pendingArticle = readPendingSavedArticle();
+            if (!pendingArticle) {
+                await loadArticles();
+                clearPendingSaveQueryParam();
+                return;
+            }
+
+            setIsLoading(true);
+            setSaveError("");
+
+            try {
+                const res = await fetch("/api/user/saved-articles", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        title: pendingArticle.title,
+                        url: pendingArticle.url,
+                    }),
+                });
+
+                if (!res.ok) throw new Error("Failed to save article");
+
+                clearPendingSavedArticle();
+                setToastMessage(getSavedItemToastMessage(pendingArticle.kind));
+                showSavedToast();
+                window.dispatchEvent(new Event("saved_articles_updated"));
+            } catch (error) {
+                console.error("Error saving pending article", error);
+                setSaveError("We could not save this item. Please try again.");
+            } finally {
+                await loadArticles(false);
+                clearPendingSaveQueryParam();
                 setIsLoading(false);
             }
         };
 
-        loadArticles();
+        processPendingSave();
 
-        window.addEventListener('saved_articles_updated', loadArticles);
-        return () => window.removeEventListener('saved_articles_updated', loadArticles);
+        const handleSavedArticlesUpdated = () => {
+            void loadArticles(false);
+        };
+
+        window.addEventListener("saved_articles_updated", handleSavedArticlesUpdated);
+        return () => {
+            window.removeEventListener("saved_articles_updated", handleSavedArticlesUpdated);
+            if (toastTimer) window.clearTimeout(toastTimer);
+        };
     }, []);
 
     const handleRemove = async (url: string, e: React.MouseEvent) => {
@@ -72,9 +138,15 @@ export default function SavedArticlesPage() {
     return (
         <div className="max-w-4xl mx-auto space-y-8">
             <div>
-                <h1 className="text-3xl font-bold font-serif mb-2 text-white">Saved Articles</h1>
-                <p className="text-zinc-400">Articles you&apos;ve bookmarked to read later.</p>
+                <h1 className="text-3xl font-bold font-serif mb-2 text-white">Saved Items</h1>
+                <p className="text-zinc-400">Articles and jobs you&apos;ve bookmarked to view later.</p>
             </div>
+
+            {saveError && (
+                <div className="rounded-xl border border-red-400/30 bg-red-500/10 px-4 py-3 text-sm font-medium text-red-200">
+                    {saveError}
+                </div>
+            )}
 
             {isLoading ? (
                 <div className="grid gap-4">
@@ -87,9 +159,9 @@ export default function SavedArticlesPage() {
                     <div className="w-16 h-16 bg-[#00A651]/10 text-[#00A651] rounded-full flex items-center justify-center mb-4">
                         <Bookmark className="w-8 h-8" />
                     </div>
-                    <h3 className="text-xl font-bold text-white mb-2">No saved articles</h3>
+                    <h3 className="text-xl font-bold text-white mb-2">No saved items</h3>
                     <p className="text-zinc-400 max-w-sm mb-6">
-                        When you see an interesting article, click the Save button to read it later here.
+                        When you see an interesting article or job, click Save to find it here later.
                     </p>
                     <Link href="/" className="inline-flex items-center gap-2 bg-white text-black font-bold px-6 py-3 rounded-full hover:bg-zinc-200 transition-colors">
                         Browse News <ArrowRight className="w-4 h-4" />
@@ -129,6 +201,13 @@ export default function SavedArticlesPage() {
                             </div>
                         </Link>
                     ))}
+                </div>
+            )}
+
+            {showToast && (
+                <div className="fixed bottom-6 left-1/2 z-50 flex -translate-x-1/2 items-center gap-2.5 rounded-full bg-white px-5 py-3 text-zinc-950 shadow-2xl ring-1 ring-black/10">
+                    <CheckCircle2 className="h-5 w-5 text-[#00A651]" />
+                    <span className="text-sm font-semibold">{toastMessage}</span>
                 </div>
             )}
         </div>

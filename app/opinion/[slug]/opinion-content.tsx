@@ -18,6 +18,7 @@ import { TagBadge } from "@/components/ui/tag-badge";
 import { AdBanner } from "@/components/ads/AdBanner";
 import { SaveArticleButton } from "@/components/article/SaveArticleButton";
 import { ArticleStickyShare } from "@/components/article/ArticleStickyShare";
+import { formatContentDate } from "@/lib/date";
 
 type RichTextChild = {
     text?: string;
@@ -44,6 +45,7 @@ type OpinionArticle = {
     category?: string;
     featuredImage?: string | null;
     readTime?: string;
+    date?: string;
     sectorSlug?: string;
     sectionPath?: string;
     backLabel?: string;
@@ -167,6 +169,14 @@ export default function OpinionContent({ opinion, recommended = [] }: OpinionCon
                                     </div>
                                 </Link>
                                 <div className="h-[14px] w-px bg-zinc-200" />
+                                {opinion.date && (
+                                    <>
+                                        <div className="flex items-center gap-[7px] text-[9px] font-bold text-zinc-400 uppercase tracking-widest">
+                                            Published on {formatContentDate(opinion.date)}
+                                        </div>
+                                        <div className="h-[14px] w-px bg-zinc-200" />
+                                    </>
+                                )}
                                 <div className="flex items-center gap-[7px] text-[9px] font-bold text-zinc-400 uppercase tracking-widest">
                                     <Clock className="h-[11px] w-[11px]" /> {opinion.readTime}
                                 </div>
@@ -181,7 +191,7 @@ export default function OpinionContent({ opinion, recommended = [] }: OpinionCon
                             className="relative w-full aspect-square lg:aspect-auto lg:h-[540px] overflow-hidden rounded-2xl shadow-3xl bg-zinc-100"
                         >
                             {opinion.featuredImage && (
-                                <Image src={opinion.featuredImage} alt={opinion.title} fill className="object-cover grayscale hover:grayscale-0 transition-all duration-1000" priority />
+                                <Image src={opinion.featuredImage} alt={opinion.title} fill className="object-cover object-top grayscale hover:grayscale-0 transition-all duration-1000" priority />
                             )}
                         </motion.div>
                     </div>
