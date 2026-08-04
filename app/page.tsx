@@ -191,13 +191,15 @@ async function getOpinionBuckets() {
 }
 
 export default async function Home() {
-  const [allContents, featuredContents, latestIssue, { opinions, interviews }, heroBannerContents] = await Promise.all([
+  const [allContents, featuredContents, latestIssue, opinionBuckets, heroBannerContents] = await Promise.all([
     getAllContents(),
     getFeaturedContents(),
     getLatestIssue(),
     getOpinionBuckets(),
     getHeroBannerContents(),
   ]);
+
+  const { opinions, interviews } = opinionBuckets || { opinions: [], interviews: [] };
 
   // ── Bento: Featured articles fetched directly from Strapi ──
   const finalBentoItems = featuredContents.length > 0
