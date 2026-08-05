@@ -22,6 +22,11 @@ type HeroExcerptBlock = {
 
 type HeroImage = {
     url?: string | null;
+    formats?: {
+        large?: { url?: string | null } | null;
+        medium?: { url?: string | null } | null;
+        small?: { url?: string | null } | null;
+    } | null;
 };
 
 type HeroSector = {
@@ -48,8 +53,7 @@ type HeroItem = {
 function getImageUrl(article: HeroItem): string {
     const img = article.FeaturedImage;
     if (!img) return "/placeholder.jpg";
-    // const url = img.formats?.large?.url || img.formats?.medium?.url || img.url;
-    const url = img.url;
+    const url = img.formats?.large?.url || img.formats?.medium?.url || img.url;
     if (!url) return "/placeholder.jpg";
     return strapiImageUrl(url);
 }
@@ -163,7 +167,7 @@ export function Hero({ heroStories: propHeroStories, topStories: propTopStories 
                                 fill
                                 priority
                                 fetchPriority="high"
-                                quality={100}
+                                quality={80}
                                 sizes="(max-width: 1024px) 100vw, 1200px"
                                 className={`object-cover transition-all duration-700 ${isTransitioning ? "opacity-40 scale-105" : "opacity-100 scale-100"
                                     } group-hover/img:scale-110`}

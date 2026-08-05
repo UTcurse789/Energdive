@@ -116,7 +116,11 @@ function FooterNewsletterForm() {
 
     return (
         <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+            <label htmlFor="footer-newsletter-email" className="sr-only">
+                Email address for newsletter subscription
+            </label>
             <input
+                id="footer-newsletter-email"
                 type="email"
                 placeholder="Enter your email"
                 required

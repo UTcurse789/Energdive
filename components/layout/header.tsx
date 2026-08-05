@@ -376,7 +376,7 @@ export function Header() {
                                 href={href}
                                 aria-label={label}
                                 target="_blank"
-                                rel="noopener"
+                                rel="noopener noreferrer"
                                 className="hover:opacity-70 transition-opacity"
                             >
                                 <Icon className="w-3.5 h-3.5 cursor-pointer" />
@@ -415,7 +415,11 @@ export function Header() {
 
                             {/* SECTORS */}
                             <div className="relative group cursor-pointer" onMouseEnter={() => { setActiveMenu('sectors'); setHoveredMoreItem(null); }}>
-                                <button className="flex items-center gap-1 text-[12px] xl:text-[13px] font-bold uppercase tracking-[1px] hover:opacity-70 whitespace-nowrap">
+                                <button
+                                    className="flex items-center gap-1 text-[12px] xl:text-[13px] font-bold uppercase tracking-[1px] hover:opacity-70 whitespace-nowrap"
+                                    aria-expanded={activeMenu === 'sectors'}
+                                    aria-haspopup="true"
+                                >
                                     SECTORS <ChevronDown className={cn("w-3 h-3 transition-transform", activeMenu === 'sectors' && "rotate-180")} />
                                 </button>
                             </div>
@@ -423,21 +427,33 @@ export function Header() {
                             <Link href="/news" className="text-[12px] xl:text-[13px] font-bold uppercase tracking-[1px] hover:opacity-70 whitespace-nowrap" onClick={closeMenus}>NEWS</Link>
                             <Link href="/reports" className="text-[12px] xl:text-[13px] font-bold uppercase tracking-[1px] hover:opacity-70 whitespace-nowrap" onClick={closeMenus}>REPORTS</Link>
                             <div className="relative group cursor-pointer" onMouseEnter={() => { setActiveMenu('opinion'); setHoveredOpinionItem('opinions'); setHoveredSector(null); setHoveredMoreItem(null); }}>
-                                <button className="flex items-center gap-1 text-[12px] xl:text-[13px] font-bold uppercase tracking-[1px] hover:opacity-70 whitespace-nowrap">
+                                <button
+                                    className="flex items-center gap-1 text-[12px] xl:text-[13px] font-bold uppercase tracking-[1px] hover:opacity-70 whitespace-nowrap"
+                                    aria-expanded={activeMenu === 'opinion'}
+                                    aria-haspopup="true"
+                                >
                                     OPINION <ChevronDown className={cn("w-3 h-3 transition-transform", activeMenu === 'opinion' && "rotate-180")} />
                                 </button>
                             </div>
 
                             {/* MAGAZINE MEGA MENU */}
                             <div className="relative group cursor-pointer" onMouseEnter={() => { setActiveMenu('magazine'); setActiveMagazineSection("latest"); setHoveredMoreItem(null); }}>
-                                <button className="flex items-center gap-1 text-[12px] xl:text-[13px] font-bold uppercase tracking-[1px] hover:opacity-70 whitespace-nowrap">
+                                <button
+                                    className="flex items-center gap-1 text-[12px] xl:text-[13px] font-bold uppercase tracking-[1px] hover:opacity-70 whitespace-nowrap"
+                                    aria-expanded={activeMenu === 'magazine'}
+                                    aria-haspopup="true"
+                                >
                                     MAGAZINE <ChevronDown className={cn("w-3 h-3 transition-transform", activeMenu === 'magazine' && "rotate-180")} />
                                 </button>
                             </div>
 
                             {/* MORE MEGA MENU */}
                             <div className="relative group cursor-pointer" onMouseEnter={() => { setActiveMenu('more'); setHoveredSector(null); }}>
-                                <button className="flex items-center gap-1 text-[12px] xl:text-[13px] font-bold uppercase tracking-[1px] hover:opacity-70 whitespace-nowrap">
+                                <button
+                                    className="flex items-center gap-1 text-[12px] xl:text-[13px] font-bold uppercase tracking-[1px] hover:opacity-70 whitespace-nowrap"
+                                    aria-expanded={activeMenu === 'more'}
+                                    aria-haspopup="true"
+                                >
                                     MORE <ChevronDown className={cn("w-3 h-3 transition-transform", activeMenu === 'more' && "rotate-180")} />
                                 </button>
                             </div>
@@ -453,7 +469,7 @@ export function Header() {
                         {/* RIGHT NAV */}
                         <div className="relative flex items-center gap-x-3 md:gap-x-5 xl:gap-x-7 flex-1 justify-end">
                             <nav className="hidden sm:flex items-center gap-x-3 md:gap-x-5 xl:gap-x-7">
-                                <Link href="/energclub" target="_blank" className="text-[12px] xl:text-[13px] font-bold uppercase tracking-[1px] hover:opacity-70 whitespace-nowrap" onClick={closeMenus}>ENERGCLUB</Link>
+                                <Link href="/energclub" target="_blank" rel="noopener noreferrer" className="text-[12px] xl:text-[13px] font-bold uppercase tracking-[1px] hover:opacity-70 whitespace-nowrap" onClick={closeMenus}>ENERGCLUB</Link>
                                 <div className="relative group cursor-pointer" onMouseEnter={() => { setActiveMenu(null); }}>
                                     <span style={{ color: brandGreen }} className="flex items-center gap-1 text-[12px] xl:text-[13px] font-bold uppercase tracking-[1px] hover:opacity-70 whitespace-nowrap py-2">
                                         SUBSCRIBE <ChevronDown className="w-3 h-3 transition-transform group-hover:rotate-180" />
@@ -1292,6 +1308,8 @@ export function Header() {
                                     <button
                                         className="w-full flex items-center justify-between px-6 py-4 text-[13px] font-bold uppercase tracking-[1px] hover:bg-gray-50 transition-colors"
                                         onClick={() => setMobileExpanded(mobileExpanded === 'sectors' ? null : 'sectors')}
+                                        aria-expanded={mobileExpanded === 'sectors'}
+                                        aria-controls="mobile-sectors-menu"
                                     >
                                         SECTORS
                                         <ChevronDown className={cn("w-4 h-4 transition-transform", mobileExpanded === 'sectors' && "rotate-180")} />
@@ -1331,6 +1349,8 @@ export function Header() {
                                     <button
                                         className="w-full flex items-center justify-between px-6 py-4 text-[13px] font-bold uppercase tracking-[1px] hover:bg-gray-50 transition-colors"
                                         onClick={() => setMobileExpanded(mobileExpanded === 'opinion' ? null : 'opinion')}
+                                        aria-expanded={mobileExpanded === 'opinion'}
+                                        aria-controls="mobile-opinion-menu"
                                     >
                                         OPINION
                                         <ChevronDown className={cn("w-4 h-4 transition-transform", mobileExpanded === 'opinion' && "rotate-180")} />
@@ -1360,6 +1380,8 @@ export function Header() {
                                     <button
                                         className="w-full flex items-center justify-between px-6 py-4 text-[13px] font-bold uppercase tracking-[1px] hover:bg-gray-50 transition-colors"
                                         onClick={() => setMobileExpanded(mobileExpanded === 'magazine' ? null : 'magazine')}
+                                        aria-expanded={mobileExpanded === 'magazine'}
+                                        aria-controls="mobile-magazine-menu"
                                     >
                                         MAGAZINE
                                         <ChevronDown className={cn("w-4 h-4 transition-transform", mobileExpanded === 'magazine' && "rotate-180")} />
@@ -1389,6 +1411,8 @@ export function Header() {
                                     <button
                                         className="w-full flex items-center justify-between px-6 py-4 text-[13px] font-bold uppercase tracking-[1px] hover:bg-gray-50 transition-colors"
                                         onClick={() => setMobileExpanded(mobileExpanded === 'more' ? null : 'more')}
+                                        aria-expanded={mobileExpanded === 'more'}
+                                        aria-controls="mobile-more-menu"
                                     >
                                         MORE
                                         <ChevronDown className={cn("w-4 h-4 transition-transform", mobileExpanded === 'more' && "rotate-180")} />
@@ -1436,9 +1460,11 @@ export function Header() {
                                         ENERGCLUB
                                     </Link>
                                     <div className="border-t border-gray-100 mt-2">
-                                        <button 
+                                        <button
                                             onClick={() => setMobileExpanded(mobileExpanded === 'subscribe' ? null : 'subscribe')}
                                             className="w-full flex items-center justify-between px-6 py-4"
+                                            aria-expanded={mobileExpanded === 'subscribe'}
+                                            aria-controls="mobile-subscribe-menu"
                                         >
                                             <span className="text-[13px] font-bold uppercase tracking-[1px]" style={{ color: brandGreen }}>SUBSCRIBE</span>
                                             <ChevronDown className={cn("w-4 h-4 transition-transform text-[#00A651]", mobileExpanded === 'subscribe' && "rotate-180")} />

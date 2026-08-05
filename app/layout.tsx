@@ -53,13 +53,15 @@ import SiteLayout from "@/components/layout/site-layout";
 import { UtmTracker } from "@/components/UtmTracker";
 import { Suspense } from "react";
 import ConsentAwareGTM from "@/components/ConsentAwareGTM";
-import AuthPromptModal from "@/components/ui/auth-prompt-modal";
-import OnboardingModal from "@/components/onboarding/onboarding-modal";
 import { PostHogProvider } from "./providers";
 import { PostHogIdentify } from "@/components/PostHogIdentify";
 import { AuthModalProvider } from "@/hooks/use-auth-modal";
-import AuthModal from "@/components/auth/auth-modal";
 import { ORGANIZATION_SCHEMA } from "@/lib/organization-schema";
+import dynamic from "next/dynamic";
+
+const AuthPromptModal = dynamic(() => import("@/components/ui/auth-prompt-modal"));
+const OnboardingModal = dynamic(() => import("@/components/onboarding/onboarding-modal"));
+const AuthModal = dynamic(() => import("@/components/auth/auth-modal"));
 
 const sans = Inter({
   subsets: ["latin"],

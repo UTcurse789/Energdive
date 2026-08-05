@@ -1,24 +1,49 @@
+import dynamic from "next/dynamic";
 import { HOME_PAGE_METADATA } from "@/lib/route-metadata";
 import { Hero } from "@/components/sections/hero";
 import { AdBanner } from "@/components/ads/AdBanner";
-// import { SpotlightSection } from "@/components/sections/spotlight-section";
-import { BentoGrid } from "@/components/ui/bento-grid";
-import { SectorBlock } from "@/components/ui/sector-block";
-import { OpinionSection } from "@/components/sections/opinion";
 import type { OpinionItem } from "@/components/sections/opinion";
-import { EventsSection } from "@/components/sections/events";
-import { HomepageVideos } from "@/components/sections/homepage-videos";
 import { ARTICLES } from "@/data/dummy";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { Article } from "@/types";
 import { formatContentDate } from "@/lib/date";
-import { Publication2 } from "@/components/sections/publication2";
 import { getLatestIssue } from "@/lib/api/getLatestIssue";
 import { strapiImageUrl } from "@/lib/strapi-image";
 import { buildContentUrl } from "@/lib/content-routes";
 import { buildSectorArticlesUrl } from "@/lib/sector-content";
 import { getOpinionContentKind } from "@/lib/content-tags";
 import Link from "next/link";
+
+// ── Below-the-Fold Lazy-Loaded Components (Code-Splitting for Main-Thread Optimization) ──
+const BentoGrid = dynamic(
+  () => import("@/components/ui/bento-grid").then((m) => m.BentoGrid),
+  { loading: () => <div className="h-96 w-full animate-pulse bg-slate-100 rounded-xl" /> }
+);
+
+const OpinionSection = dynamic(
+  () => import("@/components/sections/opinion").then((m) => m.OpinionSection),
+  { loading: () => <div className="h-96 w-full animate-pulse bg-slate-100 rounded-xl" /> }
+);
+
+const SectorBlock = dynamic(
+  () => import("@/components/ui/sector-block").then((m) => m.SectorBlock),
+  { loading: () => <div className="h-72 w-full animate-pulse bg-slate-100 rounded-xl" /> }
+);
+
+const HomepageVideos = dynamic(
+  () => import("@/components/sections/homepage-videos").then((m) => m.HomepageVideos),
+  { loading: () => <div className="h-96 w-full animate-pulse bg-slate-100 rounded-xl" /> }
+);
+
+const Publication2 = dynamic(
+  () => import("@/components/sections/publication2").then((m) => m.Publication2),
+  { loading: () => <div className="h-64 w-full animate-pulse bg-slate-100 rounded-xl" /> }
+);
+
+const EventsSection = dynamic(
+  () => import("@/components/sections/events").then((m) => m.EventsSection),
+  { loading: () => <div className="h-96 w-full animate-pulse bg-slate-100 rounded-xl" /> }
+);
 
 export const metadata = HOME_PAGE_METADATA;
 

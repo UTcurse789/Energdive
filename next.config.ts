@@ -25,6 +25,7 @@ const nextConfig: NextConfig = {
       "framer-motion",
       "recharts",
       "react-icons",
+      "@clerk/nextjs",
     ],
   },
 
