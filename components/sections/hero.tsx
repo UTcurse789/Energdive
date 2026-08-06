@@ -230,7 +230,7 @@ export function Hero({ heroStories: propHeroStories, topStories: propTopStories,
 
     return (
         <section className="bg-white py-4 sm:py-6">
-            <div className="max-w-6xl mx-auto px-4 sm:px-8 lg:px-12">
+            <div className="max-w-6xl mx-auto px-5 sm:px-10 lg:px-16">
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
 
                     {/* ── 1. LEFT COLUMN: Latest News (3 cols) ── */}
@@ -245,7 +245,7 @@ export function Hero({ heroStories: propHeroStories, topStories: propTopStories,
                             </Link>
                         </div>
                         <div className="flex flex-col divide-y divide-slate-100">
-                            {topStories.slice(0, 11).map((item) => {
+                            {topStories.slice(0, 11).map((item, idx) => {
                                 const href = buildContentUrl({
                                     slug: item.slug || "",
                                     type_of_content: item.type_of_content,
@@ -254,7 +254,12 @@ export function Hero({ heroStories: propHeroStories, topStories: propTopStories,
                                 const imgUrl = getImageUrl(item);
 
                                 return (
-                                    <article key={item.id} className="py-3 first:pt-0 last:pb-0 flex items-start gap-3 group relative">
+                                    <article
+                                        key={item.id}
+                                        className={`py-3 first:pt-0 last:pb-0 items-start gap-3 group relative ${
+                                            idx >= 6 ? "hidden lg:flex" : "flex"
+                                        }`}
+                                    >
                                         <div className="flex-1 min-w-0">
                                             {item.sectors?.[0]?.name && (
                                                 <Link
@@ -366,35 +371,33 @@ export function Hero({ heroStories: propHeroStories, topStories: propTopStories,
                                         ))}
                                     </div>
 
-                                    <div className="absolute inset-y-0 left-0 right-0 flex justify-between items-center px-3 opacity-100 lg:opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <div className="absolute inset-y-0 left-0 right-0 flex justify-between items-center px-2 sm:px-3 opacity-100 lg:opacity-0 group-hover:opacity-100 transition-opacity">
                                         <button
                                             type="button"
                                             aria-label="Previous slide"
                                             onClick={() => goToSlide((currentSlide - 1 + carouselArticles.length) % carouselArticles.length)}
-                                            className="p-2 bg-black/40 backdrop-blur-md rounded-full text-white hover:bg-emerald-600 transition-all"
+                                            className="p-1.5 sm:p-2 bg-black/40 backdrop-blur-md rounded-full text-white hover:bg-emerald-600 transition-all"
                                         >
-                                            <ChevronLeft size={18} />
+                                            <ChevronLeft size={16} className="sm:w-[18px] sm:h-[18px]" />
                                         </button>
                                         <button
                                             type="button"
                                             aria-label="Next slide"
                                             onClick={nextSlide}
-                                            className="p-2 bg-black/40 backdrop-blur-md rounded-full text-white hover:bg-emerald-600 transition-all"
+                                            className="p-1.5 sm:p-2 bg-black/40 backdrop-blur-md rounded-full text-white hover:bg-emerald-600 transition-all"
                                         >
-                                            <ChevronRight size={18} />
+                                            <ChevronRight size={16} className="sm:w-[18px] sm:h-[18px]" />
                                         </button>
                                     </div>
                                 </>
                             )}
                         </div>
 
-                        {/* NO EXCERPT OR META UNDER COVER STORY IMAGE (As requested!) */}
-
                         {/* Featured Stories Content List directly UNDER Cover Story image */}
                         {featuredStories && featuredStories.length > 0 && (
                             <div className="flex flex-col divide-y divide-slate-100 pt-2 border-t border-slate-200">
                                 {featuredStories.slice(0, 7).map((item, idx) => (
-                                    <article key={item.id || idx} className="py-3.5 first:pt-0 flex items-start gap-4 group relative">
+                                    <article key={item.id || idx} className="py-3.5 first:pt-0 flex items-start gap-3 sm:gap-4 group relative">
                                         <div className="flex-1 min-w-0">
                                             <Link href={item.href || buildContentUrl({ slug: item.slug, contentType: item.contentType, content_tag: item.contentTag })} className="before:absolute before:inset-0 z-10">
                                                 <h3 className="text-xs sm:text-sm font-bold text-slate-900 leading-snug group-hover:text-emerald-600 transition-colors line-clamp-2 mb-1">
@@ -416,12 +419,12 @@ export function Hero({ heroStories: propHeroStories, topStories: propTopStories,
                                             )}
                                         </div>
                                         {item.image && (
-                                            <div className="relative w-28 sm:w-36 aspect-[16/10] shrink-0 overflow-hidden rounded-lg bg-slate-100 border border-slate-200 shadow-xs">
+                                            <div className="relative w-20 sm:w-28 md:w-36 aspect-[16/10] shrink-0 overflow-hidden rounded-lg bg-slate-100 border border-slate-200 shadow-xs">
                                                 <Image
                                                     src={item.image}
                                                     alt={item.title}
                                                     fill
-                                                    sizes="(max-width: 640px) 112px, 144px"
+                                                    sizes="(max-width: 640px) 80px, 144px"
                                                     className="object-cover group-hover:scale-105 transition-transform duration-300"
                                                 />
                                             </div>
