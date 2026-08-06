@@ -41,6 +41,10 @@
 
 
 :root {
+  /* Local fallbacks keep development and builds independent of Google Fonts. */
+  --font-sans: Arial, Helvetica, sans-serif;
+  --font-serif: Georgia, "Times New Roman", serif;
+
   /* Brand Colors */
   --primary: oklch(0.205 0 0);
   /* Deep Teal/Blue */

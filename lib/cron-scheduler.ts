@@ -1,4 +1,5 @@
 import { processAbandonedCartDrip, processContentPreferenceDigests, processWeeklyReminders } from "./cron-jobs";
+import { sendDailySignupReport } from "./daily-signup-report";
 
 const globalForCron = globalThis as unknown as { isStarted?: boolean };
 
@@ -45,8 +46,8 @@ export function startCronScheduler() {
     }, weeklyRemindersIntervalMs);
     weeklyRemindersTimer.unref?.();
 
-    // Run preference digests once daily at 4 PM IST (10:30 UTC)
-    // Check every 5 minutes, fire only inside the 4 PM IST window
+    // Run preference digests once daily at 5 PM IST (11:30 UTC)
+    // Check every 5 minutes, fire only inside the 5 PM IST window
     let lastDigestDate = "";
     const digestCheckIntervalMs = 5 * 60 * 1000;
     const digestTimer = setInterval(async () => {
@@ -58,10 +59,10 @@ export function startCronScheduler() {
             const istHour = istDate.getUTCHours();
             const todayKey = istDate.toISOString().slice(0, 10); // YYYY-MM-DD
 
-            // Only fire between 16:00–16:59 IST, once per day
-            if (istHour === 16 && lastDigestDate !== todayKey) {
+            // Only fire between 17:00–17:59 IST, once per day
+            if (istHour === 17 && lastDigestDate !== todayKey) {
                 lastDigestDate = todayKey;
-                console.log(`[CRON-SCHEDULER] Firing daily preference digest at 4 PM IST (${todayKey})...`);
+                console.log(`[CRON-SCHEDULER] Firing daily preference digest at 5 PM IST (${todayKey})...`);
                 await processContentPreferenceDigests();
             }
         } catch (error) {
@@ -69,4 +70,25 @@ export function startCronScheduler() {
         }
     }, digestCheckIntervalMs);
     digestTimer.unref?.();
+
+    // Send the team signup report once daily at 6 PM IST. Its query uses a
+    // fixed 6 PM cutoff, even if this five-minute timer fires slightly later.
+    let lastSignupReportDate = "";
+    const signupReportTimer = setInterval(async () => {
+        try {
+            const nowUtc = new Date();
+            const istDate = new Date(nowUtc.getTime() + 5.5 * 60 * 60 * 1000);
+            const istHour = istDate.getUTCHours();
+            const todayKey = istDate.toISOString().slice(0, 10);
+
+            if (istHour === 18 && lastSignupReportDate !== todayKey) {
+                console.log(`[CRON-SCHEDULER] Sending daily signup report at 6 PM IST (${todayKey})...`);
+                await sendDailySignupReport();
+                lastSignupReportDate = todayKey;
+            }
+        } catch (error) {
+            console.error("[CRON-SCHEDULER] Daily signup report failed:", error);
+        }
+    }, digestCheckIntervalMs);
+    signupReportTimer.unref?.();
 }

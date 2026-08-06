@@ -47,7 +47,6 @@
 
 import { ClerkProvider } from "@clerk/nextjs";
 import type { Metadata } from "next";
-import { Inter, Merriweather } from "next/font/google";
 import "./globals.css";
 import SiteLayout from "@/components/layout/site-layout";
 import { UtmTracker } from "@/components/UtmTracker";
@@ -60,19 +59,6 @@ import { PostHogIdentify } from "@/components/PostHogIdentify";
 import { AuthModalProvider } from "@/hooks/use-auth-modal";
 import AuthModal from "@/components/auth/auth-modal";
 import { ORGANIZATION_SCHEMA } from "@/lib/organization-schema";
-
-const sans = Inter({
-  subsets: ["latin"],
-  variable: "--font-sans",
-  display: "swap",
-});
-
-const serif = Merriweather({
-  weight: ["300", "400", "700", "900"],
-  subsets: ["latin"],
-  variable: "--font-serif",
-  display: "swap",
-});
 
 // export const metadata: Metadata = {
 //   title: {
@@ -105,7 +91,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className={`${sans.variable} ${serif.variable}`}>
+    <html lang="en">
       <head>
         <link rel="preconnect" href="https://cms.energdive.com" />
         <link rel="preconnect" href="https://cdn.energdive.com" />

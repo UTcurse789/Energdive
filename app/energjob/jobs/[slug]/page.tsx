@@ -98,7 +98,7 @@ function CompanyMark({
       <div
         className={`${size} shrink-0 overflow-hidden rounded-[22px] border border-[#d7e3ea] bg-white shadow-[0_6px_18px_rgba(20,63,82,0.08)]`}
       >
-        <img src={logoUrl} alt={name} className="h-full w-full object-contain p-1" />
+        <img src={logoUrl} alt={name} className="h-full w-full object-contain" />
       </div>
     );
   }
@@ -323,7 +323,7 @@ export default async function EnergJobDetailPage({
             <div className="relative flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
               <div className="min-w-0 flex-1">
                 <div className="flex items-start gap-4">
-                  <CompanyMark name={company} logoUrl={job.companyLogoUrl} />
+                  <CompanyMark name={company} logoUrl={job.companyLogoUrl} size="w-32 h-16 sm:w-40 sm:h-20" />
 
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2 text-sm font-semibold text-[#09B697]">
