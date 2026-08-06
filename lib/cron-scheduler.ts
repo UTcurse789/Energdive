@@ -57,12 +57,16 @@ export function startCronScheduler() {
             const istMs = nowUtc.getTime() + 5.5 * 60 * 60 * 1000;
             const istDate = new Date(istMs);
             const istHour = istDate.getUTCHours();
+            const istMinute = istDate.getUTCMinutes();
             const todayKey = istDate.toISOString().slice(0, 10); // YYYY-MM-DD
+            // One-time delay requested for 6 August 2026. Every later day
+            // continues with the normal 5:00 PM IST Daily Briefing schedule.
+            const digestStartMinute = todayKey === "2026-08-06" ? 30 : 0;
 
             // Only fire between 17:00–17:59 IST, once per day
-            if (istHour === 17 && lastDigestDate !== todayKey) {
+            if (istHour === 17 && istMinute >= digestStartMinute && lastDigestDate !== todayKey) {
                 lastDigestDate = todayKey;
-                console.log(`[CRON-SCHEDULER] Firing daily preference digest at 5 PM IST (${todayKey})...`);
+                console.log(`[CRON-SCHEDULER] Firing daily preference digest at 5:${String(digestStartMinute).padStart(2, "0")} PM IST (${todayKey})...`);
                 await processContentPreferenceDigests();
             }
         } catch (error) {
