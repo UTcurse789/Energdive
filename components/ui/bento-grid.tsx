@@ -123,48 +123,51 @@ export function BentoGrid({ items: propItems, className }: BentoGridProps) {
         );
     }
 
-    const displayItems = items.slice(0, 4);
+    const displayItems = items.slice(0, 6);
 
     return (
-        <div className={cn("w-full flex flex-col divide-y divide-slate-100", className)}>
+        <div className={cn("w-full grid grid-cols-1 sm:grid-cols-2 gap-6", className)}>
             {displayItems.map((item, idx) => (
                 <Link
                     key={item.id || idx}
                     href={item.href || buildContentUrl({ slug: item.slug, contentType: item.contentType, content_tag: item.contentTag })}
-                    className="group py-5 sm:py-6 first:pt-0 last:pb-0 flex flex-col-reverse sm:flex-row items-start sm:items-center justify-between gap-6 sm:gap-8 transition-colors"
+                    className="group flex flex-col justify-between p-4 rounded-xl bg-white border border-slate-200 hover:border-emerald-500/40 hover:shadow-md transition-all"
                 >
-                    {/* Content Left */}
-                    <div className="flex-1 min-w-0 pr-0 sm:pr-4">
-                        <h3 className="font-serif text-xl sm:text-2xl font-bold leading-snug tracking-tight text-slate-900 group-hover:text-emerald-600 transition-colors mb-1.5 line-clamp-2">
-                            {item.title}
-                        </h3>
-
-                        {item.excerpt && (
-                            <p className="text-sm font-serif italic text-slate-500 leading-relaxed line-clamp-2 mb-2.5">
-                                {item.excerpt}
-                            </p>
-                        )}
-
-                        <div className="flex items-center gap-2 text-xs font-medium text-slate-600">
-                            <span>{item.authorName || "Energy Dive Intelligence"}</span>
-                            {item.category && (
-                                <>
-                                    <span className="text-slate-300">•</span>
-                                    <span className="text-emerald-600 font-bold uppercase tracking-wider">{item.category}</span>
-                                </>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Thumbnail Image Right */}
-                    <div className="relative w-full sm:w-[180px] md:w-[210px] aspect-[16/10] shrink-0 overflow-hidden rounded-md bg-slate-100 border border-slate-100 shadow-sm">
+                    <div className="relative w-full aspect-[16/9] overflow-hidden rounded-lg bg-slate-100 mb-3 border border-slate-100">
                         <Image
                             src={item.image}
                             alt={item.title}
                             fill
-                            sizes="(max-width: 640px) 100vw, 210px"
-                            className="object-cover object-center group-hover:scale-105 transition-transform duration-500"
+                            sizes="(max-width: 640px) 100vw, 350px"
+                            className="object-cover group-hover:scale-105 transition-transform duration-500"
                         />
+                        {item.category && (
+                            <span className="absolute top-2.5 left-2.5 bg-emerald-600 text-white text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded shadow-sm">
+                                {item.category}
+                            </span>
+                        )}
+                    </div>
+                    <div className="flex-1 flex flex-col justify-between">
+                        <div>
+                            <h3 className="font-bold text-sm sm:text-base leading-snug text-slate-900 group-hover:text-emerald-600 transition-colors line-clamp-2 mb-1.5">
+                                {item.title}
+                            </h3>
+                            {item.excerpt && (
+                                <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed mb-3">
+                                    {item.excerpt}
+                                </p>
+                            )}
+                        </div>
+                        <div className="flex items-center justify-between text-[11px] font-medium text-slate-500 pt-2 border-t border-slate-100 mt-auto">
+                            <span className="font-semibold text-slate-700 truncate max-w-[150px]">
+                                {item.authorName || "ENERGDIVE Desk"}
+                            </span>
+                            {item.date && (
+                                <time dateTime={item.date} className="shrink-0 text-slate-400">
+                                    {item.date}
+                                </time>
+                            )}
+                        </div>
                     </div>
                 </Link>
             ))}

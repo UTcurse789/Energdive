@@ -1,25 +1,25 @@
 import { HOME_PAGE_METADATA } from "@/lib/route-metadata";
 import { Hero } from "@/components/sections/hero";
 import { AdBanner } from "@/components/ads/AdBanner";
-import { BentoGrid } from "@/components/ui/bento-grid";
 import { SectorBlock } from "@/components/ui/sector-block";
 import { OpinionSection } from "@/components/sections/opinion";
 import type { OpinionItem } from "@/components/sections/opinion";
 import { EventsSection } from "@/components/sections/events";
-import { HomepageVideos } from "@/components/sections/homepage-videos";
+import { getLatestVideos } from "@/components/sections/homepage-videos";
 import { ARTICLES } from "@/data/dummy";
-import { SectionHeading } from "@/components/ui/section-heading";
 import { Article } from "@/types";
 import { formatContentDate } from "@/lib/date";
 import { Publication2 } from "@/components/sections/publication2";
-import { getLatestIssue } from "@/lib/api/getLatestIssue";
+import { getLatestIssueWithArticles } from "@/lib/api/getLatestIssue";
+import { CurrentIssueSection } from "@/components/sections/current-issue-section";
+import { EnergyJobsSidebar } from "@/components/sections/energy-jobs-sidebar";
 import { strapiImageUrl } from "@/lib/strapi-image";
 import { buildContentUrl } from "@/lib/content-routes";
 import { buildSectorArticlesUrl } from "@/lib/sector-content";
 import { getOpinionContentKind } from "@/lib/content-tags";
 import { ORGANIZATION_SCHEMA } from "@/lib/organization-schema";
 import Link from "next/link";
-import { ArrowRight, TrendingUp } from "lucide-react";
+import { ArrowRight, BookOpen, Mail } from "lucide-react";
 
 export const metadata = HOME_PAGE_METADATA;
 
@@ -124,7 +124,7 @@ async function getAllContents() {
 async function getFeaturedContents() {
   try {
     const res = await fetch(
-      `${STRAPI_BASE}/api/contents?filters[featured][$eq]=true&populate=*&sort[0]=updatedAt:desc&sort[1]=publishedAt:desc&pagination[pageSize]=10`,
+      `${STRAPI_BASE}/api/contents?filters[featured][$eq]=true&populate=*&sort[0]=updatedAt:desc&sort[1]=publishedAt:desc&pagination[pageSize]=30`,
       { next: { revalidate: 60 } }
     );
     if (!res.ok) return [];
@@ -227,12 +227,13 @@ function BreakingNewsTicker({ news }: { news: { title: string; href: string }[] 
 // ─── Main Homepage ─────────────────────────────────────────────────────────────
 
 export default async function Home() {
-  const [allContents, featuredContents, heroBannerContents, latestIssue, { opinions, interviews }] = await Promise.all([
+  const [allContents, featuredContents, heroBannerContents, latestIssue, { opinions, interviews }, videos] = await Promise.all([
     getAllContents(),
     getFeaturedContents(),
     getHeroBannerContents(),
-    getLatestIssue(),
+    getLatestIssueWithArticles(),
     getOpinionBuckets(),
+    getLatestVideos(),
   ]);
 
   // Ticker News Items (Top 8 latest news)
@@ -264,8 +265,8 @@ export default async function Home() {
         authorName: article.author?.name || article.authorName || "Energy Dive Intelligence",
         date: article.Date || article.publishedAt || article.createdAt,
       }))
-      .slice(0, 6)
-    : ARTICLES.slice(0, 6).map((a: any) => ({
+      .slice(0, 11)
+    : ARTICLES.slice(0, 11).map((a: any) => ({
       id: a.id,
       title: a.title,
       category: a.category,
@@ -283,7 +284,7 @@ export default async function Home() {
       .sort((a: any, b: any) => {
         return getArticleTimestamp(b) - getArticleTimestamp(a);
       })
-      .slice(0, 6)
+      .slice(0, 16)
     : [];
 
   // Fetch articles for each sector in parallel directly from Strapi
@@ -356,84 +357,201 @@ export default async function Home() {
       {/* Breaking News Ticker */}
       <BreakingNewsTicker news={tickerItems} />
 
-      {/* Homepage Platform Hero Ad Banner */}
-      <div className="max-w-6xl mx-auto px-6 sm:px-10 lg:px-16 pt-6 pb-2">
-        <AdBanner placement="home_platform_hero" variant="banner" className="py-0" />
+      {/* Home Platform Hero Ad Banner */}
+      <div className="max-w-6xl mx-auto px-4 sm:px-8 lg:px-12 pt-3 pb-1">
+        <AdBanner
+          placement="home_platform_hero"
+          variant="banner"
+          maxItems={1}
+          showSkeleton={false}
+        />
       </div>
 
-      {/* Hero Section (Split Grid 12 Columns - 8 col lead story with H1 + 4 col Trending stack) */}
-      <Hero heroStories={heroBannerContents} topStories={heroTopStories} />
+      {/* Main Portal Section (Left: Latest News, Center: Cover Story Title + Image + Featured Content, Right: Partner Ad + Featured Videos) */}
+      <Hero
+        heroStories={heroBannerContents}
+        topStories={heroTopStories}
+        featuredStories={finalBentoItems}
+        videos={videos}
+      />
 
-      {/* Curated Spotlight & Feature Bento Grid */}
-      <section className="py-14 lg:py-20 bg-white relative overflow-hidden border-b border-slate-100">
-        <div
-          className="absolute inset-0 pointer-events-none opacity-[0.02]"
-          style={{
-            backgroundImage: "radial-gradient(rgba(0, 166, 81, 1) 1px, transparent 1px)",
-            backgroundSize: "32px 32px",
-          }}
+
+
+      {/* Lower editorial lane: Opinion, Interviews, Sectors + Right Rail */}
+      <section className="bg-white">
+        <div className="max-w-6xl mx-auto px-4 sm:px-8 lg:px-12">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
+            <div className="min-w-0 lg:col-span-9">
+              {/* Executive Opinion & Interviews Vertical */}
+              <OpinionSection opinions={opinions} interviews={interviews} contained={false} />
+            </div>
+
+            <aside className="lg:col-span-3 pt-6 lg:pt-8" aria-label="Homepage right rail">
+              <EventsSection variant="sidebar" />
+            </aside>
+          </div>
+        </div>
+      </section>
+
+      {/* Current Issue — full width, between Opinion and Sectors */}
+      {latestIssue && (
+        <CurrentIssueSection
+          month={latestIssue.month}
+          year={latestIssue.year}
+          coverImage={latestIssue.coverImage}
+          issueSlug={latestIssue.slug}
+          articles={latestIssue.articles}
         />
-        <div className="max-w-6xl mx-auto px-6 sm:px-10 lg:px-16 relative z-10">
-          <SectionHeading title="Featured" />
-          <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-12">
-            <div className="min-w-0 lg:col-span-8">
-              <BentoGrid items={finalBentoItems} className="py-0" />
-            </div>
-            <div className="w-full lg:col-span-4 flex justify-center lg:justify-end">
-              <AdBanner
-                placement="home_featured_partner"
-                variant="vertical"
-                className="mx-auto lg:mx-0"
-              />
-            </div>
-          </div>
-        </div>
-      </section>
+      )}
 
-      {/* Executive Opinion & Interviews Vertical */}
-      <OpinionSection opinions={opinions} interviews={interviews} />
+      {/* Sector Intelligence Hubs */}
+      <section className="bg-white py-8 lg:py-6">
+        <div className="max-w-6xl mx-auto px-4 sm:px-8 lg:px-12">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
+            <div className="lg:col-span-9">
+              {sectorsWithArticles.map((sector) => (
+                <div key={sector.slug} className="mb-3 last:mb-0">
+                  <AdBanner
+                    placement="sector_hero"
+                    sectorSlug={sector.slug}
+                    variant="banner"
+                    showSkeleton={false}
+                    className="py-2"
+                  />
+                  <SectorBlock
+                    title={sector.title}
+                    slug={sector.slug}
+                    articles={sector.articles}
+                  />
+                </div>
+              ))}
 
-      {/* Sector Intelligence Hubs (Oil & Gas, Power, New Energies, Sustainability) */}
-      <section className="border-b border-slate-200 py-10 lg:py-6">
-        <div className="max-w-6xl mx-auto px-6 sm:px-10 lg:px-16">
-          {sectorsWithArticles.map((sector) => (
-            <div key={sector.slug} className="mb-7 last:mb-0">
+              {/* View All Sectors Action Callout */}
+              <div className="flex justify-center mt-6">
+                <Link
+                  href="/sectors"
+                  className="group inline-flex items-center gap-3 px-8 py-4 bg-emerald-600 text-white text-xs font-black uppercase tracking-[0.2em] rounded-full hover:bg-emerald-700 transition-all duration-300 shadow-md hover:shadow-xl hover:-translate-y-0.5"
+                >
+                  Explore All Sectors
+                  <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
+                </Link>
+              </div>
+            </div>
+
+            {/* Right Rail: Ads + EnergyJobs + Call for Papers CTA */}
+            <aside className="lg:col-span-3 flex flex-col gap-5 pt-2">
+              {/* Ad 1 */}
               <AdBanner
-                placement="sector_hero"
-                sectorSlug={sector.slug}
-                variant="banner"
+                placement="article_sidebar"
+                variant="card"
+                maxItems={1}
                 showSkeleton={false}
-                className="py-4"
               />
-              <SectorBlock
-                title={sector.title}
-                slug={sector.slug}
-                articles={sector.articles}
-              />
-            </div>
-          ))}
 
-          {/* View All Sectors Action Callout */}
-          <div className="flex justify-center">
-            <Link
-              href="/sectors"
-              className="group inline-flex items-center gap-3 px-8 py-4 bg-emerald-600 text-white text-xs font-black uppercase tracking-[0.2em] rounded-full hover:bg-emerald-700 transition-all duration-300 shadow-md hover:shadow-xl hover:-translate-y-0.5"
-            >
-              Explore All Sectors
-              <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
-            </Link>
+              {/* Ad 2 */}
+              <AdBanner
+                placement="new_sidebar"
+                variant="card"
+                maxItems={1}
+                showSkeleton={false}
+              />
+
+              {/* EnergyJobs */}
+              <EnergyJobsSidebar />
+
+              {/* Call for Papers CTA */}
+              <div className="relative overflow-hidden bg-gradient-to-br from-slate-950 via-zinc-900 to-emerald-950 p-5 rounded-md border border-slate-800/80 shadow-md group">
+                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-600" />
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-[9px] font-black uppercase tracking-[0.2em] text-emerald-400 mb-2">
+                  Insights Exchange
+                </span>
+                <h3 className="text-base font-black text-white leading-snug tracking-tight">
+                  Call for Papers
+                </h3>
+                <p className="mt-2 text-xs text-slate-300/90 leading-relaxed">
+                  Share your research, analysis, or industry insights with India&apos;s energy community.
+                </p>
+                <Link
+                  href="/insights-exchange/call-for-papers"
+                  className="mt-4 group/btn inline-flex items-center justify-center gap-2 w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-[11px] uppercase tracking-wider rounded transition-all shadow-sm"
+                >
+                  Submit Your Paper
+                  <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover/btn:translate-x-1" />
+                </Link>
+              </div>
+            </aside>
           </div>
         </div>
       </section>
 
-      {/* Multimedia & Video Coverage (Dark Slate Theme) */}
-      <HomepageVideos />
+      {/* Subscriptions CTA Section: Print Subscription + Newsletter (Light Theme) */}
+      <section className="bg-white py-10 lg:py-12 border-t border-slate-200">
+        <div className="max-w-6xl mx-auto px-4 sm:px-8 lg:px-12">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
+            
+            {/* CTA 1: Print Subscription */}
+            <div className="relative overflow-hidden bg-slate-50/80 border border-slate-200/90 p-6 sm:p-8 rounded-2xl shadow-xs flex flex-col justify-between group hover:border-emerald-500/50 hover:bg-slate-50 transition-all duration-300">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full blur-2xl group-hover:bg-emerald-500/10 transition-all" />
+              
+              <div>
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-100/80 border border-emerald-200 text-[10px] font-black uppercase tracking-[0.2em] text-emerald-800 mb-4">
+                  <BookOpen className="w-3.5 h-3.5 text-emerald-700" />
+                  Print Edition
+                </div>
+                
+                <h3 className="text-xl sm:text-2xl font-black text-slate-900 leading-tight tracking-tight mb-3">
+                  Subscribe to ENERGDIVE Magazine
+                </h3>
+                
+                <p className="text-sm text-slate-600 leading-relaxed font-normal mb-6">
+                  Get in-depth sector intelligence, expert commentary, and comprehensive monthly market analysis delivered straight to your desk or organization.
+                </p>
+              </div>
 
-      {/* Market Intelligence & Lead Generation Callout / Digital Magazine */}
-      <Publication2 variant="compact" latestCoverImage={latestIssue?.coverImage} latestIssueSlug={latestIssue?.slug} />
+              <div>
+                <Link
+                  href="/subscribe"
+                  className="inline-flex items-center justify-center gap-2.5 px-6 py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs uppercase tracking-[0.16em] rounded-xl transition-all shadow-xs hover:shadow-md group/btn"
+                >
+                  Subscribe Print Edition
+                  <ArrowRight className="w-4 h-4 transition-transform group-hover/btn:translate-x-1" />
+                </Link>
+              </div>
+            </div>
 
-      {/* Upcoming Global Industry Events Strip */}
-      <EventsSection />
+            {/* CTA 2: Newsletter Subscription */}
+            <div className="relative overflow-hidden bg-slate-50/80 border border-slate-200/90 p-6 sm:p-8 rounded-2xl shadow-xs flex flex-col justify-between group hover:border-emerald-500/50 hover:bg-slate-50 transition-all duration-300">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-teal-500/5 rounded-full blur-2xl group-hover:bg-teal-500/10 transition-all" />
+              
+              <div>
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-100/80 border border-teal-200 text-[10px] font-black uppercase tracking-[0.2em] text-teal-800 mb-4">
+                  <Mail className="w-3.5 h-3.5 text-teal-700" />
+                  Daily & Weekly Briefings
+                </div>
+                
+                <h3 className="text-xl sm:text-2xl font-black text-slate-900 leading-tight tracking-tight mb-3">
+                  Join ENERGDIVE Newsletter
+                </h3>
+                
+                <p className="text-sm text-slate-600 leading-relaxed font-normal mb-6">
+                  Stay updated with breaking energy news, policy insights, and exclusive executive digests directly in your email inbox every morning.
+                </p>
+              </div>
+
+              <div>
+                <Link
+                  href="/newsletter"
+                  className="inline-flex items-center justify-center gap-2.5 px-6 py-3.5 bg-slate-900 hover:bg-emerald-600 text-white font-black text-xs uppercase tracking-[0.16em] rounded-xl transition-all shadow-xs hover:shadow-md group/btn"
+                >
+                  Join Newsletter Free
+                  <ArrowRight className="w-4 h-4 transition-transform group-hover/btn:translate-x-1" />
+                </Link>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
     </main>
   );
 }

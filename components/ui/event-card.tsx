@@ -1,10 +1,16 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Calendar, MapPin, ArrowUpRight, Clock } from "lucide-react";
-import { Event } from "@/types";
+import { Calendar, MapPin, ArrowUpRight } from "lucide-react";
 
 interface EventCardProps {
-    event: Event | any; // Use any to allow flexibility with strapi response structure
+    event: {
+        title: string;
+        slug?: string;
+        date?: string;
+        location?: string;
+        image?: string;
+        url?: string;
+    };
 }
 
 export function EventCard({ event }: EventCardProps) {
@@ -50,11 +56,11 @@ export function EventCard({ event }: EventCardProps) {
                 <div className="p-4 relative bg-white">
                     {/* Time removed as requested */}
 
-                    <h3 className="font-serif font-bold text-base leading-snug mb-3 text-slate-900 group-hover:text-[#09B697] transition-colors line-clamp-2 min-h-[42px]">
+                    <h3 className="text-xs sm:text-sm font-bold text-slate-900 leading-snug group-hover:text-[#09B697] transition-colors line-clamp-2 min-h-[34px]">
                         {event.title}
                     </h3>
 
-                    <div className="flex items-center justify-between border-t border-slate-100 pt-3">
+                    <div className="flex items-center justify-between border-t border-slate-100 pt-3 mt-3">
                         <div className="flex items-center gap-1.5 text-xs text-slate-400">
                             <MapPin className="w-3 h-3 text-[#09B697]" />
                             <span className="font-medium line-clamp-1 max-w-[180px]">{event.location}</span>

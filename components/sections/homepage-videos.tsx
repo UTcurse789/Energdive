@@ -7,7 +7,7 @@ import { strapiImageUrl } from "@/lib/strapi-image";
 
 const STRAPI_BASE = process.env.NEXT_PUBLIC_STRAPI_URL || "https://cms.energdive.com";
 
-async function getLatestVideos() {
+export async function getLatestVideos() {
     try {
         const res = await fetch(
             `${STRAPI_BASE}/api/videos?populate[0]=thumbnail&populate[1]=sectors&sort=createdAt:desc&pagination[pageSize]=5`,

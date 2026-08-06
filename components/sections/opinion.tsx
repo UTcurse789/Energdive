@@ -23,9 +23,11 @@ export interface OpinionItem {
 export function OpinionSection({
     opinions = [],
     interviews = [],
+    contained = true,
 }: {
     opinions: OpinionItem[],
     interviews: OpinionItem[],
+    contained?: boolean,
 }) {
     const [opinionIndex, setOpinionIndex] = useState(0);
     const [interviewIndex, setInterviewIndex] = useState(0);
@@ -50,6 +52,9 @@ export function OpinionSection({
 
     const currentOpinion = opinions[opinionIndex];
     const currentInterview = interviews[interviewIndex];
+    const containerClassName = contained
+        ? "max-w-6xl mx-auto px-6 sm:px-10 lg:px-16"
+        : "w-full";
 
     return (
         <>
@@ -59,9 +64,9 @@ export function OpinionSection({
             {opinions.length > 0 && (
                 <section
                     aria-label="Opinion & Commentary"
-                    className="py-6 lg:py-8 bg-[#FAFAF8] border-b border-zinc-200"
+                    className="py-6 lg:py-8 bg-white"
                 >
-                    <div className="max-w-6xl mx-auto px-6 sm:px-10 lg:px-16">
+                    <div className={containerClassName}>
 
                         {/* Section Heading */}
                         <SectionHeading
@@ -69,6 +74,7 @@ export function OpinionSection({
                             linkText="View All"
                             linkHref="/opinion"
                             adPlacement="home_opinion"
+                            variant="hero"
                         />
 
                         {/* ── MAIN EDITORIAL CARD ── */}
@@ -116,29 +122,38 @@ export function OpinionSection({
                             </div>
 
                             {/* RIGHT — Editorial Content (9 Cols) */}
-                            <div className="lg:col-span-9 flex flex-col justify-between p-5 sm:p-6 lg:p-7 xl:p-8">
+                            <div className="lg:col-span-9 flex flex-col justify-between p-4 sm:p-5 lg:p-6">
 
                                 {/* Pull-quote style title */}
                                 <div className="flex-1">
                                     {/* Opening quotation mark */}
                                     <div className="text-[#00A651] mb-2 leading-none">
-                                        <svg width="28" height="22" viewBox="0 0 36 28" fill="currentColor" aria-hidden="true">
+                                        <svg width="22" height="18" viewBox="0 0 36 28" fill="currentColor" aria-hidden="true">
                                             <path d="M0 28V17.2C0 11.6 1.6 7.2 4.8 4C8 0.8 12.4 0 18 0v5.6c-3.2 0-5.6.8-7.2 2.4C9.2 9.6 8.4 12 8.4 15.2H16V28H0Zm20 0V17.2C20 11.6 21.6 7.2 24.8 4C28 .8 32.4 0 38 0v5.6c-3.2 0-5.6.8-7.2 2.4C29.2 9.6 28.4 12 28.4 15.2H36V28H20Z" />
                                         </svg>
                                     </div>
 
                                     {/* Article title — h3 for SEO hierarchy */}
-                                    <h3 className="font-serif text-xl sm:text-2xl lg:text-[1.5rem] xl:text-[1.75rem] font-bold leading-[1.2] tracking-tight text-zinc-900 mb-3">
+                                    <h3 className="text-sm sm:text-base lg:text-lg font-bold text-slate-900 leading-snug tracking-normal mb-2">
                                         <Link
                                             href={`/opinion/${currentOpinion.slug}`}
-                                            className="hover:text-[#00A651] transition-colors duration-300"
+                                            className="hover:text-emerald-600 transition-colors duration-300"
                                         >
                                             {currentOpinion.title}
                                         </Link>
                                     </h3>
 
+                                    {currentOpinion.date && (
+                                        <time
+                                            dateTime={currentOpinion.date}
+                                            className="mb-2 block text-[10px] text-slate-400 font-medium uppercase tracking-wide"
+                                        >
+                                            {currentOpinion.date}
+                                        </time>
+                                    )}
+
                                     {/* Excerpt */}
-                                    <p className="text-zinc-500 text-xs sm:text-sm leading-relaxed line-clamp-2 mb-4 border-l-2 border-zinc-200 pl-3">
+                                    <p className="text-[11px] sm:text-xs text-slate-500 leading-relaxed line-clamp-2 mb-4 border-l-2 border-slate-200 pl-3 font-light">
                                         {currentOpinion.excerpt}
                                     </p>
                                 </div>
@@ -197,42 +212,45 @@ export function OpinionSection({
                             </div>
                         </article>
 
-                        {/* ── THUMBNAILS STRIP (other opinions) ── */}
+                        {/* ── ARTICLE THUMBNAIL STRIP ── */}
                         {opinions.length > 1 && (
-                            <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-px border border-zinc-200 bg-zinc-200 overflow-hidden">
-                                {opinions.map((op, i) => (
+                            <div className="mt-3 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+                                {opinions.map((op, idx) => (
                                     <button
                                         key={op.id}
-                                        onClick={() => setOpinionIndex(i)}
+                                        onClick={() => setOpinionIndex(idx)}
                                         aria-label={`View opinion: ${op.title}`}
-                                        className={`relative group/thumb flex flex-col bg-white text-left transition-all duration-200 ${i === opinionIndex ? "ring-2 ring-inset ring-[#00A651] z-10" : "hover:bg-zinc-50"}`}
+                                        className={`group flex-shrink-0 flex items-center gap-2.5 pr-3 border transition-all duration-200 overflow-hidden ${
+                                            idx === opinionIndex
+                                                ? "border-[#00A651] bg-[#00A651]/5"
+                                                : "border-zinc-200 bg-white hover:border-zinc-300 hover:bg-zinc-50"
+                                        }`}
+                                        style={{ width: 200 }}
                                     >
-                                        {/* Thumbnail image */}
-                                        <div className="relative w-full aspect-[16/9] overflow-hidden bg-zinc-100">
+                                        {/* Article thumbnail */}
+                                        <div className="relative w-14 h-14 shrink-0 overflow-hidden bg-slate-100">
                                             <Image
                                                 src={op.image}
-                                                alt={op.authorName}
+                                                alt={op.title}
                                                 fill
-                                                className={`object-cover object-top transition-all duration-500 ${i === opinionIndex ? "grayscale-0" : "grayscale group-hover/thumb:grayscale-0"}`}
-                                                sizes="20vw"
+                                                className="object-contain"
+                                                sizes="56px"
                                             />
-                                            {i === opinionIndex && (
+                                            {idx === opinionIndex && (
                                                 <div className="absolute inset-0 bg-[#00A651]/10" />
                                             )}
                                         </div>
-                                        {/* Name */}
-                                        <div className="px-2.5 py-1.5">
-                                            <p className={`text-[9px] font-black uppercase tracking-wider truncate ${i === opinionIndex ? "text-[#00A651]" : "text-zinc-500"}`}>
-                                                {op.authorName}
-                                            </p>
-                                            <p className="text-[10px] text-zinc-800 font-semibold leading-tight line-clamp-1 mt-0.5">
-                                                {op.title}
-                                            </p>
-                                        </div>
+                                        {/* Article title */}
+                                        <span className={`text-[10px] font-bold leading-tight text-left line-clamp-3 ${
+                                            idx === opinionIndex ? "text-[#00A651]" : "text-zinc-600 group-hover:text-zinc-900"
+                                        } transition-colors`}>
+                                            {op.title}
+                                        </span>
                                     </button>
                                 ))}
                             </div>
                         )}
+
                     </div>
                 </section>
             )}
@@ -243,9 +261,9 @@ export function OpinionSection({
             {interviews.length > 0 && (
                 <section
                     aria-label="Exclusive Interviews"
-                    className="py-6 lg:py-8 bg-[#FAFAF8] border-b border-zinc-200"
+                    className="py-6 lg:py-8 bg-white"
                 >
-                    <div className="max-w-6xl mx-auto px-6 sm:px-10 lg:px-16">
+                    <div className={containerClassName}>
 
                         {/* Section Heading — light variant matching Opinion */}
                         <SectionHeading
@@ -253,13 +271,14 @@ export function OpinionSection({
                             linkText="View All"
                             linkHref="/interviews"
                             adPlacement="home_interview"
+                            variant="hero"
                         />
 
                         {/* ── MAIN INTERVIEW CARD ── */}
                         <article className="grid grid-cols-1 lg:grid-cols-12 gap-0 overflow-hidden border border-zinc-200 bg-white shadow-sm">
 
                             {/* LEFT — Interview Content (9 Cols) */}
-                            <div className="lg:col-span-9 flex flex-col justify-between p-5 sm:p-6 lg:p-7 xl:p-8 bg-white order-2 lg:order-1">
+                            <div className="lg:col-span-9 flex flex-col justify-between p-4 sm:p-5 lg:p-6 bg-white order-2 lg:order-1">
 
                                 {/* Label */}
                                 <div className="mb-3">
@@ -271,17 +290,26 @@ export function OpinionSection({
 
                                 {/* Interview headline */}
                                 <div className="flex-1">
-                                    <h3 className="font-serif text-xl sm:text-2xl lg:text-[1.5rem] xl:text-[1.75rem] font-bold leading-[1.2] tracking-tight text-zinc-900 mb-3">
+                                    <h3 className="text-sm sm:text-base lg:text-lg font-bold text-slate-900 leading-snug tracking-normal mb-2">
                                         <Link
                                             href={`/interviews/${currentInterview.slug}`}
-                                            className="hover:text-[#00A651] transition-colors duration-300"
+                                            className="hover:text-emerald-600 transition-colors duration-300"
                                         >
                                             &ldquo;{currentInterview.title}&rdquo;
                                         </Link>
                                     </h3>
 
+                                    {currentInterview.date && (
+                                        <time
+                                            dateTime={currentInterview.date}
+                                            className="mb-2 block text-[10px] text-slate-400 font-medium uppercase tracking-wide"
+                                        >
+                                            {currentInterview.date}
+                                        </time>
+                                    )}
+
                                     {/* Excerpt */}
-                                    <p className="text-zinc-500 text-xs sm:text-sm leading-relaxed line-clamp-2 mb-4 border-l-2 border-zinc-200 pl-3">
+                                    <p className="text-[11px] sm:text-xs text-slate-500 leading-relaxed line-clamp-2 mb-4 border-l-2 border-slate-200 pl-3 font-light">
                                         {currentInterview.excerpt}
                                     </p>
                                 </div>
@@ -375,40 +403,45 @@ export function OpinionSection({
                             </div>
                         </article>
 
-                        {/* ── INTERVIEW THUMBNAILS STRIP ── */}
+                        {/* ── ARTICLE THUMBNAIL STRIP ── */}
                         {interviews.length > 1 && (
-                            <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-px border border-zinc-200 bg-zinc-200 overflow-hidden">
-                                {interviews.map((iv, i) => (
+                            <div className="mt-3 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+                                {interviews.map((iv, idx) => (
                                     <button
                                         key={iv.id}
-                                        onClick={() => setInterviewIndex(i)}
+                                        onClick={() => setInterviewIndex(idx)}
                                         aria-label={`View interview: ${iv.title}`}
-                                        className={`relative group/thumb flex flex-col bg-white text-left transition-all duration-200 ${i === interviewIndex ? "ring-2 ring-inset ring-[#00A651] z-10" : "hover:bg-zinc-50"}`}
+                                        className={`group flex-shrink-0 flex items-center gap-2.5 pr-3 border transition-all duration-200 overflow-hidden ${
+                                            idx === interviewIndex
+                                                ? "border-[#00A651] bg-[#00A651]/5"
+                                                : "border-zinc-200 bg-white hover:border-zinc-300 hover:bg-zinc-50"
+                                        }`}
+                                        style={{ width: 200 }}
                                     >
-                                        <div className="relative w-full aspect-[16/9] overflow-hidden bg-zinc-100">
+                                        {/* Article thumbnail */}
+                                        <div className="relative w-14 h-14 shrink-0 overflow-hidden bg-slate-100">
                                             <Image
                                                 src={iv.image}
-                                                alt={iv.authorName}
+                                                alt={iv.title}
                                                 fill
-                                                className={`object-cover object-top transition-all duration-500 ${i === interviewIndex ? "grayscale-0" : "grayscale group-hover/thumb:grayscale-0"}`}
-                                                sizes="20vw"
+                                                className="object-contain"
+                                                sizes="56px"
                                             />
-                                            {i === interviewIndex && (
+                                            {idx === interviewIndex && (
                                                 <div className="absolute inset-0 bg-[#00A651]/10" />
                                             )}
                                         </div>
-                                        <div className="px-2.5 py-1.5">
-                                            <p className={`text-[9px] font-black uppercase tracking-wider truncate ${i === interviewIndex ? "text-[#00A651]" : "text-zinc-500"}`}>
-                                                {iv.authorName}
-                                            </p>
-                                            <p className="text-[10px] text-zinc-800 font-semibold leading-tight line-clamp-1 mt-0.5">
-                                                {iv.title}
-                                            </p>
-                                        </div>
+                                        {/* Article title */}
+                                        <span className={`text-[10px] font-bold leading-tight text-left line-clamp-3 ${
+                                            idx === interviewIndex ? "text-[#00A651]" : "text-zinc-600 group-hover:text-zinc-900"
+                                        } transition-colors`}>
+                                            {iv.title}
+                                        </span>
                                     </button>
                                 ))}
                             </div>
                         )}
+
                     </div>
                 </section>
             )}
