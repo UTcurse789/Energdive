@@ -198,21 +198,22 @@ function BreakingNewsTicker({ news }: { news: { title: string; href: string }[] 
 
   return (
     <div className="w-full bg-slate-950 text-slate-100 border-b border-emerald-500/30 overflow-hidden text-xs font-medium tracking-wide">
-      <div className="max-w-6xl mx-auto px-6 sm:px-10 lg:px-16 flex items-center h-11">
-        <div className="bg-red-600 text-white px-3 py-1 font-black uppercase tracking-widest text-[10px] shrink-0 flex items-center gap-1.5 shadow-sm rounded-sm mr-4 z-10">
+      <div className="max-w-6xl mx-auto px-4 sm:px-8 lg:px-12 flex items-center h-10 sm:h-11">
+        <div className="bg-red-600 text-white px-2 sm:px-3 py-0.5 sm:py-1 font-black uppercase tracking-widest text-[9px] sm:text-[10px] shrink-0 flex items-center gap-1 sm:gap-1.5 shadow-sm rounded-sm mr-2 sm:mr-4 z-10">
           <span className="relative flex h-2 w-2">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
             <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
           </span>
-          LATEST UPDATES
+          <span className="hidden xs:inline sm:inline">LATEST UPDATES</span>
+          <span className="inline xs:hidden sm:hidden">LATEST</span>
         </div>
         <div className="overflow-hidden whitespace-nowrap flex-1 flex items-center relative mask-gradient">
-          <div className="animate-marquee flex gap-8 items-center pl-2">
+          <div className="animate-marquee flex gap-6 sm:gap-8 items-center pl-2">
             {news.concat(news).map((item, idx) => (
               <Link
                 key={idx}
                 href={item.href}
-                className="hover:text-emerald-400 transition-colors inline-block text-slate-200 font-medium truncate max-w-md"
+                className="hover:text-emerald-400 transition-colors inline-block text-slate-200 font-medium truncate max-w-[220px] sm:max-w-md text-[11px] sm:text-xs"
               >
                 {item.title}
               </Link>
@@ -358,7 +359,7 @@ export default async function Home() {
       <BreakingNewsTicker news={tickerItems} />
 
       {/* Home Platform Hero Ad Banner */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-8 lg:px-12 pt-3 pb-1">
+      <div className="max-w-6xl mx-auto px-5 sm:px-10 lg:px-16 pt-3 pb-1">
         <AdBanner
           placement="home_platform_hero"
           variant="banner"
@@ -379,7 +380,7 @@ export default async function Home() {
 
       {/* Lower editorial lane: Opinion, Interviews, Sectors + Right Rail */}
       <section className="bg-white">
-        <div className="max-w-6xl mx-auto px-4 sm:px-8 lg:px-12">
+        <div className="max-w-6xl mx-auto px-5 sm:px-10 lg:px-16">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
             <div className="min-w-0 lg:col-span-9">
               {/* Executive Opinion & Interviews Vertical */}
@@ -406,7 +407,7 @@ export default async function Home() {
 
       {/* Sector Intelligence Hubs */}
       <section className="bg-white py-8 lg:py-6">
-        <div className="max-w-6xl mx-auto px-4 sm:px-8 lg:px-12">
+        <div className="max-w-6xl mx-auto px-5 sm:px-10 lg:px-16">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
             <div className="lg:col-span-9">
               {sectorsWithArticles.map((sector) => (
@@ -486,7 +487,7 @@ export default async function Home() {
 
       {/* Subscriptions CTA Section: Print Subscription + Newsletter (Light Theme) */}
       <section className="bg-white py-10 lg:py-12 border-t border-slate-200">
-        <div className="max-w-6xl mx-auto px-4 sm:px-8 lg:px-12">
+        <div className="max-w-6xl mx-auto px-5 sm:px-10 lg:px-16">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
             
             {/* CTA 1: Print Subscription */}

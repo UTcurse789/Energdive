@@ -65,7 +65,7 @@ export function CurrentIssueSection({
     <section className="bg-white py-8 lg:py-7">
       <div className="mx-auto max-w-6xl px-6 sm:px-10 lg:px-16">
         <div className="border-t border-slate-200 pt-8">
-          <header className="mb-6">
+          <header className="mb-6 text-center sm:text-left">
             <p className="font-serif text-xl font-normal italic leading-tight text-[#D71913] sm:text-2xl">
                 Current Issue
             </p>
@@ -74,24 +74,24 @@ export function CurrentIssueSection({
             </h2>
           </header>
 
-          <div className="grid items-start gap-8 lg:grid-cols-[180px_minmax(0,1fr)] lg:gap-10 xl:grid-cols-[190px_minmax(0,1fr)] xl:gap-12">
-            <aside className="flex min-w-0 flex-col">
+          <div className="grid items-start gap-8 lg:grid-cols-[190px_minmax(0,1fr)] lg:gap-10 xl:grid-cols-[200px_minmax(0,1fr)] xl:gap-12">
+            <aside className="flex min-w-0 flex-col items-center sm:items-start text-center sm:text-left">
 
-            <Link href={issueHref} className="group block w-fit" aria-label={`Open ${issueLabel} issue`}>
-              <div className="bg-slate-50 p-1.5 shadow-sm ring-1 ring-slate-100">
+            <Link href={issueHref} className="group block w-fit mx-auto sm:mx-0" aria-label={`Open ${issueLabel} issue`}>
+              <div className="bg-slate-50 p-2 shadow-md ring-1 ring-slate-200/80 rounded-md">
                 <Image
                   src={coverImage || "/current-magazine.jpg"}
                   alt={`ENERGDIVE ${issueLabel} cover`}
                   width={220}
                   height={293}
-                  sizes="(max-width: 640px) 145px, (max-width: 1024px) 160px, 180px"
-                  className="h-auto w-[145px] bg-white object-cover transition-transform duration-500 group-hover:scale-[1.02] sm:w-[160px] lg:w-[180px]"
+                  sizes="(max-width: 640px) 200px, (max-width: 1024px) 170px, 190px"
+                  className="h-auto w-[180px] sm:w-[170px] lg:w-[190px] bg-white object-cover transition-transform duration-500 group-hover:scale-[1.02] rounded-xs"
                   unoptimized
                 />
               </div>
             </Link>
 
-            <nav className="mt-6 flex flex-col gap-4" aria-label="Current issue actions">
+            <nav className="mt-5 flex flex-col items-center sm:items-start gap-3 w-full" aria-label="Current issue actions">
               <IssueLink href={issueHref}>Full Table of Contents</IssueLink>
               <IssueLink href="/subscribe" tone="red">
                 Subscribe

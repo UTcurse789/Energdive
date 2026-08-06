@@ -502,14 +502,14 @@ function VerticalBannerAd({
 
     const inner = (
         <div
-            className={`relative w-full overflow-hidden bg-white shadow-sm border border-gray-100/60 group ${className} rounded-none`}
+            className={`relative w-full max-w-[300px] mx-auto overflow-hidden bg-white shadow-xs border border-slate-200/80 group ${className} rounded-xl`}
             style={{ aspectRatio: `${width}/${height}` }}
         >
             <Image
                 src={imageUrl}
                 alt={ad.title || "Advertisement"}
                 fill
-                sizes="(max-width: 1024px) 100vw, 300px"
+                sizes="(max-width: 1024px) 300px, 300px"
                 loading="lazy"
                 unoptimized
                 className="object-cover"
@@ -517,7 +517,7 @@ function VerticalBannerAd({
         </div>
     );
 
-    return wrapWithLink(ad.target_url, inner, "block w-full");
+    return wrapWithLink(ad.target_url, inner, "block w-full flex justify-center");
 }
 
 /* ═══════════════════════════════════════════

@@ -53,7 +53,7 @@ export function OpinionSection({
     const currentOpinion = opinions[opinionIndex];
     const currentInterview = interviews[interviewIndex];
     const containerClassName = contained
-        ? "max-w-6xl mx-auto px-6 sm:px-10 lg:px-16"
+        ? "max-w-6xl mx-auto px-5 sm:px-10 lg:px-16"
         : "w-full";
 
     return (
@@ -78,10 +78,10 @@ export function OpinionSection({
                         />
 
                         {/* ── MAIN EDITORIAL CARD ── */}
-                        <article className="grid grid-cols-1 lg:grid-cols-12 gap-0 border border-zinc-200 bg-white shadow-sm overflow-hidden">
+                        <article className="grid grid-cols-1 lg:grid-cols-12 gap-0 border border-zinc-200 bg-white shadow-sm overflow-hidden rounded-xl">
 
                             {/* LEFT — Portrait Image (Compact 3 Cols) */}
-                            <div className="lg:col-span-3 relative min-h-[180px] lg:min-h-0 group/img">
+                            <div className="lg:col-span-4 xl:col-span-3 relative aspect-[4/3] sm:aspect-[16/9] lg:aspect-auto min-h-[260px] sm:min-h-[300px] lg:min-h-0 bg-zinc-950 group/img">
                                 <Link
                                     href={`/opinion/${currentOpinion.slug}`}
                                     className="block w-full h-full absolute inset-0"
@@ -93,15 +93,16 @@ export function OpinionSection({
                                         alt={currentOpinion.imageCaption || currentOpinion.authorName}
                                         fill
                                         className="object-cover object-top grayscale group-hover/img:grayscale-0 transition-all duration-700"
-                                        sizes="(max-width: 1024px) 100vw, 25vw"
+                                        sizes="(max-width: 1024px) 100vw, 30vw"
+                                        priority
                                     />
                                     {/* Dark gradient overlay */}
-                                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
                                 </Link>
 
                                 {/* OPINION stamp badge */}
                                 <div className="absolute top-3 left-3 z-10">
-                                    <span className="inline-flex items-center gap-1.5 bg-[#00A651] text-white text-[9px] font-black uppercase tracking-[0.2em] px-2.5 py-1">
+                                    <span className="inline-flex items-center gap-1.5 bg-[#00A651] text-white text-[9px] font-black uppercase tracking-[0.2em] px-2.5 py-1 shadow-sm rounded-xs">
                                         <Quote size={8} />
                                         Opinion
                                     </span>
@@ -109,20 +110,20 @@ export function OpinionSection({
 
                                 {/* Author name anchored bottom */}
                                 <div className="absolute bottom-0 left-0 right-0 z-10 px-4 py-3">
-                                    <p className="text-white/70 text-[9px] font-bold uppercase tracking-[0.2em] mb-0.5">
+                                    <p className="text-white/80 text-[9px] font-bold uppercase tracking-[0.2em] mb-0.5">
                                         {currentOpinion.imageCaption || "Columnist"}
                                     </p>
                                     <Link
                                         href={`/author/${slugify(currentOpinion.authorName)}`}
-                                        className="text-white font-black text-xs uppercase tracking-wider hover:text-[#00A651] transition-colors"
+                                        className="text-white font-black text-xs sm:text-sm uppercase tracking-wider hover:text-[#00A651] transition-colors"
                                     >
                                         {currentOpinion.authorName}
                                     </Link>
                                 </div>
                             </div>
 
-                            {/* RIGHT — Editorial Content (9 Cols) */}
-                            <div className="lg:col-span-9 flex flex-col justify-between p-4 sm:p-5 lg:p-6">
+                            {/* RIGHT — Editorial Content (8-9 Cols) */}
+                            <div className="lg:col-span-8 xl:col-span-9 flex flex-col justify-between p-4 sm:p-5 lg:p-6">
 
                                 {/* Pull-quote style title */}
                                 <div className="flex-1">
@@ -134,7 +135,7 @@ export function OpinionSection({
                                     </div>
 
                                     {/* Article title — h3 for SEO hierarchy */}
-                                    <h3 className="text-sm sm:text-base lg:text-lg font-bold text-slate-900 leading-snug tracking-normal mb-2">
+                                    <h3 className="text-base sm:text-lg lg:text-xl font-bold text-slate-900 leading-snug tracking-normal mb-2">
                                         <Link
                                             href={`/opinion/${currentOpinion.slug}`}
                                             className="hover:text-emerald-600 transition-colors duration-300"
@@ -153,7 +154,7 @@ export function OpinionSection({
                                     )}
 
                                     {/* Excerpt */}
-                                    <p className="text-[11px] sm:text-xs text-slate-500 leading-relaxed line-clamp-2 mb-4 border-l-2 border-slate-200 pl-3 font-light">
+                                    <p className="text-xs sm:text-sm text-slate-500 leading-relaxed line-clamp-3 mb-4 border-l-2 border-slate-200 pl-3 font-light">
                                         {currentOpinion.excerpt}
                                     </p>
                                 </div>
@@ -164,12 +165,12 @@ export function OpinionSection({
                                     {/* Author byline */}
                                     <div className="flex items-center gap-2.5">
                                         {currentOpinion.authorAvatar && (
-                                            <div className="relative w-8 h-8 rounded-full overflow-hidden border-2 border-zinc-200 shrink-0">
+                                            <div className="relative w-9 h-9 rounded-full overflow-hidden border-2 border-zinc-200 shrink-0">
                                                 <Image
                                                     src={currentOpinion.authorAvatar}
                                                     alt={currentOpinion.authorName}
                                                     fill
-                                                    className="object-cover"
+                                                    className="object-cover object-top"
                                                 />
                                             </div>
                                         )}
@@ -195,14 +196,14 @@ export function OpinionSection({
                                             <button
                                                 onClick={opinionPrev}
                                                 aria-label="Previous opinion"
-                                                className="w-8 h-8 border border-zinc-200 flex items-center justify-center hover:bg-zinc-900 hover:border-zinc-900 hover:text-white transition-all duration-200"
+                                                className="w-8 h-8 border border-zinc-200 flex items-center justify-center hover:bg-zinc-900 hover:border-zinc-900 hover:text-white transition-all duration-200 rounded-md"
                                             >
                                                 <ChevronLeft size={14} />
                                             </button>
                                             <button
                                                 onClick={opinionNext}
                                                 aria-label="Next opinion"
-                                                className="w-8 h-8 border border-zinc-200 flex items-center justify-center hover:bg-zinc-900 hover:border-zinc-900 hover:text-white transition-all duration-200"
+                                                className="w-8 h-8 border border-zinc-200 flex items-center justify-center hover:bg-zinc-900 hover:border-zinc-900 hover:text-white transition-all duration-200 rounded-md"
                                             >
                                                 <ChevronRight size={14} />
                                             </button>
@@ -214,26 +215,25 @@ export function OpinionSection({
 
                         {/* ── ARTICLE THUMBNAIL STRIP ── */}
                         {opinions.length > 1 && (
-                            <div className="mt-3 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+                            <div className="mt-4 hidden sm:flex gap-3 overflow-x-auto pb-2 pt-1 snap-x snap-mandatory [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
                                 {opinions.map((op, idx) => (
                                     <button
                                         key={op.id}
                                         onClick={() => setOpinionIndex(idx)}
                                         aria-label={`View opinion: ${op.title}`}
-                                        className={`group flex-shrink-0 flex items-center gap-2.5 pr-3 border transition-all duration-200 overflow-hidden ${
+                                        className={`group shrink-0 snap-start flex items-center gap-3 p-2 border transition-all duration-200 overflow-hidden rounded-xl shadow-2xs ${
                                             idx === opinionIndex
-                                                ? "border-[#00A651] bg-[#00A651]/5"
+                                                ? "border-[#00A651] bg-[#00A651]/5 ring-1 ring-[#00A651]/30"
                                                 : "border-zinc-200 bg-white hover:border-zinc-300 hover:bg-zinc-50"
-                                        }`}
-                                        style={{ width: 200 }}
+                                        } w-60 sm:w-72`}
                                     >
                                         {/* Article thumbnail */}
-                                        <div className="relative w-14 h-14 shrink-0 overflow-hidden bg-slate-100">
+                                        <div className="relative w-14 h-14 shrink-0 overflow-hidden rounded-lg bg-slate-100 border border-slate-200">
                                             <Image
                                                 src={op.image}
                                                 alt={op.title}
                                                 fill
-                                                className="object-contain"
+                                                className="object-cover object-top"
                                                 sizes="56px"
                                             />
                                             {idx === opinionIndex && (
@@ -241,11 +241,16 @@ export function OpinionSection({
                                             )}
                                         </div>
                                         {/* Article title */}
-                                        <span className={`text-[10px] font-bold leading-tight text-left line-clamp-3 ${
-                                            idx === opinionIndex ? "text-[#00A651]" : "text-zinc-600 group-hover:text-zinc-900"
-                                        } transition-colors`}>
-                                            {op.title}
-                                        </span>
+                                        <div className="flex-1 min-w-0 text-left">
+                                            <span className="block text-[9px] font-bold uppercase tracking-wider text-[#00A651] mb-0.5 truncate">
+                                                {op.authorName}
+                                            </span>
+                                            <span className={`text-[11px] font-bold leading-snug line-clamp-2 ${
+                                                idx === opinionIndex ? "text-slate-900" : "text-slate-700 group-hover:text-slate-900"
+                                            } transition-colors`}>
+                                                {op.title}
+                                            </span>
+                                        </div>
                                     </button>
                                 ))}
                             </div>
@@ -275,14 +280,14 @@ export function OpinionSection({
                         />
 
                         {/* ── MAIN INTERVIEW CARD ── */}
-                        <article className="grid grid-cols-1 lg:grid-cols-12 gap-0 overflow-hidden border border-zinc-200 bg-white shadow-sm">
+                        <article className="grid grid-cols-1 lg:grid-cols-12 gap-0 overflow-hidden border border-zinc-200 bg-white shadow-sm rounded-xl">
 
-                            {/* LEFT — Interview Content (9 Cols) */}
-                            <div className="lg:col-span-9 flex flex-col justify-between p-4 sm:p-5 lg:p-6 bg-white order-2 lg:order-1">
+                            {/* LEFT — Interview Content (8-9 Cols) */}
+                            <div className="lg:col-span-8 xl:col-span-9 flex flex-col justify-between p-4 sm:p-5 lg:p-6 bg-white order-2 lg:order-1">
 
                                 {/* Label */}
                                 <div className="mb-3">
-                                    <span className="inline-flex items-center gap-1.5 bg-[#00A651] text-white text-[9px] font-black uppercase tracking-[0.2em] px-2.5 py-1">
+                                    <span className="inline-flex items-center gap-1.5 bg-[#00A651] text-white text-[9px] font-black uppercase tracking-[0.2em] px-2.5 py-1 shadow-sm rounded-xs">
                                         <Mic size={8} />
                                         Interview
                                     </span>
@@ -290,7 +295,7 @@ export function OpinionSection({
 
                                 {/* Interview headline */}
                                 <div className="flex-1">
-                                    <h3 className="text-sm sm:text-base lg:text-lg font-bold text-slate-900 leading-snug tracking-normal mb-2">
+                                    <h3 className="text-base sm:text-lg lg:text-xl font-bold text-slate-900 leading-snug tracking-normal mb-2">
                                         <Link
                                             href={`/interviews/${currentInterview.slug}`}
                                             className="hover:text-emerald-600 transition-colors duration-300"
@@ -309,7 +314,7 @@ export function OpinionSection({
                                     )}
 
                                     {/* Excerpt */}
-                                    <p className="text-[11px] sm:text-xs text-slate-500 leading-relaxed line-clamp-2 mb-4 border-l-2 border-slate-200 pl-3 font-light">
+                                    <p className="text-xs sm:text-sm text-slate-500 leading-relaxed line-clamp-3 mb-4 border-l-2 border-slate-200 pl-3 font-light">
                                         {currentInterview.excerpt}
                                     </p>
                                 </div>
@@ -320,12 +325,12 @@ export function OpinionSection({
                                     {/* Interviewee info */}
                                     <div className="flex items-center gap-2.5">
                                         {currentInterview.authorAvatar && (
-                                            <div className="relative w-8 h-8 rounded-full overflow-hidden border-2 border-zinc-200 shrink-0">
+                                            <div className="relative w-9 h-9 rounded-full overflow-hidden border-2 border-zinc-200 shrink-0">
                                                 <Image
                                                     src={currentInterview.authorAvatar}
                                                     alt={currentInterview.authorName}
                                                     fill
-                                                    className="object-cover"
+                                                    className="object-cover object-top"
                                                 />
                                             </div>
                                         )}
@@ -351,14 +356,14 @@ export function OpinionSection({
                                             <button
                                                 onClick={interviewPrev}
                                                 aria-label="Previous interview"
-                                                className="w-8 h-8 border border-zinc-200 flex items-center justify-center hover:bg-zinc-900 hover:border-zinc-900 hover:text-white transition-all duration-200"
+                                                className="w-8 h-8 border border-zinc-200 flex items-center justify-center hover:bg-zinc-900 hover:border-zinc-900 hover:text-white transition-all duration-200 rounded-md"
                                             >
                                                 <ChevronLeft size={14} />
                                             </button>
                                             <button
                                                 onClick={interviewNext}
                                                 aria-label="Next interview"
-                                                className="w-8 h-8 border border-zinc-200 flex items-center justify-center hover:bg-zinc-900 hover:border-zinc-900 hover:text-white transition-all duration-200"
+                                                className="w-8 h-8 border border-zinc-200 flex items-center justify-center hover:bg-zinc-900 hover:border-zinc-900 hover:text-white transition-all duration-200 rounded-md"
                                             >
                                                 <ChevronRight size={14} />
                                             </button>
@@ -367,8 +372,8 @@ export function OpinionSection({
                                 </div>
                             </div>
 
-                            {/* RIGHT — Interviewee Portrait (Compact 3 Cols) */}
-                            <div className="lg:col-span-3 relative min-h-[180px] lg:min-h-0 group/img order-1 lg:order-2">
+                            {/* RIGHT — Interviewee Portrait (Compact 4-3 Cols) */}
+                            <div className="lg:col-span-4 xl:col-span-3 relative aspect-[4/3] sm:aspect-[16/9] lg:aspect-auto min-h-[260px] sm:min-h-[300px] lg:min-h-0 bg-zinc-950 group/img order-1 lg:order-2">
                                 <Link
                                     href={`/interviews/${currentInterview.slug}`}
                                     className="block w-full h-full absolute inset-0"
@@ -380,10 +385,11 @@ export function OpinionSection({
                                         alt={currentInterview.imageCaption || currentInterview.authorName}
                                         fill
                                         className="object-cover object-top grayscale group-hover/img:grayscale-0 transition-all duration-700"
-                                        sizes="(max-width: 1024px) 100vw, 25vw"
+                                        sizes="(max-width: 1024px) 100vw, 30vw"
+                                        priority
                                     />
                                     {/* Gradient overlay */}
-                                    <div className="absolute inset-0 bg-gradient-to-r from-white/20 via-transparent to-transparent lg:block hidden" />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
                                     {/* Arrow reveal overlay */}
                                     <div className="absolute bottom-3 right-3 opacity-0 group-hover/img:opacity-100 translate-y-1 group-hover/img:translate-y-0 transition-all duration-300">
                                         <div className="bg-white/90 backdrop-blur-sm border border-zinc-200 p-2 rounded-full shadow-md">
@@ -405,26 +411,25 @@ export function OpinionSection({
 
                         {/* ── ARTICLE THUMBNAIL STRIP ── */}
                         {interviews.length > 1 && (
-                            <div className="mt-3 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+                            <div className="mt-4 hidden sm:flex gap-3 overflow-x-auto pb-2 pt-1 snap-x snap-mandatory [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
                                 {interviews.map((iv, idx) => (
                                     <button
                                         key={iv.id}
                                         onClick={() => setInterviewIndex(idx)}
                                         aria-label={`View interview: ${iv.title}`}
-                                        className={`group flex-shrink-0 flex items-center gap-2.5 pr-3 border transition-all duration-200 overflow-hidden ${
+                                        className={`group shrink-0 snap-start flex items-center gap-3 p-2 border transition-all duration-200 overflow-hidden rounded-xl shadow-2xs ${
                                             idx === interviewIndex
-                                                ? "border-[#00A651] bg-[#00A651]/5"
+                                                ? "border-[#00A651] bg-[#00A651]/5 ring-1 ring-[#00A651]/30"
                                                 : "border-zinc-200 bg-white hover:border-zinc-300 hover:bg-zinc-50"
-                                        }`}
-                                        style={{ width: 200 }}
+                                        } w-60 sm:w-72`}
                                     >
                                         {/* Article thumbnail */}
-                                        <div className="relative w-14 h-14 shrink-0 overflow-hidden bg-slate-100">
+                                        <div className="relative w-14 h-14 shrink-0 overflow-hidden rounded-lg bg-slate-100 border border-slate-200">
                                             <Image
                                                 src={iv.image}
                                                 alt={iv.title}
                                                 fill
-                                                className="object-contain"
+                                                className="object-cover object-top"
                                                 sizes="56px"
                                             />
                                             {idx === interviewIndex && (
@@ -432,11 +437,16 @@ export function OpinionSection({
                                             )}
                                         </div>
                                         {/* Article title */}
-                                        <span className={`text-[10px] font-bold leading-tight text-left line-clamp-3 ${
-                                            idx === interviewIndex ? "text-[#00A651]" : "text-zinc-600 group-hover:text-zinc-900"
-                                        } transition-colors`}>
-                                            {iv.title}
-                                        </span>
+                                        <div className="flex-1 min-w-0 text-left">
+                                            <span className="block text-[9px] font-bold uppercase tracking-wider text-[#00A651] mb-0.5 truncate">
+                                                {iv.authorName}
+                                            </span>
+                                            <span className={`text-[11px] font-bold leading-snug line-clamp-2 ${
+                                                idx === interviewIndex ? "text-slate-900" : "text-slate-700 group-hover:text-slate-900"
+                                            } transition-colors`}>
+                                                {iv.title}
+                                            </span>
+                                        </div>
                                     </button>
                                 ))}
                             </div>
