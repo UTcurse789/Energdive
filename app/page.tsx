@@ -204,21 +204,42 @@ async function getOpinionBuckets() {
   }
 }
 
+async function getSectorArticles(slug: string) {
+  try {
+    const res = await fetch(buildSectorArticlesUrl(slug), { next: { revalidate: 300 } });
+    if (!res.ok) return [];
+    const json = await res.json();
+    return json.data || [];
+  } catch {
+    return [];
+  }
+}
+
 export default async function Home() {
-  const [allContents, featuredContents, heroBannerContents, latestIssue, { opinions, interviews }] = await Promise.all([
+  // All 5 server data requirements fetched in a SINGLE parallel Promise.all
+  const [allContents, featuredContents, latestIssue, opinionBuckets, sectorFetchResults] = await Promise.all([
     getAllContents(),
     getFeaturedContents(),
-    getHeroBannerContents(),
     getLatestIssue(),
     getOpinionBuckets(),
+    Promise.all(HOMEPAGE_SECTORS.map((sector) => getSectorArticles(sector.slug))),
   ]);
+
+  const { opinions, interviews } = opinionBuckets;
+
+  // Derive hero banner stories from allContents in-memory (0ms extra network latency)
+  const heroBannerContents = allContents
+    ? allContents
+        .filter((item: any) => Boolean(item.show_hero_banner))
+        .slice(0, 10)
+    : [];
 
   // ── Bento: Featured articles fetched directly from Strapi ──
   const finalBentoItems = featuredContents.length > 0
     ? featuredContents
       .sort((a: any, b: any) => {
         const aDate = Date.parse(a.updatedAt || a.Date || a.publishedAt || a.createdAt || "") || 0;
-        const bDate = Date.parse(b.updatedAt || b.Date || b.publishedAt || b.createdAt || "") || 0;
+        const bDate = Date.parse(b.updatedAt || b.Date || b.publishedAt || a.createdAt || "") || 0;
         return bDate - aDate;
       })
       .map((article: any) => ({

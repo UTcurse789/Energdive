@@ -72,35 +72,47 @@ interface HeroProps {
 }
 
 export function Hero({ heroStories: propHeroStories, topStories: propTopStories }: HeroProps) {
+    const hasServerData = Boolean(propHeroStories && propHeroStories.length > 0);
     const [coverStories, setCoverStories] = useState<HeroItem[]>([]);
     const [articles, setArticles] = useState<HeroItem[]>([]);
-    const [loading, setLoading] = useState(!(propHeroStories?.length));
+    const [loading, setLoading] = useState(!hasServerData);
     const [currentSlide, setCurrentSlide] = useState(0);
     const [isTransitioning, setIsTransitioning] = useState(false);
     const autoPlayRef = useRef<NodeJS.Timeout | null>(null);
 
     useEffect(() => {
-        if (propHeroStories?.length) {
+        // If server already provided hero stories, skip client-side fetch for carousel
+        if (propHeroStories?.length && propTopStories?.length) {
+            setLoading(false);
             return;
         }
 
-        // Hero banner content for carousel
-        fetch(`${STRAPI_BASE}/api/contents?filters[show_hero_banner][$eq]=true&populate=*&pagination[pageSize]=10&sort=publishedAt:desc`)
-            .then((res) => res.json())
-            .then((data) => setCoverStories(data?.data || []))
-            .catch(console.error)
-            .finally(() => {
-                if (propTopStories) setLoading(false);
-            });
+        let isMounted = true;
+
+        if (!propHeroStories?.length) {
+            // Hero banner content for carousel
+            fetch(`${STRAPI_BASE}/api/contents?filters[show_hero_banner][$eq]=true&populate=*&pagination[pageSize]=10&sort=publishedAt:desc`)
+                .then((res) => res.json())
+                .then((data) => { if (isMounted) setCoverStories(data?.data || []); })
+                .catch(console.error)
+                .finally(() => {
+                    if (isMounted && propTopStories) setLoading(false);
+                });
+        } else {
+            // heroStories available from server, just mark carousel ready
+            if (propTopStories) setLoading(false);
+        }
 
         // If topStories is passed as prop, we don't need to fetch featured local content
         if (!propTopStories) {
             fetch(`${STRAPI_BASE}/api/contents?filters[featured][$eq]=true&pagination[pageSize]=10&populate=*&sort=publishedAt:desc`)
                 .then((res) => res.json())
-                .then((data) => setArticles(data?.data || []))
+                .then((data) => { if (isMounted) setArticles(data?.data || []); })
                 .catch(console.error)
-                .finally(() => setLoading(false));
+                .finally(() => { if (isMounted) setLoading(false); });
         }
+
+        return () => { isMounted = false; };
     }, [propHeroStories, propTopStories]);
 
     const carouselArticles = propHeroStories?.length ? propHeroStories : coverStories;
@@ -129,7 +141,8 @@ export function Hero({ heroStories: propHeroStories, topStories: propTopStories 
         };
     }, [nextSlide, carouselArticles.length]);
 
-    if (loading && !propHeroStories?.length) return <HeroSkeleton />;
+    // If server props exist, never show skeleton — render hero image on first paint
+    if (loading && !carouselArticles.length) return <HeroSkeleton />;
     if (carouselArticles.length === 0) return null;
 
     const featured = carouselArticles[currentSlide] || carouselArticles[0];
@@ -149,8 +162,9 @@ export function Hero({ heroStories: propHeroStories, topStories: propTopStories 
                                 alt={featured.Title || "Feature story"}
                                 fill
                                 priority
-                                quality={80}
-                                sizes="(max-width: 1024px) 100vw, 850px"
+                                fetchPriority="high"
+                                quality={100}
+                                sizes="(max-width: 1024px) 100vw, 1200px"
                                 className={`object-cover transition-all duration-700 ${isTransitioning ? "opacity-40 scale-105" : "opacity-100 scale-100"
                                     } group-hover/img:scale-110`}
                             />
