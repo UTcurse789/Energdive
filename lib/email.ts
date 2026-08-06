@@ -1735,18 +1735,22 @@ export async function sendPreferenceDigestEmail(
     const renderEditorialStory = (item: PreferenceDigestSection["items"][number], buttonLabel: string) => {
         const publisher = item.publisher || "ENERGDIVE Editorial";
         const image = item.imageUrl
-            ? `<a href="${item.href}" target="_blank"><img src="${item.imageUrl}" alt="${escapeHtml(item.title)}" width="136" height="96" style="display:block;width:136px;height:96px;object-fit:cover;border-radius:8px;" /></a>`
-            : `<table width="136" height="96" cellpadding="0" cellspacing="0" role="presentation" style="width:136px;height:96px;background:#e8eeec;border-radius:8px;"><tr><td>&nbsp;</td></tr></table>`;
+            ? `<a href="${item.href}" target="_blank"><img src="${item.imageUrl}" alt="${escapeHtml(item.title)}" width="576" style="display:block;width:100%;max-width:576px;height:auto;object-fit:cover;border-radius:8px;" /></a>`
+            : `<table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="width:100%;background:#e8eeec;border-radius:8px;"><tr><td height="180" style="height:180px;">&nbsp;</td></tr></table>`;
         return `<tr><td style="padding:0 0 18px;">
             <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="border-bottom:1px solid #e5e7eb;">
                 <tr>
-                    <td class="top-news-image" width="136" valign="top" style="width:136px;padding:0 16px 18px 0;">${image}</td>
-                    <td class="story-copy" valign="top" style="padding:0 0 18px;">
+                    <td class="top-news-image" valign="top" style="padding:0 0 14px;">${image}</td>
+                </tr>
+                <tr>
+                    <td class="story-copy" valign="top" style="padding:0 0 12px;">
                         <p style="margin:0 0 7px;font-size:16px;line-height:1.3;font-weight:800;"><a href="${item.href}" target="_blank" style="color:#111827;text-decoration:none;">${escapeHtml(item.title)}</a></p>
                         <p style="margin:0 0 9px;color:#667085;font-size:13px;line-height:1.45;">${escapeHtml(item.crispLine)}</p>
                         <p style="margin:0;color:#667085;font-size:11px;line-height:1.4;">${icon("calendar", "Published date")} ${formatBriefingDate(item.publishedAt)}&nbsp;&nbsp; ${icon("publisher", "Publisher")} ${escapeHtml(publisher)}</p>
                     </td>
-                    <td class="story-action" width="96" valign="middle" align="right" style="width:96px;padding:0 0 18px 12px;"><a href="${item.href}" target="_blank" style="display:inline-block;background:#ffffff;color:#0b6b55;padding:8px 12px;border:1px solid #0b6b55;border-radius:4px;font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap;">${buttonLabel}</a></td>
+                </tr>
+                <tr>
+                    <td class="story-action" valign="top" style="padding:0 0 18px;"><a href="${item.href}" target="_blank" style="display:inline-block;background:#ffffff;color:#0b6b55;padding:8px 12px;border:1px solid #0b6b55;border-radius:4px;font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap;">${buttonLabel}</a></td>
                 </tr>
             </table>
         </td></tr>`;
@@ -1756,7 +1760,7 @@ export async function sendPreferenceDigestEmail(
 
     const trendingHtml = trendingItems.map((item) => renderEditorialStory(item, "Read Article →")).join("");
 
-    const jobsHtml = jobs.map((job) => `<td class="job-card" width="33.33%" valign="top" style="padding:0 6px 12px;">
+    const jobsHtml = jobs.map((job) => `<tr><td class="job-card" valign="top" style="padding:0 0 12px;">
         <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="border:1px solid #e5e7eb;border-radius:8px;background:#ffffff;">
             <tr><td align="center" style="padding:18px 14px 10px;">${job.logoUrl ? `<img src="${job.logoUrl}" alt="${escapeHtml(job.companyName)}" width="96" height="72" style="display:block;width:96px;height:72px;object-fit:contain;border-radius:6px;" />` : `<table width="96" height="72" cellpadding="0" cellspacing="0" role="presentation" style="width:96px;height:72px;background:#e8eeec;border-radius:6px;"><tr><td>&nbsp;</td></tr></table>`}</td></tr>
             <tr><td valign="top" style="padding:4px 14px 16px;">
@@ -1767,9 +1771,9 @@ export async function sendPreferenceDigestEmail(
                 <a href="${job.href}" target="_blank" style="display:inline-block;background:#0b6b55;color:#ffffff;padding:8px 12px;border-radius:4px;font-size:11px;font-weight:700;text-decoration:none;">Apply Now</a>
             </td></tr>
         </table>
-    </td>`).join("");
+    </td></tr>`).join("");
 
-    const eventsHtml = eventItems.map((item) => `<td class="event-card" width="33.33%" valign="top" style="padding:0 6px 12px;">
+    const eventsHtml = eventItems.map((item) => `<tr><td class="event-card" valign="top" style="padding:0 0 12px;">
         <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="border:1px solid #e5e7eb;border-radius:8px;background:#ffffff;">
             <tr><td align="center" style="padding:18px 14px 12px;">${item.imageUrl ? `<img class="event-logo" src="${item.imageUrl}" alt="${escapeHtml(item.title)}" width="150" height="100" style="display:block;width:150px;max-width:100%;height:100px;object-fit:contain;border-radius:6px;" />` : `<table class="event-logo" width="150" height="100" cellpadding="0" cellspacing="0" role="presentation" style="width:150px;height:100px;background:#e8eeec;border-radius:6px;"><tr><td>&nbsp;</td></tr></table>`}</td></tr>
             <tr><td valign="top" style="padding:4px 14px 16px;">
@@ -1779,7 +1783,7 @@ export async function sendPreferenceDigestEmail(
                 <a href="${item.href}" target="_blank" style="display:inline-block;background:#0b6b55;color:#ffffff;padding:8px 12px;border-radius:4px;font-size:11px;font-weight:700;text-decoration:none;">Read More</a>
             </td></tr>
         </table>
-    </td>`).join("");
+    </td></tr>`).join("");
 
     const topNewsBlock = hasTopNews ? `<tr><td class="section-pad" style="padding:30px 32px 8px;">${sectionTitle("news", "Top News")}</td></tr>
             <tr><td class="section-pad" style="padding:12px 32px 26px;"><table width="100%" cellpadding="0" cellspacing="0" role="presentation">${topNewsHtml}</table></td></tr>` : `<tr><td class="section-pad" style="padding:30px 32px 26px;">
@@ -1848,8 +1852,8 @@ export async function sendPreferenceDigestEmail(
             ${topNewsBlock}
             ${trendingItems.length ? `<tr><td class="section-pad" style="padding:0 32px 10px;"><h2 style="margin:0;color:#111827;font-size:18px;font-weight:800;line-height:1.2;">Trending Articles</h2></td></tr><tr><td class="section-pad" style="padding:12px 32px 24px;"><table width="100%" cellpadding="0" cellspacing="0" role="presentation">${trendingHtml}</table></td></tr>` : ""}
             ${middleOpinionAdHtml}
-            ${jobs.length ? `<tr><td class="section-pad" style="padding:4px 32px 10px;">${sectionTitle("jobs", "Latest Jobs")}</td></tr><tr><td class="section-pad" style="padding:12px 26px 28px;"><table width="100%" cellpadding="0" cellspacing="0" role="presentation"><tr>${jobsHtml}</tr></table></td></tr>` : ""}
-            ${eventItems.length ? `<tr><td class="section-pad" style="padding:0 32px 10px;">${sectionTitle("events", "Upcoming Events")}</td></tr><tr><td class="section-pad" style="padding:12px 26px 28px;"><table width="100%" cellpadding="0" cellspacing="0" role="presentation"><tr>${eventsHtml}</tr></table></td></tr>` : ""}
+            ${jobs.length ? `<tr><td class="section-pad" style="padding:4px 32px 10px;">${sectionTitle("jobs", "Latest Jobs")}</td></tr><tr><td class="section-pad" style="padding:12px 32px 28px;"><table width="100%" cellpadding="0" cellspacing="0" role="presentation">${jobsHtml}</table></td></tr>` : ""}
+            ${eventItems.length ? `<tr><td class="section-pad" style="padding:0 32px 10px;">${sectionTitle("events", "Upcoming Events")}</td></tr><tr><td class="section-pad" style="padding:12px 32px 28px;"><table width="100%" cellpadding="0" cellspacing="0" role="presentation">${eventsHtml}</table></td></tr>` : ""}
             ${footerSectorAdHtml}
             <tr><td class="section-pad" style="padding:22px 32px 30px;border-top:1px solid #e5e7eb;">
                 <img src="${logoUrl}" alt="ENERGDIVE" width="120" style="display:block;width:120px;height:auto;margin:0 0 12px;" />
