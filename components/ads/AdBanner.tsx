@@ -313,7 +313,7 @@ export function AdBanner({
 function TrackedAdWrapper({ ad, children }: { ad: Ad; children: React.ReactNode }) {
     const { trackClick } = useAdTracking(ad.documentId);
     return (
-        <div onClickCapture={trackClick}>
+        <div className="print:hidden" onClickCapture={trackClick}>
             {children}
         </div>
     );

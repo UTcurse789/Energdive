@@ -5,12 +5,12 @@
 import "dotenv/config";
 import { sendPreferenceDigestPreview } from "@/lib/preference-digests";
 
-const email = "utkarsh@encis.in";
+const email = "sankalp@itenmedia.in";
 
 async function main() {
     const result = await sendPreferenceDigestPreview({
         email,
-        firstName: "Utkarsh",
+        firstName: "Kunal",
         frequency: "daily",
         // This is an explicitly requested review preview, not a subscriber send.
         allowInsufficientTopNews: true,

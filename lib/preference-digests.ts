@@ -898,7 +898,7 @@ export async function processPreferenceDigests(
     
     let sponsor: { imageUrl: string; targetUrl: string } | null = null;
     try {
-        const ads = await getAdvertisements({ placement: "home_platform_hero" });
+        const ads = await getAdvertisements({ placement: "email_top" });
         if (ads && ads.length > 0) {
             const ad = ads.find((candidate) => {
                 const candidateImageUrl = getAdImageUrl(candidate.creative?.[0] || candidate.logo?.[0]);
@@ -1039,7 +1039,7 @@ export async function sendPreferenceDigestPreview(
 
     let sponsor: { imageUrl: string; targetUrl: string } | null = null;
     try {
-        const ads = await getAdvertisements({ placement: "home_platform_hero" });
+        const ads = await getAdvertisements({ placement: "email_top" });
         if (ads && ads.length > 0) {
             const ad = ads.find((candidate) => {
                 const candidateImageUrl = getAdImageUrl(candidate.creative?.[0] || candidate.logo?.[0]);

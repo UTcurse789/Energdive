@@ -12,8 +12,7 @@ import {
     Bookmark,
     Quote,
     Clock,
-    ArrowRight,
-    Printer
+    ArrowRight
 } from "lucide-react";
 import { Button } from "@/components/ui/buttons";
 import { ScrollProgress } from "@/components/ui/scroll-progress";
@@ -22,6 +21,7 @@ import { slugify } from "@/lib/utils";
 import { TagBadge } from "@/components/ui/tag-badge";
 import { AdBanner } from "@/components/ads/AdBanner";
 import { SaveArticleButton } from "@/components/article/SaveArticleButton";
+import { PrintArticleButton } from "@/components/article/PrintArticleButton";
 import { ArticleStickyShare } from "@/components/article/ArticleStickyShare";
 
 /* ---------- Strapi Rich Text Renderer ---------- */
@@ -52,15 +52,10 @@ export default function OpinionContent({ opinion, recommended }: any) {
                         Back to Interviews
                     </Link>
                     <div className="flex items-center gap-2">
-                        <Link
-                            href={`/print/${opinion.slug}`}
-                            target="_blank"
+                        <PrintArticleButton
                             className="flex items-center gap-1.5 text-zinc-500 hover:text-red-600 text-sm border border-zinc-200 px-3 py-1.5 rounded-full bg-white hover:bg-zinc-50 transition-colors"
-                            title="Print this article"
-                        >
-                            <Printer className="w-3.5 h-3.5" />
-                            Print
-                        </Link>
+                            iconClassName="w-3.5 h-3.5"
+                        />
                         <SaveArticleButton title={opinion.title} url={`https://www.energdive.com/interviews/${opinion.slug}`} />
                         <ShareButton
                             title={opinion.title}

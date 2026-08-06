@@ -1681,10 +1681,26 @@ export async function sendPreferenceDigestEmail(
         timeZone: "Asia/Kolkata",
     }).format(new Date()).toUpperCase();
 
+    let afterTopNewsAd: { imageUrl: string; targetUrl: string } | null = null;
     let afterNewsAd: { imageUrl: string; targetUrl: string } | null = null;
     let afterJobsAd: { imageUrl: string; targetUrl: string } | null = null;
+    let endAd: { imageUrl: string; targetUrl: string } | null = null;
     try {
-        const ads = await getAdvertisements({ placement: "home_opinion" });
+        const ads = await getAdvertisements({ placement: "email_mid_1" });
+        const ad = ads.find((candidate) => {
+            const candidateImageUrl = getAdImageUrl(candidate.creative?.[0] || candidate.logo?.[0]);
+            return Boolean(candidateImageUrl && isDailyBriefingAdImageAllowed(candidateImageUrl));
+        });
+        const imageUrl = ad ? getAdImageUrl(ad.creative?.[0] || ad.logo?.[0]) : null;
+        if (ad && imageUrl) afterTopNewsAd = {
+            imageUrl,
+            targetUrl: appendEmailAdUtm(ad.target_url || appUrl, ad.partner_name || ad.title),
+        };
+    } catch (error) {
+        console.error("[Email] Failed to fetch email_mid_1 advertisement:", error);
+    }
+    try {
+        const ads = await getAdvertisements({ placement: "email_mid_2" });
         const ad = ads.find((candidate) => {
             const candidateImageUrl = getAdImageUrl(candidate.creative?.[0] || candidate.logo?.[0]);
             return Boolean(candidateImageUrl && isDailyBriefingAdImageAllowed(candidateImageUrl));
@@ -1695,10 +1711,10 @@ export async function sendPreferenceDigestEmail(
             targetUrl: appendEmailAdUtm(ad.target_url || appUrl, ad.partner_name || ad.title),
         };
     } catch (error) {
-        console.error("[Email] Failed to fetch Top News advertisement:", error);
+        console.error("[Email] Failed to fetch email_mid_2 advertisement:", error);
     }
     try {
-        const ads = await getAdvertisements({ placement: "sector_hero" });
+        const ads = await getAdvertisements({ placement: "email_mid_3" });
         const ad = ads.find((candidate) => {
             const candidateImageUrl = getAdImageUrl(candidate.creative?.[0] || candidate.logo?.[0]);
             return Boolean(candidateImageUrl && isDailyBriefingAdImageAllowed(candidateImageUrl));
@@ -1709,7 +1725,21 @@ export async function sendPreferenceDigestEmail(
             targetUrl: appendEmailAdUtm(ad.target_url || appUrl, ad.partner_name || ad.title),
         };
     } catch (error) {
-        console.error("[Email] Failed to fetch Jobs advertisement:", error);
+        console.error("[Email] Failed to fetch email_mid_3 advertisement:", error);
+    }
+    try {
+        const ads = await getAdvertisements({ placement: "email_end" });
+        const ad = ads.find((candidate) => {
+            const candidateImageUrl = getAdImageUrl(candidate.creative?.[0] || candidate.logo?.[0]);
+            return Boolean(candidateImageUrl && isDailyBriefingAdImageAllowed(candidateImageUrl));
+        });
+        const imageUrl = ad ? getAdImageUrl(ad.creative?.[0] || ad.logo?.[0]) : null;
+        if (ad && imageUrl) endAd = {
+            imageUrl,
+            targetUrl: appendEmailAdUtm(ad.target_url || appUrl, ad.partner_name || ad.title),
+        };
+    } catch (error) {
+        console.error("[Email] Failed to fetch email_end advertisement:", error);
     }
     const newsItems = (sections.find((section) => section.format === "News Briefing")?.items || []).slice(0, 4);
     const eventItems = (sections.find((section) => section.format === "Upcoming Events")?.items || []).slice(0, 3);
@@ -1735,22 +1765,18 @@ export async function sendPreferenceDigestEmail(
     const renderEditorialStory = (item: PreferenceDigestSection["items"][number], buttonLabel: string) => {
         const publisher = item.publisher || "ENERGDIVE Editorial";
         const image = item.imageUrl
-            ? `<a href="${item.href}" target="_blank"><img src="${item.imageUrl}" alt="${escapeHtml(item.title)}" width="576" style="display:block;width:100%;max-width:576px;height:auto;object-fit:cover;border-radius:8px;" /></a>`
-            : `<table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="width:100%;background:#e8eeec;border-radius:8px;"><tr><td height="180" style="height:180px;">&nbsp;</td></tr></table>`;
+            ? `<a href="${item.href}" target="_blank"><img src="${item.imageUrl}" alt="${escapeHtml(item.title)}" width="136" height="96" style="display:block;width:136px;height:96px;object-fit:cover;border-radius:8px;" /></a>`
+            : `<table width="136" height="96" cellpadding="0" cellspacing="0" role="presentation" style="width:136px;height:96px;background:#e8eeec;border-radius:8px;"><tr><td>&nbsp;</td></tr></table>`;
         return `<tr><td style="padding:0 0 18px;">
             <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="border-bottom:1px solid #e5e7eb;">
                 <tr>
-                    <td class="top-news-image" valign="top" style="padding:0 0 14px;">${image}</td>
-                </tr>
-                <tr>
-                    <td class="story-copy" valign="top" style="padding:0 0 12px;">
+                    <td class="top-news-image" width="136" valign="top" style="width:136px;padding:0 16px 18px 0;">${image}</td>
+                    <td class="story-copy" valign="top" style="padding:0 0 18px;">
                         <p style="margin:0 0 7px;font-size:16px;line-height:1.3;font-weight:800;"><a href="${item.href}" target="_blank" style="color:#111827;text-decoration:none;">${escapeHtml(item.title)}</a></p>
                         <p style="margin:0 0 9px;color:#667085;font-size:13px;line-height:1.45;">${escapeHtml(item.crispLine)}</p>
                         <p style="margin:0;color:#667085;font-size:11px;line-height:1.4;">${icon("calendar", "Published date")} ${formatBriefingDate(item.publishedAt)}&nbsp;&nbsp; ${icon("publisher", "Publisher")} ${escapeHtml(publisher)}</p>
                     </td>
-                </tr>
-                <tr>
-                    <td class="story-action" valign="top" style="padding:0 0 18px;"><a href="${item.href}" target="_blank" style="display:inline-block;background:#ffffff;color:#0b6b55;padding:8px 12px;border:1px solid #0b6b55;border-radius:4px;font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap;">${buttonLabel}</a></td>
+                    <td class="story-action" width="96" valign="middle" align="right" style="width:96px;padding:0 0 18px 12px;"><a href="${item.href}" target="_blank" style="display:inline-block;background:#ffffff;color:#0b6b55;padding:8px 12px;border:1px solid #0b6b55;border-radius:4px;font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap;">${buttonLabel}</a></td>
                 </tr>
             </table>
         </td></tr>`;
@@ -1758,48 +1784,72 @@ export async function sendPreferenceDigestEmail(
 
     const topNewsHtml = newsItems.map((item) => renderEditorialStory(item, "Read Now →")).join("");
 
-    const trendingHtml = trendingItems.map((item) => renderEditorialStory(item, "Read Article →")).join("");
+    const trendingHtml = trendingItems.map((item) => {
+        const publisher = item.publisher || "ENERGDIVE News Desk";
+        const image = item.imageUrl
+            ? `<a href="${item.href}" target="_blank"><img src="${item.imageUrl}" alt="${escapeHtml(item.title)}" width="118" height="78" style="display:block;width:118px;height:78px;object-fit:cover;border-radius:7px;" /></a>`
+            : `<table width="118" height="78" cellpadding="0" cellspacing="0" role="presentation" style="width:118px;height:78px;background:#edf2ef;border-radius:7px;"><tr><td>&nbsp;</td></tr></table>`;
+        return `<tr><td style="padding:0 0 7px;">
+            <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="border:1px solid #e5e7eb;border-radius:9px;background:#ffffff;">
+                <tr>
+                    <td width="118" valign="middle" style="width:118px;padding:7px 12px 7px 7px;">${image}</td>
+                    <td valign="middle" style="padding:9px 10px 9px 0;">
+                        <p style="margin:0 0 6px;font-size:13px;line-height:1.35;font-weight:800;"><a href="${item.href}" target="_blank" style="color:#111827;text-decoration:none;">${escapeHtml(item.title)}</a></p>
+                        <p style="margin:0;color:#667085;font-size:10px;line-height:1.35;">${icon("calendar", "Published date")} ${formatBriefingDate(item.publishedAt)}&nbsp;&nbsp; ${icon("publisher", "Publisher")} ${escapeHtml(publisher)}</p>
+                    </td>
+                    <td width="24" valign="middle" align="center" style="width:24px;padding:9px 10px 9px 0;"><a href="${item.href}" target="_blank" aria-label="Read ${escapeHtml(item.title)}" style="color:#0b6b55;font-size:25px;line-height:1;text-decoration:none;">›</a></td>
+                </tr>
+            </table>
+        </td></tr>`;
+    }).join("");
 
-    const jobsHtml = jobs.map((job) => `<tr><td class="job-card" valign="top" style="padding:0 0 12px;">
-        <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="border:1px solid #e5e7eb;border-radius:8px;background:#ffffff;">
-            <tr><td align="center" style="padding:18px 14px 10px;">${job.logoUrl ? `<img src="${job.logoUrl}" alt="${escapeHtml(job.companyName)}" width="96" height="72" style="display:block;width:96px;height:72px;object-fit:contain;border-radius:6px;" />` : `<table width="96" height="72" cellpadding="0" cellspacing="0" role="presentation" style="width:96px;height:72px;background:#e8eeec;border-radius:6px;"><tr><td>&nbsp;</td></tr></table>`}</td></tr>
-            <tr><td valign="top" style="padding:4px 14px 16px;">
-                <p style="margin:0 0 6px;color:#111827;font-size:13px;font-weight:800;line-height:1.3;min-height:50px;">${escapeHtml(job.title)}</p>
-                <p style="margin:0 0 6px;color:#087a66;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.35px;">${escapeHtml(job.companyName)}</p>
-                <p style="margin:0 0 4px;color:#667085;font-size:11px;line-height:1.35;">${icon("location", "Location")} ${escapeHtml(job.location)}</p>
-                <p style="margin:0 0 13px;color:#667085;font-size:11px;line-height:1.35;min-height:14px;">${job.experience ? `Experience: ${escapeHtml(job.experience)}` : "&nbsp;"}</p>
-                <a href="${job.href}" target="_blank" style="display:inline-block;background:#0b6b55;color:#ffffff;padding:8px 12px;border-radius:4px;font-size:11px;font-weight:700;text-decoration:none;">Apply Now</a>
+    const jobsHtml = jobs.map((job) => `<td class="mobile-job-card" width="33.33%" valign="top" style="width:33.33%;padding:0 5px;">
+        <table class="briefing-job-card" width="100%" height="262" cellpadding="0" cellspacing="0" role="presentation" style="height:262px;border:1px solid #dfe5e2;border-radius:7px;background:#ffffff;">
+            <tr><td class="briefing-logo-cell" height="92" align="center" valign="bottom" style="height:92px;padding:15px 10px 8px;">${job.logoUrl ? `<img src="${job.logoUrl}" alt="${escapeHtml(job.companyName)}" width="112" height="58" style="display:block;width:112px;height:58px;object-fit:contain;" />` : `<table width="112" height="58" cellpadding="0" cellspacing="0" role="presentation" style="width:112px;height:58px;background:#f4f7f5;border-radius:3px;"><tr><td>&nbsp;</td></tr></table>`}</td></tr>
+            <tr><td class="briefing-job-copy" height="116" valign="top" style="height:116px;padding:7px 14px 0;">
+                <p class="briefing-card-title" style="margin:0 0 8px;color:#071b2c;font-size:12px;font-weight:800;line-height:1.32;min-height:47px;"><a href="${job.href}" target="_blank" style="color:#071b2c;text-decoration:none;">${escapeHtml(job.title)}</a></p>
+                <p class="briefing-card-company" style="margin:0 0 7px;color:#00856a;font-size:10px;font-weight:800;line-height:1.2;text-transform:uppercase;letter-spacing:0.15px;">${escapeHtml(job.companyName)}</p>
+                <p style="margin:0 0 7px;color:#667085;font-size:7px;line-height:1.25;min-height:18px;">${icon("location", "Location")} ${escapeHtml(job.location)}<br />${job.experience ? `• ${escapeHtml(job.experience)}` : "&nbsp;"}</p>
             </td></tr>
+            <tr><td height="42" valign="top" style="height:42px;padding:0 14px 12px;"><a href="${job.href}" target="_blank" style="display:inline-block;background:#087a66;color:#ffffff;padding:8px 12px;border-radius:4px;font-size:10px;font-weight:700;text-decoration:none;white-space:nowrap;">Apply Now</a></td></tr>
         </table>
-    </td></tr>`).join("");
+    </td>`).join("");
 
-    const eventsHtml = eventItems.map((item) => `<tr><td class="event-card" valign="top" style="padding:0 0 12px;">
-        <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="border:1px solid #e5e7eb;border-radius:8px;background:#ffffff;">
-            <tr><td align="center" style="padding:18px 14px 12px;">${item.imageUrl ? `<img class="event-logo" src="${item.imageUrl}" alt="${escapeHtml(item.title)}" width="150" height="100" style="display:block;width:150px;max-width:100%;height:100px;object-fit:contain;border-radius:6px;" />` : `<table class="event-logo" width="150" height="100" cellpadding="0" cellspacing="0" role="presentation" style="width:150px;height:100px;background:#e8eeec;border-radius:6px;"><tr><td>&nbsp;</td></tr></table>`}</td></tr>
-            <tr><td valign="top" style="padding:4px 14px 16px;">
-                <p style="margin:0 0 9px;color:#111827;font-size:13px;font-weight:800;line-height:1.3;min-height:34px;"><a href="${item.href}" target="_blank" style="color:#111827;text-decoration:none;">${escapeHtml(item.title)}</a></p>
-                <p style="margin:0 0 5px;color:#667085;font-size:11px;line-height:1.35;">${icon("calendar", "Event date")} ${escapeHtml(item.eventDate || "Date to be announced")}</p>
-                <p style="margin:0 0 13px;color:#667085;font-size:11px;line-height:1.35;min-height:28px;">${icon("location", "Venue")} ${escapeHtml(item.eventVenue || "Venue to be announced")}</p>
-                <a href="${item.href}" target="_blank" style="display:inline-block;background:#0b6b55;color:#ffffff;padding:8px 12px;border-radius:4px;font-size:11px;font-weight:700;text-decoration:none;">Read More</a>
+    const eventsHtml = eventItems.map((item) => `<td class="mobile-event-card" width="33.33%" valign="top" style="width:33.33%;padding:0 5px;">
+        <table class="briefing-event-card" width="100%" height="262" cellpadding="0" cellspacing="0" role="presentation" style="height:262px;border:1px solid #dfe5e2;border-radius:7px;background:#ffffff;">
+            <tr><td class="briefing-logo-cell" height="92" align="center" valign="bottom" style="height:92px;padding:15px 10px 8px;">${item.imageUrl ? `<img src="${item.imageUrl}" alt="${escapeHtml(item.title)}" width="122" height="58" style="display:block;width:122px;height:58px;object-fit:contain;" />` : `<table width="122" height="58" cellpadding="0" cellspacing="0" role="presentation" style="width:122px;height:58px;background:#f4f7f5;border-radius:3px;"><tr><td>&nbsp;</td></tr></table>`}</td></tr>
+            <tr><td class="briefing-event-copy" height="116" valign="top" style="height:116px;padding:7px 14px 0;">
+                <p class="briefing-card-title" style="margin:0 0 9px;color:#071b2c;font-size:12px;font-weight:800;line-height:1.32;min-height:32px;"><a href="${item.href}" target="_blank" style="color:#071b2c;text-decoration:none;">${escapeHtml(item.title)}</a></p>
+                <p style="margin:0 0 3px;color:#667085;font-size:7px;line-height:1.25;">${icon("calendar", "Event date")} ${escapeHtml(item.eventDate || "Date to be announced")}</p>
+                <p style="margin:0 0 7px;color:#667085;font-size:7px;line-height:1.25;min-height:18px;">${icon("location", "Venue")} ${escapeHtml(item.eventVenue || "Venue to be announced")}</p>
             </td></tr>
+            <tr><td height="42" valign="top" style="height:42px;padding:0 14px 12px;"><a href="${item.href}" target="_blank" style="display:inline-block;background:#087a66;color:#ffffff;padding:8px 12px;border-radius:4px;font-size:10px;font-weight:700;text-decoration:none;white-space:nowrap;">Read More</a></td></tr>
         </table>
-    </td></tr>`).join("");
+    </td>`).join("");
 
-    const topNewsBlock = hasTopNews ? `<tr><td class="section-pad" style="padding:30px 32px 8px;">${sectionTitle("news", "Top News")}</td></tr>
+    const topNewsBlock = hasTopNews ? `<tr><td class="section-pad" style="padding:30px 32px 8px;"><table width="100%" cellpadding="0" cellspacing="0" role="presentation"><tr><td>${sectionTitle("news", "Top News")}</td><td align="right"><a href="${appUrl}" target="_blank" style="color:#087a66;font-size:11px;font-weight:800;text-decoration:none;white-space:nowrap;">View all →</a></td></tr></table></td></tr>
             <tr><td class="section-pad" style="padding:12px 32px 26px;"><table width="100%" cellpadding="0" cellspacing="0" role="presentation">${topNewsHtml}</table></td></tr>` : `<tr><td class="section-pad" style="padding:30px 32px 26px;">
                 <p style="margin:0;color:#667085;font-size:14px;line-height:1.5;">No major energy news was published today. We'll be back tomorrow with the latest updates.</p>
             </td></tr>`;
     const middleOpinionAdHtml = afterNewsAd ? `<tr><td class="section-pad" style="padding:24px 32px 28px;">
         <p style="margin:0 0 6px;color:#98a2b3;font-size:10px;font-weight:700;letter-spacing:0.7px;text-transform:uppercase;">Advertisement</p>
-        <a href="${afterNewsAd.targetUrl}" target="_blank"><img src="${afterNewsAd.imageUrl}" alt="Sponsored" style="display:block;width:100%;height:auto;object-fit:cover;border:0;border-radius:6px;" /></a>
+        <a href="${afterNewsAd.targetUrl}" target="_blank"><img src="${afterNewsAd.imageUrl}" alt="Sponsored" width="576" height="71" style="display:block;width:100%;max-width:576px;height:auto;object-fit:cover;border:0;border-radius:6px;" /></a>
+    </td></tr>` : "";
+    const afterTopNewsAdHtml = afterTopNewsAd ? `<tr><td class="section-pad" style="padding:24px 32px 28px;">
+        <p style="margin:0 0 6px;color:#98a2b3;font-size:10px;font-weight:700;letter-spacing:0.7px;text-transform:uppercase;">Advertisement</p>
+        <a href="${afterTopNewsAd.targetUrl}" target="_blank"><img src="${afterTopNewsAd.imageUrl}" alt="Sponsored" width="576" height="71" style="display:block;width:100%;max-width:576px;height:auto;object-fit:cover;border:0;border-radius:6px;" /></a>
     </td></tr>` : "";
     const topSponsorAdHtml = sponsor ? `<tr><td class="section-pad" style="padding:24px 32px 28px;">
         <p style="margin:0 0 6px;color:#98a2b3;font-size:10px;font-weight:700;letter-spacing:0.7px;text-transform:uppercase;">Advertisement</p>
-        <a href="${sponsor.targetUrl}" target="_blank"><img src="${sponsor.imageUrl}" alt="Sponsored" style="display:block;width:100%;height:auto;object-fit:cover;border:0;border-radius:6px;" /></a>
+        <a href="${sponsor.targetUrl}" target="_blank"><img src="${sponsor.imageUrl}" alt="Sponsored" width="576" height="71" style="display:block;width:100%;max-width:576px;height:auto;object-fit:cover;border:0;border-radius:6px;" /></a>
     </td></tr>` : "";
-    const footerSectorAdHtml = afterJobsAd ? `<tr><td class="section-pad" style="padding:0 32px 28px;">
+    const afterJobsAdHtml = afterJobsAd ? `<tr><td class="section-pad" style="padding:0 32px 28px;">
         <p style="margin:0 0 6px;color:#98a2b3;font-size:10px;font-weight:700;letter-spacing:0.7px;text-transform:uppercase;">Advertisement</p>
-        <a href="${afterJobsAd.targetUrl}" target="_blank"><img src="${afterJobsAd.imageUrl}" alt="Sponsored" style="display:block;width:100%;height:auto;object-fit:cover;border:0;border-radius:6px;" /></a>
+        <a href="${afterJobsAd.targetUrl}" target="_blank"><img src="${afterJobsAd.imageUrl}" alt="Sponsored" width="576" height="71" style="display:block;width:100%;max-width:576px;height:auto;object-fit:cover;border:0;border-radius:6px;" /></a>
+    </td></tr>` : "";
+    const footerSectorAdHtml = endAd ? `<tr><td class="section-pad" style="padding:0 32px 28px;">
+        <p style="margin:0 0 6px;color:#98a2b3;font-size:10px;font-weight:700;letter-spacing:0.7px;text-transform:uppercase;">Advertisement</p>
+        <a href="${endAd.targetUrl}" target="_blank"><img src="${endAd.imageUrl}" alt="Sponsored" width="576" height="71" style="display:block;width:100%;max-width:576px;height:auto;object-fit:cover;border:0;border-radius:6px;" /></a>
     </td></tr>` : "";
 
     const htmlContent = `<!DOCTYPE html>
@@ -1815,18 +1865,21 @@ export async function sendPreferenceDigestEmail(
         body,table,td,p,a { -webkit-text-size-adjust:100%; -ms-text-size-adjust:100%; }
         img { -ms-interpolation-mode:bicubic; border:0; outline:none; text-decoration:none; }
         .preheader { display:none!important; font-size:1px; color:#f3f5f4; line-height:1px; max-height:0; max-width:0; opacity:0; overflow:hidden; }
-        @media only screen and (max-width:640px) {
+        .briefing-job-copy p, .briefing-event-copy p { color:#526574 !important; font-size:9px !important; line-height:1.4 !important; }
+        .briefing-job-copy .briefing-card-title, .briefing-event-copy .briefing-card-title { color:#071b2c !important; font-size:12px !important; font-weight:800 !important; line-height:1.32 !important; }
+        .briefing-job-copy .briefing-card-company { color:#00856a !important; font-size:10px !important; font-weight:800 !important; line-height:1.2 !important; }
+        @media screen and (max-width:620px) {
             .email-container { width:100% !important; max-width:100% !important; }
             .outer-pad { padding:16px 0 !important; }
             .section-pad { padding-left:20px !important; padding-right:20px !important; }
-            .top-news-image, .story-copy, .story-action { display:block !important; width:100% !important; box-sizing:border-box !important; }
+            .header-logo, .header-briefing, .top-news-image, .story-copy, .story-action, .footer-brand, .footer-meta, .mobile-job-card, .mobile-event-card { display:block !important; width:100% !important; box-sizing:border-box !important; }
+            .header-briefing { padding:14px 0 0 !important; text-align:left !important; }
             .top-news-image { padding:0 0 12px !important; }
             .top-news-image img { width:100% !important; max-width:none !important; height:auto !important; }
-            .story-copy { padding:0 0 14px !important; }
+            .story-copy { padding:0 0 12px !important; }
             .story-action { padding:0 0 18px !important; text-align:left !important; }
-            .job-card { display:block !important; width:100% !important; padding:0 0 12px !important; box-sizing:border-box !important; }
-            .event-card { display:block !important; width:100% !important; padding:0 0 12px !important; box-sizing:border-box !important; }
-            .event-logo { width:180px !important; height:120px !important; }
+            .mobile-job-card, .mobile-event-card { padding:0 0 8px !important; }
+            .footer-meta { padding:16px 0 0 !important; }
         }
         @media only screen and (max-width:480px) {
             .section-pad { padding-left:16px !important; padding-right:16px !important; }
@@ -1839,27 +1892,35 @@ export async function sendPreferenceDigestEmail(
 <body style="margin:0;padding:0;background:#f3f5f4;font-family:Arial,Helvetica,sans-serif;">
     <div class="preheader">Your daily snapshot of the energy stories, opportunities and events that matter.</div>
     <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background:#f3f5f4;"><tr><td class="outer-pad" align="center" style="padding:24px 10px;">
-        <table class="email-container" width="640" cellpadding="0" cellspacing="0" role="presentation" style="width:100%;max-width:640px;background:#ffffff;">
-            <tr><td style="padding:0;border-bottom:4px solid #0b6b55;"><table width="100%" cellpadding="0" cellspacing="0" role="presentation"><tr>
-                <td class="section-pad" width="100%" valign="top" style="width:100%;padding:28px 32px 22px;">
-                    <img src="${logoUrl}" alt="ENERGDIVE" width="160" style="display:block;width:160px;max-width:100%;height:auto;margin:0 0 22px;" />
-                    <p style="margin:0 0 7px;color:#0b6b55;font-size:11px;font-weight:800;letter-spacing:1.1px;text-transform:uppercase;">${todayDate}</p>
-                    <h1 class="briefing-title" style="margin:0 0 8px;color:#101828;font-size:28px;line-height:1.15;font-weight:800;letter-spacing:-0.6px;">${displayFrequency} Briefing</h1>
-                    <p class="greeting-copy" style="margin:0;color:#667085;font-size:14px;line-height:1.45;">Good evening, <span style="color:#0b6b55;font-weight:800;">${escapeHtml(firstName)}</span>. The essential energy stories, opportunities and events shaping your day.</p>
-                </td>
-            </tr></table></td></tr>
+        <table class="email-container" width="640" cellpadding="0" cellspacing="0" role="presentation" style="width:100%;max-width:640px;background:#ffffff;border:1px solid #edf0ee;">
+            <tr><td class="section-pad" style="padding:26px 32px 20px;border-bottom:1px solid #e5e7eb;">
+                <table width="100%" cellpadding="0" cellspacing="0" role="presentation"><tr>
+                    <td class="header-logo" valign="top"><img src="${logoUrl}" alt="ENERGDIVE — Insights that power decisions" width="170" style="display:block;width:170px;max-width:100%;height:auto;" /></td>
+                    <td class="header-briefing" valign="top" align="right" style="padding:0 0 0 18px;">
+                        <p style="margin:0 0 5px;color:#0b6b55;font-size:10px;font-weight:800;letter-spacing:0.7px;text-transform:uppercase;white-space:nowrap;">${todayDate}</p>
+                        <h1 class="briefing-title" style="margin:0;color:#101828;font-size:23px;line-height:1.1;font-weight:800;letter-spacing:-0.4px;text-transform:uppercase;white-space:nowrap;">${displayFrequency} Briefing</h1>
+                        <table align="right" cellpadding="0" cellspacing="0" role="presentation"><tr><td style="padding-top:8px;"><div style="width:26px;height:3px;line-height:3px;background:#0b6b55;font-size:3px;">&nbsp;</div></td></tr></table>
+                    </td>
+                </tr></table>
+            </td></tr>
+            <tr><td class="section-pad" style="padding:24px 32px 8px;">
+                <p style="margin:0 0 8px;color:#101828;font-size:21px;line-height:1.22;font-weight:800;letter-spacing:-0.25px;">Good evening, <span style="color:#0b6b55;">${escapeHtml(firstName)}</span> 👋</p>
+                <p class="greeting-copy" style="margin:0;color:#344054;font-size:14px;line-height:1.55;font-weight:600;">Your daily dose of essential energy stories,<br />opportunities &amp; events shaping the future.</p>
+            </td></tr>
             ${topSponsorAdHtml}
             ${topNewsBlock}
-            ${trendingItems.length ? `<tr><td class="section-pad" style="padding:0 32px 10px;"><h2 style="margin:0;color:#111827;font-size:18px;font-weight:800;line-height:1.2;">Trending Articles</h2></td></tr><tr><td class="section-pad" style="padding:12px 32px 24px;"><table width="100%" cellpadding="0" cellspacing="0" role="presentation">${trendingHtml}</table></td></tr>` : ""}
+            ${afterTopNewsAdHtml}
+            ${trendingItems.length ? `<tr><td class="section-pad" style="padding:0 32px 10px;border-top:1px solid #e5e7eb;"><table width="100%" cellpadding="0" cellspacing="0" role="presentation"><tr><td>${sectionTitle("news", "Trending Articles")}</td><td align="right"><a href="${appUrl}" target="_blank" style="color:#087a66;font-size:11px;font-weight:800;text-decoration:none;white-space:nowrap;">View all →</a></td></tr></table></td></tr><tr><td class="section-pad" style="padding:12px 32px 24px;"><table width="100%" cellpadding="0" cellspacing="0" role="presentation">${trendingHtml}</table></td></tr>` : ""}
             ${middleOpinionAdHtml}
-            ${jobs.length ? `<tr><td class="section-pad" style="padding:4px 32px 10px;">${sectionTitle("jobs", "Latest Jobs")}</td></tr><tr><td class="section-pad" style="padding:12px 32px 28px;"><table width="100%" cellpadding="0" cellspacing="0" role="presentation">${jobsHtml}</table></td></tr>` : ""}
-            ${eventItems.length ? `<tr><td class="section-pad" style="padding:0 32px 10px;">${sectionTitle("events", "Upcoming Events")}</td></tr><tr><td class="section-pad" style="padding:12px 32px 28px;"><table width="100%" cellpadding="0" cellspacing="0" role="presentation">${eventsHtml}</table></td></tr>` : ""}
+            ${jobs.length ? `<tr><td class="section-pad" style="padding:4px 32px 8px;"><table width="100%" cellpadding="0" cellspacing="0" role="presentation"><tr><td>${sectionTitle("jobs", "Latest Jobs")}</td><td align="right"><a href="${appUrl}/jobs" target="_blank" style="color:#087a66;font-size:11px;font-weight:800;text-decoration:none;white-space:nowrap;">View all →</a></td></tr></table></td></tr><tr><td class="section-pad" style="padding:0 29px 20px;"><table width="100%" cellpadding="0" cellspacing="0" role="presentation"><tr>${jobsHtml}</tr></table></td></tr>` : ""}
+            ${afterJobsAdHtml}
+            ${eventItems.length ? `<tr><td class="section-pad" style="padding:0 32px 8px;"><table width="100%" cellpadding="0" cellspacing="0" role="presentation"><tr><td>${sectionTitle("events", "Upcoming Events")}</td><td align="right"><a href="${appUrl}/events" target="_blank" style="color:#087a66;font-size:11px;font-weight:800;text-decoration:none;white-space:nowrap;">View all →</a></td></tr></table></td></tr><tr><td class="section-pad" style="padding:0 29px 24px;"><table width="100%" cellpadding="0" cellspacing="0" role="presentation"><tr>${eventsHtml}</tr></table></td></tr>` : ""}
             ${footerSectorAdHtml}
-            <tr><td class="section-pad" style="padding:22px 32px 30px;border-top:1px solid #e5e7eb;">
-                <img src="${logoUrl}" alt="ENERGDIVE" width="120" style="display:block;width:120px;height:auto;margin:0 0 12px;" />
-                <p style="margin:0 0 8px;color:#475467;font-size:11px;line-height:1.5;">You are receiving this email because you subscribed to ENERGDIVE briefings.</p>
-                <p class="footer-links" style="margin:0 0 10px;color:#667085;font-size:11px;line-height:1.5;"><a href="https://www.linkedin.com/company/energdive/" style="color:#475467;text-decoration:underline;">LinkedIn</a>&nbsp;&nbsp;|&nbsp;&nbsp;<a href="https://x.com/energdive" style="color:#475467;text-decoration:underline;">X</a>&nbsp;&nbsp;|&nbsp;&nbsp;<a href="https://www.youtube.com/@energdive" style="color:#475467;text-decoration:underline;">YouTube</a></p>
-                <p class="footer-links" style="margin:0;color:#667085;font-size:11px;line-height:1.5;"><a href="${manageUrl}" style="color:#475467;text-decoration:underline;">Manage preferences</a>&nbsp;&nbsp;|&nbsp;&nbsp;<a href="${unsubscribeUrl}" style="color:#475467;text-decoration:underline;">Unsubscribe</a>&nbsp;&nbsp;|&nbsp;&nbsp;&copy; ${new Date().getFullYear()} ENERGDIVE</p>
+            <tr><td class="section-pad" style="padding:22px 32px 28px;border-top:1px solid #e5e7eb;">
+                <table width="100%" cellpadding="0" cellspacing="0" role="presentation"><tr>
+                    <td class="footer-brand" width="42%" valign="top" style="width:42%;padding:0 16px 0 0;"><img src="${logoUrl}" alt="ENERGDIVE" width="126" style="display:block;width:126px;height:auto;margin:0 0 8px;" /><p style="margin:0;color:#475467;font-size:10px;line-height:1.4;">Insights that power decisions</p></td>
+                    <td class="footer-meta" width="58%" valign="top" style="width:58%;"><p style="margin:0 0 8px;color:#475467;font-size:10px;line-height:1.45;">You are receiving this email because you subscribed to ENERGDIVE briefings.</p><p class="footer-links" style="margin:0 0 8px;color:#667085;font-size:10px;line-height:1.45;"><a href="${manageUrl}" style="color:#087a66;text-decoration:underline;">Manage preferences</a>&nbsp;&nbsp;|&nbsp;&nbsp;<a href="${unsubscribeUrl}" style="color:#087a66;text-decoration:underline;">Unsubscribe</a></p><p style="margin:0;color:#475467;font-size:10px;line-height:1.45;">© ${new Date().getFullYear()} ENERGDIVE</p></td>
+                </tr></table>
             </td></tr>
         </table>
     </td></tr></table>
