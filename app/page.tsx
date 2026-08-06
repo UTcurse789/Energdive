@@ -206,7 +206,7 @@ async function getOpinionBuckets() {
 
 async function getSectorArticles(slug: string) {
   try {
-    const res = await fetch(buildSectorArticlesUrl(slug), { next: { revalidate: 300 } });
+    const res = await fetchCms(buildSectorArticlesUrl(slug), { next: { revalidate: 300 } });
     if (!res.ok) return [];
     const json = await res.json();
     return json.data || [];
@@ -271,22 +271,6 @@ export default async function Home() {
       })
       .slice(0, 6)
     : [];
-
-  // Fetch articles for each sector in parallel directly from Strapi
-  const sectorFetchResults = await Promise.all(
-    HOMEPAGE_SECTORS.map(async (sector) => {
-      try {
-        const res = await fetchCms(buildSectorArticlesUrl(sector.slug), {
-          next: { revalidate: 300 },
-        });
-        if (!res.ok) return [];
-        const json = await res.json();
-        return json.data || [];
-      } catch {
-        return [];
-      }
-    })
-  );
 
   const sectorsWithArticles = HOMEPAGE_SECTORS.map((sector, idx) => {
     const sectorArticles = sectorFetchResults[idx];

@@ -5,7 +5,6 @@ const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
 
 export const DAILY_SIGNUP_REPORT_RECIPIENTS = [
     "kunal@itenmedia.in",
-    "ab@itenmedia.in",
     "utkarsh@encis.in",
     "sankalp@itenmedia.in",
 ] as const;
