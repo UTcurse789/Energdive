@@ -1806,24 +1806,24 @@ export async function sendPreferenceDigestEmail(
     const jobsHtml = jobs.map((job) => `<td class="mobile-job-card" width="33.33%" valign="top" style="width:33.33%;padding:0 5px;">
         <table class="briefing-job-card" width="100%" height="262" cellpadding="0" cellspacing="0" role="presentation" style="height:262px;border:1px solid #dfe5e2;border-radius:7px;background:#ffffff;">
             <tr><td class="briefing-logo-cell" height="92" align="center" valign="bottom" style="height:92px;padding:15px 10px 8px;">${job.logoUrl ? `<img src="${job.logoUrl}" alt="${escapeHtml(job.companyName)}" width="112" height="58" style="display:block;width:112px;height:58px;object-fit:contain;" />` : `<table width="112" height="58" cellpadding="0" cellspacing="0" role="presentation" style="width:112px;height:58px;background:#f4f7f5;border-radius:3px;"><tr><td>&nbsp;</td></tr></table>`}</td></tr>
-            <tr><td class="briefing-job-copy" height="116" valign="top" style="height:116px;padding:7px 14px 0;">
+            <tr><td class="briefing-job-copy" height="116" valign="top" align="center" style="height:116px;padding:7px 14px 0;text-align:center;">
                 <p class="briefing-card-title" style="margin:0 0 8px;color:#071b2c;font-size:12px;font-weight:800;line-height:1.32;min-height:47px;"><a href="${job.href}" target="_blank" style="color:#071b2c;text-decoration:none;">${escapeHtml(job.title)}</a></p>
                 <p class="briefing-card-company" style="margin:0 0 7px;color:#00856a;font-size:10px;font-weight:800;line-height:1.2;text-transform:uppercase;letter-spacing:0.15px;">${escapeHtml(job.companyName)}</p>
                 <p style="margin:0 0 7px;color:#667085;font-size:7px;line-height:1.25;min-height:18px;">${icon("location", "Location")} ${escapeHtml(job.location)}<br />${job.experience ? `• ${escapeHtml(job.experience)}` : "&nbsp;"}</p>
             </td></tr>
-            <tr><td height="42" valign="top" style="height:42px;padding:0 14px 12px;"><a href="${job.href}" target="_blank" style="display:inline-block;background:#087a66;color:#ffffff;padding:8px 12px;border-radius:4px;font-size:10px;font-weight:700;text-decoration:none;white-space:nowrap;">Apply Now</a></td></tr>
+            <tr><td height="42" valign="top" align="center" style="height:42px;padding:0 14px 12px;text-align:center;"><a href="${job.href}" target="_blank" style="display:inline-block;background:#087a66;color:#ffffff;padding:8px 12px;border-radius:4px;font-size:10px;font-weight:700;text-decoration:none;white-space:nowrap;">Apply Now</a></td></tr>
         </table>
     </td>`).join("");
 
     const eventsHtml = eventItems.map((item) => `<td class="mobile-event-card" width="33.33%" valign="top" style="width:33.33%;padding:0 5px;">
         <table class="briefing-event-card" width="100%" height="262" cellpadding="0" cellspacing="0" role="presentation" style="height:262px;border:1px solid #dfe5e2;border-radius:7px;background:#ffffff;">
             <tr><td class="briefing-logo-cell" height="92" align="center" valign="bottom" style="height:92px;padding:15px 10px 8px;">${item.imageUrl ? `<img src="${item.imageUrl}" alt="${escapeHtml(item.title)}" width="122" height="58" style="display:block;width:122px;height:58px;object-fit:contain;" />` : `<table width="122" height="58" cellpadding="0" cellspacing="0" role="presentation" style="width:122px;height:58px;background:#f4f7f5;border-radius:3px;"><tr><td>&nbsp;</td></tr></table>`}</td></tr>
-            <tr><td class="briefing-event-copy" height="116" valign="top" style="height:116px;padding:7px 14px 0;">
+            <tr><td class="briefing-event-copy" height="116" valign="top" align="center" style="height:116px;padding:7px 14px 0;text-align:center;">
                 <p class="briefing-card-title" style="margin:0 0 9px;color:#071b2c;font-size:12px;font-weight:800;line-height:1.32;min-height:32px;"><a href="${item.href}" target="_blank" style="color:#071b2c;text-decoration:none;">${escapeHtml(item.title)}</a></p>
                 <p style="margin:0 0 3px;color:#667085;font-size:7px;line-height:1.25;">${icon("calendar", "Event date")} ${escapeHtml(item.eventDate || "Date to be announced")}</p>
                 <p style="margin:0 0 7px;color:#667085;font-size:7px;line-height:1.25;min-height:18px;">${icon("location", "Venue")} ${escapeHtml(item.eventVenue || "Venue to be announced")}</p>
             </td></tr>
-            <tr><td height="42" valign="top" style="height:42px;padding:0 14px 12px;"><a href="${item.href}" target="_blank" style="display:inline-block;background:#087a66;color:#ffffff;padding:8px 12px;border-radius:4px;font-size:10px;font-weight:700;text-decoration:none;white-space:nowrap;">Read More</a></td></tr>
+            <tr><td height="42" valign="top" align="center" style="height:42px;padding:0 14px 12px;text-align:center;"><a href="${item.href}" target="_blank" style="display:inline-block;background:#087a66;color:#ffffff;padding:8px 12px;border-radius:4px;font-size:10px;font-weight:700;text-decoration:none;white-space:nowrap;">Read More</a></td></tr>
         </table>
     </td>`).join("");
 
