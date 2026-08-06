@@ -4,18 +4,12 @@ import { NextResponse } from "next/server";
 const isProtectedRoute = createRouteMatcher(["/energclub/dashboard(.*)", "/dashboard(.*)", "/onboarding(.*)"]);
 
 export default clerkMiddleware(async (auth, req) => {
-    // Skip logging for PostHog telemetry to avoid terminal spam
-    if (!req.url.includes("/ingest/")) {
-        console.log("[PROXY.TS] Middleware executed for:", req.url);
-    }
-    const { userId, redirectToSignIn } = await auth();
-
     // Only handle authentication — NOT onboarding status.
     // Onboarding redirects are handled at the page/layout level using
     // currentUser() which always returns fresh data from Clerk's API.
     // The middleware JWT can be stale for up to 60s, causing redirect loops.
-    if (!userId && isProtectedRoute(req)) {
-        return redirectToSignIn();
+    if (isProtectedRoute(req)) {
+        await auth.protect();
     }
 
     // Forward client IP to downstream API routes via custom header.
@@ -38,7 +32,7 @@ export default clerkMiddleware(async (auth, req) => {
 export const config = {
     matcher: [
         // Skip Next.js internals and all static files, unless found in search params
-        '/((?!api/(?:paper-submissions|submit-abstract|submit-paper|submit-final-paper)|_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
+        '/((?!api/(?:paper-submissions|submit-abstract|submit-paper|submit-final-paper)|ingest|_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
         '/trpc/(.*)',
     ],
 };

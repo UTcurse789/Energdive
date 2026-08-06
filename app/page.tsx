@@ -23,6 +23,19 @@ import Link from "next/link";
 export const metadata = HOME_PAGE_METADATA;
 
 const STRAPI_BASE = process.env.NEXT_PUBLIC_STRAPI_URL || "https://cms.energdive.com";
+const CMS_REQUEST_TIMEOUT_MS = 10_000;
+
+function fetchCms(url: string, options: RequestInit = {}) {
+  return fetch(url, {
+    ...options,
+    signal: AbortSignal.timeout(CMS_REQUEST_TIMEOUT_MS),
+  });
+}
+
+function logCmsError(message: string, error: unknown) {
+  if (error instanceof Error && error.name === "TimeoutError") return;
+  console.error(message, error);
+}
 
 const HOMEPAGE_SECTORS = [
   { title: "Oil & Gas", slug: "oil-gas" },
@@ -108,7 +121,7 @@ function mapArticle(article: any, sectorName: string): Article {
 
 async function getAllContents() {
   try {
-    const res = await fetch(
+    const res = await fetchCms(
       `${STRAPI_BASE}/api/contents?pagination[pageSize]=100&populate=*&sort=Date:desc`,
       { next: { revalidate: 600 } } // 10 min ISR
     );
@@ -116,14 +129,14 @@ async function getAllContents() {
     const json = await res.json();
     return json.data || [];
   } catch (err) {
-    console.error("Contents fetch error:", err);
+    logCmsError("Contents fetch error:", err);
     return null;
   }
 }
 
 async function getFeaturedContents() {
   try {
-    const res = await fetch(
+    const res = await fetchCms(
       `${STRAPI_BASE}/api/contents?filters[featured][$eq]=true&populate=*&sort[0]=updatedAt:desc&sort[1]=publishedAt:desc&pagination[pageSize]=10`,
       { next: { revalidate: 60 } } // Keep featured picks fresh on the homepage
     );
@@ -131,14 +144,14 @@ async function getFeaturedContents() {
     const json = await res.json();
     return json.data || [];
   } catch (err) {
-    console.error("Featured contents fetch error:", err);
+    logCmsError("Featured contents fetch error:", err);
     return [];
   }
 }
 
 async function getHeroBannerContents() {
   try {
-    const res = await fetch(
+    const res = await fetchCms(
       `${STRAPI_BASE}/api/contents?filters[show_hero_banner][$eq]=true&populate=*&pagination[pageSize]=10&sort=publishedAt:desc`,
       { next: { revalidate: 60 } }
     );
@@ -146,14 +159,14 @@ async function getHeroBannerContents() {
     const json = await res.json();
     return json.data || [];
   } catch (err) {
-    console.error("Hero banner fetch error:", err);
+    logCmsError("Hero banner fetch error:", err);
     return [];
   }
 }
 
 async function getOpinionBuckets() {
   try {
-    const res = await fetch(
+    const res = await fetchCms(
       `${STRAPI_BASE}/api/contents` +
       `?filters[type_of_content][name][$eq]=Opinion` +
       `&pagination[pageSize]=60` +
@@ -186,7 +199,7 @@ async function getOpinionBuckets() {
         interviews: mapOpinionItems(interviewItems.slice(0, 5)),
     };
   } catch (err) {
-    console.error("Opinion fetch error:", err);
+    logCmsError("Opinion fetch error:", err);
     return { opinions: [], interviews: [] };
   }
 }
@@ -242,7 +255,9 @@ export default async function Home() {
   const sectorFetchResults = await Promise.all(
     HOMEPAGE_SECTORS.map(async (sector) => {
       try {
-        const res = await fetch(buildSectorArticlesUrl(sector.slug), { next: { revalidate: 300 } });
+        const res = await fetchCms(buildSectorArticlesUrl(sector.slug), {
+          next: { revalidate: 300 },
+        });
         if (!res.ok) return [];
         const json = await res.json();
         return json.data || [];

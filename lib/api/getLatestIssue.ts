@@ -1,6 +1,7 @@
 
 import { strapiImageUrl } from "@/lib/strapi-image";
 const STRAPI_BASE_URL = process.env.NEXT_PUBLIC_STRAPI_URL || "https://cms.energdive.com";
+const CMS_REQUEST_TIMEOUT_MS = 10_000;
 
 type StrapiMedia = {
     url?: string | null;
@@ -74,7 +75,10 @@ export async function getLatestIssue(): Promise<LatestIssueData | null> {
     try {
         const res = await fetch(
             `${STRAPI_BASE_URL}/api/issues?populate=CoverImage&sort=createdAt:desc&pagination[limit]=1`,
-            { next: { revalidate: 3600 } } // 1 hour ISR — keeps latest issue fresh
+            {
+                next: { revalidate: 3600 }, // 1 hour ISR — keeps latest issue fresh
+                signal: AbortSignal.timeout(CMS_REQUEST_TIMEOUT_MS),
+            }
         );
         if (!res.ok) return null;
 
@@ -84,7 +88,9 @@ export async function getLatestIssue(): Promise<LatestIssueData | null> {
 
         return normalizeIssue(item);
     } catch (e) {
-        console.error("Failed to fetch latest issue from Strapi:", e);
+        if (!(e instanceof Error && e.name === "TimeoutError")) {
+            console.error("Failed to fetch latest issue from Strapi:", e);
+        }
         return null;
     }
 }
