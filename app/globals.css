@@ -850,3 +850,60 @@ h6 {
     @apply bg-background text-foreground;
   }
 }
+
+/* Native article printing: retain editorial content only, never site chrome. */
+@media print {
+  @page {
+    margin: 16mm;
+  }
+
+  html,
+  body {
+    background: #ffffff !important;
+  }
+
+  header.fixed,
+  footer,
+  nav,
+  aside,
+  button,
+  .fixed,
+  .sticky,
+  .print\:hidden {
+    display: none !important;
+  }
+
+  main {
+    padding: 0 !important;
+  }
+
+  article {
+    max-width: 100% !important;
+  }
+
+  /* Next/Image `fill` uses absolute positioning for the web layout. Convert
+     it back to a regular image for print, and remove its decorative overlay. */
+  [class*="aspect-video"] {
+    height: auto !important;
+    aspect-ratio: auto !important;
+    background: transparent !important;
+    break-inside: avoid;
+  }
+
+  img[data-nimg="fill"] {
+    position: static !important;
+    display: block !important;
+    width: 100% !important;
+    height: auto !important;
+    object-fit: contain !important;
+  }
+
+  [class*="bg-linear-to-t"] {
+    display: none !important;
+  }
+
+  a {
+    color: inherit !important;
+    text-decoration: none !important;
+  }
+}
