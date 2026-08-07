@@ -2,7 +2,8 @@ User-agent: *
 Allow: /
 Disallow: /api/
 Disallow: /private/
-Disallow: /auth
+Disallow: /auth$
+Disallow: /auth/
 Disallow: /dashboard
 Disallow: /admin
 
