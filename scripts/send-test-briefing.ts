@@ -5,7 +5,7 @@
 import "dotenv/config";
 import { sendPreferenceDigestPreview } from "@/lib/preference-digests";
 
-const email = "sankalp@itenmedia.in";
+const email = "utkarsh@encis.in";
 
 async function main() {
     const result = await sendPreferenceDigestPreview({

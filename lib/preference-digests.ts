@@ -5,6 +5,7 @@ import { appendEmailAdUtm, isDailyBriefingAdImageAllowed, sendPreferenceDigestEm
 import { strapiMediaUrl } from "@/lib/strapi-image";
 import { getAdvertisements, getAdImageUrl } from "@/lib/api/getAdvertisements";
 import { loadPublicEnergJobs } from "@/lib/energjob-public";
+import { getLatestIssue } from "@/lib/api/getLatestIssue";
 
 const STRAPI_BASE = process.env.NEXT_PUBLIC_STRAPI_URL || "https://cms.energdive.com";
 const STRAPI_TOKEN = process.env.STRAPI_API_TOKEN || "";
@@ -13,6 +14,7 @@ const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
 
 const INSIGHT_CONTENT_TYPES = new Set([
     "analysis",
+    "article",
     "articles",
     "featured stories",
     "featured story",
@@ -58,6 +60,8 @@ export interface DigestItem {
     publisher?: string;
     eventDate?: string | null;
     eventVenue?: string | null;
+    eventDescription?: string | null;
+    contentTag?: string;
 }
 
 export interface DigestSection {
@@ -356,14 +360,15 @@ function parseEventSortDate(value: string | null | undefined): Date | null {
 
 function mapFormatsForContent(item: StrapiDigestContent): DigestFormat[] {
     const typeName = extractContentTypeName(item.type_of_content).toLowerCase();
-    const tagTitle = getContentTagTitle(item.content_tag).toLowerCase();
     const formats: DigestFormat[] = [];
 
     if (typeName === "news") {
         formats.push("News Briefing");
     }
 
-    if (typeName === "opinion" && tagTitle !== "interview") {
+    // Interviews are stored as Opinion content with an Interview tag. Keep
+    // both in the catalogue so the briefing can rotate one editorial pick.
+    if (typeName === "opinion") {
         formats.push("Opinion");
     }
 
@@ -413,6 +418,7 @@ function normalizeContentItem(item: StrapiDigestContent): DigestItem | null {
         badge: typeName,
         formats,
         publisher: getAuthorName(item.author),
+        contentTag: getContentTagTitle(item.content_tag).toLowerCase(),
     };
 }
 
@@ -455,6 +461,7 @@ function normalizeEventItem(item: StrapiDigestEvent): DigestItem | null {
         formats: ["Upcoming Events"],
         eventDate: item.date || null,
         eventVenue: item.location || item.venue || null,
+        eventDescription: truncate(extractPlainText(item.description), 110) || null,
     };
 }
 
@@ -588,6 +595,8 @@ function hasEnoughTopNews(sections: DigestSection[]): boolean {
 
 interface DailyBriefingExtras {
     trending: DigestItem[];
+    articles: DigestItem[];
+    latestIssue: Awaited<ReturnType<typeof getLatestIssue>>;
     jobs: Array<{
         companyName: string;
         title: string;
@@ -634,18 +643,31 @@ async function loadDailyBriefingExtras(
     sections: DigestSection[]
 ): Promise<DailyBriefingExtras> {
     const trending = getDailyTrendingArticles(catalog, sections);
+    const dayKey = getIstDateKey();
+    const selectedKeys = new Set(sections.flatMap((section) => section.items.map((item) => item.key)));
+
+    const articles = catalog
+        .filter((item) =>
+            item.key.startsWith("content:") &&
+            !selectedKeys.has(item.key) &&
+            /article/i.test(item.badge)
+        )
+        .sort((left, right) => right.publishedAt.getTime() - left.publishedAt.getTime())
+        .slice(0, 3);
+    const latestIssue = await getLatestIssue();
 
     try {
         // Fetch a wider pool, then use the IST date as a stable shuffle seed.
         // Everyone sees the same three jobs on a given day, and a fresh mix on
         // the next day without changing the source job data.
         const jobs = await loadPublicEnergJobs(60);
-        const dayKey = getIstDateKey();
         const dailyJobs = [...jobs]
             .sort((left, right) => hashForDay(left.routeSlug, dayKey) - hashForDay(right.routeSlug, dayKey))
             .slice(0, 3);
         return {
             trending,
+            articles,
+            latestIssue,
             jobs: dailyJobs.map((job) => ({
                 companyName: job.companyName || "ENERGDIVE Jobs",
                 title: job.title,
@@ -659,7 +681,7 @@ async function loadDailyBriefingExtras(
         };
     } catch (error) {
         console.error("[Digests] Failed to load latest jobs:", error);
-        return { trending, jobs: [] };
+        return { trending, articles, latestIssue, jobs: [] };
     }
 }
 

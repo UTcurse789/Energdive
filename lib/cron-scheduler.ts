@@ -47,10 +47,14 @@ export function startCronScheduler() {
     weeklyRemindersTimer.unref?.();
 
     // Run preference digests once daily at 5 PM IST (11:30 UTC)
-    // Check every 5 minutes, fire only inside the 5 PM IST window
+    // Check every 5 minutes, fire only inside the 5 PM IST window. A failed
+    // attempt remains eligible for a retry during that same hour.
     let lastDigestDate = "";
+    let isDigestRunning = false;
     const digestCheckIntervalMs = 5 * 60 * 1000;
-    const digestTimer = setInterval(async () => {
+    const runDailyDigestCheck = async () => {
+        if (isDigestRunning) return;
+
         try {
             // Current time in IST
             const nowUtc = new Date();
@@ -59,20 +63,26 @@ export function startCronScheduler() {
             const istHour = istDate.getUTCHours();
             const istMinute = istDate.getUTCMinutes();
             const todayKey = istDate.toISOString().slice(0, 10); // YYYY-MM-DD
-            // One-time delay requested for 6 August 2026. Every later day
-            // continues with the normal 5:00 PM IST Daily Briefing schedule.
-            const digestStartMinute = todayKey === "2026-08-06" ? 30 : 0;
+            // Daily Briefing always starts at 5:00 PM IST.
+            const digestStartMinute = 0;
 
             // Only fire between 17:00–17:59 IST, once per day
             if (istHour === 17 && istMinute >= digestStartMinute && lastDigestDate !== todayKey) {
-                lastDigestDate = todayKey;
+                isDigestRunning = true;
                 console.log(`[CRON-SCHEDULER] Firing daily preference digest at 5:${String(digestStartMinute).padStart(2, "0")} PM IST (${todayKey})...`);
                 await processContentPreferenceDigests();
+                lastDigestDate = todayKey;
             }
         } catch (error) {
             console.error("[CRON-SCHEDULER] Preference digest processing failed:", error);
+        } finally {
+            isDigestRunning = false;
         }
-    }, digestCheckIntervalMs);
+    };
+    // Check immediately as well as on the five-minute interval. This prevents
+    // a restart during the delivery window from missing today's send.
+    void runDailyDigestCheck();
+    const digestTimer = setInterval(runDailyDigestCheck, digestCheckIntervalMs);
     digestTimer.unref?.();
 
     // Send the team signup report once daily at 6 PM IST. Its query uses a
