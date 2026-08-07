@@ -802,7 +802,7 @@ export function Header() {
                                         </Link>
 
                                         {/* <Link
-                                            href="/energdive-insights-exchange"
+                                            href="/insights-exchange"
                                             onClick={closeMenus}
                                             className={cn(
                                                 "px-4 py-3 text-[14px] font-bold text-gray-800 flex justify-between items-center transition-colors",
@@ -1050,7 +1050,7 @@ export function Header() {
                                                 <p className="text-[14px] text-gray-500 leading-relaxed mb-4">EIX is a curated knowledge platform powered by ENERGClub for research papers, sector outlooks, case studies, white papers, technical notes, and knowledge briefs.</p>
                                                 <p className="text-[14px] text-gray-500 leading-relaxed mb-6">It brings together professionals, researchers, academics, policymakers, consultants, technology providers, and emerging talent across India&apos;s energy ecosystem.</p>
                                                 <div className="flex flex-wrap gap-3">
-                                                    <Link href="/energdive-insights-exchange" onClick={closeMenus} className="inline-flex items-center gap-1.5 text-[11px] font-bold text-[#00A651] uppercase tracking-widest hover:underline">
+                                                    <Link href="/insights-exchange" onClick={closeMenus} className="inline-flex items-center gap-1.5 text-[11px] font-bold text-[#00A651] uppercase tracking-widest hover:underline">
                                                         Explore EIX <ArrowRight size={13} />
                                                     </Link>
                                                     <Link href="/knowledge-hub/submit" onClick={closeMenus} className="inline-flex items-center gap-1.5 text-[11px] font-bold text-zinc-900 uppercase tracking-widest hover:underline">
@@ -1411,7 +1411,7 @@ export function Header() {
                                                 <Link href="/resource-hub" onClick={closeAll} className="block px-10 py-3 text-[13px] font-medium text-gray-700 hover:text-[#00A651] hover:bg-white transition-colors border-b border-gray-100">
                                                     Resource Hub
                                                 </Link>
-                                                <Link href="/energdive-insights-exchange" onClick={closeAll} className="block px-10 py-3 text-[13px] font-medium text-gray-700 hover:text-[#00A651] hover:bg-white transition-colors border-b border-gray-100">
+                                                <Link href="/insights-exchange" onClick={closeAll} className="block px-10 py-3 text-[13px] font-medium text-gray-700 hover:text-[#00A651] hover:bg-white transition-colors border-b border-gray-100">
                                                     Insights Exchange
                                                 </Link>
                                                 <Link href="/about" onClick={closeAll} className="block px-10 py-3 text-[13px] font-medium text-gray-700 hover:text-[#00A651] hover:bg-white transition-colors border-b border-gray-100">

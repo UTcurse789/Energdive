@@ -471,12 +471,12 @@ export const ADVERTISE_PAGE_METADATA = buildExactPageMetadata({
   topic: "Advertising, Media Partnerships, Brand Promotion, Energy Industry Marketing",
   audience:
     "Energy companies, corporates, marketers, advertisers, agencies, industry leaders",
-  canonical: "https://www.energdive.com/advertise",
+  canonical: "https://www.energdive.com/advertise-with-us",
   openGraph: {
     title: "Advertise with ENERGDIVE | Energy Media Platform",
     description:
       "Partner with ENERGDIVE to position your brand at the center of India's energy transition through strategic media, content, and industry engagement.",
-    url: "https://www.energdive.com/advertise",
+    url: "https://www.energdive.com/advertise-with-us",
     siteName: "ENERGDIVE",
   },
   twitter: {
@@ -535,12 +535,12 @@ export const EIX_PAGE_METADATA = buildExactPageMetadata({
     "Energy Research, Sector Outlooks, Case Studies, White Papers, Technical Notes, Knowledge Briefs",
   audience:
     "Industry professionals, researchers, academics, policymakers, consultants, technology providers, startup founders",
-  canonical: "https://www.energdive.com/energdive-insights-exchange",
+  canonical: "https://www.energdive.com/insights-exchange",
   openGraph: {
     title: "ENERGDIVE Insights Exchange",
     description:
       "A curated ENERGClub-powered knowledge platform for research, practical insights, and industry perspectives on India's energy transition.",
-    url: "https://www.energdive.com/energdive-insights-exchange",
+    url: "https://www.energdive.com/insights-exchange",
     siteName: "ENERGDIVE",
   },
   twitter: {
