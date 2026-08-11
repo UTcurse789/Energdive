@@ -66,7 +66,7 @@ async function energJobCmsRequest<T>(
   const response = await fetch(url, {
     ...options,
     headers: getHeaders(options.headers),
-    cache: "no-store",
+    next: { revalidate: 300 },
   });
 
   if (!response.ok) {
