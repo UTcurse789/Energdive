@@ -1,0 +1,45 @@
+// ZOHO CRM CUSTOM FUNCTION
+// Trigger this function ONLY from the workflow whose criteria exactly match
+// custom view 651593000023479260. Do not attach it to "All Leads".
+//
+// Endpoint accepts that view ID only and syncs the Lead to Brevo list #21.
+// The endpoint is idempotent and will not add a contact already in list #7.
+
+portalUrl = "https://www.energdive.com";
+webhookSecret = zoho.adminparams.get("ZOHO_FORM_WEBHOOK_SECRET");
+
+leadId = input.get("lead_id");
+leadRecord = zoho.crm.getRecordById("Leads", leadId);
+
+firstName = if(leadRecord.get("First_Name") != null, leadRecord.get("First_Name"), "");
+lastName = if(leadRecord.get("Last_Name") != null, leadRecord.get("Last_Name"), "");
+phone = leadRecord.get("Mobile");
+if(phone == null || phone == "")
+{
+    phone = leadRecord.get("Phone");
+}
+
+payload = Map();
+payload.put("zoho_custom_view_id", "651593000023479260");
+payload.put("email", leadRecord.get("Email"));
+payload.put("name", (firstName + " " + lastName).trim());
+payload.put("phone", if(phone != null, phone, ""));
+payload.put("company", if(leadRecord.get("Company") != null, leadRecord.get("Company"), ""));
+payload.put("job_title", if(leadRecord.get("Designation") != null, leadRecord.get("Designation"), ""));
+payload.put("industry", if(leadRecord.get("Industry") != null, leadRecord.get("Industry"), ""));
+payload.put("Community", if(leadRecord.get("Community") != null, leadRecord.get("Community"), ""));
+payload.put("Sub_Community", if(leadRecord.get("Sub_Community") != null, leadRecord.get("Sub_Community"), ""));
+
+headers = Map();
+headers.put("Content-Type", "application/json");
+headers.put("x-webhook-secret", webhookSecret);
+
+response = invokeurl
+[
+    url : portalUrl + "/api/brevo/sync-partial-zoho"
+    type : POST
+    parameters : payload.toString()
+    headers : headers
+];
+
+info "Partial Zoho Brevo sync response: " + response;

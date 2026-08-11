@@ -212,7 +212,7 @@ export async function processWeeklyReminders() {
  * Users receive at most one digest per daily/weekly/monthly period, and only
  * when new matching content exists since their previous digest.
  */
-export async function processContentPreferenceDigests(limit = 100) {
+export async function processContentPreferenceDigests(limit?: number) {
     const requestId = crypto.randomUUID().slice(0, 8);
     const log = (msg: string) => console.log(`[CONTENT-DIGEST:${requestId}] ${msg}`);
 

@@ -19,7 +19,10 @@ export async function POST(req: NextRequest) {
 
     try {
         const body = await req.json().catch(() => ({}));
-        const limit = Number(body?.limit) || 100;
+        const requestedLimit = Number(body?.limit);
+        const limit = Number.isFinite(requestedLimit) && requestedLimit > 0
+            ? requestedLimit
+            : undefined;
         const result = await processContentPreferenceDigests(limit);
         return NextResponse.json(result);
     } catch (error: unknown) {
