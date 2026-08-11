@@ -339,7 +339,6 @@ export default async function Home() {
       .slice(0, 25)
     : [];
 
-<<<<<<< HEAD
   // Fetch articles for each sector in parallel directly from Strapi
   const sectorFetchResults: any[][] = await Promise.all(
     HOMEPAGE_SECTORS.map(async (sector) => {
@@ -354,8 +353,6 @@ export default async function Home() {
     })
   );
 
-=======
->>>>>>> c9778787b1fd255a6e6c928d7fe11855efd05eba
   const sectorsWithArticles = HOMEPAGE_SECTORS.map((sector, idx) => {
     const sectorArticles = sectorFetchResults?.[idx] || [];
     const finalArticles = sectorArticles.slice(0, 4);
