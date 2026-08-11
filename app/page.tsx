@@ -179,20 +179,8 @@ function FeaturedVideosSidebar({ videos }: { videos: VideoItem[] }) {
 
 async function getAllContents() {
   try {
-    const params = [
-      "pagination[pageSize]=50",
-      "sort=Date:desc",
-      "fields[0]=Title",
-      "fields[1]=Date",
-      "fields[2]=publishedAt",
-      "fields[3]=createdAt",
-      "fields[4]=slug",
-      "populate[type_of_content][fields][0]=name",
-      "populate[FeaturedImage][fields][0]=url",
-      "populate[FeaturedImage][fields][1]=formats",
-    ].join("&");
     const res = await fetchCms(
-      `${STRAPI_BASE}/api/contents?${params}`,
+      `${STRAPI_BASE}/api/contents?pagination[pageSize]=40&populate=*&sort=Date:desc`,
       { next: { revalidate: 300 } }
     );
     if (!res.ok) return null;
