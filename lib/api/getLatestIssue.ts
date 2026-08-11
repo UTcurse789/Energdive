@@ -188,7 +188,7 @@ function normalizeIssue(item: StrapiIssueItem): LatestIssueData | null {
 }
 
 function issuePopulateParams(withArticles: boolean): string {
-    if (!withArticles) return "populate=CoverImage";
+    if (!withArticles) return "populate[0]=CoverImage&fields[0]=Month&fields[1]=Year&fields[2]=slug&fields[3]=Title";
 
     return [
         "populate[0]=CoverImage",
@@ -197,6 +197,11 @@ function issuePopulateParams(withArticles: boolean): string {
         "populate[3]=contents.author",
         "populate[4]=contents.FeaturedImage",
         "populate[5]=contents.content_tag",
+        "fields[0]=Month",
+        "fields[1]=Year",
+        "fields[2]=slug",
+        "fields[3]=Title",
+        "pagination[pageSize]=1",
     ].join("&");
 }
 

@@ -33,6 +33,8 @@ export function OpinionSection({
     const [interviewIndex, setInterviewIndex] = useState(0);
     const opinionThumbRefs = useRef<(HTMLButtonElement | null)[]>([]);
     const interviewThumbRefs = useRef<(HTMLButtonElement | null)[]>([]);
+    const opinionStripRef = useRef<HTMLDivElement | null>(null);
+    const interviewStripRef = useRef<HTMLDivElement | null>(null);
 
     // Opinion navigation
     const opinionNext = useCallback(() => {
@@ -51,19 +53,23 @@ export function OpinionSection({
     }, [interviews.length]);
 
     useEffect(() => {
-        opinionThumbRefs.current[opinionIndex]?.scrollIntoView({
-            behavior: "smooth",
-            block: "nearest",
-            inline: "center",
-        });
+        const strip = opinionStripRef.current;
+        const thumb = opinionThumbRefs.current[opinionIndex];
+        if (!strip || !thumb) return;
+        const thumbLeft = thumb.offsetLeft;
+        const thumbWidth = thumb.offsetWidth;
+        const stripWidth = strip.offsetWidth;
+        strip.scrollTo({ left: thumbLeft - (stripWidth - thumbWidth) / 2, behavior: "smooth" });
     }, [opinionIndex]);
 
     useEffect(() => {
-        interviewThumbRefs.current[interviewIndex]?.scrollIntoView({
-            behavior: "smooth",
-            block: "nearest",
-            inline: "center",
-        });
+        const strip = interviewStripRef.current;
+        const thumb = interviewThumbRefs.current[interviewIndex];
+        if (!strip || !thumb) return;
+        const thumbLeft = thumb.offsetLeft;
+        const thumbWidth = thumb.offsetWidth;
+        const stripWidth = strip.offsetWidth;
+        strip.scrollTo({ left: thumbLeft - (stripWidth - thumbWidth) / 2, behavior: "smooth" });
     }, [interviewIndex]);
 
     if (opinions.length === 0 && interviews.length === 0) return null;
@@ -230,7 +236,7 @@ export function OpinionSection({
 
                         {/* ── ARTICLE THUMBNAIL STRIP ── */}
                         {opinions.length > 1 && (
-                            <div className="mt-4 hidden sm:flex gap-3 overflow-x-auto pb-2 pt-1 snap-x snap-mandatory [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+                            <div ref={opinionStripRef} className="mt-4 hidden sm:flex gap-3 overflow-x-auto pb-2 pt-1 snap-x snap-mandatory [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
                                 {opinions.map((op, idx) => (
                                     <button
                                         key={op.id}
@@ -398,7 +404,7 @@ export function OpinionSection({
 
                         {/* ── ARTICLE THUMBNAIL STRIP ── */}
                         {interviews.length > 1 && (
-                            <div className="mt-4 hidden sm:flex gap-3 overflow-x-auto pb-2 pt-1 snap-x snap-mandatory [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+                            <div ref={interviewStripRef} className="mt-4 hidden sm:flex gap-3 overflow-x-auto pb-2 pt-1 snap-x snap-mandatory [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
                                 {interviews.map((iv, idx) => (
                                     <button
                                         key={iv.id}

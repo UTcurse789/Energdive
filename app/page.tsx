@@ -179,9 +179,21 @@ function FeaturedVideosSidebar({ videos }: { videos: VideoItem[] }) {
 
 async function getAllContents() {
   try {
+    const params = [
+      "pagination[pageSize]=50",
+      "sort=Date:desc",
+      "fields[0]=Title",
+      "fields[1]=Date",
+      "fields[2]=publishedAt",
+      "fields[3]=createdAt",
+      "fields[4]=slug",
+      "populate[type_of_content][fields][0]=name",
+      "populate[FeaturedImage][fields][0]=url",
+      "populate[FeaturedImage][fields][1]=formats",
+    ].join("&");
     const res = await fetchCms(
-      `${STRAPI_BASE}/api/contents?pagination[pageSize]=100&populate=*&sort=Date:desc`,
-      { next: { revalidate: 600 } }
+      `${STRAPI_BASE}/api/contents?${params}`,
+      { next: { revalidate: 300 } }
     );
     if (!res.ok) return null;
     const json = await res.json();
@@ -195,8 +207,8 @@ async function getAllContents() {
 async function getFeaturedContents() {
   try {
     const res = await fetch(
-      `${STRAPI_BASE}/api/contents?filters[featured][$eq]=true&populate=*&sort[0]=updatedAt:desc&sort[1]=publishedAt:desc&pagination[pageSize]=30`,
-      { next: { revalidate: 60 } }
+      `${STRAPI_BASE}/api/contents?filters[featured][$eq]=true&populate=*&sort[0]=updatedAt:desc&sort[1]=publishedAt:desc&pagination[pageSize]=20`,
+      { next: { revalidate: 120 } }
     );
     if (!res.ok) return [];
     const json = await res.json();
@@ -211,7 +223,7 @@ async function getHeroBannerContents() {
   try {
     const res = await fetchCms(
       `${STRAPI_BASE}/api/contents?filters[show_hero_banner][$eq]=true&populate=*&pagination[pageSize]=10&sort=publishedAt:desc`,
-      { next: { revalidate: 60 } }
+      { next: { revalidate: 120 } }
     );
     if (!res.ok) return [];
     const json = await res.json();
