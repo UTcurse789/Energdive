@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState, useCallback, useRef } from "react";
-import { ChevronLeft, ChevronRight, Zap, Play, X, ExternalLink } from "lucide-react";
+import { ChevronLeft, ChevronRight, Zap, Play, X, ExternalLink, ArrowRight } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { strapiImageUrl } from "@/lib/strapi-image";
 import { buildContentUrl } from "@/lib/content-routes";
@@ -230,106 +230,23 @@ export function Hero({ heroStories: propHeroStories, topStories: propTopStories,
 
     return (
         <section className="bg-white py-4 sm:py-6">
-            <div className="max-w-6xl mx-auto px-5 sm:px-10 lg:px-16">
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
+            <div className="max-w-7xl mx-auto px-5 sm:px-10 lg:px-16">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
 
-                    {/* ── 1. LEFT COLUMN: Latest News (3 cols) ── */}
-                    <aside className="lg:col-span-3 flex flex-col order-2 lg:order-1 pr-0 lg:pr-2 lg:border-r lg:border-slate-200">
-                        <div className="flex items-center justify-between pb-2 border-b-2 border-slate-900 mb-4">
-                            <h2 className="text-xs font-black uppercase tracking-widest text-slate-900 flex items-center gap-1.5">
-                                <span className="w-2.5 h-2.5 rounded-full bg-red-600 animate-pulse" />
-                                Latest News
-                            </h2>
-                            <Link href="/news" className="text-[10px] font-black text-emerald-600 hover:text-emerald-700 transition-colors uppercase tracking-widest">
-                                ALL NEWS &rarr;
-                            </Link>
-                        </div>
-                        <div className="flex flex-col divide-y divide-slate-100">
-                            {topStories.slice(0, 11).map((item, idx) => {
-                                const href = buildContentUrl({
-                                    slug: item.slug || "",
-                                    type_of_content: item.type_of_content,
-                                    content_tag: item.content_tag,
-                                });
-                                const imgUrl = getImageUrl(item);
-
-                                return (
-                                    <article
-                                        key={item.id}
-                                        className={`py-3 first:pt-0 last:pb-0 items-start gap-3 group relative ${
-                                            idx >= 6 ? "hidden lg:flex" : "flex"
-                                        }`}
-                                    >
-                                        <div className="flex-1 min-w-0">
-                                            {item.sectors?.[0]?.name && (
-                                                <Link
-                                                    href={`/sectors/${slugify(item.sectors[0].name)}`}
-                                                    className="text-[10px] font-black text-red-600 uppercase tracking-widest block relative z-20 hover:underline mb-0.5"
-                                                >
-                                                    {item.sectors[0].name}
-                                                </Link>
-                                            )}
-                                            <Link href={href} className="before:absolute before:inset-0 z-10">
-                                                <h3 className="text-xs font-bold text-slate-900 leading-snug group-hover:text-emerald-600 transition-colors line-clamp-3">
-                                                    {item.Title}
-                                                </h3>
-                                            </Link>
-                                            <div className="text-[10px] text-slate-400 font-medium mt-1">
-                                                <time dateTime={item.Date || item.createdAt || ""}>
-                                                    {formatContentDate(item.Date || item.createdAt || "")}
-                                                </time>
-                                            </div>
-                                        </div>
-
-                                        <div className="relative w-16 h-14 shrink-0 rounded-md overflow-hidden bg-slate-100 border border-slate-200 shadow-2xs">
-                                            <Image
-                                                src={imgUrl}
-                                                alt={item.Title || "News thumbnail"}
-                                                fill
-                                                sizes="64px"
-                                                className="object-cover group-hover:scale-105 transition-transform duration-500"
-                                            />
-                                        </div>
-                                    </article>
-                                );
-                            })}
-                        </div>
-                    </aside>
-
-                    {/* ── 2. CENTER COLUMN: Cover Story Heading + Big Image + Featured News List (6 cols) ── */}
-                    <div className="lg:col-span-6 flex flex-col order-1 lg:order-2 lg:pr-4 xl:pr-6">
-                        {/* Cover Story Heading ABOVE Image */}
-                        <div className="mb-3">
-                            <Link href={featuredHref}>
-                                <h1
-                                    className="text-xl sm:text-2xl md:text-3xl font-extrabold text-slate-900 leading-tight tracking-tight hover:text-emerald-700 transition-colors"
-                                    style={{ fontFamily: "var(--font-playfair, serif)" }}
-                                >
-                                    {featured.Title}
-                                </h1>
-                            </Link>
-                            {(featured.Date || featured.createdAt) && (
-                                <time
-                                    dateTime={featured.Date || featured.createdAt || ""}
-                                    className="mt-1.5 block text-[10px] text-slate-400 font-medium uppercase tracking-wide"
-                                >
-                                    {formatContentDate(featured.Date || featured.createdAt || "")}
-                                </time>
-                            )}
-                        </div>
-
+                    {/* ── 1. LEFT COLUMN: Cover Story (8 cols) ── */}
+                    <div className="lg:col-span-8 flex flex-col">
                         {/* Cover Story Image */}
-                        <div className="relative aspect-[16/9] rounded-xl overflow-hidden bg-slate-900 border border-slate-200 shadow-sm mb-6 group">
+                        <div className="relative aspect-[16/9] max-h-[370px] lg:max-h-[390px] w-full rounded-2xl overflow-hidden bg-slate-900 border border-slate-200 shadow-sm mb-6 group">
                             {featured.FeaturedImage?.url ? (
                                 <Image
                                     src={getImageUrl(featured)}
                                     alt={featured.Title || "Featured energy story"}
                                     fill
                                     priority
-                                    sizes="(max-width: 1024px) 100vw, 50vw"
+                                    sizes="(max-width: 1024px) 100vw, 66vw"
                                     className={`object-cover transition-transform duration-700 ${
                                         isTransitioning ? "opacity-50 scale-105" : "opacity-100 scale-100"
-                                    } group-hover:scale-[1.02]`}
+                                    }`}
                                 />
                             ) : (
                                 <div className="absolute inset-0 bg-gradient-to-br from-slate-800 to-slate-950 flex items-center justify-center">
@@ -337,22 +254,10 @@ export function Hero({ heroStories: propHeroStories, topStories: propTopStories,
                                 </div>
                             )}
 
-                            {/* Sector Badges */}
-                            <div className="absolute top-3 left-3 z-10 flex flex-wrap gap-2">
-                                {featured.sectors?.[0]?.name && (
-                                    <Link
-                                        href={`/sectors/${slugify(featured.sectors[0].name)}`}
-                                        className="bg-emerald-600 text-white text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded shadow-md hover:bg-emerald-700 transition-colors"
-                                    >
-                                        {featured.sectors[0].name}
-                                    </Link>
-                                )}
-                            </div>
-
                             {/* Carousel Controls */}
                             {carouselArticles.length > 1 && (
                                 <>
-                                    <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
+                                    <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-10 hidden lg:flex">
                                         {carouselArticles.map((_, i) => (
                                             <button
                                                 key={i}
@@ -364,159 +269,135 @@ export function Hero({ heroStories: propHeroStories, topStories: propTopStories,
                                             >
                                                 <span
                                                     className={`h-1.5 rounded-full transition-all duration-300 ${
-                                                        i === currentSlide ? "w-5 bg-emerald-500" : "w-1.5 bg-white/50"
+                                                        i === currentSlide ? "w-6 bg-emerald-500" : "w-1.5 bg-white/50"
                                                     }`}
                                                 />
                                             </button>
                                         ))}
                                     </div>
 
-                                    <div className="absolute inset-y-0 left-0 right-0 flex justify-between items-center px-2 sm:px-3 opacity-100 lg:opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <div className="absolute inset-y-0 left-4 flex items-center z-10">
                                         <button
                                             type="button"
-                                            aria-label="Previous slide"
                                             onClick={() => goToSlide((currentSlide - 1 + carouselArticles.length) % carouselArticles.length)}
-                                            className="p-1.5 sm:p-2 bg-black/40 backdrop-blur-md rounded-full text-white hover:bg-emerald-600 transition-all"
+                                            className="p-3 bg-black/30 backdrop-blur-sm rounded-full text-white hover:bg-black/50 transition-all shadow-md"
                                         >
-                                            <ChevronLeft size={16} className="sm:w-[18px] sm:h-[18px]" />
+                                            <ChevronLeft size={20} />
                                         </button>
+                                    </div>
+                                    <div className="absolute inset-y-0 right-4 flex items-center z-10">
                                         <button
                                             type="button"
-                                            aria-label="Next slide"
                                             onClick={nextSlide}
-                                            className="p-1.5 sm:p-2 bg-black/40 backdrop-blur-md rounded-full text-white hover:bg-emerald-600 transition-all"
+                                            className="p-3 bg-black/30 backdrop-blur-sm rounded-full text-white hover:bg-black/50 transition-all shadow-md"
                                         >
-                                            <ChevronRight size={16} className="sm:w-[18px] sm:h-[18px]" />
+                                            <ChevronRight size={20} />
                                         </button>
                                     </div>
                                 </>
                             )}
                         </div>
 
-                        {/* Featured Stories Content List directly UNDER Cover Story image */}
-                        {featuredStories && featuredStories.length > 0 && (
-                            <div className="flex flex-col divide-y divide-slate-100 pt-2 border-t border-slate-200">
-                                {featuredStories.slice(0, 7).map((item, idx) => (
-                                    <article key={item.id || idx} className="py-3.5 first:pt-0 flex items-start gap-3 sm:gap-4 group relative">
-                                        <div className="flex-1 min-w-0">
-                                            <Link href={item.href || buildContentUrl({ slug: item.slug, contentType: item.contentType, content_tag: item.contentTag })} className="before:absolute before:inset-0 z-10">
-                                                <h3 className="text-xs sm:text-sm font-bold text-slate-900 leading-snug group-hover:text-emerald-600 transition-colors line-clamp-2 mb-1">
-                                                    {item.title}
-                                                </h3>
-                                            </Link>
-                                            {item.date && (
-                                                <time
-                                                    dateTime={item.date}
-                                                    className="mb-1 block text-[10px] text-slate-400 font-medium uppercase tracking-wide"
-                                                >
-                                                    {formatContentDate(item.date)}
-                                                </time>
-                                            )}
-                                            {item.excerpt && (
-                                                <p className="text-[11px] text-slate-500 line-clamp-2 leading-relaxed font-light">
-                                                    {item.excerpt}
-                                                </p>
-                                            )}
-                                        </div>
-                                        {item.image && (
-                                            <div className="relative w-20 sm:w-28 md:w-36 aspect-[16/10] shrink-0 overflow-hidden rounded-lg bg-slate-100 border border-slate-200 shadow-xs">
-                                                <Image
-                                                    src={item.image}
-                                                    alt={item.title}
-                                                    fill
-                                                    sizes="(max-width: 640px) 80px, 144px"
-                                                    className="object-cover group-hover:scale-105 transition-transform duration-300"
-                                                />
-                                            </div>
-                                        )}
-                                    </article>
-                                ))}
+                        {/* Cover Story Content — full width, date inline with meta pills */}
+                        <div className="flex flex-col gap-3">
+                            <div className="flex flex-wrap items-center gap-2">
+                                {featured.sectors?.[0]?.name && (
+                                    <Link
+                                        href={`/sectors/${slugify(featured.sectors[0].name)}`}
+                                        className="bg-teal-800 text-white text-[11px] font-bold uppercase tracking-widest px-3 py-1 rounded-full hover:bg-teal-900 transition-colors"
+                                    >
+                                        {featured.sectors[0].name}
+                                    </Link>
+                                )}
+                                <span className="bg-teal-800 text-white text-[11px] font-bold uppercase tracking-widest px-3 py-1 rounded-full">
+                                    COVER STORY
+                                </span>
+                                {(featured.Date || featured.createdAt) && (
+                                    <span className="flex items-center gap-1 text-xs text-slate-400 font-semibold ml-1">
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                                        <time dateTime={featured.Date || featured.createdAt || ""}>
+                                            {formatContentDate(featured.Date || featured.createdAt || "")}
+                                        </time>
+                                    </span>
+                                )}
                             </div>
-                        )}
+
+                            <Link href={featuredHref}>
+                                <h1
+                                    className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-slate-900 leading-tight tracking-tight hover:text-emerald-700 transition-colors line-clamp-1"
+                                    style={{ fontFamily: "var(--font-playfair, serif)" }}
+                                >
+                                    {featured.Title}
+                                </h1>
+                            </Link>
+
+                            <p className="text-slate-500 text-base md:text-lg leading-relaxed line-clamp-3">
+                                {getExcerpt(featured)}
+                            </p>
+                        </div>
                     </div>
 
-                    {/* ── 3. RIGHT COLUMN: Ad Banner + Featured Videos (3 cols) ── */}
-                    <aside className="lg:col-span-3 flex flex-col gap-6 order-3">
-                        {/* Partner Ad Banner */}
-                        <div className="w-full flex flex-col border-b border-slate-100 pb-6">
-                            <span className="text-[9px] font-bold uppercase tracking-widest text-slate-400 mb-2">
-                                Advertisement
-                            </span>
-                            <AdBanner
-                                placement="home_featured_partner"
-                                variant="vertical"
-                                className="w-full py-0"
-                            />
+                    {/* ── 2. RIGHT COLUMN: Latest News (4 cols) ── */}
+                    <aside className="lg:col-span-4 flex flex-col">
+                        <div className="flex items-center justify-between pb-4 border-b-2 border-slate-100 mb-6">
+                            <h2 className="text-sm font-black uppercase tracking-widest text-slate-900 flex items-center gap-2">
+                                <span className="w-2.5 h-2.5 rounded-full bg-red-600" />
+                                LATEST NEWS
+                            </h2>
+                            <Link href="/news" className="text-[11px] font-black text-emerald-800 hover:text-emerald-900 transition-colors uppercase tracking-widest flex items-center gap-1">
+                                EXPLORE <ArrowRight size={14} className="stroke-[2.5]" />
+                            </Link>
                         </div>
+                        
+                        <div className="flex flex-col gap-6">
+                            {topStories.slice(0, 5).map((item, idx) => {
+                                const href = buildContentUrl({
+                                    slug: item.slug || "",
+                                    type_of_content: item.type_of_content,
+                                    content_tag: item.content_tag,
+                                });
+                                const imgUrl = getImageUrl(item);
 
-                        {/* Featured Videos Block */}
-                        {videos && videos.length > 0 && (
-                            <div className="w-full flex flex-col gap-4 pt-2">
-                                {/* Header: Featured Videos > */}
-                                <div className="flex items-center justify-between pb-1">
-                                    <Link href="/videos" className="group inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-widest text-slate-900 hover:text-emerald-600 transition-colors">
-                                        Featured Videos
-                                        <ChevronRight size={14} className="text-slate-900 group-hover:text-emerald-600 transition-colors stroke-[2.5]" />
-                                    </Link>
-                                </div>
+                                return (
+                                    <article key={item.id} className="flex items-center gap-4 group relative">
+                                        <div className="relative w-32 aspect-[4/3] shrink-0 rounded-xl overflow-hidden bg-slate-100 border border-slate-200 shadow-sm">
+                                            <Image
+                                                src={imgUrl}
+                                                alt={item.Title || "News thumbnail"}
+                                                fill
+                                                sizes="128px"
+                                                className="object-cover group-hover:scale-105 transition-transform duration-500"
+                                            />
+                                        </div>
 
-                                {/* Stacked Full-Width Video Cards */}
-                                <div className="flex flex-col divide-y divide-slate-100">
-                                    {videos.slice(0, 3).map((vid, idx) => (
-                                        <article key={vid.id || idx} className="py-4 first:pt-0 last:pb-0">
-                                            <button
-                                                type="button"
-                                                onClick={() => setActiveVideo(vid)}
-                                                className="group flex flex-col text-left w-full cursor-pointer"
-                                            >
-                                                {/* Thumbnail Container */}
-                                                <div className="relative aspect-[16/9] w-full overflow-hidden rounded-2xl bg-slate-900 mb-2.5 border border-slate-200 shadow-xs">
-                                                    <Image
-                                                        src={vid.thumbnail}
-                                                        alt={vid.title}
-                                                        fill
-                                                        sizes="(max-width: 1024px) 100vw, 33vw"
-                                                        className="object-cover group-hover:scale-105 transition-transform duration-500"
-                                                    />
-
-                                                    {/* Play Overlay Button */}
-                                                    <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors flex items-center justify-center">
-                                                        <div className="w-10 h-10 rounded-full bg-red-600/90 text-white flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
-                                                            <Play size={18} className="fill-white text-white translate-x-[1px]" />
-                                                        </div>
-                                                    </div>
-                                                    
-                                                    {/* Play Duration Badge on Top Left */}
-                                                    <div className="absolute top-2.5 left-2.5 bg-black/80 backdrop-blur-xs text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1.5 shadow-md">
-                                                        <span className="w-2 h-2 bg-red-600 rounded-full animate-pulse" />
-                                                        <span>Watch</span>
-                                                    </div>
-                                                </div>
-
-                                                {/* Video Title */}
-                                                <h4 className="text-xs sm:text-sm font-bold text-slate-900 leading-snug group-hover:text-emerald-600 transition-colors line-clamp-2">
-                                                    {vid.title}
-                                                </h4>
-                                                {vid.date && (
-                                                    <time
-                                                        dateTime={vid.date}
-                                                        className="mt-1 block text-[10px] text-slate-400 font-medium uppercase tracking-wide"
-                                                    >
-                                                        {formatContentDate(vid.date)}
-                                                    </time>
-                                                )}
-                                            </button>
-                                        </article>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
+                                        <div className="flex-1 min-w-0">
+                                            {item.sectors?.[0]?.name && (
+                                                <Link
+                                                    href={`/sectors/${slugify(item.sectors[0].name)}`}
+                                                    className="text-[10px] font-black text-emerald-600 uppercase tracking-widest block relative z-20 hover:underline mb-1"
+                                                >
+                                                    {item.sectors[0].name}
+                                                </Link>
+                                            )}
+                                            <Link href={href} className="before:absolute before:inset-0 z-10">
+                                                <h3 className="text-[15px] font-bold text-slate-900 leading-snug group-hover:text-emerald-600 transition-colors line-clamp-3 mb-2" style={{ fontFamily: "var(--font-playfair, serif)" }}>
+                                                    {item.Title}
+                                                </h3>
+                                            </Link>
+                                            <div className="flex items-center gap-1.5 text-[11px] text-slate-600 font-bold uppercase tracking-wider">
+                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                                                <time dateTime={item.Date || item.createdAt || ""}>
+                                                    {formatContentDate(item.Date || item.createdAt || "")}
+                                                </time>
+                                            </div>
+                                        </div>
+                                    </article>
+                                );
+                            })}
+                        </div>
                     </aside>
-
                 </div>
             </div>
-
-            {/* ── VIDEO POPUP MODAL ── */}
             {activeVideo && (
                 <div 
                     className="fixed inset-0 z-[9999] bg-black/85 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 md:p-10 animate-in fade-in duration-200"

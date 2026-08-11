@@ -10,7 +10,7 @@ export async function EnergyJobsSidebar() {
     jobs = [];
   }
 
-  const latest = jobs.slice(0, 5);
+  const latest = jobs.slice(0, 3);
 
   return (
     <div className="bg-white border border-slate-200/90 rounded-md shadow-xs overflow-hidden">

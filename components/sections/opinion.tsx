@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { SectionHeading } from "@/components/ui/section-heading";
@@ -31,6 +31,8 @@ export function OpinionSection({
 }) {
     const [opinionIndex, setOpinionIndex] = useState(0);
     const [interviewIndex, setInterviewIndex] = useState(0);
+    const opinionThumbRefs = useRef<(HTMLButtonElement | null)[]>([]);
+    const interviewThumbRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
     // Opinion navigation
     const opinionNext = useCallback(() => {
@@ -47,6 +49,22 @@ export function OpinionSection({
     const interviewPrev = useCallback(() => {
         setInterviewIndex((i) => (i - 1 + interviews.length) % Math.max(interviews.length, 1));
     }, [interviews.length]);
+
+    useEffect(() => {
+        opinionThumbRefs.current[opinionIndex]?.scrollIntoView({
+            behavior: "smooth",
+            block: "nearest",
+            inline: "center",
+        });
+    }, [opinionIndex]);
+
+    useEffect(() => {
+        interviewThumbRefs.current[interviewIndex]?.scrollIntoView({
+            behavior: "smooth",
+            block: "nearest",
+            inline: "center",
+        });
+    }, [interviewIndex]);
 
     if (opinions.length === 0 && interviews.length === 0) return null;
 
@@ -110,9 +128,6 @@ export function OpinionSection({
 
                                 {/* Author name anchored bottom */}
                                 <div className="absolute bottom-0 left-0 right-0 z-10 px-4 py-3">
-                                    <p className="text-white/80 text-[9px] font-bold uppercase tracking-[0.2em] mb-0.5">
-                                        {currentOpinion.imageCaption || "Columnist"}
-                                    </p>
                                     <Link
                                         href={`/author/${slugify(currentOpinion.authorName)}`}
                                         className="text-white font-black text-xs sm:text-sm uppercase tracking-wider hover:text-[#00A651] transition-colors"
@@ -219,6 +234,9 @@ export function OpinionSection({
                                 {opinions.map((op, idx) => (
                                     <button
                                         key={op.id}
+                                        ref={(element) => {
+                                            opinionThumbRefs.current[idx] = element;
+                                        }}
                                         onClick={() => setOpinionIndex(idx)}
                                         aria-label={`View opinion: ${op.title}`}
                                         className={`group shrink-0 snap-start flex items-center gap-3 p-2 border transition-all duration-200 overflow-hidden rounded-xl shadow-2xs ${
@@ -318,58 +336,27 @@ export function OpinionSection({
                                         {currentInterview.excerpt}
                                     </p>
                                 </div>
-
-                                {/* Footer — Interviewee + Navigation */}
-                                <div className="flex items-center justify-between gap-4 pt-4 border-t border-zinc-100">
-
-                                    {/* Interviewee info */}
-                                    <div className="flex items-center gap-2.5">
-                                        {currentInterview.authorAvatar && (
-                                            <div className="relative w-9 h-9 rounded-full overflow-hidden border-2 border-zinc-200 shrink-0">
-                                                <Image
-                                                    src={currentInterview.authorAvatar}
-                                                    alt={currentInterview.authorName}
-                                                    fill
-                                                    className="object-cover object-top"
-                                                />
-                                            </div>
-                                        )}
-                                        <div>
-                                            <Link
-                                                href={`/author/${slugify(currentInterview.authorName)}`}
-                                                className="block font-black text-xs uppercase tracking-wider text-zinc-900 hover:text-[#00A651] transition-colors"
-                                            >
-                                                {currentInterview.authorName}
-                                            </Link>
-                                            <span className="text-[9px] font-bold text-[#00A651] uppercase tracking-[0.18em]">
-                                                {currentInterview.authorRole}
-                                            </span>
-                                        </div>
+                                {interviews.length > 1 && (
+                                    <div className="flex items-center justify-end gap-1.5 pt-4 border-t border-zinc-100">
+                                        <span className="text-[10px] font-bold text-zinc-400 tabular-nums mr-1">
+                                            {String(interviewIndex + 1).padStart(2, "0")} / {String(interviews.length).padStart(2, "0")}
+                                        </span>
+                                        <button
+                                            onClick={interviewPrev}
+                                            aria-label="Previous interview"
+                                            className="w-8 h-8 border border-zinc-200 flex items-center justify-center hover:bg-zinc-900 hover:border-zinc-900 hover:text-white transition-all duration-200 rounded-md"
+                                        >
+                                            <ChevronLeft size={14} />
+                                        </button>
+                                        <button
+                                            onClick={interviewNext}
+                                            aria-label="Next interview"
+                                            className="w-8 h-8 border border-zinc-200 flex items-center justify-center hover:bg-zinc-900 hover:border-zinc-900 hover:text-white transition-all duration-200 rounded-md"
+                                        >
+                                            <ChevronRight size={14} />
+                                        </button>
                                     </div>
-
-                                    {/* Prev / Next navigation */}
-                                    {interviews.length > 1 && (
-                                        <div className="flex items-center gap-1.5 shrink-0">
-                                            <span className="text-[10px] font-bold text-zinc-400 tabular-nums mr-1">
-                                                {String(interviewIndex + 1).padStart(2, "0")} / {String(interviews.length).padStart(2, "0")}
-                                            </span>
-                                            <button
-                                                onClick={interviewPrev}
-                                                aria-label="Previous interview"
-                                                className="w-8 h-8 border border-zinc-200 flex items-center justify-center hover:bg-zinc-900 hover:border-zinc-900 hover:text-white transition-all duration-200 rounded-md"
-                                            >
-                                                <ChevronLeft size={14} />
-                                            </button>
-                                            <button
-                                                onClick={interviewNext}
-                                                aria-label="Next interview"
-                                                className="w-8 h-8 border border-zinc-200 flex items-center justify-center hover:bg-zinc-900 hover:border-zinc-900 hover:text-white transition-all duration-200 rounded-md"
-                                            >
-                                                <ChevronRight size={14} />
-                                            </button>
-                                        </div>
-                                    )}
-                                </div>
+                                )}
                             </div>
 
                             {/* RIGHT — Interviewee Portrait (Compact 4-3 Cols) */}
@@ -415,6 +402,9 @@ export function OpinionSection({
                                 {interviews.map((iv, idx) => (
                                     <button
                                         key={iv.id}
+                                        ref={(element) => {
+                                            interviewThumbRefs.current[idx] = element;
+                                        }}
                                         onClick={() => setInterviewIndex(idx)}
                                         aria-label={`View interview: ${iv.title}`}
                                         className={`group shrink-0 snap-start flex items-center gap-3 p-2 border transition-all duration-200 overflow-hidden rounded-xl shadow-2xs ${
@@ -438,9 +428,7 @@ export function OpinionSection({
                                         </div>
                                         {/* Article title */}
                                         <div className="flex-1 min-w-0 text-left">
-                                            <span className="block text-[9px] font-bold uppercase tracking-wider text-[#00A651] mb-0.5 truncate">
-                                                {iv.authorName}
-                                            </span>
+
                                             <span className={`text-[11px] font-bold leading-snug line-clamp-2 ${
                                                 idx === interviewIndex ? "text-slate-900" : "text-slate-700 group-hover:text-slate-900"
                                             } transition-colors`}>

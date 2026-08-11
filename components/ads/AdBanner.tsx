@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { strapiImageUrl } from "@/lib/strapi-image";
 import { useAdTracking } from "./useAdTracking";
+import { isAdMatchingSector, getSectorsArray } from "@/lib/sector-content";
 
 const STRAPI_BASE = process.env.NEXT_PUBLIC_STRAPI_URL || "https://cms.energdive.com";
 
@@ -27,18 +28,43 @@ interface Ad {
     start_date: string;
     end_date: string;
     priority: number | null;
-    logo: StrapiMedia[] | null;
-    creative: StrapiMedia[] | null;
+    logo: any;
+    creative: any;
     sectors: unknown[];
 }
 
-function getImageUrl(media: StrapiMedia | undefined | null): string | null {
+function getCreativeMedia(ad: any): any {
+    if (!ad) return null;
+    const creative = ad.creative;
+    if (!creative) return null;
+    if (Array.isArray(creative)) return creative[0] || null;
+    if (creative.data) {
+        if (Array.isArray(creative.data)) return creative.data[0] || null;
+        return creative.data;
+    }
+    return creative;
+}
+
+function getLogoMedia(ad: any): any {
+    if (!ad) return null;
+    const logo = ad.logo;
+    if (!logo) return null;
+    if (Array.isArray(logo)) return logo[0] || null;
+    if (logo.data) {
+        if (Array.isArray(logo.data)) return logo.data[0] || null;
+        return logo.data;
+    }
+    return logo;
+}
+
+function getImageUrl(media: any): string | null {
     if (!media) return null;
+    const attrs = media.attributes || media;
     const url =
-        media.url ||
-        media.formats?.large?.url ||
-        media.formats?.medium?.url ||
-        media.formats?.small?.url;
+        attrs.url ||
+        attrs.formats?.large?.url ||
+        attrs.formats?.medium?.url ||
+        attrs.formats?.small?.url;
     if (!url) return null;
     return strapiImageUrl(url);
 }
@@ -52,11 +78,12 @@ interface AdBannerProps {
     maxItems?: number;
     width?: number;
     height?: number;
+    adIndex?: number;
 }
 
 function adHasRenderableMedia(ad: Ad, variant: NonNullable<AdBannerProps["variant"]>): boolean {
     if (variant === "native") return true;
-    return Boolean(getImageUrl(ad.creative?.[0]));
+    return Boolean(getImageUrl(getCreativeMedia(ad)));
 }
 
 function getRotationStorageKey(placement: string, sectorSlug?: string): string {
@@ -136,6 +163,11 @@ const EXACT_VERTICAL_SIZE = {
     height: 600,
 } as const;
 
+const EXACT_CARD_SIZE = {
+    width: 300,
+    height: 250,
+} as const;
+
 const CAROUSEL_PLACEMENTS = new Set([
     "home_featured_partner",
     "home_opinion",
@@ -144,11 +176,6 @@ const CAROUSEL_PLACEMENTS = new Set([
 
 const AD_CAROUSEL_INTERVAL_MS = 2000;
 
-/**
- * Client-side ad banner component.
- * Used in client components (header, sector pages, etc.)
- * where async server components can't be used.
- */
 export function AdBanner({
     placement,
     sectorSlug,
@@ -157,6 +184,7 @@ export function AdBanner({
     maxItems,
     width,
     height,
+    adIndex,
 }: AdBannerProps) {
     const [selectedAds, setSelectedAds] = useState<Ad[]>([]);
     const [activeAdIndex, setActiveAdIndex] = useState(0);
@@ -164,25 +192,18 @@ export function AdBanner({
     useEffect(() => {
         async function fetchAd() {
             try {
-                // Use local date to avoid UTC timezone mismatch
                 const nowDate = new Date();
                 const year = nowDate.getFullYear();
                 const month = String(nowDate.getMonth() + 1).padStart(2, "0");
                 const day = String(nowDate.getDate()).padStart(2, "0");
                 const now = `${year}-${month}-${day}`;
 
-                let url =
+                const url =
                     `${STRAPI_BASE}/api/advertisements` +
                     `?filters[placement][$eq]=${encodeURIComponent(placement)}` +
                     `&filters[is_active][$eq]=true` +
                     `&populate=*` +
                     `&sort=priority:desc`;
-
-                if (sectorSlug) {
-                    url += `&filters[sectors][slug][$eq]=${encodeURIComponent(sectorSlug)}`;
-                }
-
-
 
                 const res = await fetch(url);
                 if (!res.ok) {
@@ -190,43 +211,39 @@ export function AdBanner({
                     return;
                 }
                 const json = await res.json();
-                let ads: Ad[] = json.data || [];
+                let allAds: Ad[] = json.data || [];
 
-
-
-                // Filter by date in code (null/empty dates = always active)
-                ads = ads.filter((ad) => {
+                allAds = allAds.filter((ad) => {
                     if (ad.start_date && ad.start_date > now) return false;
                     if (ad.end_date && ad.end_date < now) return false;
                     return true;
                 });
 
+                allAds = allAds.filter((ad) => adHasRenderableMedia(ad, variant));
 
-
-                // Fallback to global (no-sector) ads if no sector match
-                if (ads.length === 0 && sectorSlug) {
-
-                    const fallbackUrl =
-                        `${STRAPI_BASE}/api/advertisements` +
-                        `?filters[placement][$eq]=${encodeURIComponent(placement)}` +
-                        `&filters[is_active][$eq]=true` +
-                        `&populate=*` +
-                        `&sort=priority:desc`;
-                    const fallbackRes = await fetch(fallbackUrl);
-                    if (fallbackRes.ok) {
-                        const fallbackJson = await fallbackRes.json();
-                        const allAds: Ad[] = fallbackJson.data || [];
-                        // Only keep ads that have NO sectors assigned (global/untargeted ads)
-                        ads = allAds.filter((a) => !a.sectors || a.sectors.length === 0);
+                let ads: Ad[] = [];
+                if (sectorSlug) {
+                    const matchingAds = allAds.filter((ad) => isAdMatchingSector(ad, sectorSlug));
+                    if (matchingAds.length > 0) {
+                        ads = matchingAds;
+                    } else {
+                        ads = allAds.filter((a) => {
+                            const secs = getSectorsArray(a);
+                            return secs.length === 0;
+                        });
                     }
+                } else {
+                    ads = allAds;
                 }
 
-                ads = ads.filter((ad) => adHasRenderableMedia(ad, variant));
-
                 if (ads.length > 0) {
-                    // Sort by priority DESC
                     ads.sort((a, b) => (b.priority ?? -1) - (a.priority ?? -1));
-                    setSelectedAds(pickAdsToDisplay(ads, placement, sectorSlug, maxItems));
+                    if (typeof adIndex === "number") {
+                        const targetAd = ads[adIndex];
+                        setSelectedAds(targetAd ? [targetAd] : []);
+                    } else {
+                        setSelectedAds(pickAdsToDisplay(ads, placement, sectorSlug, maxItems));
+                    }
                 } else {
                     setSelectedAds([]);
                 }
@@ -237,7 +254,7 @@ export function AdBanner({
         }
 
         fetchAd();
-    }, [placement, sectorSlug, variant, maxItems]);
+    }, [placement, sectorSlug, variant, maxItems, adIndex]);
 
     useEffect(() => {
         if (!CAROUSEL_PLACEMENTS.has(placement) || selectedAds.length <= 1) return;
@@ -309,7 +326,6 @@ export function AdBanner({
     }
 }
 
-/** Tracked wrapper — fires impression on mount, captures clicks via event bubbling */
 function TrackedAdWrapper({ ad, children }: { ad: Ad; children: React.ReactNode }) {
     const { trackClick } = useAdTracking(ad.documentId);
     return (
@@ -319,7 +335,6 @@ function TrackedAdWrapper({ ad, children }: { ad: Ad; children: React.ReactNode 
     );
 }
 
-/** Wraps content in a clickable link if target_url is present */
 function wrapWithLink(
     targetUrl: string | null | undefined,
     content: React.ReactNode,
@@ -334,10 +349,6 @@ function wrapWithLink(
     );
 }
 
-/* ═══════════════════════════════════════════
-   BANNER — 728×90 / 900×90 header-style
-   ═══════════════════════════════════════════ */
-
 function BannerAd({
     ad,
     placement,
@@ -347,7 +358,7 @@ function BannerAd({
     placement: string;
     className: string;
 }) {
-    const creative = ad.creative?.[0];
+    const creative = getCreativeMedia(ad);
     const imageUrl = getImageUrl(creative);
     const isExactSizedPlacement = EXACT_LEADERBOARD_PLACEMENTS.has(placement);
 
@@ -401,10 +412,6 @@ function BannerAd({
     );
 }
 
-/* ═══════════════════════════════════════════
-   CARD — 300×250 in-grid ad
-   ═══════════════════════════════════════════ */
-
 function CardAd({
     ad,
     placement,
@@ -414,7 +421,7 @@ function CardAd({
     placement: string;
     className: string;
 }) {
-    const creative = ad.creative?.[0];
+    const creative = getCreativeMedia(ad);
     const imageUrl = getImageUrl(creative);
     const isExactVerticalCardPlacement = EXACT_VERTICAL_CARD_PLACEMENTS.has(placement);
 
@@ -422,16 +429,16 @@ function CardAd({
 
     const inner = (
         <div
-            className={`relative mx-auto overflow-hidden bg-white shadow-sm border border-gray-100/60 group ${className} rounded-none`}
+            className={`relative mx-auto overflow-hidden bg-white group ${className} rounded-none`}
             style={
                 isExactVerticalCardPlacement
                     ? { width: EXACT_VERTICAL_SIZE.width, height: EXACT_VERTICAL_SIZE.height }
-                    : { width: "100%", maxWidth: 300 }
+                    : { width: EXACT_CARD_SIZE.width, maxWidth: "100%" }
             }
         >
             <div
                 className={`relative w-full ${isExactVerticalCardPlacement ? "h-full" : ""}`}
-                style={isExactVerticalCardPlacement ? undefined : { aspectRatio: "300/250" }}
+                style={isExactVerticalCardPlacement ? undefined : { aspectRatio: `${EXACT_CARD_SIZE.width}/${EXACT_CARD_SIZE.height}` }}
             >
                 <Image
                     src={imageUrl}
@@ -448,12 +455,8 @@ function CardAd({
     return wrapWithLink(ad.target_url, inner);
 }
 
-/* ═══════════════════════════════════════════
-   HERO BANNER — Full-width banner for pages
-   ═══════════════════════════════════════════ */
-
 function HeroBannerAd({ ad, className }: { ad: Ad; className: string }) {
-    const creative = ad.creative?.[0];
+    const creative = getCreativeMedia(ad);
     const imageUrl = getImageUrl(creative);
 
     if (!imageUrl) return null;
@@ -480,10 +483,6 @@ function HeroBannerAd({ ad, className }: { ad: Ad; className: string }) {
     );
 }
 
-/* ═══════════════════════════════════════════
-   VERTICAL — 300×600 vertical card
-   ═══════════════════════════════════════════ */
-
 function VerticalBannerAd({
     ad,
     className,
@@ -495,7 +494,7 @@ function VerticalBannerAd({
     width?: number;
     height?: number;
 }) {
-    const creative = ad.creative?.[0];
+    const creative = getCreativeMedia(ad);
     const imageUrl = getImageUrl(creative);
 
     if (!imageUrl) return null;
@@ -520,12 +519,8 @@ function VerticalBannerAd({
     return wrapWithLink(ad.target_url, inner, "block w-full flex justify-center");
 }
 
-/* ═══════════════════════════════════════════
-   NATIVE — Partner module with CTA
-   ═══════════════════════════════════════════ */
-
 function NativeBannerAd({ ad, className }: { ad: Ad; className: string }) {
-    const logoMedia = ad.logo?.[0];
+    const logoMedia = getLogoMedia(ad);
     const logoUrl = getImageUrl(logoMedia);
 
     const inner = (
@@ -557,12 +552,8 @@ function NativeBannerAd({ ad, className }: { ad: Ad; className: string }) {
     return wrapWithLink(ad.target_url, inner);
 }
 
-/* ═══════════════════════════════════════════
-   MOBILE BANNER — 320×100 mobile leaderboard
-   ═══════════════════════════════════════════ */
-
 function MobileBannerAd({ ad, className }: { ad: Ad; className: string }) {
-    const creative = ad.creative?.[0];
+    const creative = getCreativeMedia(ad);
     const imageUrl = getImageUrl(creative);
 
     if (!imageUrl) return null;

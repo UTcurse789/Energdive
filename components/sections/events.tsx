@@ -112,53 +112,50 @@ export async function EventsSection({ variant = "default" }: { variant?: "defaul
                     </Link>
                 </div>
 
-                {/* Stacked Compact Event Rows */}
-                <div className="flex flex-col divide-y divide-slate-100">
-                    {events.slice(0, 4).map((event, idx) => {
+                {/* Stacked Image Cards */}
+                <div className="flex flex-col gap-3">
+                    {events.slice(0, 3).map((event, idx) => {
                         const href = event.url || `/events/${event.slug}`;
                         const isExternal = !!event.url && event.url.startsWith("http");
 
                         return (
-                            <article key={event.id || idx} className="py-3 first:pt-0 last:pb-0">
+                            <article key={event.id || idx}>
                                 <Link
                                     href={href}
                                     target={isExternal ? "_blank" : "_self"}
                                     rel={isExternal ? "noopener" : undefined}
-                                    className="group flex items-start gap-3"
+                                    className="group block"
                                 >
-                                    {/* Compact Thumbnail */}
-                                    <div className="relative w-24 h-16 shrink-0 rounded-lg overflow-hidden bg-white border border-slate-200 shadow-2xs p-1">
+                                    <div className="relative aspect-video overflow-hidden rounded-lg bg-white border border-slate-200 shadow-2xs">
                                         <Image
                                             src={event.image || "/magazine-default.jpg"}
                                             alt={event.title}
                                             fill
-                                            sizes="96px"
+                                            sizes="300px"
                                             className="object-contain group-hover:scale-105 transition-transform duration-300"
                                         />
-                                    </div>
-
-                                    {/* Event Details */}
-                                    <div className="flex-1 min-w-0">
-                                        <span className="text-[9px] font-black uppercase text-emerald-600 tracking-wider block mb-0.5">
+                                        <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/60 to-transparent" />
+                                        <span className="absolute top-2 left-2 max-w-[calc(100%-1rem)] truncate bg-white/90 backdrop-blur-sm text-emerald-700 text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded border border-slate-200/80">
                                             Register ↗
                                         </span>
-                                        <h4 className="text-xs font-bold text-slate-900 leading-snug group-hover:text-emerald-600 transition-colors line-clamp-2">
-                                            {event.title}
-                                        </h4>
-                                        <div className="mt-1 flex flex-col gap-0.5 text-[10px] font-medium text-slate-500">
-                                            {event.date && (
-                                                <div className="flex items-center gap-1">
-                                                    <Calendar className="w-2.5 h-2.5 text-emerald-600 shrink-0" />
-                                                    <span className="truncate">{event.date}</span>
-                                                </div>
-                                            )}
-                                            {event.location && (
-                                                <div className="flex items-center gap-1 text-slate-400">
-                                                    <MapPin className="w-2.5 h-2.5 text-slate-400 shrink-0" />
-                                                    <span className="truncate">{event.location}</span>
-                                                </div>
-                                            )}
-                                        </div>
+                                    </div>
+
+                                    <h4 className="mt-2 text-xs font-bold text-slate-900 leading-snug group-hover:text-emerald-600 transition-colors line-clamp-2">
+                                        {event.title}
+                                    </h4>
+                                    <div className="mt-1 flex flex-col gap-0.5 text-[10px] font-medium text-slate-500">
+                                        {event.date && (
+                                            <div className="flex items-center gap-1">
+                                                <Calendar className="w-2.5 h-2.5 text-emerald-600 shrink-0" />
+                                                <span className="truncate">{event.date}</span>
+                                            </div>
+                                        )}
+                                        {event.location && (
+                                            <div className="flex items-center gap-1 text-slate-400">
+                                                <MapPin className="w-2.5 h-2.5 text-slate-400 shrink-0" />
+                                                <span className="truncate">{event.location}</span>
+                                            </div>
+                                        )}
                                     </div>
                                 </Link>
                             </article>
@@ -189,4 +186,3 @@ export async function EventsSection({ variant = "default" }: { variant?: "defaul
         </section>
     );
 }
-
