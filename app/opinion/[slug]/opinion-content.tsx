@@ -9,7 +9,6 @@ import {
     Quote,
     Clock,
     ArrowRight,
-    Printer
 } from "lucide-react";
 import { ScrollProgress } from "@/components/ui/scroll-progress";
 import { ShareButton } from "@/components/ui/share-button";
@@ -17,6 +16,7 @@ import { slugify } from "@/lib/utils";
 import { TagBadge } from "@/components/ui/tag-badge";
 import { AdBanner } from "@/components/ads/AdBanner";
 import { SaveArticleButton } from "@/components/article/SaveArticleButton";
+import { PrintArticleButton } from "@/components/article/PrintArticleButton";
 import { ArticleStickyShare } from "@/components/article/ArticleStickyShare";
 import { formatContentDate } from "@/lib/date";
 
@@ -122,15 +122,10 @@ export default function OpinionContent({ opinion, recommended = [] }: OpinionCon
                         {backLabel}
                     </Link>
                     <div className="flex items-center gap-2">
-                        <Link
-                            href={`/print/${opinion.slug}`}
-                            target="_blank"
+                        <PrintArticleButton
                             className="flex items-center gap-[5px] text-zinc-500 hover:text-red-600 text-[13px] border border-zinc-200 px-[11px] py-[5px] rounded-full bg-white hover:bg-zinc-50 transition-colors"
-                            title="Print this article"
-                        >
-                            <Printer className="h-[13px] w-[13px]" />
-                            Print
-                        </Link>
+                            iconClassName="h-[13px] w-[13px]"
+                        />
                         <SaveArticleButton title={opinion.title} url={`https://www.energdive.com${sectionPath}/${opinion.slug}`} />
                         <ShareButton
                             title={opinion.title}

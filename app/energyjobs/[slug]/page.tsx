@@ -128,7 +128,7 @@ function CompanyMark({
       <div
         className={`${size} ${rounded} shrink-0 overflow-hidden border border-gray-200 bg-white`}
       >
-        <img src={logoUrl} alt={name} className="h-full w-full object-contain p-1" />
+        <img src={logoUrl} alt={name} className="h-full w-full object-contain" />
       </div>
     );
   }
@@ -321,7 +321,7 @@ function InterestedJobsPanel({ jobs }: { jobs: PublicEnergJob[] }) {
               <CompanyMark
                 name={relatedCompany}
                 logoUrl={item.companyLogoUrl}
-                size="h-14 w-14"
+                size="w-24 h-12"
                 rounded="rounded-xl"
               />
             </Link>
@@ -436,7 +436,7 @@ export default async function EnergJobDetailPage({
                 <CompanyMark
                   name={company}
                   logoUrl={job.companyLogoUrl}
-                  size="h-16 w-16 sm:h-20 sm:w-20"
+                  size="w-32 h-16 sm:w-40 sm:h-20"
                   rounded="rounded-xl"
                 />
                 <div>

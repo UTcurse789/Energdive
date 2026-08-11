@@ -13,7 +13,7 @@ import {
 } from "@/lib/post-auth-redirect";
 
 // Pages where the modal should NOT appear
-const EXCLUDED_PATHS = ["/auth", "/onboarding", "/print/"];
+const EXCLUDED_PATHS = ["/auth", "/onboarding"];
 
 export default function OnboardingModal() {
     const { isLoaded, isSignedIn } = useAuth();
