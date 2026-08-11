@@ -327,13 +327,13 @@ export default async function Home() {
     : [];
 
   // Fetch articles for each sector in parallel directly from Strapi
-  const sectorFetchResults = await Promise.all(
+  const sectorFetchResults: any[][] = await Promise.all(
     HOMEPAGE_SECTORS.map(async (sector) => {
       try {
         const res = await fetch(buildSectorArticlesUrl(sector.slug), { next: { revalidate: 300 } });
         if (!res.ok) return [];
         const json = await res.json();
-        return json.data || [];
+        return (json.data || []) as any[];
       } catch {
         return [];
       }
@@ -341,7 +341,7 @@ export default async function Home() {
   );
 
   const sectorsWithArticles = HOMEPAGE_SECTORS.map((sector, idx) => {
-    const sectorArticles = sectorFetchResults[idx];
+    const sectorArticles = sectorFetchResults?.[idx] || [];
     const finalArticles = sectorArticles.slice(0, 4);
     const articles = finalArticles.map((article: any) => mapArticle(article, sector.title));
 
