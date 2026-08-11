@@ -11,6 +11,7 @@ const STRAPI_BASE = process.env.NEXT_PUBLIC_STRAPI_URL || "https://cms.energdive
 const STRAPI_TOKEN = process.env.STRAPI_API_TOKEN || "";
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://www.energdive.com";
 const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
+const BREVO_CONTACTS_PAGE_SIZE = 500;
 
 const INSIGHT_CONTENT_TYPES = new Set([
     "analysis",
@@ -45,6 +46,7 @@ interface DigestCandidateRow {
     preferred_frequency: string | null;
     preferred_formats: string[] | null;
     last_content_digest_sent_at: string | null;
+    source?: "brevo";
 }
 
 export interface DigestItem {
@@ -163,6 +165,12 @@ interface DigestEmailCandidate {
     preferred_frequency: string | null;
     preferred_formats: string[] | null;
     last_content_digest_sent_at: string | null;
+}
+
+interface BrevoListContact {
+    email?: string;
+    emailBlacklisted?: boolean;
+    attributes?: Record<string, unknown>;
 }
 
 function getStrapiHeaders(): HeadersInit {
@@ -307,6 +315,12 @@ function getContentTagTitle(contentTag: unknown): string {
     }
     const tag = contentTag as (ContentTagRecord & ContentTagShape) | null;
     return tag?.title || tag?.Title || tag?.data?.attributes?.title || "";
+}
+
+// The production briefing has two delivery groups: weekly contacts receive
+// the weekly edition; every other active contact receives the daily edition.
+function normalizeScheduledFrequency(value: string | null | undefined): Extract<DigestFrequency, "daily" | "weekly"> {
+    return normalizeFrequency(value) === "weekly" ? "weekly" : "daily";
 }
 
 function getAuthorName(author: StrapiDigestContent["author"]): string {
@@ -788,6 +802,15 @@ function dedupeCandidatesByEmail(rows: DigestCandidateRow[]): DigestEmailCandida
 
         existing.userIds.push(row.id);
 
+        // Brevo is the source of truth for contact frequency. A portal profile can be older than
+        // the latest Brevo preference, so keep the Brevo value on a match.
+        if (row.source === "brevo") {
+            existing.preferred_frequency = row.preferred_frequency;
+            if (row.first_name) {
+                existing.first_name = row.first_name;
+            }
+        }
+
         const existingLast = existing.last_content_digest_sent_at
             ? new Date(existing.last_content_digest_sent_at).getTime()
             : Number.NEGATIVE_INFINITY;
@@ -818,6 +841,90 @@ function dedupeCandidatesByEmail(rows: DigestCandidateRow[]): DigestEmailCandida
     });
 }
 
+async function getBrevoActiveContactCandidates(): Promise<DigestCandidateRow[]> {
+    const apiKey = process.env.BREVO_API_KEY;
+    if (!apiKey) {
+        throw new Error("BREVO_API_KEY is not configured");
+    }
+
+    const contacts: BrevoListContact[] = [];
+    let offset = 0;
+
+    while (true) {
+        const response = await fetch(
+            `https://api.brevo.com/v3/contacts?limit=${BREVO_CONTACTS_PAGE_SIZE}&offset=${offset}`,
+            { headers: { "api-key": apiKey, Accept: "application/json" } }
+        );
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Brevo contacts fetch failed: ${response.status} ${errorText}`);
+        }
+
+        const payload = await response.json() as { contacts?: BrevoListContact[] };
+        const page = payload.contacts || [];
+        contacts.push(...page);
+
+        if (page.length < BREVO_CONTACTS_PAGE_SIZE) {
+            break;
+        }
+        offset += page.length;
+    }
+
+    return contacts.flatMap((contact) => {
+        const email = contact.email?.trim().toLowerCase();
+        if (!email || contact.emailBlacklisted || email.endsWith("@phone.energdive.com")) {
+            return [];
+        }
+
+        const attributes = contact.attributes || {};
+        const firstName = typeof attributes.FIRSTNAME === "string" ? attributes.FIRSTNAME.trim() : null;
+        const rawFrequency = typeof attributes.FREQUENCY === "string" ? attributes.FREQUENCY : null;
+
+        return [{
+            // Brevo-only contacts have no local user record to update after
+            // delivery. Their last send time is read from digest logs.
+            id: 0,
+            email,
+            first_name: firstName || null,
+            last_name: null,
+            preferred_frequency: normalizeScheduledFrequency(rawFrequency),
+            preferred_formats: ["News Briefing", "Upcoming Events"],
+            last_content_digest_sent_at: null,
+            source: "brevo" as const,
+        }];
+    });
+}
+
+async function getSuppressedDigestEmails(): Promise<Set<string>> {
+    const result = await query<{ email: string }>(
+        `SELECT DISTINCT LOWER(email) AS email
+         FROM users
+         WHERE COALESCE(content_digest_opted_out, false) = true
+           AND email IS NOT NULL`
+    );
+    return new Set(result.rows.map((row) => row.email));
+}
+
+async function hydrateBrevoLastSentAt(rows: DigestCandidateRow[]): Promise<void> {
+    const emails = Array.from(new Set(rows.filter((row) => row.source === "brevo").map((row) => row.email)));
+    if (emails.length === 0) return;
+
+    const result = await query<{ email: string; last_sent_at: string }>(
+        `SELECT LOWER(email) AS email, MAX(sent_at) AS last_sent_at
+         FROM content_digest_logs
+         WHERE LOWER(email) = ANY($1::text[])
+           AND status = 'sent'
+         GROUP BY LOWER(email)`,
+        [emails]
+    );
+    const sentAtByEmail = new Map(result.rows.map((row) => [row.email, row.last_sent_at]));
+    for (const row of rows) {
+        if (row.source === "brevo") {
+            row.last_content_digest_sent_at = sentAtByEmail.get(row.email) || null;
+        }
+    }
+}
+
 async function getDigestCandidates(options: ProcessDigestsOptions): Promise<DigestEmailCandidate[]> {
     const params: unknown[] = [];
     let emailFilter = "";
@@ -827,7 +934,9 @@ async function getDigestCandidates(options: ProcessDigestsOptions): Promise<Dige
         emailFilter = `AND LOWER(email) = $${params.length}`;
     }
 
-    params.push(options.limit || 100);
+    // The scheduled briefing must reach every eligible contact. A caller can
+    // still supply a smaller limit for a controlled retry or diagnostic run.
+    params.push(options.limit || 10_000);
     const limitPlaceholder = `$${params.length}`;
 
     // Ensure last_content_digest_sent_at column exists in subscribe_letterbox
@@ -872,7 +981,15 @@ async function getDigestCandidates(options: ProcessDigestsOptions): Promise<Dige
         params
     );
 
-    return dedupeCandidatesByEmail(result.rows);
+    const [brevoRows, suppressedEmails] = await Promise.all([
+        getBrevoActiveContactCandidates(),
+        getSuppressedDigestEmails(),
+    ]);
+    const allRows = [...result.rows, ...brevoRows]
+        .filter((row) => !suppressedEmails.has(row.email.trim().toLowerCase()));
+
+    await hydrateBrevoLastSentAt(allRows);
+    return dedupeCandidatesByEmail(allRows);
 }
 
 export async function processPreferenceDigests(
@@ -880,25 +997,10 @@ export async function processPreferenceDigests(
 ): Promise<ProcessDigestsResult> {
     const now = new Date();
 
-    // Do not send any emails on Saturday (6) or Sunday (0)
-    const istNow = shiftToIst(now);
-    const dayOfWeek = istNow.getUTCDay();
-    if (dayOfWeek === 0 || dayOfWeek === 6) {
-        return {
-            success: true,
-            processed: 0,
-            due: 0,
-            sent: 0,
-            skipped: 0,
-            errors: 0,
-            results: [],
-        };
-    }
-
     const candidates = await getDigestCandidates(options);
     const dueCandidates = candidates.filter((row) =>
         isDigestDue(
-            normalizeFrequency(row.preferred_frequency),
+            normalizeScheduledFrequency(row.preferred_frequency),
             row.last_content_digest_sent_at ? new Date(row.last_content_digest_sent_at) : null,
             now
         )
@@ -942,42 +1044,50 @@ export async function processPreferenceDigests(
     let sent = 0;
     let skipped = 0;
     let errors = 0;
+    const preparedDigests = new Map<
+        DigestFrequency,
+        | { sections: DigestSection[]; itemKeys: string[]; extras: Awaited<ReturnType<typeof loadDailyBriefingExtras>> }
+        | "no_new_matching_content"
+    >();
+
+    const prepareDigest = async (frequency: DigestFrequency) => {
+        const cached = preparedDigests.get(frequency);
+        if (cached) return cached;
+
+        const formats = ["News Briefing", "Upcoming Events"] as DigestFormat[];
+        const since = getDueWindowStart({ preferred_frequency: frequency }, now);
+        let sections = buildSections(formats, since, catalog, frequency);
+        // A daily briefing should not disappear merely because fewer than two
+        // stories were published in the last 24 hours. Fall back to the
+        // latest available editorial items while retaining upcoming events.
+        if (!hasEnoughTopNews(sections)) {
+            sections = buildSections(formats, null, catalog, frequency);
+        }
+        const itemKeys = sections.flatMap((section) => section.items.map((item) => item.key));
+        const prepared = sections.length === 0 || itemKeys.length === 0
+                ? "no_new_matching_content" as const
+                : { sections, itemKeys, extras: await loadDailyBriefingExtras(catalog, sections) };
+
+        preparedDigests.set(frequency, prepared);
+        return prepared;
+    };
 
     for (const row of dueCandidates) {
-        const frequency = normalizeFrequency(row.preferred_frequency);
-        if (frequency === "monthly") {
-            skipped++;
-            results.push({ email: row.email, status: "skipped", reason: "monthly_disabled" });
-            continue;
-        }
+        const frequency = normalizeScheduledFrequency(row.preferred_frequency);
 
-        // Hardcode formats to ONLY include News Briefing and Upcoming Events
+        // Hardcode formats to ONLY include News Briefing and Upcoming Events.
         const formats = ["News Briefing", "Upcoming Events"] as DigestFormat[];
-        const since = getDueWindowStart(row, now);
-        const sections = buildSections(formats, since, catalog, frequency);
-        const itemKeys = sections.flatMap((section) => section.items.map((item) => item.key));
-
-        if (!hasEnoughTopNews(sections)) {
+        const prepared = await prepareDigest(frequency);
+        if (typeof prepared === "string") {
             skipped++;
             results.push({
                 email: row.email,
                 status: "skipped",
-                reason: "insufficient_top_news",
+                reason: prepared,
             });
             continue;
         }
-
-        if (sections.length === 0 || itemKeys.length === 0) {
-            skipped++;
-            results.push({
-                email: row.email,
-                status: "skipped",
-                reason: "no_new_matching_content",
-            });
-            continue;
-        }
-
-        const extras = await loadDailyBriefingExtras(catalog, sections);
+        const { sections, itemKeys, extras } = prepared;
 
         try {
             await sendPreferenceDigestEmail(

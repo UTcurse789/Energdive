@@ -4,6 +4,7 @@ import { sendEmail } from "@/lib/email";
 const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
 
 export const DAILY_SIGNUP_REPORT_RECIPIENTS = [
+    "ab@itenmedia.in",
     "kunal@itenmedia.in",
     "utkarsh@encis.in",
     "sankalp@itenmedia.in",
@@ -21,9 +22,32 @@ interface SignupReportUser {
 
 export interface DailySignupReportResult {
     totalUsers: number;
+    totalContactsToDate: number;
     fullySignedUp: number;
     partiallySignedUp: number;
     reportDate: string;
+}
+
+async function loadTotalContactsToDate(): Promise<number> {
+    const result = await query<{ total: number }>(
+        `SELECT COUNT(*)::int AS total
+         FROM (
+            SELECT LOWER(email) AS email
+            FROM users
+            WHERE email IS NOT NULL
+              AND email <> ''
+              AND email NOT LIKE '%@phone.energdive.com'
+
+            UNION
+
+            SELECT LOWER(email) AS email
+            FROM pending_verifications
+            WHERE email IS NOT NULL
+              AND email <> ''
+              AND email NOT LIKE '%@phone.energdive.com'
+         ) AS real_contacts`
+    );
+    return result.rows[0]?.total || 0;
 }
 
 function escapeHtml(value: string | null | undefined): string {
@@ -120,7 +144,7 @@ async function loadSignupReportUsers(start: Date, cutoff: Date): Promise<SignupR
     }));
 }
 
-function buildDailySignupReportHtml(reportDate: string, users: SignupReportUser[]): string {
+function buildDailySignupReportHtml(reportDate: string, users: SignupReportUser[], totalContactsToDate: number): string {
     const fullySignedUp = users.filter((user) => user.fullySignedUp).length;
     const partiallySignedUp = users.length - fullySignedUp;
     const registrationRows = users.map((user) => `<tr>
@@ -161,9 +185,10 @@ function buildDailySignupReportHtml(reportDate: string, users: SignupReportUser[
             <tr><td style="padding:28px 32px 32px;">
                 <h1 style="margin:0 0 14px;color:#101828;font-size:20px;line-height:1.3;">Today&apos;s Summary</h1>
                 <table width="100%" cellpadding="0" cellspacing="0" role="presentation"><tr>
-                    <td width="33.33%" style="padding:0 6px 0 0;"><div style="padding:14px;background:#edf7f2;border-radius:8px;"><p style="margin:0 0 5px;color:#087a66;font-size:11px;font-weight:700;text-transform:uppercase;">Total New Users</p><p style="margin:0;color:#101828;font-size:24px;font-weight:800;">${users.length}</p></div></td>
-                    <td width="33.33%" style="padding:0 3px;"><div style="padding:14px;background:#f0f9ff;border-radius:8px;"><p style="margin:0 0 5px;color:#026aa2;font-size:11px;font-weight:700;text-transform:uppercase;">Fully Signed Up</p><p style="margin:0;color:#101828;font-size:24px;font-weight:800;">${fullySignedUp}</p></div></td>
-                    <td width="33.33%" style="padding:0 0 0 6px;"><div style="padding:14px;background:#fff7ed;border-radius:8px;"><p style="margin:0 0 5px;color:#b54708;font-size:11px;font-weight:700;text-transform:uppercase;">Partially Signed Up</p><p style="margin:0;color:#101828;font-size:24px;font-weight:800;">${partiallySignedUp}</p></div></td>
+                    <td width="25%" style="padding:0 6px 0 0;"><div style="padding:14px;background:#f7f4ff;border-radius:8px;"><p style="margin:0 0 5px;color:#6941c6;font-size:11px;font-weight:700;text-transform:uppercase;">Total Contacts (All Time)</p><p style="margin:0;color:#101828;font-size:24px;font-weight:800;">${totalContactsToDate}</p></div></td>
+                    <td width="25%" style="padding:0 4px;"><div style="padding:14px;background:#edf7f2;border-radius:8px;"><p style="margin:0 0 5px;color:#087a66;font-size:11px;font-weight:700;text-transform:uppercase;">Total New Users</p><p style="margin:0;color:#101828;font-size:24px;font-weight:800;">${users.length}</p></div></td>
+                    <td width="25%" style="padding:0 4px;"><div style="padding:14px;background:#f0f9ff;border-radius:8px;"><p style="margin:0 0 5px;color:#026aa2;font-size:11px;font-weight:700;text-transform:uppercase;">Fully Signed Up</p><p style="margin:0;color:#101828;font-size:24px;font-weight:800;">${fullySignedUp}</p></div></td>
+                    <td width="25%" style="padding:0 0 0 6px;"><div style="padding:14px;background:#fff7ed;border-radius:8px;"><p style="margin:0 0 5px;color:#b54708;font-size:11px;font-weight:700;text-transform:uppercase;">Partially Signed Up</p><p style="margin:0;color:#101828;font-size:24px;font-weight:800;">${partiallySignedUp}</p></div></td>
                 </tr></table>
                 ${registrationsBlock}
                 <p style="margin:28px 0 0;color:#475467;font-size:14px;line-height:1.5;">Regards,<br /><strong style="color:#101828;">ENERGDIVE Automation</strong></p>
@@ -179,9 +204,12 @@ export async function sendDailySignupReport(
     now = new Date()
 ): Promise<DailySignupReportResult> {
     const { start, cutoff, reportDate } = getSignupReportWindow(now);
-    const users = await loadSignupReportUsers(start, cutoff);
+    const [users, totalContactsToDate] = await Promise.all([
+        loadSignupReportUsers(start, cutoff),
+        loadTotalContactsToDate(),
+    ]);
     const fullySignedUp = users.filter((user) => user.fullySignedUp).length;
-    const htmlContent = buildDailySignupReportHtml(reportDate, users);
+    const htmlContent = buildDailySignupReportHtml(reportDate, users, totalContactsToDate);
     const subject = `ENERGDIVE Daily User Signup Report – ${reportDate}`;
 
     for (const recipient of recipients) {
@@ -199,6 +227,7 @@ export async function sendDailySignupReport(
 
     return {
         totalUsers: users.length,
+        totalContactsToDate,
         fullySignedUp,
         partiallySignedUp: users.length - fullySignedUp,
         reportDate,

@@ -1,5 +1,8 @@
 import axios from "axios";
 
+const BREVO_SUBSCRIBERS_LIST_ID = 7;
+const BREVO_PARTIAL_ZOHO_LIST_ID = 21;
+
 export default async function syncUserToBrevo(user: any) {
     try {
         // Safety: never push dummy/placeholder emails to Brevo
@@ -34,7 +37,8 @@ export default async function syncUserToBrevo(user: any) {
                     ...(user.utm_term ? { UTM_TERM: user.utm_term } : {}),
                     ...(user.utm_content ? { UTM_CONTENT: user.utm_content } : {}),
                 },
-                listIds: [7],
+                listIds: [BREVO_SUBSCRIBERS_LIST_ID],
+                unlinkListIds: [BREVO_PARTIAL_ZOHO_LIST_ID],
                 updateEnabled: true
             },
             {
@@ -71,6 +75,79 @@ export interface VerifiedUserBrevoPayload {
     utm_campaign?: string | null;
     utm_term?: string | null;
     utm_content?: string | null;
+    preferredFrequency?: string | null;
+}
+
+export interface PartialZohoBrevoPayload {
+    email: string;
+    name?: string;
+    phone?: string;
+    company?: string;
+    jobTitle?: string;
+    communities?: string[];
+    subCommunities?: string[];
+    industry?: string;
+}
+
+/**
+ * Add a Zoho-form lead to Brevo's Partial Zoho list while it is still
+ * completing registration. Verification moves the contact to Subscribers.
+ */
+export async function syncPartialZohoLeadToBrevo(user: PartialZohoBrevoPayload): Promise<void> {
+    const email = user.email.trim().toLowerCase();
+    if (!email || email.endsWith("@phone.energdive.com")) {
+        console.warn("Brevo partial-Zoho sync skipped — invalid email:", user.email);
+        return;
+    }
+
+    const client = (await import("axios")).default;
+    try {
+        const existing = await client.get(
+            `https://api.brevo.com/v3/contacts/${encodeURIComponent(email)}`,
+            { headers: { "api-key": process.env.BREVO_API_KEY! } }
+        );
+        const listIds = Array.isArray(existing.data?.listIds) ? existing.data.listIds : [];
+        if (listIds.includes(BREVO_SUBSCRIBERS_LIST_ID)) {
+            console.log("Brevo partial-Zoho sync skipped — contact is already a Subscriber:", email);
+            return;
+        }
+    } catch (error: any) {
+        if (error.response?.status !== 404) {
+            throw error;
+        }
+    }
+
+    const nameParts = (user.name || "").trim().split(/\s+/);
+    const attributes: Record<string, string> = {
+        FIRSTNAME: nameParts[0] || "",
+        LASTNAME: nameParts.slice(1).join(" "),
+        PHONE: user.phone || "",
+        ORGANISATION: user.company || "",
+        JOB_TITLE: user.jobTitle || "",
+        COMMUNITY: (user.communities || []).filter(Boolean).join(","),
+        SUB_COMMUNITY: (user.subCommunities || []).filter(Boolean).join(","),
+        INDUSTRY: user.industry || "",
+        SOURCE: "Zoho Form",
+        VERIFICATION_STATUS: "Pending profile completion",
+    };
+
+    await client.post(
+        "https://api.brevo.com/v3/contacts",
+        {
+            email,
+            attributes,
+            listIds: [BREVO_PARTIAL_ZOHO_LIST_ID],
+            updateEnabled: true,
+        },
+        {
+            headers: {
+                "api-key": process.env.BREVO_API_KEY!,
+                "Content-Type": "application/json",
+            },
+        }
+    );
+
+    console.log("Brevo partial Zoho lead synced:", email);
 }
 
 /**
@@ -99,6 +176,9 @@ export async function syncVerifiedUserToBrevo(user: VerifiedUserBrevoPayload): P
         MEMBERSHIP_ID: user.membershipId || "",
         SOURCE: user.source || "website",
         VERIFICATION_STATUS: "Verified",
+        FREQUENCY: user.preferredFrequency
+            ? `${user.preferredFrequency.charAt(0).toUpperCase()}${user.preferredFrequency.slice(1).toLowerCase()}`
+            : "Daily",
     };
 
     // Include optional fields if provided (from Zoho lead data)
@@ -131,7 +211,8 @@ export async function syncVerifiedUserToBrevo(user: VerifiedUserBrevoPayload): P
         {
             email: user.email,
             attributes,
-            listIds: [7],
+            listIds: [BREVO_SUBSCRIBERS_LIST_ID],
+            unlinkListIds: [BREVO_PARTIAL_ZOHO_LIST_ID],
             updateEnabled: true,
         },
         {

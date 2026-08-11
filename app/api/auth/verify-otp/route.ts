@@ -469,6 +469,7 @@ export async function POST(req: NextRequest) {
                 source: "Portal",
                 communities: fullUser?.communities || [],
                 subCommunities: fullUser?.sub_communities || [],
+                preferredFrequency: fullUser?.preferred_frequency || "daily",
                 utm_source: pvUtmSource,
                 utm_medium: pvUtmMedium,
                 utm_campaign: pvUtmCampaign,
