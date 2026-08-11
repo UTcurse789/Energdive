@@ -3,6 +3,7 @@ import { formatContentDate } from "@/lib/date";
 import { strapiMediaUrl } from "@/lib/strapi-image";
 
 const STRAPI_BASE_URL = process.env.NEXT_PUBLIC_STRAPI_URL || "https://cms.energdive.com";
+const CMS_REQUEST_TIMEOUT_MS = 10_000;
 
 type StrapiIssueItem = {
     id?: number | string;
@@ -230,7 +231,9 @@ async function getLatestIssueData(withArticles: boolean): Promise<LatestIssueDat
 
         return item ? normalizeIssue(item) : null;
     } catch (e) {
-        console.error("Failed to fetch latest issue from Strapi:", e);
+        if (!(e instanceof Error && e.name === "TimeoutError")) {
+            console.error("Failed to fetch latest issue from Strapi:", e);
+        }
         return null;
     }
 }

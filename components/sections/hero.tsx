@@ -187,8 +187,10 @@ export function Hero({ heroStories: propHeroStories, topStories: propTopStories,
                 .then((r) => r.json())
                 .then((d) => setArticles(d?.data || []))
                 .catch(console.error)
-                .finally(() => setLoading(false));
+                .finally(() => { if (isMounted) setLoading(false); });
         }
+
+        return () => { isMounted = false; };
     }, [propHeroStories, propTopStories]);
 
     const carouselArticles = propHeroStories?.length ? propHeroStories : coverStories;

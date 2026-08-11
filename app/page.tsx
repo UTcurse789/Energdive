@@ -29,6 +29,19 @@ import { ArrowRight, BookOpen, ChevronRight, Mail, Play } from "lucide-react";
 export const metadata = HOME_PAGE_METADATA;
 
 const STRAPI_BASE = process.env.NEXT_PUBLIC_STRAPI_URL || "https://cms.energdive.com";
+const CMS_REQUEST_TIMEOUT_MS = 10_000;
+
+function fetchCms(url: string, options: RequestInit = {}) {
+  return fetch(url, {
+    ...options,
+    signal: AbortSignal.timeout(CMS_REQUEST_TIMEOUT_MS),
+  });
+}
+
+function logCmsError(message: string, error: unknown) {
+  if (error instanceof Error && error.name === "TimeoutError") return;
+  console.error(message, error);
+}
 
 const HOMEPAGE_SECTORS = [
   { title: "Oil & Gas", slug: "oil-gas" },
@@ -166,7 +179,7 @@ function FeaturedVideosSidebar({ videos }: { videos: VideoItem[] }) {
 
 async function getAllContents() {
   try {
-    const res = await fetch(
+    const res = await fetchCms(
       `${STRAPI_BASE}/api/contents?pagination[pageSize]=100&populate=*&sort=Date:desc`,
       { next: { revalidate: 600 } }
     );
@@ -174,7 +187,7 @@ async function getAllContents() {
     const json = await res.json();
     return json.data || [];
   } catch (err) {
-    console.error("Contents fetch error:", err);
+    logCmsError("Contents fetch error:", err);
     return null;
   }
 }
@@ -189,14 +202,14 @@ async function getFeaturedContents() {
     const json = await res.json();
     return json.data || [];
   } catch (err) {
-    console.error("Featured contents fetch error:", err);
+    logCmsError("Featured contents fetch error:", err);
     return [];
   }
 }
 
 async function getHeroBannerContents() {
   try {
-    const res = await fetch(
+    const res = await fetchCms(
       `${STRAPI_BASE}/api/contents?filters[show_hero_banner][$eq]=true&populate=*&pagination[pageSize]=10&sort=publishedAt:desc`,
       { next: { revalidate: 60 } }
     );
@@ -204,7 +217,7 @@ async function getHeroBannerContents() {
     const json = await res.json();
     return json.data || [];
   } catch (err) {
-    console.error("Hero banner fetch error:", err);
+    logCmsError("Hero banner fetch error:", err);
     return [];
   }
 }
@@ -233,7 +246,7 @@ async function getFeaturedPartnerAds() {
 
 async function getOpinionBuckets() {
   try {
-    const res = await fetch(
+    const res = await fetchCms(
       `${STRAPI_BASE}/api/contents` +
       `?filters[type_of_content][name][$eq]=Opinion` +
       `&pagination[pageSize]=60` +
@@ -266,7 +279,7 @@ async function getOpinionBuckets() {
       interviews: mapOpinionItems(interviewItems.slice(0, 5)),
     };
   } catch (err) {
-    console.error("Opinion fetch error:", err);
+    logCmsError("Opinion fetch error:", err);
     return { opinions: [], interviews: [] };
   }
 }
@@ -289,7 +302,7 @@ export default async function Home() {
     ? featuredContents
       .sort((a: any, b: any) => {
         const aDate = Date.parse(a.updatedAt || a.Date || a.publishedAt || a.createdAt || "") || 0;
-        const bDate = Date.parse(b.updatedAt || b.Date || b.publishedAt || b.createdAt || "") || 0;
+        const bDate = Date.parse(b.updatedAt || b.Date || b.publishedAt || a.createdAt || "") || 0;
         return bDate - aDate;
       })
       .map((article: any) => ({
@@ -325,20 +338,6 @@ export default async function Home() {
       })
       .slice(0, 25)
     : [];
-
-  // Fetch articles for each sector in parallel directly from Strapi
-  const sectorFetchResults = await Promise.all(
-    HOMEPAGE_SECTORS.map(async (sector) => {
-      try {
-        const res = await fetch(buildSectorArticlesUrl(sector.slug), { next: { revalidate: 300 } });
-        if (!res.ok) return [];
-        const json = await res.json();
-        return json.data || [];
-      } catch {
-        return [];
-      }
-    })
-  );
 
   const sectorsWithArticles = HOMEPAGE_SECTORS.map((sector, idx) => {
     const sectorArticles = sectorFetchResults[idx];
