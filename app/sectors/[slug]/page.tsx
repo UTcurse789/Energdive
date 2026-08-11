@@ -3,8 +3,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { buildContentUrl } from "@/lib/content-routes";
 import { useParams, useSearchParams } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
-import { Search, ChevronRight, ArrowUpRight, Play } from "lucide-react";
+import { Search, ChevronRight, Play, LayoutGrid, List, Bookmark, Share2, ShieldCheck, Zap } from "lucide-react";
 import { Header } from "@/components/layout/header";
 import { AdBanner } from "@/components/ads/AdBanner";
 import Image from "next/image";
@@ -13,11 +12,16 @@ import { TagBadge } from "@/components/ui/tag-badge";
 import { DateChip } from "@/components/ui/date-chip";
 import { strapiImageUrl } from "@/lib/strapi-image";
 import { buildSectorArticlesUrl, getSectorNames } from "@/lib/sector-content";
+import { StickySidebar } from "@/components/ui/StickySidebar";
+import { SidebarNewsletterForm } from "@/components/news/SidebarNewsletterForm";
+import { LatestIssueWidget } from "@/components/news/LatestIssueWidget";
+import { getLatestIssue, LatestIssueData } from "@/lib/api/getLatestIssue";
+import { formatContentDate } from "@/lib/date";
 
 /* ================================
    STRAPI CONFIG & HELPERS
 ================================ */
-const STRAPI = process.env.NEXT_PUBLIC_STRAPI_URL;
+const STRAPI = process.env.NEXT_PUBLIC_STRAPI_URL || "https://cms.energdive.com";
 
 async function fetchSectorWithChildren(slug: string) {
     try {
@@ -102,14 +106,11 @@ function matchesActiveTab(values: string[] = [], activeTab: string) {
     return values.some((value) => {
         const normalizedValue = normalizeText(value || "");
         if (!normalizedValue) return false;
-        // Exact full-string match
         if (normalizedValue === normalizedTab) return true;
 
         const valueWords = normalizedValue.split(" ").filter(Boolean);
 
-        // Check if all tab words appear as complete words in the value
         const tabMatchesInValue = tabWords.length > 0 && tabWords.every((tw) => valueWords.includes(tw));
-        // Check if all value words appear as complete words in the tab
         const valueMatchesInTab = valueWords.length > 0 && valueWords.every((vw) => tabWords.includes(vw));
 
         return tabMatchesInValue || valueMatchesInTab;
@@ -239,12 +240,17 @@ export default function SectorIntelligencePage() {
     const [videos, setVideos] = useState<any[]>([]);
     const [childSectors, setChildSectors] = useState<any[]>([]);
     const [sectorInfo, setSectorInfo] = useState<any | null>(null);
+    const [latestIssue, setLatestIssue] = useState<LatestIssueData | null>(null);
     const [searchQuery, setSearchQuery] = useState("");
     const [activeTab, setActiveTab] = useState("ALL");
+    const [viewMode, setViewMode] = useState<"grid" | "compact">("grid");
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         if (!slug) return;
+
+        getLatestIssue().then(setLatestIssue);
+
         fetchSectorWithChildren(slug).then((sector) => {
             setSectorInfo(sector);
 
@@ -256,6 +262,7 @@ export default function SectorIntelligencePage() {
 
             setChildSectors(normalizedChildren);
         });
+
         fetchSectorArticles(slug).then((data) => {
             const formatted = data.map((item: any) => ({
                 id: item.id,
@@ -270,6 +277,7 @@ export default function SectorIntelligencePage() {
             }));
             setArticles(formatted);
         });
+
         fetchSectorVideos(slug).then((data) => {
             const formatted = data.map((item: any) => ({
                 id: item.id,
@@ -328,10 +336,10 @@ export default function SectorIntelligencePage() {
             };
         });
 
-        // Sort tabs with content first, then alphabetically
         stats.sort((a, b) => {
             if (a.count > 0 && b.count === 0) return -1;
             if (a.count === 0 && b.count > 0) return 1;
+            if (a.count !== b.count) return b.count - a.count;
             return a.name.localeCompare(b.name);
         });
 
@@ -342,7 +350,6 @@ export default function SectorIntelligencePage() {
         return ["ALL", ...subCategoryStats.map(s => s.name)];
     }, [subCategoryStats]);
 
-    // Sorted version of tabs for rendering: tabs with content first, empty ones last
     const sortedTabs = useMemo(() => {
         if (subCategories.length <= 1) return subCategories;
 
@@ -355,6 +362,7 @@ export default function SectorIntelligencePage() {
         tabCounts.sort((a, b) => {
             if (a.total > 0 && b.total === 0) return -1;
             if (a.total === 0 && b.total > 0) return 1;
+            if (a.total !== b.total) return b.total - a.total;
             return a.tab.localeCompare(b.tab);
         });
         return ["ALL", ...tabCounts.map((t) => t.tab)];
@@ -413,344 +421,285 @@ export default function SectorIntelligencePage() {
         });
     }, [videos, activeTab, searchQuery]);
 
-    // Simplified loading state WITHOUT complex Skeletons to avoid hydration mismatches
-    const content = loading ? (
-        <div className="min-h-screen bg-[#fafafa]">
-            <Header />
-            <div className="flex items-center justify-center h-[50vh]">
-                <div className="w-8 h-8 border-2 border-[#00C6A7] border-t-transparent rounded-full animate-spin" />
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-white">
+                <Header />
+                <div className="min-h-[50vh] flex flex-col items-center justify-center">
+                    <div className="w-8 h-8 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin" />
+                </div>
             </div>
-        </div>
-    ) : (
-        <div className="min-h-screen bg-[#fafafa] text-[#121212] selection:bg-[#00C6A7]/30">
+        );
+    }
 
-            {/* HERO SECTION */}
-            <section className="relative min-h-[62vh] md:min-h-[68vh] flex items-center overflow-hidden bg-black">
-                <Image
-                    src={sectorMeta.heroImage}
-                    alt={sectorMeta.title}
-                    fill
-                    className="object-cover opacity-60 scale-[1.06]"
-                />
-                <div className="absolute inset-0 bg-linear-to-r from-black/72 via-black/48 to-black/22" />
-                <div className="absolute inset-0 bg-linear-to-t from-black/72 via-black/8 to-transparent" />
-                <div
-                    className="absolute inset-0 opacity-14"
-                    style={{
-                        backgroundImage:
-                            "linear-gradient(to right, rgba(255,255,255,0.08) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.08) 1px, transparent 1px)",
-                        backgroundSize: "44px 44px",
-                    }}
-                />
+    return (
+        <div className="min-h-screen bg-white text-slate-900 selection:bg-emerald-600 selection:text-white font-sans overflow-x-clip">
+            
+            {/* 1. TOP BREADCRUMB & HEADER BAR */}
+            <div className="bg-slate-900 text-slate-200 border-b border-emerald-500 overflow-hidden text-xs font-medium tracking-wide">
+                <div className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-16 flex items-center justify-between h-11">
+                    <nav className="flex items-center gap-1.5 text-xs text-slate-300">
+                        <Link href="/" className="hover:text-emerald-400 transition-colors">EnergDive</Link>
+                        <ChevronRight size={12} className="text-slate-500" />
+                        <Link href="/sectors" className="hover:text-emerald-400 transition-colors">Sectors</Link>
+                        <ChevronRight size={12} className="text-slate-500" />
+                        <span className="text-emerald-400 font-bold truncate max-w-[200px] sm:max-w-xs">
+                            {sectorMeta.breadcrumbLabel}
+                        </span>
+                    </nav>
 
-                <div className="container mx-auto px-6 lg:px-16 max-w-[1400px] relative z-10">
-                    <div className="my-6 sm:my-10">
-                        <motion.nav
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className="inline-flex items-center gap-1.5 sm:gap-2 rounded-full border border-white/20 bg-white/5 px-3 sm:px-4 py-1.5 sm:py-2 text-[9px] sm:text-[10px] font-black text-[#00C6A7] uppercase tracking-[0.15em] sm:tracking-[0.2em] backdrop-blur-sm shrink-0 max-w-[65%]"
-                        >
-                            <Link href="/" className="hover:text-white transition shrink-0">EnergDive</Link>
-                            <ChevronRight size={10} className="text-white/40 shrink-0" />
-                            <span className="text-white/60 hidden sm:inline shrink-0">Articles & Videos</span>
-                            <ChevronRight size={10} className="text-white/40 hidden sm:inline shrink-0" />
-                            <span className="text-white truncate">{sectorMeta.breadcrumbLabel}</span>
-                        </motion.nav>
-                    </div>
-
-                    <motion.h1
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        className="text-3xl sm:text-5xl md:text-[108px] font-black uppercase leading-[0.86] tracking-tighter text-white mb-7"
-                    >
-                        {sectorMeta.title}
-                    </motion.h1>
-
-                    <motion.p
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: 0.2 }}
-                        className="text-lg md:text-xl text-gray-300 max-w-xl border-l-2 border-[#00C6A7] pl-6 md:pl-8 font-light leading-relaxed"
-                    >
-                        {sectorMeta.description}
-                    </motion.p>
-
-                    <motion.div
-                        initial={{ opacity: 0, y: 12 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.4 }}
-                        className="mt-8 flex flex-wrap gap-3"
-                    >
-                        <div className="rounded-full border border-white/20 bg-white/5 px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-white backdrop-blur-sm">
+                    <div className="hidden sm:flex items-center gap-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                        <span className="bg-slate-800 text-emerald-400 px-2.5 py-0.5 rounded-full border border-slate-700">
                             {filteredReports.length} Articles
-                        </div>
-                        <div className="rounded-full border border-white/20 bg-white/5 px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-white backdrop-blur-sm">
-                            {filteredVideos.length} Videos
-                        </div>
-                    </motion.div>
-
-                    {/* <motion.div
-                        initial={{ opacity: 0, y: 16 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.48 }}
-                        className="mt-6 flex flex-wrap gap-2 mb-25"
-                    >
-                        {sectorMeta.quickSignals.map((signal: string) => (
-                            <span
-                                key={signal}
-                                className="inline-flex items-center rounded-full bg-[#00C6A7]/18 text-[#7ff1de] px-3 py-1 text-[10px] font-black uppercase tracking-widest border border-[#00C6A7]/30"
-                            >
-                                {signal}
+                        </span>
+                        {filteredVideos.length > 0 && (
+                            <span className="bg-slate-800 text-emerald-400 px-2.5 py-0.5 rounded-full border border-slate-700">
+                                {filteredVideos.length} Videos
                             </span>
-                        ))}
-                    </motion.div> */}
+                        )}
+                    </div>
                 </div>
+            </div>
 
-                <div className="absolute left-0 right-0 bottom-0 h-16 bg-linear-to-t from-[#fafafa] to-transparent" />
-            </section>
+            {/* SECTOR TITLE & DESCRIPTION BANNER */}
+            <div className="bg-slate-50/60 border-b border-slate-100 py-6 sm:py-8">
+                <div className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-16">
+                    <h1 className="text-3xl sm:text-4xl md:text-5xl font-black uppercase tracking-tight text-slate-900">
+                        {sectorMeta.title}
+                    </h1>
+                    {sectorMeta.description && (
+                        <p className="text-slate-600 max-w-3xl mt-3 text-base sm:text-lg font-light leading-relaxed border-l-2 border-emerald-600 pl-4">
+                            {sectorMeta.description}
+                        </p>
+                    )}
+                </div>
+            </div>
 
-            {/* Sector Hero Ad Banner — no wrapper, so no empty space when ad is absent */}
-            <AdBanner placement="sector_banner" sectorSlug={slug} variant="banner" className="container mx-auto mt-6 mb-8 flex justify-center bg-[#fafafa] px-6 py-4 md:mt-8 md:mb-10 lg:px-16 max-w-[1400px]" />
+            {/* SECTOR TOP LEADERBOARD AD */}
+            <div className="w-full bg-white border-b border-slate-100 pt-2 pb-0">
+                <div className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-16 flex justify-center">
+                    <AdBanner placement="sector_banner" sectorSlug={slug} variant="banner" />
+                </div>
+            </div>
 
-            {/* STICKY NAVIGATION & FILTER */}
-            <section className="sticky top-[74px] z-10 bg-white/95 backdrop-blur-xl border-y border-gray-100 py-5 shadow-[0_6px_20px_rgba(15,23,42,0.06)]">
-                <div className="container mx-auto px-6 lg:px-16 max-w-[1400px] flex flex-col lg:flex-row gap-8 justify-between items-center">
+            {/* MAIN CONTAINER */}
+            <main className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-16 pt-2 pb-12">
 
-                    {/* Tabs */}
-                    <div className="flex gap-3 overflow-x-auto no-scrollbar w-full lg:w-auto pb-2 lg:pb-0 pr-6 scroll-px-6 snap-x">
-                        {sortedTabs.map((cat) => {
-                            const stat = subCategoryStats.find(s => s.name === cat);
-                            const hasContent = cat === "ALL" || (stat ? stat.count > 0 : false);
-                            return (
-                                <button
-                                    key={cat}
-                                    onClick={() => hasContent && setActiveTab(cat)}
-                                    disabled={!hasContent}
-                                    className={`whitespace-nowrap px-6 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all duration-300 ${!hasContent
-                                        ? "opacity-40 cursor-not-allowed bg-transparent border-gray-200 text-gray-400"
-                                        : activeTab === cat
-                                            ? "bg-black text-white border-black scale-105 shadow-lg shadow-black/10"
-                                            : "bg-transparent border-gray-200 text-gray-400 hover:border-black hover:text-black"
+                {/* 2. INTERACTIVE TOPIC / SUB-SECTOR FILTER BAR */}
+                <div className="bg-white pb-3 pt-2 border-b border-slate-200 mb-6">
+                    <div className="bg-white p-2 rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        {/* Pill Tabs */}
+                        <div className="flex overflow-x-auto no-scrollbar gap-2 pb-2 md:pb-0 scroll-smooth">
+                            {sortedTabs.map((cat) => {
+                                const stat = subCategoryStats.find(s => s.name === cat);
+                                const hasContent = cat === "ALL" || (stat ? stat.count > 0 : false);
+                                return (
+                                    <button
+                                        key={cat}
+                                        onClick={() => hasContent && setActiveTab(cat)}
+                                        disabled={!hasContent}
+                                        className={`whitespace-nowrap px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-colors border ${
+                                            !hasContent
+                                                ? "opacity-35 cursor-not-allowed bg-slate-50 text-slate-300 border-slate-100 pointer-events-none select-none"
+                                                : activeTab === cat
+                                                    ? "bg-slate-900 text-white border-slate-900 shadow-md"
+                                                    : "bg-white text-slate-600 border-slate-200 hover:border-slate-400 hover:text-slate-900"
                                         }`}
-                                >
-                                    {cat}
-                                </button>
-                            );
-                        })}
-                    </div>
-
-                    {/* Search */}
-                    <div className="relative w-full lg:w-96 group">
-                        <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300 group-focus-within:text-[#00C6A7] transition-colors" />
-                        <input
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            placeholder={`Search through ${sectorMeta.title.toLowerCase()}...`}
-                            className="w-full bg-gray-50/50 border border-gray-100 rounded-full py-4 pl-12 pr-6 text-sm focus:bg-white focus:ring-4 focus:ring-[#00C6A7]/5 transition-all outline-none"
-                        />
-                    </div>
-                </div>
-            </section>
-
-            {/* ARTICLES GRID */}
-            <SectorArticlesSection
-                slug={slug}
-                filteredReports={filteredReports}
-                buildContentUrl={buildContentUrl}
-            />
-
-            {/* VIDEOS SECTION */}
-            {filteredVideos.length > 0 && (
-                <section className="border-t border-gray-200 bg-white pb-30">
-                    <div className="container mx-auto px-6 lg:px-16 max-w-[1400px] py-20">
-
-                        {/* Section Heading */}
-                        <div className="mb-12">
-                            <h2 className="text-3xl font-bold tracking-tight text-gray-900 pt-10">
-                                Videos
-                            </h2>
-                            <div className="w-16 h-1 bg-[#00A651] mt-3"></div>
+                                    >
+                                        {cat}
+                                    </button>
+                                );
+                            })}
                         </div>
 
-                        {filteredVideos.length > 0 ? (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-                                {filteredVideos.map((video) => (
-                                    <Link key={video.id} href={`/videos/${video.slug}`} className="group block">
-                                        <div className="relative aspect-video rounded-xl overflow-hidden mb-3 bg-gray-200">
-                                            <Image
-                                                src={video.thumbnail}
-                                                alt={video.title}
-                                                fill
-                                                className="object-cover"
-                                            />
-                                            <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
-                                                <div className="w-12 h-12 bg-white/90 rounded-full flex items-center justify-center pl-1 opacity-80 group-hover:opacity-100 transition-all">
-                                                    <Play size={18} className="text-red-600 fill-red-600" />
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <h3 className="text-sm font-bold group-hover:text-[#00A651] transition-colors line-clamp-2">
-                                            {video.title}
-                                        </h3>
-                                        <DateChip value={video.date} className="text-[10px] mt-1" />
-                                    </Link>
-                                ))}
+                        {/* Right Controls: Search & Layout Switcher */}
+                        <div className="flex items-center gap-3 shrink-0">
+                            <div className="relative group flex items-center h-10">
+                                <Search size={16} className="absolute left-3.5 text-slate-400 group-focus-within:text-emerald-600 transition-colors z-10" />
+                                <input 
+                                    type="text"
+                                    placeholder={`Filter ${sectorMeta.title.toLowerCase()}...`}
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    className="h-full w-full md:w-56 pl-10 pr-4 bg-white border border-slate-200 rounded-full text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all placeholder:text-slate-400 leading-normal flex items-center"
+                                />
+                            </div>
+                            <div className="flex items-center bg-white border border-slate-200 rounded-full p-1 shadow-sm">
+                                <button 
+                                    onClick={() => setViewMode("grid")}
+                                    className={`p-1.5 rounded-full transition-colors ${viewMode === 'grid' ? 'bg-slate-100 text-slate-900' : 'text-slate-400 hover:text-slate-600'}`}
+                                    aria-label="Grid View"
+                                >
+                                    <LayoutGrid size={16} />
+                                </button>
+                                <button 
+                                    onClick={() => setViewMode("compact")}
+                                    className={`p-1.5 rounded-full transition-colors ${viewMode === 'compact' ? 'bg-slate-100 text-slate-900' : 'text-slate-400 hover:text-slate-600'}`}
+                                    aria-label="Compact List View"
+                                >
+                                    <List size={16} />
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* 3. PRIMARY ARTICLES STREAM (8:4 Layout) */}
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
+                    
+                    {/* Left Column (8 cols - Articles Stream) */}
+                    <div className="lg:col-span-8">
+                        {filteredReports.length === 0 ? (
+                            <div className="py-20 text-center flex flex-col items-center">
+                                <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-4">
+                                    <Search size={24} className="text-slate-300" />
+                                </div>
+                                <h3 className="text-lg font-bold text-slate-900 mb-2">No articles match your filter</h3>
+                                <p className="text-slate-500 text-sm">Try adjusting your sub-sector or search terms.</p>
+                                <button 
+                                    onClick={() => { setActiveTab("ALL"); setSearchQuery(""); }}
+                                    className="mt-6 text-emerald-600 font-bold text-sm hover:underline"
+                                >
+                                    Clear all filters
+                                </button>
                             </div>
                         ) : (
-                            <div className="rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 px-6 py-10 text-center">
-                                <p className="text-sm text-zinc-500">
-                                    No Video Found
-                                </p>
+                            <div className={`grid gap-6 lg:gap-8 ${viewMode === 'grid' ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1'}`}>
+                                {filteredReports.map((item) => (
+                                    <article 
+                                        key={item.id}
+                                        className={`group flex bg-white border border-slate-200/80 rounded-xl overflow-hidden hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 relative ${viewMode === 'compact' ? 'flex-row items-center p-4 gap-6' : 'flex-col'}`}
+                                    >
+                                        {/* Image */}
+                                        <div className={`relative bg-slate-900 shrink-0 overflow-hidden ${viewMode === 'compact' ? 'w-32 h-32 sm:w-48 sm:h-32 rounded-lg' : 'w-full aspect-[16/10] mb-4'}`}>
+                                            {item.image ? (
+                                                <Image 
+                                                    src={item.image} 
+                                                    alt={item.title} 
+                                                    fill 
+                                                    sizes={viewMode === 'compact' ? "192px" : "(max-width: 768px) 100vw, 50vw"} 
+                                                    className="object-cover group-hover:scale-105 transition-transform duration-500" 
+                                                    loading="lazy" 
+                                                />
+                                            ) : (
+                                                <div className="absolute inset-0 bg-gradient-to-br from-slate-800 to-slate-950 flex items-center justify-center">
+                                                    <Zap size={32} className="text-white/10" />
+                                                </div>
+                                            )}
+                                            {viewMode === 'grid' && (
+                                                <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+                                            )}
+                                        </div>
+
+                                        {/* Content */}
+                                        <div className={`flex flex-col flex-1 space-y-3 ${viewMode === 'compact' ? 'py-1' : 'px-5 pb-5 md:px-6 md:pb-6'}`}>
+                                            <div className="flex items-center justify-between relative z-20">
+                                                <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest bg-emerald-50 px-2.5 py-1 rounded-full">
+                                                    {sectorMeta.breadcrumbLabel}
+                                                </span>
+                                                <div className="flex items-center gap-2 text-slate-400">
+                                                    <button className="hover:text-emerald-600 transition-colors"><Bookmark size={14} /></button>
+                                                    <button className="hover:text-emerald-600 transition-colors"><Share2 size={14} /></button>
+                                                </div>
+                                            </div>
+
+                                            <Link href={buildContentUrl({ slug: item.slug, type_of_content: item.type_of_content })} className="before:absolute before:inset-0 z-10">
+                                                <h3 className={`font-bold text-slate-900 leading-snug group-hover:text-emerald-700 transition-colors ${viewMode === 'compact' ? 'text-[15px] line-clamp-2' : 'text-base line-clamp-3'}`}>
+                                                    {item.title}
+                                                </h3>
+                                            </Link>
+
+                                            {viewMode === 'grid' && item.excerpt && (
+                                                <p className="text-sm text-slate-500 line-clamp-2 font-light leading-relaxed">
+                                                    {item.excerpt}
+                                                </p>
+                                            )}
+
+                                            {item.tags?.length > 0 && (
+                                                <div className="flex flex-wrap gap-1.5 relative z-20">
+                                                    {item.tags.slice(0, 3).map((tag: any) => (
+                                                        <TagBadge key={tag.slug} name={tag.name} slug={tag.slug} />
+                                                    ))}
+                                                </div>
+                                            )}
+
+                                            <div className={`mt-auto flex items-center justify-between text-xs font-medium text-slate-500 border-t border-slate-100 pt-3 relative z-20 pointer-events-none ${viewMode === 'compact' ? 'mt-3' : ''}`}>
+                                                <div className="flex items-center gap-2">
+                                                    <span className="flex items-center gap-1 text-slate-700 font-bold">
+                                                        <ShieldCheck size={12} className="text-emerald-500" />
+                                                        ENERGDIVE Desk
+                                                    </span>
+                                                </div>
+                                                <time dateTime={item.date} className="bg-slate-50 px-2 py-0.5 rounded-sm border border-slate-100 text-[10px] tracking-wider uppercase">
+                                                    {formatContentDate(item.date)}
+                                                </time>
+                                            </div>
+                                        </div>
+                                    </article>
+                                ))}
                             </div>
                         )}
                     </div>
-                </section>
-            )}
 
-
-        </div>
-    );
-
-    return content;
-}
-
-/* ================================
-   SECTOR ARTICLES SECTION
-   Right sidebar only appears when ad is loaded
-================================ */
-function SectorArticlesSection({
-    slug,
-    filteredReports,
-    buildContentUrl,
-}: {
-    slug: string;
-    filteredReports: any[];
-    buildContentUrl: (item: any) => string;
-}) {
-    const [hasRightAd, setHasRightAd] = useState(false);
-    const sidebarRef = React.useRef<HTMLDivElement>(null);
-
-    // Check if AdBanner rendered content inside the sidebar
-    useEffect(() => {
-        if (!sidebarRef.current) return;
-
-        const checkContent = () => {
-            const hasContent = sidebarRef.current
-                ? sidebarRef.current.querySelector("img, a, div > *") !== null
-                : false;
-            setHasRightAd(hasContent);
-        };
-
-        const observer = new MutationObserver(checkContent);
-        observer.observe(sidebarRef.current, {
-            childList: true,
-            subtree: true,
-        });
-
-        // Initial check after a short delay for async ad loading
-        const timer = setTimeout(checkContent, 1500);
-
-        return () => {
-            observer.disconnect();
-            clearTimeout(timer);
-        };
-    }, []);
-
-    return (
-        <section className="container mx-auto px-6 lg:px-16 max-w-[1400px] py-24 min-h-[40vh] mb-10">
-            <div
-                className={`grid grid-cols-1 gap-12 items-start ${hasRightAd ? "xl:grid-cols-[minmax(0,1fr)_160px]" : ""
-                    }`}
-            >
-                <div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-x-10 gap-y-16 mt-15 mb-15">
-                        <AnimatePresence mode="popLayout">
-                            {/* In-grid Ad Card — no wrapper so no empty space when ad is absent */}
-                            <AdBanner placement="sector_card" sectorSlug={slug} variant="card" />
-
-                            {filteredReports.map((report, idx) => (
-                                <motion.div
-                                    key={report.id}
-                                    layout
-                                    initial={{ opacity: 0, y: 20 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0, scale: 0.95 }}
-                                    transition={{ delay: idx * 0.05 }}
-                                >
-                                    <article className="group relative">
-                                        <Link
-                                            href={buildContentUrl({ slug: report.slug, type_of_content: report.type_of_content })}
-                                            className="block"
-                                        >
-                                            {/* Card Image */}
-                                            <div className="relative aspect-16/10 rounded-2xl overflow-hidden mb-6 bg-gray-200 shadow-sm transition-shadow duration-300 group-hover:shadow-lg">
-                                                <Image
-                                                    src={report.image}
-                                                    alt={report.title}
-                                                    fill
-                                                    className="object-cover"
-                                                />
-                                                <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-md p-2 rounded-full opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300">
-                                                    <ArrowUpRight size={18} className="text-black" />
-                                                </div>
-                                            </div>
-
-                                            {/* Card Meta */}
-                                            <div className="space-y-3 px-1">
-                                                <DateChip value={report.date} className="text-[10px]" />
-
-                                                <h3 className="text-2xl font-bold leading-tight tracking-tight text-[#1a1a1a] group-hover:text-[#00C6A7] transition-colors duration-300">
-                                                    {report.title}
-                                                </h3>
-
-                                                <p className="text-sm text-gray-500 line-clamp-2 font-light leading-relaxed">
-                                                    {report.excerpt}
-                                                </p>
-                                            </div>
-                                        </Link>
-
-                                        {report.tags?.length > 0 && (
-                                            <div className="flex flex-wrap gap-1.5 mt-3 px-1">
-                                                {report.tags.slice(0, 3).map((tag: any) => (
-                                                    <TagBadge key={tag.slug} name={tag.name} slug={tag.slug} />
-                                                ))}
-                                            </div>
-                                        )}
-                                    </article>
-                                </motion.div>
-                            ))}
-                        </AnimatePresence>
-                    </div>
-
-                    {/* Empty State */}
-                    {filteredReports.length === 0 && (
-                        <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            className="py-40 text-center flex flex-col items-center justify-center"
-                        >
-                            <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-6">
-                                <Search size={32} className="text-gray-300" />
+                    {/* Right Sidebar (4 cols - Sticky Widgets, Desktop Only) */}
+                    <aside className="hidden lg:block lg:col-span-4 relative">
+                        <StickySidebar className="flex flex-col space-y-8 pb-12 pr-2 lg:pr-4">
+                            
+                            {/* In-Sidebar Ads */}
+                            <div>
+                                <AdBanner placement="sector_card" sectorSlug={slug} variant="card" />
                             </div>
-                            <h2 className="text-2xl font-bold text-gray-300">No Articles Found</h2>
-                            <p className="text-gray-400 mt-2">Adjust your filters or try a different search term.</p>
-                        </motion.div>
-                    )}
+
+                            {/* Widget 1: Latest Issue */}
+                            {latestIssue && <LatestIssueWidget latestIssue={latestIssue} />}
+
+                            {/* Widget 2: Newsletter */}
+                            <SidebarNewsletterForm />
+
+                        </StickySidebar>
+                    </aside>
                 </div>
 
-                {/* Right sidebar — only visible when ad content exists */}
-                <aside className={`hidden ${hasRightAd ? "xl:block" : ""}`}>
-                    <div className="sticky top-[148px] flex justify-end" ref={sidebarRef}>
-                        <AdBanner
-                            placement="header_banner_mobile"
-                            variant="vertical"
-                            width={160}
-                            height={600}
-                            className="mx-auto"
-                        />
-                    </div>
-                </aside>
-            </div>
-        </section>
+                {/* 4. VIDEOS SECTION */}
+                {filteredVideos.length > 0 && (
+                    <section className="border-t border-slate-200 pt-12 mt-16">
+                        <div className="flex items-center justify-between pb-3 border-b-2 border-slate-900 mb-6">
+                            <h2 className="text-xl font-black uppercase tracking-wider text-slate-900 flex items-center gap-2.5">
+                                <span className="w-6 h-6 rounded-full bg-red-600 flex items-center justify-center text-white text-xs">
+                                    <Play size={12} className="fill-white translate-x-[1px]" />
+                                </span>
+                                {sectorMeta.breadcrumbLabel} Videos
+                            </h2>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {filteredVideos.map((video) => (
+                                <Link key={video.id} href={`/videos/${video.slug}`} className="group block bg-white border border-slate-200/80 rounded-xl overflow-hidden hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 p-3">
+                                    <div className="relative aspect-video rounded-lg overflow-hidden mb-3 bg-slate-900">
+                                        <Image
+                                            src={video.thumbnail}
+                                            alt={video.title}
+                                            fill
+                                            sizes="(max-width: 640px) 100vw, 33vw"
+                                            className="object-cover group-hover:scale-105 transition-transform duration-500"
+                                        />
+                                        <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                                            <div className="w-10 h-10 bg-white/90 rounded-full flex items-center justify-center pl-0.5 opacity-90 group-hover:opacity-100 group-hover:scale-110 transition-all shadow-md">
+                                                <Play size={16} className="text-red-600 fill-red-600 translate-x-[1px]" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <h3 className="text-sm font-bold text-slate-900 group-hover:text-emerald-600 transition-colors line-clamp-2">
+                                        {video.title}
+                                    </h3>
+                                    <DateChip value={video.date} className="text-[10px] mt-2" />
+                                </Link>
+                            ))}
+                        </div>
+                    </section>
+                )}
+
+            </main>
+        </div>
     );
 }

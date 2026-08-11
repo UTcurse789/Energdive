@@ -1,8 +1,6 @@
-import { SectionHeading } from "./section-heading";
-import { ArticleCard } from "./article-card";
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
-
+import Image from "next/image";
+import { ChevronRight } from "lucide-react";
 import { Article } from "@/types";
 
 interface SectorBlockProps {
@@ -12,22 +10,51 @@ interface SectorBlockProps {
 }
 
 export function SectorBlock({ title, slug, articles }: SectorBlockProps) {
-    return (
-        <section className="py-8 border-b border-border">
-            <SectionHeading
-                title={title}
-                linkText="View All"
-                linkHref={`/sectors/${slug}`}
-            />
+    if (!articles || articles.length === 0) return null;
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {articles.slice(0, 4).map((article, index) => (
-                    <ArticleCard
-                        key={index}
-                        article={article}
-                        variant="vertical"
-                        className="h-full"
-                    />
+    return (
+        <section className="py-3 sm:py-4 border-b border-slate-200">
+            {/* Section Header: Title > */}
+            <div className="flex items-center justify-between pb-2 border-b-2 border-slate-900 mb-4">
+                <Link
+                    href={`/sectors/${slug}`}
+                    className="group inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-widest text-slate-900 hover:text-emerald-600 transition-colors"
+                >
+                    {title}
+                    <ChevronRight className="w-3.5 h-3.5 text-slate-900 group-hover:text-emerald-600 transition-colors stroke-[2.5]" />
+                </Link>
+            </div>
+
+            {/* Grid Row of Cards (Image Top + Title Below) */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                {articles.slice(0, 4).map((article, i) => (
+                    <article key={i} className="group flex flex-col">
+                        {/* Thumbnail Image */}
+                        <div className="relative aspect-[16/10] w-full overflow-hidden rounded-lg bg-slate-100 mb-2 border border-slate-200 shadow-xs">
+                            <Image
+                                src={article.image}
+                                alt={article.title}
+                                fill
+                                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                                className="object-cover group-hover:scale-105 transition-transform duration-500"
+                            />
+                        </div>
+
+                        {/* Date Above Title */}
+                        {article.date && (
+                            <time
+                                dateTime={article.date}
+                                className="mt-1.5 mb-1 block text-[10px] text-slate-400 font-medium uppercase tracking-wide"
+                            >
+                                {article.date}
+                            </time>
+                        )}
+                        <Link href={article.href || "#"} className="group">
+                            <h3 className="text-xs sm:text-sm font-bold text-slate-900 leading-snug group-hover:text-emerald-600 transition-colors line-clamp-3">
+                                {article.title}
+                            </h3>
+                        </Link>
+                    </article>
                 ))}
             </div>
         </section>

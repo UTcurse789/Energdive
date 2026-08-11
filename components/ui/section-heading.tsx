@@ -11,9 +11,37 @@ interface SectionHeadingProps {
     linkHref?: string;
     className?: string;
     adPlacement?: string;
+    variant?: "default" | "hero";
 }
 
-export function SectionHeading({ title, linkText, linkHref, className, adPlacement }: SectionHeadingProps) {
+export function SectionHeading({ title, linkText, linkHref, className, adPlacement, variant = "default" }: SectionHeadingProps) {
+    if (variant === "hero") {
+        return (
+            <div className="w-full flex flex-col">
+                {adPlacement && (
+                    <div className="w-full flex justify-center mb-6 empty:hidden [&>div]:w-full">
+                        <AdBanner placement={adPlacement} variant="banner" className="w-full" />
+                    </div>
+                )}
+                <div className={cn("flex items-center justify-between pb-2 border-b-2 border-slate-900 mb-4", className)}>
+                    <h2 className="text-xs font-black uppercase tracking-widest text-slate-900 flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-600" />
+                        {title}
+                    </h2>
+
+                    {linkText && linkHref && (
+                        <Link
+                            href={linkHref}
+                            className="text-[10px] font-black text-emerald-600 hover:text-emerald-700 transition-colors uppercase tracking-widest"
+                        >
+                            {linkText} &rarr;
+                        </Link>
+                    )}
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="w-full flex flex-col">
             {adPlacement && (
@@ -21,18 +49,18 @@ export function SectionHeading({ title, linkText, linkHref, className, adPlaceme
                     <AdBanner placement={adPlacement} variant="banner" className="w-full" />
                 </div>
             )}
-            <div className={cn("flex flex-wrap md:flex-nowrap items-end justify-between border-b border-slate-100 pb-4 mb-10 relative gap-y-4 gap-x-2 md:gap-4", className)}>
+            <div className={cn("flex flex-wrap md:flex-nowrap items-end justify-between border-b border-slate-100 pb-3 mb-6 relative gap-y-4 gap-x-2 md:gap-4", className)}>
             {/* The Bottom Accent Line */}
-            <div className="absolute bottom-0 left-0 w-24 h-1 bg-[#09B697]" />
+            <div className="absolute bottom-0 left-0 w-20 h-0.5 bg-[#09B697]" />
 
-            <div className="flex items-center gap-3 shrink-0 order-1">
+            <div className="flex items-center gap-2.5 shrink-0 order-1">
                 {/* Live Indicator Dot */}
-                <span className="relative flex h-3 w-3">
+                <span className="relative flex h-2.5 w-2.5">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#09B697] opacity-20"></span>
-                    <span className="relative inline-flex rounded-full h-3 w-3 bg-[#09B697]"></span>
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#09B697]"></span>
                 </span>
 
-                <h2 className="text-2xl md:text-4xl font-serif font-black tracking-tight text-[#1a1a1a] uppercase">
+                <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 uppercase">
                     {title}
                 </h2>
             </div>

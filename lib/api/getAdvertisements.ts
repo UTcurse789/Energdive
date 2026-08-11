@@ -38,6 +38,8 @@ interface GetAdvertisementsOptions {
     sectorSlug?: string;
 }
 
+import { isAdMatchingSector } from "@/lib/sector-content";
+
 /**
  * Fetch active advertisements from Strapi, filtered by placement and optionally sector.
  * Falls back to placement-only ads if no sector-specific ads exist.
@@ -54,11 +56,15 @@ export async function getAdvertisements({
         const day = String(now.getDate()).padStart(2, "0");
         const today = `${year}-${month}-${day}`; // YYYY-MM-DD in local time
 
-        // Build URL — don't filter dates in Strapi (they may be null = always active)
-        const url = buildUrl({}, placement, sectorSlug, today);
+        // Build URL for placement
+        const url =
+            `${STRAPI_BASE}/api/advertisements` +
+            `?filters[placement][$eq]=${encodeURIComponent(placement)}` +
+            `&filters[is_active][$eq]=true` +
+            `&populate=*` +
+            `&sort=priority:desc`;
 
         console.log(`[Ads] Fetching: placement=${placement}, sector=${sectorSlug || "none"}, today=${today}`);
-        console.log(`[Ads] URL: ${url}`);
 
         const res = await fetch(url, {
             headers: {
@@ -73,25 +79,26 @@ export async function getAdvertisements({
         }
 
         const json = await res.json();
-        let ads: Advertisement[] = json.data || [];
-
-        console.log(`[Ads] Raw ads from Strapi: ${ads.length} for placement "${placement}"`);
+        let allAds: Advertisement[] = json.data || [];
 
         // Filter by date in code (null/empty dates = always active)
-        ads = ads.filter((ad) => {
+        allAds = allAds.filter((ad) => {
             if (ad.start_date && ad.start_date > today) return false;
             if (ad.end_date && ad.end_date < today) return false;
             return true;
         });
 
-        console.log(`[Ads] After date filter: ${ads.length} ads remaining`);
-
-        // If sector-specific query returned nothing, fallback to global (no-sector) ads only
-        if (ads.length === 0 && sectorSlug) {
-            console.log(`[Ads] No sector-specific ads, falling back to global ads only`);
-            const globalAds = await getAdvertisements({ placement });
-            // Only keep ads that have NO sectors assigned (global/untargeted ads)
-            return globalAds.filter((a) => !a.sectors || a.sectors.length === 0);
+        let ads: Advertisement[] = [];
+        if (sectorSlug) {
+            const matchingAds = allAds.filter((ad) => isAdMatchingSector(ad, sectorSlug));
+            if (matchingAds.length > 0) {
+                ads = matchingAds;
+            } else {
+                // Fallback to global (no-sector) ads if no sector-specific match
+                ads = allAds.filter((a) => !a.sectors || a.sectors.length === 0);
+            }
+        } else {
+            ads = allAds;
         }
 
         // Sort by priority DESC (higher priority first), nulls last
@@ -102,28 +109,6 @@ export async function getAdvertisements({
         console.error("[Ads] Failed to fetch advertisements:", err);
         return [];
     }
-}
-
-function buildUrl(
-    _filters: Record<string, any>,
-    placement: string,
-    sectorSlug: string | undefined,
-    _now: string
-): string {
-    // Don't filter by date in Strapi query — dates may be null (meaning always active)
-    // We filter dates in code after fetching
-    let url =
-        `${STRAPI_BASE}/api/advertisements` +
-        `?filters[placement][$eq]=${encodeURIComponent(placement)}` +
-        `&filters[is_active][$eq]=true` +
-        `&populate=*` +
-        `&sort=priority:desc`;
-
-    if (sectorSlug) {
-        url += `&filters[sectors][slug][$eq]=${encodeURIComponent(sectorSlug)}`;
-    }
-
-    return url;
 }
 
 /**
