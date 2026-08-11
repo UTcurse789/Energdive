@@ -170,27 +170,38 @@ export function Hero({ heroStories: propHeroStories, topStories: propTopStories,
     }, [activeVideo]);
 
     useEffect(() => {
+        let isMounted = true;
         if (propHeroStories?.length) return;
 
         fetch(
             `${STRAPI_BASE}/api/contents?filters[show_hero_banner][$eq]=true&populate=*&pagination[pageSize]=10&sort=publishedAt:desc`
         )
             .then((r) => r.json())
-            .then((d) => setCoverStories(d?.data || []))
+            .then((d) => {
+                if (isMounted) setCoverStories(d?.data || []);
+            })
             .catch(console.error)
-            .finally(() => { if (propTopStories) setLoading(false); });
+            .finally(() => {
+                if (isMounted && propTopStories) setLoading(false);
+            });
 
         if (!propTopStories) {
             fetch(
                 `${STRAPI_BASE}/api/contents?filters[featured][$eq]=true&pagination[pageSize]=10&populate=*&sort=publishedAt:desc`
             )
                 .then((r) => r.json())
-                .then((d) => setArticles(d?.data || []))
+                .then((d) => {
+                    if (isMounted) setArticles(d?.data || []);
+                })
                 .catch(console.error)
-                .finally(() => { if (isMounted) setLoading(false); });
+                .finally(() => {
+                    if (isMounted) setLoading(false);
+                });
         }
 
-        return () => { isMounted = false; };
+        return () => {
+            isMounted = false;
+        };
     }, [propHeroStories, propTopStories]);
 
     const carouselArticles = propHeroStories?.length ? propHeroStories : coverStories;
