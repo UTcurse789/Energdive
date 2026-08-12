@@ -26,6 +26,11 @@ import { getCanonicalUrl } from "@/lib/seo";
 
 const STRAPI_BASE_URL = "https://cms.energdive.com";
 
+function cleanHeadline(title: string): string {
+    if (!title) return "";
+    return title.replace(/\s*[\|-]\s*ENERGDIVE$/i, '').replace(/\s*[\|-]\s*EnergDive$/i, '').trim();
+}
+
 function slugify(text: string): string {
     return text.toLowerCase().trim().replace(/[^\w\s-]/g, "").replace(/[\s_]+/g, "-").replace(/-+/g, "-").replace(/^-+|-+$/g, "");
 }
@@ -43,7 +48,7 @@ function normalizeTag(tag: any) {
 async function getArticle(slug: string) {
     const url = `${STRAPI_BASE_URL}/api/contents?filters[slug][$eq]=${slug}&populate[author][populate]=avatar&populate[FeaturedImage]=true&populate[tags]=true&populate[type_of_content]=true&populate[sectors]=true`;
 
-    const res = await fetch(url, { next: { revalidate: 3600 } });
+    const res = await fetch(url, { next: { revalidate: 300 } });
     if (!res.ok) return null;
 
     const json = await res.json();
@@ -192,8 +197,9 @@ export default async function NewsDetailPage({
     const articleContent = attrs.Content || [];
     const dataBlocks = await fetchDataBlocks(articleContent);
 
+    const cleanTitle = cleanHeadline(attrs.Title || attrs.title || "");
     const article = {
-        title: attrs.Title,
+        title: cleanTitle,
         excerpt: attrs.Excerpt || [],
         content: articleContent,
         image: attrs.FeaturedImage?.url
@@ -215,8 +221,8 @@ export default async function NewsDetailPage({
 
     const categorySectorSlug = getSectorSlugForTagOrCategory(sectorName || article.category, sectorSlug);
 
-    const rawDate = attrs.publishedAt || attrs.createdAt || attrs.Date || "";
-    const modifiedDate = attrs.updatedAt || rawDate;
+    const rawDate = attrs.publishedAt || attrs.createdAt || attrs.Date || new Date().toISOString();
+    const modifiedDate = attrs.updatedAt || attrs.publishedAt || attrs.createdAt || rawDate;
     const excerptText = Array.isArray(attrs.Excerpt)
         ? attrs.Excerpt[0]?.children?.[0]?.text || ""
         : "";
