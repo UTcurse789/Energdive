@@ -907,3 +907,23 @@ h6 {
     text-decoration: none !important;
   }
 }
+
+/* Article Body & Internal/External Content Links Styling */
+.article-body a,
+.prose a,
+a.inline-link {
+  color: #00A651 !important;
+  text-decoration: underline !important;
+  text-underline-offset: 4px !important;
+  text-decoration-color: rgba(0, 166, 81, 0.4) !important;
+  font-weight: 600 !important;
+  transition: color 0.2s ease, text-decoration-color 0.2s ease !important;
+}
+
+.article-body a:hover,
+.prose a:hover,
+a.inline-link:hover {
+  color: #008741 !important;
+  text-decoration-color: #008741 !important;
+}
+
