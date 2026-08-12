@@ -64,6 +64,20 @@ function resolveImageUrl(url: string | undefined | null): string {
     return resolved.replace("http://", "https://");
 }
 
+/** Recursively extract plain text from Strapi block children nodes (including link nodes, bold nodes, etc.) */
+function extractTextFromNodes(nodes: any): string {
+    if (!nodes) return "";
+    if (typeof nodes === "string") return nodes;
+    if (Array.isArray(nodes)) {
+        return nodes.map(extractTextFromNodes).join("");
+    }
+    if (typeof nodes?.text === "string") return nodes.text;
+    if (Array.isArray(nodes?.children)) {
+        return extractTextFromNodes(nodes.children);
+    }
+    return "";
+}
+
 /** Render a shortcode component (chart or table) */
 function renderShortcode(
     type: "chart" | "table",
@@ -218,7 +232,7 @@ export default function ArticleBody({
     };
 
     return (
-        <div>
+        <div className="article-body">
             {content.map((block: any, i: number) => {
                 // ── Check for shortcode blocks ──
                 if (hasDataBlocks) {
@@ -238,9 +252,7 @@ export default function ArticleBody({
                         block?.type === "paragraph" &&
                         Array.isArray(block.children)
                     ) {
-                        const fullText = block.children
-                            .map((c: any) => c?.text ?? "")
-                            .join("");
+                        const fullText = extractTextFromNodes(block.children);
 
                         if (textContainsShortcode(fullText)) {
                             const segments = splitTextByShortcodes(fullText);
@@ -275,9 +287,7 @@ export default function ArticleBody({
                     isNonEmptyParagraph(block) && i > 0 && isImageBlock(content[i - 1]);
 
                 if (isCaption) {
-                    const text = block.children
-                        .map((child: any) => child?.text ?? "")
-                        .join("");
+                    const text = extractTextFromNodes(block.children);
 
                     return (
                         <Fragment key={i}>
@@ -306,6 +316,21 @@ export default function ArticleBody({
                         <BlocksRenderer
                             content={[block]}
                             blocks={{
+                                link: ({ children, url }: any) => {
+                                    const href = url || "#";
+                                    const isExternal = href.startsWith("http") && !href.includes("energdive.com");
+                                    return (
+                                        <a
+                                            href={href}
+                                            target={isExternal ? "_blank" : undefined}
+                                            rel={isExternal ? "noopener noreferrer" : undefined}
+                                            className="text-[#00A651] font-semibold underline underline-offset-4 decoration-[#00A651]/40 hover:text-[#008741] hover:decoration-[#00A651] transition-colors inline-link"
+                                            style={{ color: "#00A651", textDecoration: "underline" }}
+                                        >
+                                            {children}
+                                        </a>
+                                    );
+                                },
                                 quote: ({ children }: any) => (
                                     <blockquote
                                         style={{
@@ -361,13 +386,7 @@ export default function ArticleBody({
                                 },
                                 ...(enableSectionSharing ? {
                                     heading: ({ children, level }: any) => {
-                                        const extractText = (node: any): string => {
-                                            if (typeof node === 'string') return node;
-                                            if (Array.isArray(node)) return node.map(extractText).join('');
-                                            if (node && node.props && node.props.children) return extractText(node.props.children);
-                                            return '';
-                                        };
-                                        const text = extractText(children);
+                                        const text = extractTextFromNodes(children);
                                         const sectionId = text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
                                         const HeadingTag = `h${level}` as any;
 
@@ -390,18 +409,12 @@ export default function ArticleBody({
                                 } : {}),
                             }}
                             modifiers={{
-                                italic: ({ children }) => (
-                                    <em
-                                        style={{
-                                            fontSize: "0.90rem",
-                                            color: "#9ca3af",
-                                            display: "block",
-                                            textAlign: "center",
-                                            fontStyle: "italic",
-                                        }}
-                                    >
-                                        {children}
-                                    </em>
+                                italic: ({ children }) => <em className="italic">{children}</em>,
+                                bold: ({ children }) => <strong className="font-bold">{children}</strong>,
+                                underline: ({ children }) => <u className="underline">{children}</u>,
+                                strikethrough: ({ children }) => <s className="line-through">{children}</s>,
+                                code: ({ children }) => (
+                                    <code className="bg-gray-100 rounded px-1.5 py-0.5 font-mono text-sm">{children}</code>
                                 ),
                             }}
                         />
@@ -412,3 +425,4 @@ export default function ArticleBody({
         </div>
     );
 }
+
