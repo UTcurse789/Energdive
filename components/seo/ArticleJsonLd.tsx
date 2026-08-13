@@ -4,18 +4,23 @@ import { slugify } from "@/lib/utils";
 import { toIsoDate } from "@/lib/date";
 import { ORGANIZATION_SCHEMA } from "@/lib/organization-schema";
 
-interface ArticleJsonLdProps {
-    title: string;
+export interface ArticleJsonLdProps {
+    title?: string;
+    headline?: string;
     /** ISO-8601 date string or raw Date string from Strapi */
     datePublished: string;
     /** ISO-8601 updated date string */
     dateModified?: string;
     /** Author display name */
     authorName?: string | null;
+    authorType?: 'Person' | 'Organization';
+    authorUrl?: string;
     /** Article slug used to build canonical URL */
-    slug: string;
+    slug?: string;
+    url?: string;
     /** Absolute or relative URL to featured image */
-    imageUrl: string;
+    imageUrl?: string;
+    image?: string;
     /** Route prefix, e.g. "news" */
     section?: string;
     /** Optional excerpt / description */
@@ -30,68 +35,99 @@ interface ArticleJsonLdProps {
 
 const GENERIC_DESK_REGEX = /\b(desk|editorial|team|energdive|newsroom)\b/i;
 
+function cleanHeadline(title: string): string {
+    if (!title) return "";
+    return title
+        .replace(/\s*[\|-]\s*ENERGDIVE$/i, '')
+        .replace(/\s*[\|-]\s*EnergDive$/i, '')
+        .trim();
+}
+
 export function ArticleJsonLd({
     title,
+    headline,
     datePublished,
     dateModified,
     authorName,
+    authorType,
+    authorUrl,
     slug,
+    url,
     imageUrl,
+    image,
     section = "news",
     description,
     category,
     categorySlug,
     schemaType = "NewsArticle",
 }: ArticleJsonLdProps) {
-    const toAbsoluteUrl = (value: string) => {
+    const rawHeadline = headline || title || "ENERGDIVE News";
+    const finalHeadline = cleanHeadline(rawHeadline).substring(0, 110);
+
+    const toAbsoluteUrl = (value?: string) => {
         if (!value) return getCanonicalUrl("/fav.jpg");
         if (value.startsWith("http://") || value.startsWith("https://")) return value;
         return getCanonicalUrl(value);
     };
 
-    const canonicalUrl = getCanonicalUrl(`/${section}/${slug}`);
-    const publishedIsoDate = toIsoDate(datePublished);
-    const modifiedIsoDate = toIsoDate(dateModified || datePublished);
-    const normalizedImageUrl = toAbsoluteUrl(imageUrl);
-    const normalizedDescription = description?.trim() || title;
+    const canonicalUrl = url || (slug ? getCanonicalUrl(`/${section}/${slug}`) : getCanonicalUrl("/"));
+
+    // Guard clause: enforce reliable fallback ISO strings to avoid string serialization omission
+    const nowIso = new Date().toISOString();
+    const parsedPublished = toIsoDate(datePublished);
+    const finalPublished = parsedPublished && !isNaN(Date.parse(parsedPublished))
+        ? new Date(parsedPublished).toISOString()
+        : nowIso;
+
+    const parsedModified = toIsoDate(dateModified);
+    const finalModified = parsedModified && !isNaN(Date.parse(parsedModified))
+        ? new Date(parsedModified).toISOString()
+        : finalPublished;
+
+    const targetImageUrl = image || imageUrl || "";
+    const normalizedImageUrl = toAbsoluteUrl(targetImageUrl);
+    const normalizedDescription = description?.trim() || finalHeadline;
 
     const rawAuthor = (authorName || "").trim();
-    const effectiveAuthorName = rawAuthor || "ENERGDIVE News Desk";
-    const isOrgAuthor = !rawAuthor || GENERIC_DESK_REGEX.test(rawAuthor);
+    const effectiveAuthorName = rawAuthor || "ENERGDIVE Editorial Desk";
+    const isOrgAuthor = authorType === "Organization" || !rawAuthor || GENERIC_DESK_REGEX.test(rawAuthor);
 
-    const authorSchema = isOrgAuthor
-        ? {
-            "@type": "Organization",
-            name: effectiveAuthorName,
-            url: getCanonicalUrl(`/author/${slugify(effectiveAuthorName)}`),
-        }
-        : {
-            "@type": "Person",
-            name: effectiveAuthorName,
-            url: getCanonicalUrl(`/author/${slugify(effectiveAuthorName)}`),
-        };
+    const authorSchema = {
+        "@type": isOrgAuthor ? "Organization" : (authorType || "Person"),
+        "name": effectiveAuthorName,
+        "url": authorUrl || getCanonicalUrl(`/author/${slugify(effectiveAuthorName)}`),
+    };
 
     const articleSchema = {
         "@type": schemaType,
-        headline: title,
-        description: normalizedDescription,
-        datePublished: publishedIsoDate,
-        dateModified: modifiedIsoDate,
-        mainEntityOfPage: {
+        "mainEntityOfPage": {
             "@type": "WebPage",
             "@id": canonicalUrl,
         },
-        author: authorSchema,
-        publisher: {
-            "@id": "https://www.energdive.com/#organization",
-        },
-        image: {
+        "headline": finalHeadline,
+        "description": normalizedDescription,
+        "image": {
             "@type": "ImageObject",
-            url: normalizedImageUrl,
-            width: 1200,
-            height: 630,
+            "url": normalizedImageUrl,
+            "width": 1200,
+            "height": 630,
         },
-        url: canonicalUrl,
+        "datePublished": finalPublished,
+        "dateModified": finalModified,
+        "author": authorSchema,
+        "publisher": {
+            "@type": "Organization",
+            "@id": "https://www.energdive.com/#organization",
+            "name": "ENERGDIVE",
+            "url": "https://www.energdive.com",
+            "logo": {
+                "@type": "ImageObject",
+                "url": "https://www.energdive.com/fav.jpg",
+                "width": 192,
+                "height": 192
+            }
+        },
+        "url": canonicalUrl,
     };
 
     const sectionName = section.charAt(0).toUpperCase() + section.slice(1);
@@ -120,14 +156,14 @@ export function ArticleJsonLd({
         breadcrumbs.push({
             "@type": "ListItem",
             position: 4,
-            name: title,
+            name: finalHeadline,
             item: canonicalUrl,
         });
     } else {
         breadcrumbs.push({
             "@type": "ListItem",
             position: 3,
-            name: title,
+            name: finalHeadline,
             item: canonicalUrl,
         });
     }
@@ -156,3 +192,4 @@ export function ArticleJsonLd({
     );
 }
 
+export default ArticleJsonLd;

@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { SectionHeading } from "@/components/ui/section-heading";
-import { ChevronLeft, ChevronRight, ArrowUpRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, ArrowUpRight, Quote, Mic } from "lucide-react";
 import { slugify } from "@/lib/utils";
 
 export interface OpinionItem {
@@ -20,17 +20,21 @@ export interface OpinionItem {
     imageCaption?: string;
 }
 
-
-
 export function OpinionSection({
     opinions = [],
     interviews = [],
+    contained = true,
 }: {
     opinions: OpinionItem[],
     interviews: OpinionItem[],
+    contained?: boolean,
 }) {
     const [opinionIndex, setOpinionIndex] = useState(0);
     const [interviewIndex, setInterviewIndex] = useState(0);
+    const opinionThumbRefs = useRef<(HTMLButtonElement | null)[]>([]);
+    const interviewThumbRefs = useRef<(HTMLButtonElement | null)[]>([]);
+    const opinionStripRef = useRef<HTMLDivElement | null>(null);
+    const interviewStripRef = useRef<HTMLDivElement | null>(null);
 
     // Opinion navigation
     const opinionNext = useCallback(() => {
@@ -48,219 +52,400 @@ export function OpinionSection({
         setInterviewIndex((i) => (i - 1 + interviews.length) % Math.max(interviews.length, 1));
     }, [interviews.length]);
 
+    useEffect(() => {
+        const strip = opinionStripRef.current;
+        const thumb = opinionThumbRefs.current[opinionIndex];
+        if (!strip || !thumb) return;
+        const thumbLeft = thumb.offsetLeft;
+        const thumbWidth = thumb.offsetWidth;
+        const stripWidth = strip.offsetWidth;
+        strip.scrollTo({ left: thumbLeft - (stripWidth - thumbWidth) / 2, behavior: "smooth" });
+    }, [opinionIndex]);
+
+    useEffect(() => {
+        const strip = interviewStripRef.current;
+        const thumb = interviewThumbRefs.current[interviewIndex];
+        if (!strip || !thumb) return;
+        const thumbLeft = thumb.offsetLeft;
+        const thumbWidth = thumb.offsetWidth;
+        const stripWidth = strip.offsetWidth;
+        strip.scrollTo({ left: thumbLeft - (stripWidth - thumbWidth) / 2, behavior: "smooth" });
+    }, [interviewIndex]);
+
     if (opinions.length === 0 && interviews.length === 0) return null;
 
     const currentOpinion = opinions[opinionIndex];
     const currentInterview = interviews[interviewIndex];
+    const containerClassName = contained
+        ? "max-w-6xl mx-auto px-5 sm:px-10 lg:px-16"
+        : "w-full";
 
     return (
         <>
-            {/* ─── OPINION SECTION ─── */}
+            {/* ═══════════════════════════════════════════════
+                OPINION SECTION — Compact Editorial Portrait Layout
+            ═══════════════════════════════════════════════ */}
             {opinions.length > 0 && (
-                <section className="py-6 md:py-8 bg-white border-b border-zinc-100">
-                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <section
+                    aria-label="Opinion & Commentary"
+                    className="py-6 lg:py-8 bg-white"
+                >
+                    <div className={containerClassName}>
+
+                        {/* Section Heading */}
                         <SectionHeading
                             title="Opinion"
                             linkText="View All"
                             linkHref="/opinion"
                             adPlacement="home_opinion"
+                            variant="hero"
                         />
 
-                        {/* Carousel: Image LEFT, Content RIGHT */}
-                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center mt-4 group">
-                            {/* Image Column - LEFT */}
-                            <div className="lg:col-span-4 flex justify-center lg:justify-start">
-                                <Link href={`/opinion/${currentOpinion.slug}`} className="relative w-full max-w-[320px] block cursor-pointer group/image">
-                                    <div className="relative w-full aspect-[4/5] border border-zinc-800 p-2 bg-white transition-transform duration-500 group-hover/image:scale-[1.02]">
-                                        <div className="relative w-full h-full overflow-hidden border border-zinc-200">
-                                            <Image
-                                                src={currentOpinion.image}
-                                                alt={currentOpinion.authorName}
-                                                fill
-                                                className="object-cover grayscale group-hover/image:grayscale-0 transition-all duration-1000"
-                                            />
-                                            <div className="absolute bottom-4 right-4 bg-white/90 backdrop-blur-md p-3 rounded-full opacity-0 translate-y-2 group-hover/image:opacity-100 group-hover/image:translate-y-0 transition-all duration-300 shadow-lg">
-                                                <ArrowUpRight size={20} className="text-black" />
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className="mt-3 text-center lg:text-left pl-1">
-                                        {currentOpinion.imageCaption ? (
-                                            <span className="text-[13px] md:text-sm font-serif italic text-zinc-500 group-hover/image:text-zinc-800 transition-colors">
-                                                {currentOpinion.imageCaption}
-                                            </span>
-                                        ) : (
-                                            <span className="text-[13px] md:text-sm font-serif italic text-zinc-500 group-hover/image:text-zinc-800 transition-colors">
-                                                {currentOpinion.authorName}
-                                            </span>
-                                        )}
-                                    </div>
+                        {/* ── MAIN EDITORIAL CARD ── */}
+                        <article className="grid grid-cols-1 lg:grid-cols-12 gap-0 border border-zinc-200 bg-white shadow-sm overflow-hidden rounded-xl">
+
+                            {/* LEFT — Portrait Image (Compact 3 Cols) */}
+                            <div className="lg:col-span-4 xl:col-span-3 relative aspect-[4/3] sm:aspect-[16/9] lg:aspect-auto min-h-[260px] sm:min-h-[300px] lg:min-h-0 bg-zinc-950 group/img">
+                                <Link
+                                    href={`/opinion/${currentOpinion.slug}`}
+                                    className="block w-full h-full absolute inset-0"
+                                    tabIndex={-1}
+                                    aria-hidden="true"
+                                >
+                                    <Image
+                                        src={currentOpinion.image}
+                                        alt={currentOpinion.imageCaption || currentOpinion.authorName}
+                                        fill
+                                        className="object-cover object-top grayscale group-hover/img:grayscale-0 transition-all duration-700"
+                                        sizes="(max-width: 1024px) 100vw, 30vw"
+                                        priority
+                                    />
+                                    {/* Dark gradient overlay */}
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
                                 </Link>
-                            </div>
 
-                            {/* Content Column - RIGHT */}
-                            <div className="lg:col-span-8">
-                                <div className="flex flex-col items-start">
-                                    <Link href={`/opinion/${currentOpinion.slug}`} className="block mb-4">
-                                        <h3 className="font-serif text-2xl md:text-3xl lg:text-4xl font-bold leading-[1.15] tracking-tight text-zinc-900 group-hover:text-[#00A651] transition-colors duration-300">
-                                            &ldquo;{currentOpinion.title}&rdquo;
-                                        </h3>
+                                {/* OPINION stamp badge */}
+                                <div className="absolute top-3 left-3 z-10">
+                                    <span className="inline-flex items-center gap-1.5 bg-[#00A651] text-white text-[9px] font-black uppercase tracking-[0.2em] px-2.5 py-1 shadow-sm rounded-xs">
+                                        <Quote size={8} />
+                                        Opinion
+                                    </span>
+                                </div>
+
+                                {/* Author name anchored bottom */}
+                                <div className="absolute bottom-0 left-0 right-0 z-10 px-4 py-3">
+                                    <Link
+                                        href={`/author/${slugify(currentOpinion.authorName)}`}
+                                        className="text-white font-black text-xs sm:text-sm uppercase tracking-wider hover:text-[#00A651] transition-colors"
+                                    >
+                                        {currentOpinion.authorName}
                                     </Link>
-
-                                    <div className="relative pl-8 mb-6 border-l border-zinc-200">
-                                        <p className="text-sm md:text-base text-zinc-500 font-serif leading-relaxed italic line-clamp-3">
-                                            {currentOpinion.excerpt}
-                                        </p>
-                                    </div>
-
-                                    <div className="flex items-center justify-between w-full">
-                                        <Link href={`/author/${slugify(currentOpinion.authorName)}`} className="flex flex-col hover:opacity-80 transition-opacity">
-                                            <span className="font-black text-base sm:text-lg uppercase tracking-wider sm:tracking-widest text-zinc-900 overflow-wrap-break-word">
-                                                {currentOpinion.authorName}
-                                            </span>
-                                            <span className="text-[10px] font-bold text-[#00A651] uppercase tracking-[3px] mt-1">
-                                                {currentOpinion.authorRole}
-                                            </span>
-                                        </Link>
-
-                                        {/* Navigation */}
-                                        {opinions.length > 1 && (
-                                            <div className="flex items-center gap-3">
-                                                <span className="text-xs font-bold text-zinc-400">
-                                                    {opinionIndex + 1} / {opinions.length}
-                                                </span>
-                                                <button
-                                                    onClick={opinionPrev}
-                                                    className="w-10 h-10 border border-zinc-200 flex items-center justify-center hover:bg-zinc-100 transition-colors"
-                                                >
-                                                    <ChevronLeft size={16} />
-                                                </button>
-                                                <button
-                                                    onClick={opinionNext}
-                                                    className="w-10 h-10 border border-zinc-200 flex items-center justify-center hover:bg-zinc-100 transition-colors"
-                                                >
-                                                    <ChevronRight size={16} />
-                                                </button>
-                                            </div>
-                                        )}
-                                    </div>
                                 </div>
                             </div>
-                        </div>
 
-                        {/* Dots indicator */}
+                            {/* RIGHT — Editorial Content (8-9 Cols) */}
+                            <div className="lg:col-span-8 xl:col-span-9 flex flex-col justify-between p-4 sm:p-5 lg:p-6">
+
+                                {/* Pull-quote style title */}
+                                <div className="flex-1">
+                                    {/* Opening quotation mark */}
+                                    <div className="text-[#00A651] mb-2 leading-none">
+                                        <svg width="22" height="18" viewBox="0 0 36 28" fill="currentColor" aria-hidden="true">
+                                            <path d="M0 28V17.2C0 11.6 1.6 7.2 4.8 4C8 0.8 12.4 0 18 0v5.6c-3.2 0-5.6.8-7.2 2.4C9.2 9.6 8.4 12 8.4 15.2H16V28H0Zm20 0V17.2C20 11.6 21.6 7.2 24.8 4C28 .8 32.4 0 38 0v5.6c-3.2 0-5.6.8-7.2 2.4C29.2 9.6 28.4 12 28.4 15.2H36V28H20Z" />
+                                        </svg>
+                                    </div>
+
+                                    {/* Article title — h3 for SEO hierarchy */}
+                                    <h3 className="text-base sm:text-lg lg:text-xl font-bold text-slate-900 leading-snug tracking-normal mb-2">
+                                        <Link
+                                            href={`/opinion/${currentOpinion.slug}`}
+                                            className="hover:text-emerald-600 transition-colors duration-300"
+                                        >
+                                            {currentOpinion.title}
+                                        </Link>
+                                    </h3>
+
+                                    {currentOpinion.date && (
+                                        <time
+                                            dateTime={currentOpinion.date}
+                                            className="mb-2 block text-[10px] text-slate-400 font-medium uppercase tracking-wide"
+                                        >
+                                            {currentOpinion.date}
+                                        </time>
+                                    )}
+
+                                    {/* Excerpt */}
+                                    <p className="text-xs sm:text-sm text-slate-500 leading-relaxed line-clamp-3 mb-4 border-l-2 border-slate-200 pl-3 font-light">
+                                        {currentOpinion.excerpt}
+                                    </p>
+                                </div>
+
+                                {/* Footer row — Author + Navigation */}
+                                <div className="flex items-center justify-between gap-4 pt-4 border-t border-zinc-100">
+
+                                    {/* Author byline */}
+                                    <div className="flex items-center gap-2.5">
+                                        {currentOpinion.authorAvatar && (
+                                            <div className="relative w-9 h-9 rounded-full overflow-hidden border-2 border-zinc-200 shrink-0">
+                                                <Image
+                                                    src={currentOpinion.authorAvatar}
+                                                    alt={currentOpinion.authorName}
+                                                    fill
+                                                    className="object-cover object-top"
+                                                />
+                                            </div>
+                                        )}
+                                        <div>
+                                            <Link
+                                                href={`/author/${slugify(currentOpinion.authorName)}`}
+                                                className="block font-black text-xs uppercase tracking-wider text-zinc-900 hover:text-[#00A651] transition-colors"
+                                            >
+                                                {currentOpinion.authorName}
+                                            </Link>
+                                            <span className="text-[9px] font-bold text-[#00A651] uppercase tracking-[0.18em]">
+                                                {currentOpinion.authorRole}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    {/* Prev / Next navigation */}
+                                    {opinions.length > 1 && (
+                                        <div className="flex items-center gap-1.5 shrink-0">
+                                            <span className="text-[10px] font-bold text-zinc-400 tabular-nums mr-1">
+                                                {String(opinionIndex + 1).padStart(2, "0")} / {String(opinions.length).padStart(2, "0")}
+                                            </span>
+                                            <button
+                                                onClick={opinionPrev}
+                                                aria-label="Previous opinion"
+                                                className="w-8 h-8 border border-zinc-200 flex items-center justify-center hover:bg-zinc-900 hover:border-zinc-900 hover:text-white transition-all duration-200 rounded-md"
+                                            >
+                                                <ChevronLeft size={14} />
+                                            </button>
+                                            <button
+                                                onClick={opinionNext}
+                                                aria-label="Next opinion"
+                                                className="w-8 h-8 border border-zinc-200 flex items-center justify-center hover:bg-zinc-900 hover:border-zinc-900 hover:text-white transition-all duration-200 rounded-md"
+                                            >
+                                                <ChevronRight size={14} />
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </article>
+
+                        {/* ── ARTICLE THUMBNAIL STRIP ── */}
                         {opinions.length > 1 && (
-                            <div className="flex justify-center gap-2 mt-4">
-                                {opinions.map((_, i) => (
+                            <div ref={opinionStripRef} className="mt-4 hidden sm:flex gap-3 overflow-x-auto pb-2 pt-1 snap-x snap-mandatory [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+                                {opinions.map((op, idx) => (
                                     <button
-                                        key={i}
-                                        onClick={() => setOpinionIndex(i)}
-                                        className={`h-1 rounded-full transition-all duration-300 ${i === opinionIndex ? "w-8 bg-[#00A651]" : "w-4 bg-zinc-200 hover:bg-zinc-400"}`}
-                                    />
+                                        key={op.id}
+                                        ref={(element) => {
+                                            opinionThumbRefs.current[idx] = element;
+                                        }}
+                                        onClick={() => setOpinionIndex(idx)}
+                                        aria-label={`View opinion: ${op.title}`}
+                                        className={`group shrink-0 snap-start flex items-center gap-3 p-2 border transition-all duration-200 overflow-hidden rounded-xl shadow-2xs ${
+                                            idx === opinionIndex
+                                                ? "border-[#00A651] bg-[#00A651]/5 ring-1 ring-[#00A651]/30"
+                                                : "border-zinc-200 bg-white hover:border-zinc-300 hover:bg-zinc-50"
+                                        } w-60 sm:w-72`}
+                                    >
+                                        {/* Article thumbnail */}
+                                        <div className="relative w-14 h-14 shrink-0 overflow-hidden rounded-lg bg-slate-100 border border-slate-200">
+                                            <Image
+                                                src={op.image}
+                                                alt={op.title}
+                                                fill
+                                                className="object-cover object-top"
+                                                sizes="56px"
+                                            />
+                                            {idx === opinionIndex && (
+                                                <div className="absolute inset-0 bg-[#00A651]/10" />
+                                            )}
+                                        </div>
+                                        {/* Article title */}
+                                        <div className="flex-1 min-w-0 text-left">
+                                            <span className="block text-[9px] font-bold uppercase tracking-wider text-[#00A651] mb-0.5 truncate">
+                                                {op.authorName}
+                                            </span>
+                                            <span className={`text-[11px] font-bold leading-snug line-clamp-2 ${
+                                                idx === opinionIndex ? "text-slate-900" : "text-slate-700 group-hover:text-slate-900"
+                                            } transition-colors`}>
+                                                {op.title}
+                                            </span>
+                                        </div>
+                                    </button>
                                 ))}
                             </div>
                         )}
+
                     </div>
                 </section>
             )}
 
-            {/* ─── INTERVIEW SECTION ─── */}
+            {/* ═══════════════════════════════════════════════
+                INTERVIEW SECTION — Compact Editorial Layout
+            ═══════════════════════════════════════════════ */}
             {interviews.length > 0 && (
-                <section className="py-6 md:py-8 bg-white border-b border-zinc-100">
-                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <section
+                    aria-label="Exclusive Interviews"
+                    className="py-6 lg:py-8 bg-white"
+                >
+                    <div className={containerClassName}>
+
+                        {/* Section Heading — light variant matching Opinion */}
                         <SectionHeading
                             title="Interview"
                             linkText="View All"
                             linkHref="/interviews"
                             adPlacement="home_interview"
+                            variant="hero"
                         />
 
-                        {/* Carousel: Content LEFT, Image RIGHT (mirrored) */}
-                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center mt-4 group">
-                            {/* Content Column - LEFT */}
-                            <div className="lg:col-span-8 order-2 lg:order-1">
-                                <div className="flex flex-col items-start">
-                                    <Link href={`/interviews/${currentInterview.slug}`} className="block mb-4">
-                                        <h3 className="font-serif text-2xl md:text-3xl lg:text-4xl font-bold leading-[1.15] tracking-tight text-zinc-900 group-hover:text-[#00A651] transition-colors duration-300">
-                                            &ldquo;{currentInterview.title}&rdquo;
-                                        </h3>
-                                    </Link>
+                        {/* ── MAIN INTERVIEW CARD ── */}
+                        <article className="grid grid-cols-1 lg:grid-cols-12 gap-0 overflow-hidden border border-zinc-200 bg-white shadow-sm rounded-xl">
 
-                                    <div className="relative pl-8 mb-6 border-l border-zinc-200">
-                                        <p className="text-sm md:text-base text-zinc-500 font-serif leading-relaxed italic line-clamp-3">
-                                            {currentInterview.excerpt}
-                                        </p>
-                                    </div>
+                            {/* LEFT — Interview Content (8-9 Cols) */}
+                            <div className="lg:col-span-8 xl:col-span-9 flex flex-col justify-between p-4 sm:p-5 lg:p-6 bg-white order-2 lg:order-1">
 
-                                    <div className="flex items-center justify-end w-full">
-
-                                        {/* Navigation */}
-                                        {interviews.length > 1 && (
-                                            <div className="flex items-center gap-3">
-                                                <span className="text-xs font-bold text-zinc-400">
-                                                    {interviewIndex + 1} / {interviews.length}
-                                                </span>
-                                                <button
-                                                    onClick={interviewPrev}
-                                                    className="w-10 h-10 border border-zinc-200 flex items-center justify-center hover:bg-zinc-100 transition-colors"
-                                                >
-                                                    <ChevronLeft size={16} />
-                                                </button>
-                                                <button
-                                                    onClick={interviewNext}
-                                                    className="w-10 h-10 border border-zinc-200 flex items-center justify-center hover:bg-zinc-100 transition-colors"
-                                                >
-                                                    <ChevronRight size={16} />
-                                                </button>
-                                            </div>
-                                        )}
-                                    </div>
+                                {/* Label */}
+                                <div className="mb-3">
+                                    <span className="inline-flex items-center gap-1.5 bg-[#00A651] text-white text-[9px] font-black uppercase tracking-[0.2em] px-2.5 py-1 shadow-sm rounded-xs">
+                                        <Mic size={8} />
+                                        Interview
+                                    </span>
                                 </div>
+
+                                {/* Interview headline */}
+                                <div className="flex-1">
+                                    <h3 className="text-base sm:text-lg lg:text-xl font-bold text-slate-900 leading-snug tracking-normal mb-2">
+                                        <Link
+                                            href={`/interviews/${currentInterview.slug}`}
+                                            className="hover:text-emerald-600 transition-colors duration-300"
+                                        >
+                                            &ldquo;{currentInterview.title}&rdquo;
+                                        </Link>
+                                    </h3>
+
+                                    {currentInterview.date && (
+                                        <time
+                                            dateTime={currentInterview.date}
+                                            className="mb-2 block text-[10px] text-slate-400 font-medium uppercase tracking-wide"
+                                        >
+                                            {currentInterview.date}
+                                        </time>
+                                    )}
+
+                                    {/* Excerpt */}
+                                    <p className="text-xs sm:text-sm text-slate-500 leading-relaxed line-clamp-3 mb-4 border-l-2 border-slate-200 pl-3 font-light">
+                                        {currentInterview.excerpt}
+                                    </p>
+                                </div>
+                                {interviews.length > 1 && (
+                                    <div className="flex items-center justify-end gap-1.5 pt-4 border-t border-zinc-100">
+                                        <span className="text-[10px] font-bold text-zinc-400 tabular-nums mr-1">
+                                            {String(interviewIndex + 1).padStart(2, "0")} / {String(interviews.length).padStart(2, "0")}
+                                        </span>
+                                        <button
+                                            onClick={interviewPrev}
+                                            aria-label="Previous interview"
+                                            className="w-8 h-8 border border-zinc-200 flex items-center justify-center hover:bg-zinc-900 hover:border-zinc-900 hover:text-white transition-all duration-200 rounded-md"
+                                        >
+                                            <ChevronLeft size={14} />
+                                        </button>
+                                        <button
+                                            onClick={interviewNext}
+                                            aria-label="Next interview"
+                                            className="w-8 h-8 border border-zinc-200 flex items-center justify-center hover:bg-zinc-900 hover:border-zinc-900 hover:text-white transition-all duration-200 rounded-md"
+                                        >
+                                            <ChevronRight size={14} />
+                                        </button>
+                                    </div>
+                                )}
                             </div>
 
-                            {/* Image Column - RIGHT */}
-                            <div className="lg:col-span-4 flex justify-center lg:justify-end order-1 lg:order-2">
-                                <Link href={`/interviews/${currentInterview.slug}`} className="relative w-full max-w-[320px] block cursor-pointer group/image">
-                                    <div className="relative w-full aspect-[4/5] border border-zinc-800 p-2 bg-white transition-transform duration-500 group-hover/image:scale-[1.02]">
-                                        <div className="relative w-full h-full overflow-hidden border border-zinc-200">
-                                            <Image
-                                                src={currentInterview.image}
-                                                alt={currentInterview.authorName}
-                                                fill
-                                                className="object-cover grayscale group-hover/image:grayscale-0 transition-all duration-1000"
-                                            />
-                                            <div className="absolute bottom-4 right-4 bg-white/90 backdrop-blur-md p-3 rounded-full opacity-0 translate-y-2 group-hover/image:opacity-100 group-hover/image:translate-y-0 transition-all duration-300 shadow-lg">
-                                                <ArrowUpRight size={20} className="text-black" />
-                                            </div>
+                            {/* RIGHT — Interviewee Portrait (Compact 4-3 Cols) */}
+                            <div className="lg:col-span-4 xl:col-span-3 relative aspect-[4/3] sm:aspect-[16/9] lg:aspect-auto min-h-[260px] sm:min-h-[300px] lg:min-h-0 bg-zinc-950 group/img order-1 lg:order-2">
+                                <Link
+                                    href={`/interviews/${currentInterview.slug}`}
+                                    className="block w-full h-full absolute inset-0"
+                                    tabIndex={-1}
+                                    aria-hidden="true"
+                                >
+                                    <Image
+                                        src={currentInterview.image}
+                                        alt={currentInterview.imageCaption || currentInterview.authorName}
+                                        fill
+                                        className="object-cover object-top grayscale group-hover/img:grayscale-0 transition-all duration-700"
+                                        sizes="(max-width: 1024px) 100vw, 30vw"
+                                        priority
+                                    />
+                                    {/* Gradient overlay */}
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
+                                    {/* Arrow reveal overlay */}
+                                    <div className="absolute bottom-3 right-3 opacity-0 group-hover/img:opacity-100 translate-y-1 group-hover/img:translate-y-0 transition-all duration-300">
+                                        <div className="bg-white/90 backdrop-blur-sm border border-zinc-200 p-2 rounded-full shadow-md">
+                                            <ArrowUpRight size={14} className="text-zinc-900" />
                                         </div>
                                     </div>
-                                    <div className="mt-3 text-center lg:text-right pr-1">
-                                        {currentInterview.imageCaption ? (
-                                            <span className="text-[13px] md:text-sm font-serif italic text-zinc-500 group-hover/image:text-zinc-800 transition-colors">
-                                                {currentInterview.imageCaption}
-                                            </span>
-                                        ) : (
-                                            <span className="text-[13px] md:text-sm font-serif italic text-zinc-500 group-hover/image:text-zinc-800 transition-colors">
-                                                {currentInterview.authorName}
-                                            </span>
-                                        )}
-                                    </div>
                                 </Link>
-                            </div>
-                        </div>
 
-                        {/* Dots indicator */}
+                                {/* Issue / caption label */}
+                                {currentInterview.imageCaption && (
+                                    <div className="absolute top-3 right-3 z-10">
+                                        <span className="text-[9px] font-bold uppercase tracking-[0.18em] text-zinc-500 bg-white/80 backdrop-blur-sm px-2 py-0.5">
+                                            {currentInterview.imageCaption}
+                                        </span>
+                                    </div>
+                                )}
+                            </div>
+                        </article>
+
+                        {/* ── ARTICLE THUMBNAIL STRIP ── */}
                         {interviews.length > 1 && (
-                            <div className="flex justify-center gap-2 mt-4">
-                                {interviews.map((_, i) => (
+                            <div ref={interviewStripRef} className="mt-4 hidden sm:flex gap-3 overflow-x-auto pb-2 pt-1 snap-x snap-mandatory [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+                                {interviews.map((iv, idx) => (
                                     <button
-                                        key={i}
-                                        onClick={() => setInterviewIndex(i)}
-                                        className={`h-1 rounded-full transition-all duration-300 ${i === interviewIndex ? "w-8 bg-[#00A651]" : "w-4 bg-zinc-200 hover:bg-zinc-400"}`}
-                                    />
+                                        key={iv.id}
+                                        ref={(element) => {
+                                            interviewThumbRefs.current[idx] = element;
+                                        }}
+                                        onClick={() => setInterviewIndex(idx)}
+                                        aria-label={`View interview: ${iv.title}`}
+                                        className={`group shrink-0 snap-start flex items-center gap-3 p-2 border transition-all duration-200 overflow-hidden rounded-xl shadow-2xs ${
+                                            idx === interviewIndex
+                                                ? "border-[#00A651] bg-[#00A651]/5 ring-1 ring-[#00A651]/30"
+                                                : "border-zinc-200 bg-white hover:border-zinc-300 hover:bg-zinc-50"
+                                        } w-60 sm:w-72`}
+                                    >
+                                        {/* Article thumbnail */}
+                                        <div className="relative w-14 h-14 shrink-0 overflow-hidden rounded-lg bg-slate-100 border border-slate-200">
+                                            <Image
+                                                src={iv.image}
+                                                alt={iv.title}
+                                                fill
+                                                className="object-cover object-top"
+                                                sizes="56px"
+                                            />
+                                            {idx === interviewIndex && (
+                                                <div className="absolute inset-0 bg-[#00A651]/10" />
+                                            )}
+                                        </div>
+                                        {/* Article title */}
+                                        <div className="flex-1 min-w-0 text-left">
+
+                                            <span className={`text-[11px] font-bold leading-snug line-clamp-2 ${
+                                                idx === interviewIndex ? "text-slate-900" : "text-slate-700 group-hover:text-slate-900"
+                                            } transition-colors`}>
+                                                {iv.title}
+                                            </span>
+                                        </div>
+                                    </button>
                                 ))}
                             </div>
                         )}
+
                     </div>
                 </section>
             )}

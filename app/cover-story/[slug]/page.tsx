@@ -9,7 +9,7 @@ import { SidebarNewsletterForm } from "@/components/news/SidebarNewsletterForm";
 import { ScrollProgress } from "@/components/ui/scroll-progress";
 import { ShareButton } from "@/components/ui/share-button";
 import { getLatestIssue } from "@/lib/api/getLatestIssue";
-import { Printer } from "lucide-react";
+import { PrintArticleButton } from "@/components/article/PrintArticleButton";
 import { formatContentDate } from "@/lib/date";
 import ArticleBody from "@/components/ArticleBody";
 import { fetchDataBlocks } from "@/lib/parse-content-blocks";
@@ -269,15 +269,9 @@ export default async function CoverStoryDetailPage({
                                 </div>
                             </div>
                             <div className="flex items-center gap-3 self-start sm:self-auto">
-                                <Link
-                                    href={`/print/${slug}`}
-                                    target="_blank"
+                                <PrintArticleButton
                                     className="flex items-center gap-1.5 text-gray-600 hover:text-gray-900 font-medium text-sm border border-gray-200 px-4 py-2 rounded-full bg-white hover:bg-gray-50 shadow-sm transition-colors"
-                                    title="Print this article"
-                                >
-                                    <Printer className="w-4 h-4" />
-                                    Print
-                                </Link>
+                                />
                                 <ShareButton
                                     title={article.title}
                                     text={excerptText}

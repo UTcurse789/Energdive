@@ -1,18 +1,27 @@
 import dynamic from "next/dynamic";
 import { HOME_PAGE_METADATA } from "@/lib/route-metadata";
 import { Hero } from "@/components/sections/hero";
+import type { VideoItem } from "@/components/sections/hero";
+import { FeaturedSection } from "@/components/sections/featured-section";
+import { LatestNewsSection } from "@/components/sections/latest-news-section";
+import { SubscriptionsCTASection } from "@/components/sections/subscriptions-cta-section";
 import { AdBanner } from "@/components/ads/AdBanner";
 import type { OpinionItem } from "@/components/sections/opinion";
+import { getLatestVideos } from "@/components/sections/homepage-videos";
 import { ARTICLES } from "@/data/dummy";
-import { SectionHeading } from "@/components/ui/section-heading";
 import { Article } from "@/types";
 import { formatContentDate } from "@/lib/date";
-import { getLatestIssue } from "@/lib/api/getLatestIssue";
+import { getLatestIssueWithArticles } from "@/lib/api/getLatestIssue";
+import { CurrentIssueSection } from "@/components/sections/current-issue-section";
+import { EnergyJobsSidebar } from "@/components/sections/energy-jobs-sidebar";
 import { strapiImageUrl } from "@/lib/strapi-image";
 import { buildContentUrl } from "@/lib/content-routes";
 import { buildSectorArticlesUrl } from "@/lib/sector-content";
 import { getOpinionContentKind } from "@/lib/content-tags";
+import { ORGANIZATION_SCHEMA } from "@/lib/organization-schema";
+import Image from "next/image";
 import Link from "next/link";
+import { ArrowRight, BookOpen, ChevronRight, Mail, Play } from "lucide-react";
 
 // ── Below-the-Fold Lazy-Loaded Components (Code-Splitting for Main-Thread Optimization) ──
 const BentoGrid = dynamic(
@@ -48,6 +57,19 @@ const EventsSection = dynamic(
 export const metadata = HOME_PAGE_METADATA;
 
 const STRAPI_BASE = process.env.NEXT_PUBLIC_STRAPI_URL || "https://cms.energdive.com";
+const CMS_REQUEST_TIMEOUT_MS = 10_000;
+
+function fetchCms(url: string, options: RequestInit = {}) {
+  return fetch(url, {
+    ...options,
+    signal: AbortSignal.timeout(CMS_REQUEST_TIMEOUT_MS),
+  });
+}
+
+function logCmsError(message: string, error: unknown) {
+  if (error instanceof Error && error.name === "TimeoutError") return;
+  console.error(message, error);
+}
 
 const HOMEPAGE_SECTORS = [
   { title: "Oil & Gas", slug: "oil-gas" },
@@ -55,7 +77,6 @@ const HOMEPAGE_SECTORS = [
   { title: "New Energies", slug: "new-energies" },
   { title: "Sustainability & Safety", slug: "sustainability-and-safety" },
 ];
-
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -131,17 +152,70 @@ function mapArticle(article: any, sectorName: string): Article {
   };
 }
 
+function FeaturedVideosSidebar({ videos }: { videos: VideoItem[] }) {
+  if (!videos || videos.length === 0) return null;
+
+  return (
+    <div className="w-full flex flex-col gap-3">
+      <div className="flex items-center justify-between pb-1.5 border-b border-slate-200 mb-1">
+        <Link href="/videos" className="group inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-widest text-slate-900 hover:text-emerald-600 transition-colors">
+          Featured Videos
+          <ChevronRight size={14} className="text-slate-900 group-hover:text-emerald-600 transition-colors stroke-[2.5]" />
+        </Link>
+      </div>
+
+      <div className="flex flex-col gap-3">
+        {videos.slice(0, 2).map((video) => (
+          <Link
+            key={video.id}
+            href={`/videos/${video.slug}`}
+            className="group block"
+          >
+            <div className="relative aspect-video overflow-hidden rounded-lg bg-slate-100 border border-slate-200 shadow-2xs">
+              <Image
+                src={video.thumbnail}
+                alt={video.title}
+                fill
+                sizes="300px"
+                className="object-cover transition-transform duration-500 group-hover:scale-105"
+              />
+              <div className="absolute inset-0 bg-black/25 group-hover:bg-black/15 transition-colors flex items-center justify-center">
+                <div className="w-9 h-9 rounded-full bg-red-600/95 text-white flex items-center justify-center pl-0.5 shadow-md group-hover:scale-105 transition-transform">
+                  <Play size={14} className="fill-white" />
+                </div>
+              </div>
+              {video.category && (
+                <span className="absolute top-2 left-2 max-w-[calc(100%-1rem)] truncate bg-white/90 backdrop-blur-sm text-emerald-700 text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded border border-slate-200/80">
+                  {video.category}
+                </span>
+              )}
+            </div>
+            <h4 className="mt-2 text-xs font-bold text-slate-900 leading-snug line-clamp-2 group-hover:text-emerald-600 transition-colors">
+              {video.title}
+            </h4>
+            {video.date && (
+              <time className="mt-1 block text-[10px] font-medium text-slate-500">
+                {video.date}
+              </time>
+            )}
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 async function getAllContents() {
   try {
-    const res = await fetch(
-      `${STRAPI_BASE}/api/contents?pagination[pageSize]=100&populate=*&sort=Date:desc`,
-      { next: { revalidate: 600 } } // 10 min ISR
+    const res = await fetchCms(
+      `${STRAPI_BASE}/api/contents?pagination[pageSize]=40&populate=*&sort=Date:desc`,
+      { next: { revalidate: 300 } }
     );
     if (!res.ok) return null;
     const json = await res.json();
     return json.data || [];
   } catch (err) {
-    console.error("Contents fetch error:", err);
+    logCmsError("Contents fetch error:", err);
     return null;
   }
 }
@@ -149,21 +223,58 @@ async function getAllContents() {
 async function getFeaturedContents() {
   try {
     const res = await fetch(
-      `${STRAPI_BASE}/api/contents?filters[featured][$eq]=true&populate=*&sort[0]=updatedAt:desc&sort[1]=publishedAt:desc&pagination[pageSize]=10`,
-      { next: { revalidate: 60 } } // Keep featured picks fresh on the homepage
+      `${STRAPI_BASE}/api/contents?filters[featured][$eq]=true&populate=*&sort[0]=updatedAt:desc&sort[1]=publishedAt:desc&pagination[pageSize]=20`,
+      { next: { revalidate: 120 } }
     );
     if (!res.ok) return [];
     const json = await res.json();
     return json.data || [];
   } catch (err) {
-    console.error("Featured contents fetch error:", err);
+    logCmsError("Featured contents fetch error:", err);
+    return [];
+  }
+}
+
+async function getHeroBannerContents() {
+  try {
+    const res = await fetchCms(
+      `${STRAPI_BASE}/api/contents?filters[show_hero_banner][$eq]=true&populate=*&pagination[pageSize]=10&sort=publishedAt:desc`,
+      { next: { revalidate: 120 } }
+    );
+    if (!res.ok) return [];
+    const json = await res.json();
+    return json.data || [];
+  } catch (err) {
+    logCmsError("Hero banner fetch error:", err);
+    return [];
+  }
+}
+
+async function getFeaturedPartnerAds() {
+  try {
+    const now = new Date();
+    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+    const res = await fetch(
+      `${STRAPI_BASE}/api/advertisements?filters[placement][$eq]=home_featured_partner&filters[is_active][$eq]=true&populate=*&sort=priority:desc`,
+      { next: { revalidate: 1800 } }
+    );
+    if (!res.ok) return [];
+    const json = await res.json();
+    const ads = (json.data || []).filter((ad: any) => {
+      if (ad.start_date && ad.start_date > today) return false;
+      if (ad.end_date && ad.end_date < today) return false;
+      return true;
+    });
+    return ads;
+  } catch (err) {
+    console.error("Featured partner ads fetch error:", err);
     return [];
   }
 }
 
 async function getOpinionBuckets() {
   try {
-    const res = await fetch(
+    const res = await fetchCms(
       `${STRAPI_BASE}/api/contents` +
       `?filters[type_of_content][name][$eq]=Opinion` +
       `&pagination[pageSize]=60` +
@@ -181,57 +292,40 @@ async function getOpinionBuckets() {
     const interviewItems: any[] = [];
 
     allItems.forEach((item: any) => {
-        const kind = getOpinionContentKind(item);
-        if (kind === "interview") {
-            interviewItems.push(item);
-            return;
-        }
-        if (kind === "opinion") {
-            opinionItems.push(item);
-        }
+      const kind = getOpinionContentKind(item);
+      if (kind === "interview") {
+        interviewItems.push(item);
+        return;
+      }
+      if (kind === "opinion") {
+        opinionItems.push(item);
+      }
     });
 
     return {
-        opinions: mapOpinionItems(opinionItems.slice(0, 5)),
-        interviews: mapOpinionItems(interviewItems.slice(0, 5)),
+      opinions: mapOpinionItems(opinionItems.slice(0, 5)),
+      interviews: mapOpinionItems(interviewItems.slice(0, 5)),
     };
   } catch (err) {
-    console.error("Opinion fetch error:", err);
+    logCmsError("Opinion fetch error:", err);
     return { opinions: [], interviews: [] };
   }
 }
 
-async function getSectorArticles(slug: string) {
-  try {
-    const res = await fetch(buildSectorArticlesUrl(slug), { next: { revalidate: 300 } });
-    if (!res.ok) return [];
-    const json = await res.json();
-    return json.data || [];
-  } catch {
-    return [];
-  }
-}
+// ─── Main Homepage ─────────────────────────────────────────────────────────────
 
 export default async function Home() {
-  // All 5 server data requirements fetched in a SINGLE parallel Promise.all
-  const [allContents, featuredContents, latestIssue, opinionBuckets, sectorFetchResults] = await Promise.all([
+  const [allContents, featuredContents, heroBannerContents, latestIssue, { opinions, interviews }, videos, featuredPartnerAds] = await Promise.all([
     getAllContents(),
     getFeaturedContents(),
-    getLatestIssue(),
+    getHeroBannerContents(),
+    getLatestIssueWithArticles(),
     getOpinionBuckets(),
-    Promise.all(HOMEPAGE_SECTORS.map((sector) => getSectorArticles(sector.slug))),
+    getLatestVideos(),
+    getFeaturedPartnerAds(),
   ]);
 
-  const { opinions, interviews } = opinionBuckets;
-
-  // Derive hero banner stories from allContents in-memory (0ms extra network latency)
-  const heroBannerContents = allContents
-    ? allContents
-        .filter((item: any) => Boolean(item.show_hero_banner))
-        .slice(0, 10)
-    : [];
-
-  // ── Bento: Featured articles fetched directly from Strapi ──
+  // Bento: Featured articles
   const finalBentoItems = featuredContents.length > 0
     ? featuredContents
       .sort((a: any, b: any) => {
@@ -248,31 +342,48 @@ export default async function Home() {
         image: extractImageUrl(article),
         slug: article.slug || "",
         excerpt: extractExcerpt(article),
+        authorName: article.author?.name || article.authorName || "Energy Dive Intelligence",
+        date: article.Date || article.publishedAt || article.createdAt,
       }))
-      .slice(0, 6)
-    : ARTICLES.slice(0, 6).map((a) => ({
+      .slice(0, 11)
+    : ARTICLES.slice(0, 11).map((a: any) => ({
       id: a.id,
       title: a.title,
       category: a.category,
       image: a.image,
       slug: a.slug,
       excerpt: a.excerpt,
+      authorName: a.author?.name || a.authorName || "Energy Dive Intelligence",
+      date: a.date,
     }));
 
-  // ── Hero Sidebar: Random 6 from All News (Swapped from Bento) ──
+  // Hero Sidebar: Top 5 News items + Next stories for Latest News section
   const heroTopStories = allContents
     ? allContents
       .filter((a: any) => a.type_of_content?.name === "News")
       .sort((a: any, b: any) => {
         return getArticleTimestamp(b) - getArticleTimestamp(a);
       })
-      .slice(0, 6)
+      .slice(0, 25)
     : [];
 
-  const sectorsWithArticles = HOMEPAGE_SECTORS.map((sector, idx) => {
-    const sectorArticles = sectorFetchResults[idx];
-    const finalArticles = sectorArticles.slice(0, 4);
+  // Fetch articles for each sector in parallel directly from Strapi
+  const sectorFetchResults: any[][] = await Promise.all(
+    HOMEPAGE_SECTORS.map(async (sector) => {
+      try {
+        const res = await fetch(buildSectorArticlesUrl(sector.slug), { next: { revalidate: 300 } });
+        if (!res.ok) return [];
+        const json = await res.json();
+        return (json.data || []) as any[];
+      } catch {
+        return [];
+      }
+    })
+  );
 
+  const sectorsWithArticles = HOMEPAGE_SECTORS.map((sector, idx) => {
+    const sectorArticles = sectorFetchResults?.[idx] || [];
+    const finalArticles = sectorArticles.slice(0, 4);
     const articles = finalArticles.map((article: any) => mapArticle(article, sector.title));
 
     return {
@@ -282,83 +393,184 @@ export default async function Home() {
     };
   }).filter((s) => s.articles.length > 0);
 
+  // Structured Data / Schema.org JSON-LD
+  const homeJsonLd = {
+    "@context": "https://schema.org",
+    "@graph": [
+      ORGANIZATION_SCHEMA,
+      {
+        "@type": "WebSite",
+        "@id": "https://www.energdive.com/#website",
+        "url": "https://www.energdive.com",
+        "name": "ENERGDIVE",
+        "description": "India's High-Authority Digital Media & Energy Market Intelligence Platform",
+        "publisher": {
+          "@id": "https://www.energdive.com/#organization"
+        }
+      },
+      {
+        "@type": "ItemList",
+        "name": "Latest Energy News & Market Intelligence",
+        "itemListElement": (allContents || []).slice(0, 10).map((article: any, index: number) => ({
+          "@type": "ListItem",
+          "position": index + 1,
+          "item": {
+            "@type": "NewsArticle",
+            "headline": article.Title || "",
+            "url": `https://www.energdive.com${buildContentUrl({ slug: article.slug || "", type_of_content: article.type_of_content })}`,
+            "datePublished": article.publishedAt || article.Date || article.createdAt || "",
+            "dateModified": article.updatedAt || article.publishedAt || article.createdAt || ""
+          }
+        }))
+      }
+    ]
+  };
+
   return (
-    <>
-      {/* Homepage Hero Ad Banner */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4">
-        <AdBanner placement="home_platform_hero" variant="banner" className="py-0" />
+    <main className="min-h-screen bg-white text-slate-900 font-sans selection:bg-emerald-500/20">
+      {/* Structured Data */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(homeJsonLd).replace(/</g, "\\u003c") }}
+      />
+
+      {/* Home Platform Hero Ad Banner */}
+      <div className="max-w-6xl mx-auto px-5 sm:px-10 lg:px-16 pt-3 pb-1">
+        <AdBanner
+          placement="home_platform_hero"
+          variant="banner"
+          maxItems={1}
+          showSkeleton={false}
+        />
       </div>
 
-      {/* Cover Story (left) + Trending (right) — the original Hero */}
-      <Hero heroStories={heroBannerContents} topStories={heroTopStories} />
+      {/* Main Portal Section (Left: Latest News, Center: Cover Story Title + Image + Featured Content, Right: Partner Ad + Featured Videos) */}
+      <Hero
+        heroStories={heroBannerContents}
+        topStories={heroTopStories}
+        featuredStories={finalBentoItems}
+        videos={videos}
+      />
 
-      {/* Featured Bento */}
-      <section className="pt-8 pb-8 bg-white relative overflow-hidden">
-        <div
-          className="absolute inset-0 pointer-events-none opacity-[0.03]"
-          style={{
-            backgroundImage: "radial-gradient(rgba(9, 182, 151, 1) 1px, transparent 1px)",
-            backgroundSize: "40px 40px",
-          }}
-        />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <SectionHeading
-            title="Featured"
-          />
-          <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-12 xl:gap-10">
-            <div className="min-w-0 lg:col-span-9">
-              <BentoGrid items={finalBentoItems} className="py-0" />
+      {/* Featured Section */}
+      <FeaturedSection articles={finalBentoItems} partnerAds={featuredPartnerAds} />
+
+      {/* Latest News Section (full-width detailed view of hero section's top 5 news) */}
+      <LatestNewsSection news={heroTopStories.slice(0, 7)} />
+
+
+
+      {/* Lower editorial lane: Opinion, Interviews + Right Rail */}
+      <section className="bg-white">
+        <div className="max-w-7xl mx-auto px-5 sm:px-10 lg:px-16">
+          <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_300px] gap-6 lg:gap-8 items-start">
+            <div className="min-w-0">
+              {/* Executive Opinion & Interviews Vertical */}
+              <OpinionSection opinions={opinions} interviews={interviews} contained={false} />
             </div>
-            <div className="w-full lg:col-span-3 lg:flex lg:justify-end">
+
+            <aside className="w-full lg:w-75 flex flex-col gap-5 pt-6 lg:pt-8" aria-label="Opinion and interview right rail">
+              {/* Ad 1 */}
               <AdBanner
-                placement="home_featured_partner"
-                variant="vertical"
-                className="mx-auto lg:mx-0"
+                placement="article_sidebar"
+                variant="card"
+                maxItems={1}
+                showSkeleton={false}
               />
-            </div>
+
+              {/* Ad 2 */}
+              <AdBanner
+                placement="new_sidebar"
+                variant="card"
+                adIndex={1}
+                maxItems={1}
+                showSkeleton={false}
+              />
+
+              {/* EnergyJobs */}
+              <EnergyJobsSidebar />
+
+              {/* Call for Papers CTA */}
+              <div className="relative overflow-hidden bg-linear-to-br from-slate-950 via-zinc-900 to-emerald-950 p-5 rounded-md border border-slate-800/80 shadow-md group">
+                <div className="absolute top-0 left-0 right-0 h-1 bg-linear-to-r from-emerald-500 via-teal-400 to-emerald-600" />
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-[9px] font-black uppercase tracking-[0.2em] text-emerald-400 mb-2">
+                  Insights Exchange
+                </span>
+                <h3 className="text-base font-black text-white leading-snug tracking-tight">
+                  Call for Papers
+                </h3>
+                <p className="mt-2 text-xs text-slate-300/90 leading-relaxed">
+                  Share your research, analysis, or industry insights with India&apos;s energy community.
+                </p>
+                <Link
+                  href="/insights-exchange/call-for-papers"
+                  className="mt-4 group/btn inline-flex items-center justify-center gap-2 w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-[11px] uppercase tracking-wider rounded transition-all shadow-sm"
+                >
+                  Submit Your Paper
+                  <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover/btn:translate-x-1" />
+                </Link>
+              </div>
+            </aside>
           </div>
         </div>
       </section>
 
-      <OpinionSection opinions={opinions} interviews={interviews} />
+      {/* Current Issue — full width, between Opinion and Sectors */}
+      {latestIssue && (
+        <CurrentIssueSection
+          month={latestIssue.month}
+          year={latestIssue.year}
+          coverImage={latestIssue.coverImage}
+          issueSlug={latestIssue.slug}
+          articles={latestIssue.articles}
+        />
+      )}
 
-      {/* Sector Blocks */}
-      <div className="border-b border-border">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {sectorsWithArticles.map((sector) => (
-            <div key={sector.slug}>
-              <AdBanner
-                placement="sector_hero"
-                sectorSlug={sector.slug}
-                variant="banner"
-                showSkeleton={false}
-                className="py-6"
-              />
-              <SectorBlock
-                title={sector.title}
-                slug={sector.slug}
-                articles={sector.articles}
-              />
+      {/* Sector Intelligence Hubs */}
+      <section className="bg-white py-8 lg:py-6">
+        <div className="max-w-7xl mx-auto px-5 sm:px-10 lg:px-16">
+          <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_300px] gap-6 lg:gap-8">
+            <div className="min-w-0">
+              {sectorsWithArticles.map((sector) => (
+                <div key={sector.slug} className="mb-3 last:mb-0">
+                  <AdBanner
+                    placement="sector_hero"
+                    sectorSlug={sector.slug}
+                    variant="banner"
+                    showSkeleton={false}
+                    className="py-2"
+                  />
+                  <SectorBlock
+                    title={sector.title}
+                    slug={sector.slug}
+                    articles={sector.articles}
+                  />
+                </div>
+              ))}
+
+              {/* View All Sectors Action Callout */}
+              <div className="flex justify-center mt-6">
+                <Link
+                  href="/sectors"
+                  className="group inline-flex items-center gap-3 px-8 py-4 bg-emerald-600 text-white text-xs font-black uppercase tracking-[0.2em] rounded-full hover:bg-emerald-700 transition-all duration-300 shadow-md hover:shadow-xl hover:-translate-y-0.5"
+                >
+                  Explore All Sectors
+                  <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
+                </Link>
+              </div>
             </div>
-          ))}
 
-          {/* View All Sectors Button */}
-          <div className="flex justify-center py-5">
-            <Link
-              href="/sectors"
-              className="group inline-flex items-center gap-3 px-8 py-4 bg-[#09B697] text-white text-[12px] font-black uppercase tracking-[0.2em] rounded-full hover:bg-[#078a72] transition-all duration-300 shadow-lg shadow-[#09B697]/20 hover:shadow-xl hover:shadow-[#09B697]/30 hover:-translate-y-0.5"
-            >
-              View All Sectors
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="transition-transform duration-300 group-hover:translate-x-1"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg>
-            </Link>
+            {/* Right Rail: Videos + Upcoming Events */}
+            <aside className="w-full lg:w-75 pt-2 flex flex-col gap-6" aria-label="Sector right rail">
+              <FeaturedVideosSidebar videos={videos} />
+              <EventsSection variant="sidebar" />
+            </aside>
           </div>
         </div>
-      </div>
+      </section>
 
-
-      <HomepageVideos />
-      <Publication2 variant="compact" latestCoverImage={latestIssue?.coverImage} latestIssueSlug={latestIssue?.slug} />
-      <EventsSection />
-    </>
+      {/* Subscriptions CTA Section: Login + Print Subscription + Newsletter (Light Theme) */}
+      <SubscriptionsCTASection />
+    </main>
   );
 }

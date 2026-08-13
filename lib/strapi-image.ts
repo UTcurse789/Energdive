@@ -61,7 +61,8 @@ export function strapiImageUrl(
 export function strapiMediaUrl(
     media: any,
     fallback: string = "/placeholder.jpg",
-    customBase?: string
+    customBase?: string,
+    preferredSize: "thumbnail" | "small" | "medium" | "large" = "large"
 ): string {
     if (!media) return fallback;
 
@@ -69,13 +70,14 @@ export function strapiMediaUrl(
     const data = source?.data || source;
     const attrs = data?.attributes || data;
 
-    const path =
-        attrs?.formats?.large?.url ||
-        attrs?.formats?.medium?.url ||
-        attrs?.formats?.small?.url ||
-        attrs?.formats?.thumbnail?.url ||
-        attrs?.url ||
-        null;
+    const formats = attrs?.formats;
+    const formatOrder = {
+        thumbnail: ["thumbnail", "small", "medium", "large"],
+        small: ["small", "medium", "thumbnail", "large"],
+        medium: ["medium", "small", "large", "thumbnail"],
+        large: ["large", "medium", "small", "thumbnail"],
+    }[preferredSize];
+    const path = formatOrder.map((size) => formats?.[size]?.url).find(Boolean) || attrs?.url || null;
 
     return strapiImageUrl(path, fallback, customBase);
 }

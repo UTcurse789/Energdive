@@ -3,6 +3,14 @@ import { getOpinionContentKind } from "@/lib/content-tags";
 import { filterAndSortEventsByOccurrence, getEventStartTimestamp } from "@/lib/event-dates";
 
 const STRAPI_BASE = process.env.NEXT_PUBLIC_STRAPI_URL || "https://cms.energdive.com";
+const CMS_REQUEST_TIMEOUT_MS = 10_000;
+
+function fetchCms(url: string, options: RequestInit = {}) {
+    return fetch(url, {
+        ...options,
+        signal: AbortSignal.timeout(CMS_REQUEST_TIMEOUT_MS),
+    });
+}
 
 type LooseRecord = Record<string, unknown>;
 
@@ -41,15 +49,15 @@ type MenuEvent = LooseRecord & {
 export async function GET() {
     try {
         const [videosRes, eventsRes, issuesRes, sectorsRes, articlesRes, allVideosRes, opinionMenuRes, resourcesRes] = await Promise.all([
-            fetch(`${STRAPI_BASE}/api/videos?populate[0]=thumbnail&populate[1]=author.avatar&pagination[limit]=3&sort=createdAt:desc`, { next: { revalidate: 600 } }).catch(() => null),
-            fetch(`${STRAPI_BASE}/api/events?populate=image`, { cache: "no-store" }).catch(() => null),
-            fetch(`${STRAPI_BASE}/api/issues?populate=CoverImage&pagination[limit]=12`, { next: { revalidate: 600 } }).catch(() => null),
-            fetch(`${STRAPI_BASE}/api/sectors?populate=children&pagination[pageSize]=100`, { next: { revalidate: 600 } }).catch(() => null),
-            fetch(`${STRAPI_BASE}/api/contents?populate[sectors][fields][0]=name&populate[sectors][fields][1]=slug&populate[tags][fields][0]=name&pagination[pageSize]=500`, { next: { revalidate: 600 } }).catch(() => null),
-            fetch(`${STRAPI_BASE}/api/videos?populate[sectors][fields][0]=name&populate[sectors][fields][1]=slug&populate[tags][fields][0]=name&pagination[pageSize]=500`, { next: { revalidate: 600 } }).catch(() => null),
+            fetchCms(`${STRAPI_BASE}/api/videos?populate[0]=thumbnail&populate[1]=author.avatar&pagination[limit]=3&sort=createdAt:desc`, { next: { revalidate: 600 } }).catch(() => null),
+            fetchCms(`${STRAPI_BASE}/api/events?populate=image`, { cache: "no-store" }).catch(() => null),
+            fetchCms(`${STRAPI_BASE}/api/issues?populate=CoverImage&pagination[limit]=12`, { next: { revalidate: 600 } }).catch(() => null),
+            fetchCms(`${STRAPI_BASE}/api/sectors?populate=children&pagination[pageSize]=100`, { next: { revalidate: 600 } }).catch(() => null),
+            fetchCms(`${STRAPI_BASE}/api/contents?populate[sectors][fields][0]=name&populate[sectors][fields][1]=slug&populate[tags][fields][0]=name&pagination[pageSize]=500`, { next: { revalidate: 600 } }).catch(() => null),
+            fetchCms(`${STRAPI_BASE}/api/videos?populate[sectors][fields][0]=name&populate[sectors][fields][1]=slug&populate[tags][fields][0]=name&pagination[pageSize]=500`, { next: { revalidate: 600 } }).catch(() => null),
             // Opinion + Interview articles for the mega menu
-            fetch(`${STRAPI_BASE}/api/contents?filters[type_of_content][name][$eq]=Opinion&populate[FeaturedImage]=true&populate[content_tag]=true&populate[author][populate]=avatar&sort=Date:desc&pagination[limit]=30`, { next: { revalidate: 600 } }).catch(() => null),
-            fetch(`${STRAPI_BASE}/api/resoucre-centers?fields[0]=resource_type&pagination[pageSize]=500`, {
+            fetchCms(`${STRAPI_BASE}/api/contents?filters[type_of_content][name][$eq]=Opinion&populate[FeaturedImage]=true&populate[content_tag]=true&populate[author][populate]=avatar&sort=Date:desc&pagination[limit]=30`, { next: { revalidate: 600 } }).catch(() => null),
+            fetchCms(`${STRAPI_BASE}/api/resoucre-centers?fields[0]=resource_type&pagination[pageSize]=500`, {
                 headers: process.env.STRAPI_API_TOKEN ? { Authorization: `Bearer ${process.env.STRAPI_API_TOKEN}` } : {},
                 next: { revalidate: 600 }
             }).catch(() => null),

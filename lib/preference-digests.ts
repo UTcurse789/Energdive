@@ -1,17 +1,21 @@
 import { query } from "@/lib/db";
 import { DigestFormat, DigestFrequency, DIGEST_FORMAT_OPTIONS, isDigestFormat, isDigestFrequency } from "@/lib/digest-preferences";
 import { buildContentUrl, extractContentTypeName } from "@/lib/content-routes";
-import { sendPreferenceDigestEmail } from "@/lib/email";
+import { appendEmailAdUtm, isDailyBriefingAdImageAllowed, sendPreferenceDigestEmail } from "@/lib/email";
 import { strapiMediaUrl } from "@/lib/strapi-image";
 import { getAdvertisements, getAdImageUrl } from "@/lib/api/getAdvertisements";
+import { loadPublicEnergJobs } from "@/lib/energjob-public";
+import { getLatestIssue } from "@/lib/api/getLatestIssue";
 
 const STRAPI_BASE = process.env.NEXT_PUBLIC_STRAPI_URL || "https://cms.energdive.com";
 const STRAPI_TOKEN = process.env.STRAPI_API_TOKEN || "";
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://www.energdive.com";
 const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
+const BREVO_CONTACTS_PAGE_SIZE = 500;
 
 const INSIGHT_CONTENT_TYPES = new Set([
     "analysis",
+    "article",
     "articles",
     "featured stories",
     "featured story",
@@ -42,6 +46,7 @@ interface DigestCandidateRow {
     preferred_frequency: string | null;
     preferred_formats: string[] | null;
     last_content_digest_sent_at: string | null;
+    source?: "brevo";
 }
 
 export interface DigestItem {
@@ -54,6 +59,11 @@ export interface DigestItem {
     sortAt: Date;
     badge: string;
     formats: DigestFormat[];
+    publisher?: string;
+    eventDate?: string | null;
+    eventVenue?: string | null;
+    eventDescription?: string | null;
+    contentTag?: string;
 }
 
 export interface DigestSection {
@@ -86,6 +96,8 @@ export interface PreviewDigestOptions {
     firstName?: string;
     frequency?: DigestFrequency;
     formats?: DigestFormat[];
+    /** Test-only escape hatch. Scheduled subscriber sends always require two Top News items. */
+    allowInsufficientTopNews?: boolean;
 }
 
 export interface PreviewDigestResult {
@@ -126,6 +138,7 @@ interface StrapiDigestContent {
     publishedAt?: string;
     Date?: string;
     createdAt?: string;
+    author?: { name?: string } | { data?: { attributes?: { name?: string } } } | null;
 }
 
 interface StrapiDigestEvent {
@@ -152,6 +165,12 @@ interface DigestEmailCandidate {
     preferred_frequency: string | null;
     preferred_formats: string[] | null;
     last_content_digest_sent_at: string | null;
+}
+
+interface BrevoListContact {
+    email?: string;
+    emailBlacklisted?: boolean;
+    attributes?: Record<string, unknown>;
 }
 
 function getStrapiHeaders(): HeadersInit {
@@ -298,6 +317,21 @@ function getContentTagTitle(contentTag: unknown): string {
     return tag?.title || tag?.Title || tag?.data?.attributes?.title || "";
 }
 
+// The production briefing has two delivery groups: weekly contacts receive
+// the weekly edition; every other active contact receives the daily edition.
+function normalizeScheduledFrequency(value: string | null | undefined): Extract<DigestFrequency, "daily" | "weekly"> {
+    return normalizeFrequency(value) === "weekly" ? "weekly" : "daily";
+}
+
+function getAuthorName(author: StrapiDigestContent["author"]): string {
+    if (!author) return "ENERGDIVE Editorial";
+    if ("name" in author && author.name?.trim()) return author.name.trim();
+    if ("data" in author && author.data?.attributes?.name?.trim()) {
+        return author.data.attributes.name.trim();
+    }
+    return "ENERGDIVE Editorial";
+}
+
 function parseEventSortDate(value: string | null | undefined): Date | null {
     if (!value) {
         return null;
@@ -340,14 +374,15 @@ function parseEventSortDate(value: string | null | undefined): Date | null {
 
 function mapFormatsForContent(item: StrapiDigestContent): DigestFormat[] {
     const typeName = extractContentTypeName(item.type_of_content).toLowerCase();
-    const tagTitle = getContentTagTitle(item.content_tag).toLowerCase();
     const formats: DigestFormat[] = [];
 
     if (typeName === "news") {
         formats.push("News Briefing");
     }
 
-    if (typeName === "opinion" && tagTitle !== "interview") {
+    // Interviews are stored as Opinion content with an Interview tag. Keep
+    // both in the catalogue so the briefing can rotate one editorial pick.
+    if (typeName === "opinion") {
         formats.push("Opinion");
     }
 
@@ -389,11 +424,15 @@ function normalizeContentItem(item: StrapiDigestContent): DigestItem | null {
             extractPlainText(item.Excerpt) ||
             `Latest ${typeName.toLowerCase()} update from ENERGDIVE.`
         ),
-        imageUrl: strapiMediaUrl(item.FeaturedImage, toAbsoluteUrl("/magazine-default.jpg")),
+        // Digest cards are rendered at a small fixed size. Using Strapi's small
+        // rendition prevents each email from downloading the full article image.
+        imageUrl: strapiMediaUrl(item.FeaturedImage, toAbsoluteUrl("/magazine-default.jpg"), undefined, "small"),
         publishedAt,
         sortAt: publishedAt,
         badge: typeName,
         formats,
+        publisher: getAuthorName(item.author),
+        contentTag: getContentTagTitle(item.content_tag).toLowerCase(),
     };
 }
 
@@ -411,8 +450,9 @@ function normalizeEventItem(item: StrapiDigestEvent): DigestItem | null {
     const eventDate = parseEventSortDate(item.date);
     const todayStart = getStartOfIstDay(new Date());
 
-    // If we have a valid event date, and it's in the past, skip it
-    if (eventDate && eventDate < todayStart) {
+    // Digest events must have a valid date and must still be upcoming. This
+    // prevents date-less CMS entries from displacing the nearest real events.
+    if (!eventDate || eventDate < todayStart) {
         return null;
     }
 
@@ -428,11 +468,14 @@ function normalizeEventItem(item: StrapiDigestEvent): DigestItem | null {
             extractPlainText(item.description) ||
             "Upcoming event from ENERGDIVE."
         ),
-        imageUrl: image ? strapiMediaUrl(image, toAbsoluteUrl("/magazine-default.jpg")) : null,
+        imageUrl: image ? strapiMediaUrl(image, toAbsoluteUrl("/magazine-default.jpg"), undefined, "small") : null,
         publishedAt,
-        sortAt: eventDate || publishedAt,
+        sortAt: eventDate,
         badge: "Upcoming Event",
         formats: ["Upcoming Events"],
+        eventDate: item.date || null,
+        eventVenue: item.location || item.venue || null,
+        eventDescription: truncate(extractPlainText(item.description), 110) || null,
     };
 }
 
@@ -444,6 +487,7 @@ async function fetchRecentContents(earliestPublishedAt?: Date): Promise<DigestIt
     url.searchParams.set("populate[0]", "FeaturedImage");
     url.searchParams.set("populate[1]", "type_of_content");
     url.searchParams.set("populate[2]", "content_tag");
+    url.searchParams.set("populate[3]", "author");
 
     if (earliestPublishedAt) {
         url.searchParams.set("filters[publishedAt][$gte]", earliestPublishedAt.toISOString());
@@ -465,7 +509,7 @@ async function fetchRecentContents(earliestPublishedAt?: Date): Promise<DigestIt
         .sort((a: DigestItem, b: DigestItem) => b.sortAt.getTime() - a.sortAt.getTime());
 }
 
-async function fetchUpcomingEvents(earliestPublishedAt?: Date): Promise<DigestItem[]> {
+async function fetchUpcomingEvents(): Promise<DigestItem[]> {
     const url = new URL(`${STRAPI_BASE}/api/events`);
     url.searchParams.set("pagination[pageSize]", "100");
     url.searchParams.set("sort[0]", "createdAt:desc");
@@ -492,10 +536,12 @@ async function fetchUpcomingEvents(earliestPublishedAt?: Date): Promise<DigestIt
         .sort((a: DigestItem, b: DigestItem) => a.sortAt.getTime() - b.sortAt.getTime());
 }
 
-async function loadDigestCatalog(earliestPublishedAt?: Date): Promise<DigestItem[]> {
+async function loadDigestCatalog(): Promise<DigestItem[]> {
     const [contents, events] = await Promise.all([
-        fetchRecentContents(earliestPublishedAt),
-        fetchUpcomingEvents(earliestPublishedAt),
+        // The fresh-news gate is applied when sections are built. Keeping a
+        // wider catalog here lets Trending Articles rotate independently.
+        fetchRecentContents(),
+        fetchUpcomingEvents(),
     ]);
 
     return [...contents, ...events].sort(
@@ -508,7 +554,7 @@ function buildSections(
     since: Date | null,
     catalog: DigestItem[],
     frequency: string = "daily",
-    perFormatLimit = 3
+    perFormatLimit = 4
 ): DigestSection[] {
     const sections: DigestSection[] = [];
     const usedKeys = new Set<string>();
@@ -527,8 +573,8 @@ function buildSections(
         
         if (isEvent) {
             limit = 3; // Strictly top 3 events
-        } else if (frequency === "weekly" && format === "News Briefing") {
-            limit = 9;
+        } else if (format === "News Briefing") {
+            limit = 4;
         }
 
         const items = catalog
@@ -556,11 +602,101 @@ function buildSections(
     return sections;
 }
 
-function hasFreshContentSection(sections: DigestSection[]): boolean {
-    // Only News Briefing is considered "fresh content" for the daily/weekly trigger
-    return sections.some((section) =>
-        section.format === "News Briefing" && section.items.length > 0
+function hasEnoughTopNews(sections: DigestSection[]): boolean {
+    // A Daily Briefing is only useful when it has at least two fresh news stories.
+    return (sections.find((section) => section.format === "News Briefing")?.items.length || 0) >= 2;
+}
+
+interface DailyBriefingExtras {
+    trending: DigestItem[];
+    articles: DigestItem[];
+    latestIssue: Awaited<ReturnType<typeof getLatestIssue>>;
+    jobs: Array<{
+        companyName: string;
+        title: string;
+        location: string;
+        href: string;
+    }>;
+}
+
+function getIstDateKey(now = new Date()): string {
+    return new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Asia/Kolkata",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+    }).format(now);
+}
+
+function hashForDay(value: string, dayKey: string): number {
+    let hash = 2166136261;
+    const source = `${dayKey}:${value}`;
+    for (let index = 0; index < source.length; index += 1) {
+        hash ^= source.charCodeAt(index);
+        hash = Math.imul(hash, 16777619);
+    }
+    return hash >>> 0;
+}
+
+function getDailyTrendingArticles(catalog: DigestItem[], sections: DigestSection[]): DigestItem[] {
+    const topNewsKeys = new Set(
+        sections
+            .find((section) => section.format === "News Briefing")
+            ?.items.map((item) => item.key) || []
     );
+    const dayKey = getIstDateKey();
+
+    return catalog
+        .filter((item) => item.key.startsWith("content:") && !topNewsKeys.has(item.key))
+        .sort((left, right) => hashForDay(left.key, dayKey) - hashForDay(right.key, dayKey))
+        .slice(0, 3);
+}
+
+async function loadDailyBriefingExtras(
+    catalog: DigestItem[],
+    sections: DigestSection[]
+): Promise<DailyBriefingExtras> {
+    const trending = getDailyTrendingArticles(catalog, sections);
+    const dayKey = getIstDateKey();
+    const selectedKeys = new Set(sections.flatMap((section) => section.items.map((item) => item.key)));
+
+    const articles = catalog
+        .filter((item) =>
+            item.key.startsWith("content:") &&
+            !selectedKeys.has(item.key) &&
+            /article/i.test(item.badge)
+        )
+        .sort((left, right) => right.publishedAt.getTime() - left.publishedAt.getTime())
+        .slice(0, 3);
+    const latestIssue = await getLatestIssue();
+
+    try {
+        // Fetch a wider pool, then use the IST date as a stable shuffle seed.
+        // Everyone sees the same three jobs on a given day, and a fresh mix on
+        // the next day without changing the source job data.
+        const jobs = await loadPublicEnergJobs(60);
+        const dailyJobs = [...jobs]
+            .sort((left, right) => hashForDay(left.routeSlug, dayKey) - hashForDay(right.routeSlug, dayKey))
+            .slice(0, 3);
+        return {
+            trending,
+            articles,
+            latestIssue,
+            jobs: dailyJobs.map((job) => ({
+                companyName: job.companyName || "ENERGDIVE Jobs",
+                title: job.title,
+                location: job.location || "India",
+                href: job.externalApplyUrl || toAbsoluteUrl(`/energyjobs/${job.routeSlug}`),
+                logoUrl: job.companyLogoUrl,
+                experience: job.experienceMin !== null || job.experienceMax !== null
+                    ? `${job.experienceMin ?? job.experienceMax}${job.experienceMin !== job.experienceMax && job.experienceMax !== null ? `–${job.experienceMax}` : ""} years`
+                    : null,
+            })),
+        };
+    } catch (error) {
+        console.error("[Digests] Failed to load latest jobs:", error);
+        return { trending, articles, latestIssue, jobs: [] };
+    }
 }
 
 function getDueWindowStart(
@@ -666,6 +802,15 @@ function dedupeCandidatesByEmail(rows: DigestCandidateRow[]): DigestEmailCandida
 
         existing.userIds.push(row.id);
 
+        // Brevo is the source of truth for contact frequency. A portal profile can be older than
+        // the latest Brevo preference, so keep the Brevo value on a match.
+        if (row.source === "brevo") {
+            existing.preferred_frequency = row.preferred_frequency;
+            if (row.first_name) {
+                existing.first_name = row.first_name;
+            }
+        }
+
         const existingLast = existing.last_content_digest_sent_at
             ? new Date(existing.last_content_digest_sent_at).getTime()
             : Number.NEGATIVE_INFINITY;
@@ -696,6 +841,90 @@ function dedupeCandidatesByEmail(rows: DigestCandidateRow[]): DigestEmailCandida
     });
 }
 
+async function getBrevoActiveContactCandidates(): Promise<DigestCandidateRow[]> {
+    const apiKey = process.env.BREVO_API_KEY;
+    if (!apiKey) {
+        throw new Error("BREVO_API_KEY is not configured");
+    }
+
+    const contacts: BrevoListContact[] = [];
+    let offset = 0;
+
+    while (true) {
+        const response = await fetch(
+            `https://api.brevo.com/v3/contacts?limit=${BREVO_CONTACTS_PAGE_SIZE}&offset=${offset}`,
+            { headers: { "api-key": apiKey, Accept: "application/json" } }
+        );
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Brevo contacts fetch failed: ${response.status} ${errorText}`);
+        }
+
+        const payload = await response.json() as { contacts?: BrevoListContact[] };
+        const page = payload.contacts || [];
+        contacts.push(...page);
+
+        if (page.length < BREVO_CONTACTS_PAGE_SIZE) {
+            break;
+        }
+        offset += page.length;
+    }
+
+    return contacts.flatMap((contact) => {
+        const email = contact.email?.trim().toLowerCase();
+        if (!email || contact.emailBlacklisted || email.endsWith("@phone.energdive.com")) {
+            return [];
+        }
+
+        const attributes = contact.attributes || {};
+        const firstName = typeof attributes.FIRSTNAME === "string" ? attributes.FIRSTNAME.trim() : null;
+        const rawFrequency = typeof attributes.FREQUENCY === "string" ? attributes.FREQUENCY : null;
+
+        return [{
+            // Brevo-only contacts have no local user record to update after
+            // delivery. Their last send time is read from digest logs.
+            id: 0,
+            email,
+            first_name: firstName || null,
+            last_name: null,
+            preferred_frequency: normalizeScheduledFrequency(rawFrequency),
+            preferred_formats: ["News Briefing", "Upcoming Events"],
+            last_content_digest_sent_at: null,
+            source: "brevo" as const,
+        }];
+    });
+}
+
+async function getSuppressedDigestEmails(): Promise<Set<string>> {
+    const result = await query<{ email: string }>(
+        `SELECT DISTINCT LOWER(email) AS email
+         FROM users
+         WHERE COALESCE(content_digest_opted_out, false) = true
+           AND email IS NOT NULL`
+    );
+    return new Set(result.rows.map((row) => row.email));
+}
+
+async function hydrateBrevoLastSentAt(rows: DigestCandidateRow[]): Promise<void> {
+    const emails = Array.from(new Set(rows.filter((row) => row.source === "brevo").map((row) => row.email)));
+    if (emails.length === 0) return;
+
+    const result = await query<{ email: string; last_sent_at: string }>(
+        `SELECT LOWER(email) AS email, MAX(sent_at) AS last_sent_at
+         FROM content_digest_logs
+         WHERE LOWER(email) = ANY($1::text[])
+           AND status = 'sent'
+         GROUP BY LOWER(email)`,
+        [emails]
+    );
+    const sentAtByEmail = new Map(result.rows.map((row) => [row.email, row.last_sent_at]));
+    for (const row of rows) {
+        if (row.source === "brevo") {
+            row.last_content_digest_sent_at = sentAtByEmail.get(row.email) || null;
+        }
+    }
+}
+
 async function getDigestCandidates(options: ProcessDigestsOptions): Promise<DigestEmailCandidate[]> {
     const params: unknown[] = [];
     let emailFilter = "";
@@ -705,7 +934,9 @@ async function getDigestCandidates(options: ProcessDigestsOptions): Promise<Dige
         emailFilter = `AND LOWER(email) = $${params.length}`;
     }
 
-    params.push(options.limit || 100);
+    // The scheduled briefing must reach every eligible contact. A caller can
+    // still supply a smaller limit for a controlled retry or diagnostic run.
+    params.push(options.limit || 10_000);
     const limitPlaceholder = `$${params.length}`;
 
     // Ensure last_content_digest_sent_at column exists in subscribe_letterbox
@@ -750,7 +981,15 @@ async function getDigestCandidates(options: ProcessDigestsOptions): Promise<Dige
         params
     );
 
-    return dedupeCandidatesByEmail(result.rows);
+    const [brevoRows, suppressedEmails] = await Promise.all([
+        getBrevoActiveContactCandidates(),
+        getSuppressedDigestEmails(),
+    ]);
+    const allRows = [...result.rows, ...brevoRows]
+        .filter((row) => !suppressedEmails.has(row.email.trim().toLowerCase()));
+
+    await hydrateBrevoLastSentAt(allRows);
+    return dedupeCandidatesByEmail(allRows);
 }
 
 export async function processPreferenceDigests(
@@ -758,25 +997,10 @@ export async function processPreferenceDigests(
 ): Promise<ProcessDigestsResult> {
     const now = new Date();
 
-    // Do not send any emails on Saturday (6) or Sunday (0)
-    const istNow = shiftToIst(now);
-    const dayOfWeek = istNow.getUTCDay();
-    if (dayOfWeek === 0 || dayOfWeek === 6) {
-        return {
-            success: true,
-            processed: 0,
-            due: 0,
-            sent: 0,
-            skipped: 0,
-            errors: 0,
-            results: [],
-        };
-    }
-
     const candidates = await getDigestCandidates(options);
     const dueCandidates = candidates.filter((row) =>
         isDigestDue(
-            normalizeFrequency(row.preferred_frequency),
+            normalizeScheduledFrequency(row.preferred_frequency),
             row.last_content_digest_sent_at ? new Date(row.last_content_digest_sent_at) : null,
             now
         )
@@ -794,23 +1018,21 @@ export async function processPreferenceDigests(
         };
     }
 
-    const earliestStart = dueCandidates.reduce<number>((min, row) => {
-        const time = getDueWindowStart(row, now).getTime();
-        return Math.min(min, time);
-    }, Number.POSITIVE_INFINITY);
-
-    const catalog = await loadDigestCatalog(new Date(earliestStart));
+    const catalog = await loadDigestCatalog();
     
     let sponsor: { imageUrl: string; targetUrl: string } | null = null;
     try {
-        const ads = await getAdvertisements({ placement: "home_platform_hero" });
+        const ads = await getAdvertisements({ placement: "email_top" });
         if (ads && ads.length > 0) {
-            const ad = ads[0];
-            const imageUrl = getAdImageUrl(ad.creative?.[0] || ad.logo?.[0]);
-            if (imageUrl) {
+            const ad = ads.find((candidate) => {
+                const candidateImageUrl = getAdImageUrl(candidate.creative?.[0] || candidate.logo?.[0]);
+                return Boolean(candidateImageUrl && isDailyBriefingAdImageAllowed(candidateImageUrl));
+            });
+            const imageUrl = ad ? getAdImageUrl(ad.creative?.[0] || ad.logo?.[0]) : null;
+            if (ad && imageUrl) {
                 sponsor = {
                     imageUrl,
-                    targetUrl: ad.target_url || APP_URL
+                    targetUrl: appendEmailAdUtm(ad.target_url || APP_URL, ad.partner_name || ad.title)
                 };
             }
         }
@@ -822,40 +1044,50 @@ export async function processPreferenceDigests(
     let sent = 0;
     let skipped = 0;
     let errors = 0;
+    const preparedDigests = new Map<
+        DigestFrequency,
+        | { sections: DigestSection[]; itemKeys: string[]; extras: Awaited<ReturnType<typeof loadDailyBriefingExtras>> }
+        | "no_new_matching_content"
+    >();
+
+    const prepareDigest = async (frequency: DigestFrequency) => {
+        const cached = preparedDigests.get(frequency);
+        if (cached) return cached;
+
+        const formats = ["News Briefing", "Upcoming Events"] as DigestFormat[];
+        const since = getDueWindowStart({ preferred_frequency: frequency }, now);
+        let sections = buildSections(formats, since, catalog, frequency);
+        // A daily briefing should not disappear merely because fewer than two
+        // stories were published in the last 24 hours. Fall back to the
+        // latest available editorial items while retaining upcoming events.
+        if (!hasEnoughTopNews(sections)) {
+            sections = buildSections(formats, null, catalog, frequency);
+        }
+        const itemKeys = sections.flatMap((section) => section.items.map((item) => item.key));
+        const prepared = sections.length === 0 || itemKeys.length === 0
+                ? "no_new_matching_content" as const
+                : { sections, itemKeys, extras: await loadDailyBriefingExtras(catalog, sections) };
+
+        preparedDigests.set(frequency, prepared);
+        return prepared;
+    };
 
     for (const row of dueCandidates) {
-        const frequency = normalizeFrequency(row.preferred_frequency);
-        if (frequency === "monthly") {
-            skipped++;
-            results.push({ email: row.email, status: "skipped", reason: "monthly_disabled" });
-            continue;
-        }
+        const frequency = normalizeScheduledFrequency(row.preferred_frequency);
 
-        // Hardcode formats to ONLY include News Briefing and Upcoming Events
+        // Hardcode formats to ONLY include News Briefing and Upcoming Events.
         const formats = ["News Briefing", "Upcoming Events"] as DigestFormat[];
-        const since = getDueWindowStart(row, now);
-        const sections = buildSections(formats, since, catalog, frequency);
-        const itemKeys = sections.flatMap((section) => section.items.map((item) => item.key));
-
-        if (!hasFreshContentSection(sections)) {
+        const prepared = await prepareDigest(frequency);
+        if (typeof prepared === "string") {
             skipped++;
             results.push({
                 email: row.email,
                 status: "skipped",
-                reason: "no_fresh_news_published_today",
+                reason: prepared,
             });
             continue;
         }
-
-        if (sections.length === 0 || itemKeys.length === 0) {
-            skipped++;
-            results.push({
-                email: row.email,
-                status: "skipped",
-                reason: "no_new_matching_content",
-            });
-            continue;
-        }
+        const { sections, itemKeys, extras } = prepared;
 
         try {
             await sendPreferenceDigestEmail(
@@ -863,7 +1095,8 @@ export async function processPreferenceDigests(
                 deriveDisplayName(row.email, row.first_name),
                 frequency,
                 sections,
-                sponsor
+                sponsor,
+                extras
             );
 
             await markDigestSent(row.userIds);
@@ -932,20 +1165,23 @@ export async function sendPreferenceDigestPreview(
     const formats = ["News Briefing", "Upcoming Events"] as DigestFormat[];
     const mockRow = { preferred_frequency: frequency } as any;
     const since = getDueWindowStart(mockRow, new Date());
-    const catalog = await loadDigestCatalog(since);
+    const catalog = await loadDigestCatalog();
     const sections = buildSections(formats, since, catalog, frequency);
     const itemKeys = sections.flatMap((section) => section.items.map((item) => item.key));
 
     let sponsor: { imageUrl: string; targetUrl: string } | null = null;
     try {
-        const ads = await getAdvertisements({ placement: "home_platform_hero" });
+        const ads = await getAdvertisements({ placement: "email_top" });
         if (ads && ads.length > 0) {
-            const ad = ads[0];
-            const imageUrl = getAdImageUrl(ad.creative?.[0] || ad.logo?.[0]);
-            if (imageUrl) {
+            const ad = ads.find((candidate) => {
+                const candidateImageUrl = getAdImageUrl(candidate.creative?.[0] || candidate.logo?.[0]);
+                return Boolean(candidateImageUrl && isDailyBriefingAdImageAllowed(candidateImageUrl));
+            });
+            const imageUrl = ad ? getAdImageUrl(ad.creative?.[0] || ad.logo?.[0]) : null;
+            if (ad && imageUrl) {
                 sponsor = {
                     imageUrl,
-                    targetUrl: ad.target_url || APP_URL
+                    targetUrl: appendEmailAdUtm(ad.target_url || APP_URL, ad.partner_name || ad.title)
                 };
             }
         }
@@ -957,12 +1193,19 @@ export async function sendPreferenceDigestPreview(
         throw new Error("No matching content or events are available for the requested preview.");
     }
 
+    if (!options.allowInsufficientTopNews && !hasEnoughTopNews(sections)) {
+        throw new Error("At least two Top News articles are required to send a Daily Briefing preview.");
+    }
+
+    const extras = await loadDailyBriefingExtras(catalog, sections);
+
     await sendPreferenceDigestEmail(
         email,
         deriveDisplayName(email, options.firstName),
         frequency,
         sections,
-        sponsor
+        sponsor,
+        extras
     );
 
     await logDigestSend({

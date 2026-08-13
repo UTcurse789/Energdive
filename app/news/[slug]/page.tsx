@@ -10,7 +10,7 @@ import { SidebarNewsletterForm } from "@/components/news/SidebarNewsletterForm";
 import { ScrollProgress } from "@/components/ui/scroll-progress";
 import { ShareButton } from "@/components/ui/share-button";
 import { getLatestIssue } from "@/lib/api/getLatestIssue";
-import { Printer } from "lucide-react";
+import { PrintArticleButton } from "@/components/article/PrintArticleButton";
 import { formatContentDate } from "@/lib/date";
 import ArticleBody from "@/components/ArticleBody";
 import { fetchDataBlocks } from "@/lib/parse-content-blocks";
@@ -25,6 +25,11 @@ import { strapiImageUrl } from "@/lib/strapi-image";
 import { getCanonicalUrl } from "@/lib/seo";
 
 const STRAPI_BASE_URL = "https://cms.energdive.com";
+
+function cleanHeadline(title: string): string {
+    if (!title) return "";
+    return title.replace(/\s*[\|-]\s*ENERGDIVE$/i, '').replace(/\s*[\|-]\s*EnergDive$/i, '').trim();
+}
 
 function slugify(text: string): string {
     return text.toLowerCase().trim().replace(/[^\w\s-]/g, "").replace(/[\s_]+/g, "-").replace(/-+/g, "-").replace(/^-+|-+$/g, "");
@@ -43,7 +48,7 @@ function normalizeTag(tag: any) {
 async function getArticle(slug: string) {
     const url = `${STRAPI_BASE_URL}/api/contents?filters[slug][$eq]=${slug}&populate[author][populate]=avatar&populate[FeaturedImage]=true&populate[tags]=true&populate[type_of_content]=true&populate[sectors]=true`;
 
-    const res = await fetch(url, { next: { revalidate: 3600 } });
+    const res = await fetch(url, { next: { revalidate: 300 } });
     if (!res.ok) return null;
 
     const json = await res.json();
@@ -192,8 +197,9 @@ export default async function NewsDetailPage({
     const articleContent = attrs.Content || [];
     const dataBlocks = await fetchDataBlocks(articleContent);
 
+    const cleanTitle = cleanHeadline(attrs.Title || attrs.title || "");
     const article = {
-        title: attrs.Title,
+        title: cleanTitle,
         excerpt: attrs.Excerpt || [],
         content: articleContent,
         image: attrs.FeaturedImage?.url
@@ -215,8 +221,8 @@ export default async function NewsDetailPage({
 
     const categorySectorSlug = getSectorSlugForTagOrCategory(sectorName || article.category, sectorSlug);
 
-    const rawDate = attrs.publishedAt || attrs.createdAt || attrs.Date || "";
-    const modifiedDate = attrs.updatedAt || rawDate;
+    const rawDate = attrs.publishedAt || attrs.createdAt || attrs.Date || new Date().toISOString();
+    const modifiedDate = attrs.updatedAt || attrs.publishedAt || attrs.createdAt || rawDate;
     const excerptText = Array.isArray(attrs.Excerpt)
         ? attrs.Excerpt[0]?.children?.[0]?.text || ""
         : "";
@@ -318,15 +324,9 @@ export default async function NewsDetailPage({
                                 </div>
                             </div>
                             <div className="flex items-center gap-3 self-start sm:self-auto">
-                                <Link
-                                    href={`/print/${slug}`}
-                                    target="_blank"
+                                <PrintArticleButton
                                     className="flex items-center gap-1.5 text-gray-600 hover:text-gray-900 font-medium text-sm border border-gray-200 px-4 py-2 rounded-full bg-white hover:bg-gray-50 shadow-sm transition-colors"
-                                    title="Print this article"
-                                >
-                                    <Printer className="w-4 h-4" />
-                                    Print
-                                </Link>
+                                />
                                 <ShareButton
                                     title={article.title}
                                     text={excerptText}

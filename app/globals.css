@@ -41,6 +41,10 @@
 
 
 :root {
+  /* Local fallbacks keep development and builds independent of Google Fonts. */
+  --font-sans: Arial, Helvetica, sans-serif;
+  --font-serif: Georgia, "Times New Roman", serif;
+
   /* Brand Colors */
   --primary: oklch(0.205 0 0);
   /* Deep Teal/Blue */
@@ -846,3 +850,80 @@ h6 {
     @apply bg-background text-foreground;
   }
 }
+
+/* Native article printing: retain editorial content only, never site chrome. */
+@media print {
+  @page {
+    margin: 16mm;
+  }
+
+  html,
+  body {
+    background: #ffffff !important;
+  }
+
+  header.fixed,
+  footer,
+  nav,
+  aside,
+  button,
+  .fixed,
+  .sticky,
+  .print\:hidden {
+    display: none !important;
+  }
+
+  main {
+    padding: 0 !important;
+  }
+
+  article {
+    max-width: 100% !important;
+  }
+
+  /* Next/Image `fill` uses absolute positioning for the web layout. Convert
+     it back to a regular image for print, and remove its decorative overlay. */
+  [class*="aspect-video"] {
+    height: auto !important;
+    aspect-ratio: auto !important;
+    background: transparent !important;
+    break-inside: avoid;
+  }
+
+  img[data-nimg="fill"] {
+    position: static !important;
+    display: block !important;
+    width: 100% !important;
+    height: auto !important;
+    object-fit: contain !important;
+  }
+
+  [class*="bg-linear-to-t"] {
+    display: none !important;
+  }
+
+  a {
+    color: inherit !important;
+    text-decoration: none !important;
+  }
+}
+
+/* Article Body & Internal/External Content Links Styling */
+.article-body a,
+.prose a,
+a.inline-link {
+  color: #00A651 !important;
+  text-decoration: underline !important;
+  text-underline-offset: 4px !important;
+  text-decoration-color: rgba(0, 166, 81, 0.4) !important;
+  font-weight: 600 !important;
+  transition: color 0.2s ease, text-decoration-color 0.2s ease !important;
+}
+
+.article-body a:hover,
+.prose a:hover,
+a.inline-link:hover {
+  color: #008741 !important;
+  text-decoration-color: #008741 !important;
+}
+

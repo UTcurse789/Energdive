@@ -16,7 +16,8 @@ import { ScrollProgress } from "@/components/ui/scroll-progress";
 import { DateChip } from "@/components/ui/date-chip";
 import { ShareButton } from "@/components/ui/share-button";
 import { getLatestIssue } from "@/lib/api/getLatestIssue";
-import { ArrowRight, Calendar, ChevronRight, Printer } from "lucide-react";
+import { ArrowRight, Calendar, ChevronRight } from "lucide-react";
+import { PrintArticleButton } from "@/components/article/PrintArticleButton";
 import { formatContentDate } from "@/lib/date";
 import { ArticleJsonLd } from "@/components/seo/ArticleJsonLd";
 import { AdBanner } from "@/components/ads/AdBanner";
@@ -260,15 +261,9 @@ export default async function InterviewDetailPage({ params }: { params: Promise<
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-3 self-start sm:self-auto">
-                                    <Link
-                                        href={`/print/${slug}`}
-                                        target="_blank"
+                                    <PrintArticleButton
                                         className="flex items-center gap-1.5 text-gray-600 hover:text-gray-900 font-medium text-sm border border-gray-200 px-4 py-2 rounded-full bg-white hover:bg-gray-50 shadow-sm transition-colors"
-                                        title="Print this article"
-                                    >
-                                        <Printer className="w-4 h-4" />
-                                        Print
-                                    </Link>
+                                    />
                                     <ShareButton
                                         title={article.title}
                                         text={excerptText}

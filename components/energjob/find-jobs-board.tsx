@@ -128,7 +128,7 @@ function CompanyMark({
       <div
         className={`${size} ${rounded} shrink-0 overflow-hidden border border-gray-200 bg-white`}
       >
-        <img src={logoUrl} alt={name} className="h-full w-full object-contain p-1" />
+        <img src={logoUrl} alt={name} className="h-full w-full object-contain" />
       </div>
     );
   }
@@ -798,17 +798,17 @@ export default function FindJobsBoard({ jobs }: FindJobsBoardProps) {
                               <CompanyMark
                                 name={companyName}
                                 logoUrl={job.companyLogoUrl}
-                                size="h-12 w-12 sm:h-14 sm:w-14"
+                                size="w-28 h-14 sm:w-32 sm:h-16"
                               />
 
                               <div className="min-w-0 flex-1">
                                 <Link
                                   href={getJobHref(job)}
-                                  className="block text-base font-bold leading-snug text-gray-900 transition-colors hover:text-[#09B697] sm:text-lg hover:underline"
+                                  className="block text-xs font-bold leading-snug text-gray-900 transition-colors hover:text-[#09B697] sm:text-sm hover:underline"
                                 >
                                   {job.title}
                                 </Link>
-                                <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-gray-500 sm:text-sm">
+                                <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] text-gray-500 sm:text-xs">
                                   {metaParts.map((part, index) => (
                                     <span key={index} className="flex items-center">
                                       {index > 0 && <span className="mr-2 text-gray-300">•</span>}
@@ -854,29 +854,28 @@ export default function FindJobsBoard({ jobs }: FindJobsBoardProps) {
             )}
           </div>
 
-          <aside className="order-first h-fit rounded-[22px] border border-[#091d3a]/8 bg-white p-5 shadow-[0_16px_40px_rgba(20,63,82,0.06)] lg:order-none lg:sticky lg:top-24">
-            <div className="flex items-center gap-2 border-b border-black/8 pb-4">
-              <SlidersHorizontal className="h-4 w-4 text-[#46556f]" />
-              <h3 className="text-sm font-bold text-[#24344b]">Refine Your Search</h3>
+          <aside className="order-first h-fit rounded-[16px] border border-[#091d3a]/8 bg-white p-3 shadow-[0_8px_24px_rgba(20,63,82,0.04)] lg:order-none lg:sticky lg:top-24">
+            <div className="flex items-center gap-2 border-b border-black/8 pb-2.5">
+              <SlidersHorizontal className="h-3.5 w-3.5 text-[#46556f]" />
+              <h3 className="text-xs font-bold text-[#24344b]">Refine Your Search</h3>
             </div>
 
-            <div className="mt-5">
-              <p className="text-sm font-bold text-[#24344b]">Experience Level</p>
-              <div className="mt-3 space-y-2.5">
+            <div className="mt-3">
+              <p className="text-[11px] font-bold text-[#24344b]">Experience Level</p>
+              <div className="mt-1.5 space-y-1">
                 {EXPERIENCE_FILTERS.map((filter) => (
                   <label
                     key={filter.id}
-                    className="flex cursor-pointer items-center gap-3 text-sm text-[#46556f]"
+                    className="flex cursor-pointer items-center gap-2 text-[11px] text-[#46556f] hover:text-[#24344b]"
                   >
                     <input
                       type="checkbox"
-                      checked={draftExperienceFilters.includes(filter.id)}
-                      onChange={() =>
-                        setDraftExperienceFilters((current) =>
-                          toggleSelection(current, filter.id) as ExperienceFilterId[]
-                        )
-                      }
-                      className="h-4 w-4 rounded border border-black/20 text-[#09B697] focus:ring-[#09B697]"
+                      checked={appliedExperienceFilters.includes(filter.id)}
+                      onChange={() => {
+                        const next = toggleSelection(appliedExperienceFilters, filter.id) as ExperienceFilterId[];
+                        applySearchState({ ...getDraftState(), experienceFilters: next });
+                      }}
+                      className="h-3 w-3 rounded border border-black/20 text-[#09B697] focus:ring-[#09B697]"
                     />
                     <span>{filter.label}</span>
                   </label>
@@ -884,23 +883,22 @@ export default function FindJobsBoard({ jobs }: FindJobsBoardProps) {
               </div>
             </div>
 
-            <div className="mt-6">
-              <p className="text-sm font-bold text-[#24344b]">Employment Type</p>
-              <div className="mt-3 space-y-2.5">
+            <div className="mt-3">
+              <p className="text-[11px] font-bold text-[#24344b]">Employment Type</p>
+              <div className="mt-1.5 space-y-1">
                 {EMPLOYMENT_FILTERS.map((filter) => (
                   <label
                     key={filter.id}
-                    className="flex cursor-pointer items-center gap-3 text-sm text-[#46556f]"
+                    className="flex cursor-pointer items-center gap-2 text-[11px] text-[#46556f] hover:text-[#24344b]"
                   >
                     <input
                       type="checkbox"
-                      checked={draftEmploymentFilters.includes(filter.id)}
-                      onChange={() =>
-                        setDraftEmploymentFilters((current) =>
-                          toggleSelection(current, filter.id) as EmploymentFilterId[]
-                        )
-                      }
-                      className="h-4 w-4 rounded border border-black/20 text-[#09B697] focus:ring-[#09B697]"
+                      checked={appliedEmploymentFilters.includes(filter.id)}
+                      onChange={() => {
+                        const next = toggleSelection(appliedEmploymentFilters, filter.id) as EmploymentFilterId[];
+                        applySearchState({ ...getDraftState(), employmentFilters: next });
+                      }}
+                      className="h-3 w-3 rounded border border-black/20 text-[#09B697] focus:ring-[#09B697]"
                     />
                     <span>{filter.label}</span>
                   </label>
@@ -909,23 +907,22 @@ export default function FindJobsBoard({ jobs }: FindJobsBoardProps) {
             </div>
 
             {categories.length > 0 && (
-              <div className="mt-6">
-                <p className="text-sm font-bold text-[#24344b]">Job Category</p>
-                <div className="mt-3 space-y-2.5">
+              <div className="mt-3">
+                <p className="text-[11px] font-bold text-[#24344b]">Job Category</p>
+                <div className="mt-1.5 space-y-1">
                   {categories.map((category) => (
                     <label
                       key={category.id}
-                      className="flex cursor-pointer items-center gap-3 text-sm text-[#46556f]"
+                      className="flex cursor-pointer items-center gap-2 text-[11px] text-[#46556f] hover:text-[#24344b]"
                     >
                       <input
                         type="checkbox"
-                        checked={draftCategoryFilters.includes(category.id)}
-                        onChange={() =>
-                          setDraftCategoryFilters((current) =>
-                            toggleSelection(current, category.id)
-                          )
-                        }
-                        className="h-4 w-4 rounded border border-black/20 text-[#09B697] focus:ring-[#09B697]"
+                        checked={appliedCategoryFilters.includes(category.id)}
+                        onChange={() => {
+                          const next = toggleSelection(appliedCategoryFilters, category.id);
+                          applySearchState({ ...getDraftState(), categoryFilters: next });
+                        }}
+                        className="h-3 w-3 rounded border border-black/20 text-[#09B697] focus:ring-[#09B697]"
                       />
                       <span>{category.label}</span>
                     </label>
@@ -934,30 +931,27 @@ export default function FindJobsBoard({ jobs }: FindJobsBoardProps) {
               </div>
             )}
 
-            <div className="mt-6">
-              <p className="text-sm font-bold text-[#24344b]">Location</p>
+            <div className="mt-3">
+              <p className="text-[11px] font-bold text-[#24344b]">Location</p>
               <input
                 value={draftFilterLocation}
-                onChange={(event) => setDraftFilterLocation(event.target.value)}
+                onChange={(event) => {
+                  const value = event.target.value;
+                  setDraftFilterLocation(value);
+                  applySearchState({ ...getDraftState(), filterLocation: value });
+                }}
                 placeholder="Enter city or state"
-                className="mt-3 h-11 w-full rounded-[12px] border border-black/10 bg-[#fbfcfb] px-3 text-sm text-[#091d3a] outline-none placeholder:text-[#6d7582] focus:border-[#09B697]"
+                className="mt-1.5 h-8 w-full rounded-[8px] border border-black/10 bg-[#fbfcfb] px-2.5 text-[11px] text-[#091d3a] outline-none placeholder:text-[#6d7582] focus:border-[#09B697]"
               />
             </div>
 
-            <div className="mt-6 flex items-center justify-between gap-3">
+            <div className="mt-3 flex items-center justify-center">
               <button
                 type="button"
                 onClick={clearSidebarFilters}
-                className="text-sm font-bold text-[#09B697] transition-colors hover:text-[#06695d]"
+                className="inline-flex h-7 items-center justify-center rounded-[8px] border border-[#09B697]/20 px-3 text-[11px] font-bold text-[#09B697] transition-colors hover:bg-[#09B697]/5 hover:text-[#06695d]"
               >
-                Clear all
-              </button>
-              <button
-                type="button"
-                onClick={applyCurrentDraftState}
-                className="inline-flex h-11 items-center justify-center rounded-[12px] bg-[#0b7c6c] px-5 text-sm font-bold text-white transition-colors hover:bg-[#09B697]"
-              >
-                Apply Filters
+                Reset Filters
               </button>
             </div>
           </aside>
