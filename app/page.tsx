@@ -181,7 +181,7 @@ async function getAllContents() {
   try {
     const res = await fetchCms(
       `${STRAPI_BASE}/api/contents?pagination[pageSize]=40&populate=*&sort=Date:desc`,
-      { next: { revalidate: 300 } }
+      { next: { revalidate: 60, tags: ["strapi-contents"] } }
     );
     if (!res.ok) return null;
     const json = await res.json();
@@ -196,7 +196,7 @@ async function getFeaturedContents() {
   try {
     const res = await fetch(
       `${STRAPI_BASE}/api/contents?filters[featured][$eq]=true&populate=*&sort[0]=updatedAt:desc&sort[1]=publishedAt:desc&pagination[pageSize]=20`,
-      { next: { revalidate: 120 } }
+      { next: { revalidate: 60, tags: ["strapi-contents"] } }
     );
     if (!res.ok) return [];
     const json = await res.json();
@@ -211,7 +211,7 @@ async function getHeroBannerContents() {
   try {
     const res = await fetchCms(
       `${STRAPI_BASE}/api/contents?filters[show_hero_banner][$eq]=true&populate=*&pagination[pageSize]=10&sort=publishedAt:desc`,
-      { next: { revalidate: 120 } }
+      { next: { revalidate: 60, tags: ["strapi-contents"] } }
     );
     if (!res.ok) return [];
     const json = await res.json();

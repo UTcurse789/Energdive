@@ -28,7 +28,9 @@ const nextConfig: NextConfig = {
     ],
   },
 
-  // Aggressive cache headers for static assets & images
+  // Cache headers for static assets & images (immutable, long TTL)
+  // For HTML pages: short stale-while-revalidate so Cloudflare doesn't
+  // serve stale content for a year (Next.js ISR default is ~1 year SWR).
   async headers() {
     return [
       {
@@ -46,6 +48,20 @@ const nextConfig: NextConfig = {
           {
             key: "Cache-Control",
             value: "public, max-age=31536000, immutable",
+          },
+        ],
+      },
+      {
+        // All HTML pages: tell Cloudflare max 60s stale-while-revalidate.
+        // This prevents CDN from serving stale news pages for days/hours.
+        source: "/:path*",
+        missing: [
+          { type: "header", key: "x-no-cache-override" },
+        ],
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, s-maxage=60, stale-while-revalidate=60",
           },
         ],
       },
