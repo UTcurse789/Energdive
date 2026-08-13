@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath, revalidateTag } from "next/cache";
 import {
     sendAbstractAcceptedEmail,
     sendAbstractRejectedEmail,
@@ -6,6 +7,95 @@ import {
     sendFinalPaperAcceptedEmail,
     sendFinalPaperRejectedEmail
 } from "@/lib/email";
+
+// ─── Content Revalidation Helper ──────────────────────────────────────────────
+
+/**
+ * Returns true if the Strapi model uid refers to the main "content" collection.
+ */
+function isContentModel(model: string): boolean {
+    const lower = model.toLowerCase();
+    return (
+        lower === "content" ||
+        lower === "api::content.content" ||
+        lower.endsWith(".content")
+    );
+}
+
+/**
+ * Revalidates all pages that depend on the Strapi content collection.
+ * Called on entry.publish, entry.update, and entry.unpublish events.
+ */
+async function revalidateContentPages(slug?: string, contentType?: string) {
+    // Bust the fetch Data Cache
+    (revalidateTag as any)("strapi-contents");
+
+
+    const staticPaths = [
+        "/",
+        "/news",
+        "/articles",
+        "/analysis",
+        "/opinion",
+        "/cover-story",
+        "/featured-stories",
+        "/editorial",
+        "/interviews",
+        "/reports",
+        "/feature",
+        "/case-study",
+        "/sitemap.xml",
+        "/rss.xml",
+        "/sitemap-news.xml",
+    ];
+
+    for (const p of staticPaths) {
+        revalidatePath(p, "layout");
+    }
+
+    // Bust the specific article slug if we know it
+    if (slug) {
+        const slugPaths = [
+            `/news/${slug}`,
+            `/articles/${slug}`,
+            `/analysis/${slug}`,
+            `/opinion/${slug}`,
+            `/cover-story/${slug}`,
+            `/featured-stories/${slug}`,
+            `/editorial/${slug}`,
+            `/interviews/${slug}`,
+            `/reports/${slug}`,
+            `/feature/${slug}`,
+            `/case-study/${slug}`,
+        ];
+        for (const p of slugPaths) {
+            revalidatePath(p, "page");
+        }
+    }
+
+    // Also purge Cloudflare CDN cache
+    const cfToken = process.env.CF_API_TOKEN;
+    const cfZone = process.env.CF_ZONE_ID;
+    if (cfToken && cfZone) {
+        try {
+            const cfRes = await fetch(`https://api.cloudflare.com/client/v4/zones/${cfZone}/purge_cache`, {
+                method: "POST",
+                headers: {
+                    "Authorization": `Bearer ${cfToken}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ purge_everything: true }),
+            });
+            const cfJson = await cfRes.json();
+            if (!cfJson.success) {
+                console.error("[STRAPI-WEBHOOK] Cloudflare purge failed:", JSON.stringify(cfJson.errors));
+            }
+        } catch (cfErr) {
+            console.error("[STRAPI-WEBHOOK] Cloudflare purge error:", cfErr);
+        }
+    }
+}
+
 
 function getStringValue(...values: unknown[]) {
     for (const value of values) {
@@ -119,6 +209,25 @@ export async function POST(request: NextRequest) {
         const entry = extractEntry(body);
 
         console.log("[STRAPI-WEBHOOK] Parsed → event:", event, "| model:", model, "| has entry:", !!entry);
+
+        // ── On-demand ISR revalidation for content articles ──────────────────
+        // Fires on publish, update, or unpublish of any content entry.
+        if (isContentModel(model) && (
+            event === "entry.publish" ||
+            event === "entry.update" ||
+            event === "entry.unpublish" ||
+            event === "entry.create"
+        )) {
+            const slug = entry ? getStringValue(entry.slug) : undefined;
+            await revalidateContentPages(slug || undefined);
+            return NextResponse.json({
+                success: true,
+                message: `Cache revalidated for content entry (slug: ${slug || "unknown"})`,
+                event,
+                model,
+            });
+        }
+        // ─────────────────────────────────────────────────────────────────────
 
         if (!entry) {
             console.log("[STRAPI-WEBHOOK] No entry data found in payload. Keys:", Object.keys(body));
