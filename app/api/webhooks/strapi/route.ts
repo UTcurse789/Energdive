@@ -14,13 +14,15 @@ import {
  * Returns true if the Strapi model uid refers to the main "content" collection.
  */
 function isContentModel(model: string): boolean {
+    if (!model) return true;
     const lower = model.toLowerCase();
-    return (
-        lower === "content" ||
-        lower === "api::content.content" ||
-        lower.endsWith(".content")
-    );
+    // Exclude submission models
+    if (isSubmissionModel(lower) || isFinalPaperModel(lower)) {
+        return false;
+    }
+    return true;
 }
+
 
 /**
  * Revalidates all pages that depend on the Strapi content collection.
@@ -213,11 +215,15 @@ export async function POST(request: NextRequest) {
         // ── On-demand ISR revalidation for content articles ──────────────────
         // Fires on publish, update, or unpublish of any content entry.
         if (isContentModel(model) && (
-            event === "entry.publish" ||
-            event === "entry.update" ||
-            event === "entry.unpublish" ||
-            event === "entry.create"
+            !event ||
+            event.includes("publish") ||
+            event.includes("update") ||
+            event.includes("create") ||
+            event.includes("delete") ||
+            event.includes("unpublish") ||
+            event === "trigger"
         )) {
+
             const slug = entry ? getStringValue(entry.slug) : undefined;
             await revalidateContentPages(slug || undefined);
             return NextResponse.json({
