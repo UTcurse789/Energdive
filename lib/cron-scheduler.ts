@@ -62,9 +62,16 @@ export function startCronScheduler() {
             const istDate = new Date(istMs);
             const istHour = istDate.getUTCHours();
             const istMinute = istDate.getUTCMinutes();
+            const istDay = istDate.getUTCDay();
             const todayKey = istDate.toISOString().slice(0, 10); // YYYY-MM-DD
+            const isWeekday = istDay >= 1 && istDay <= 5;
             // Daily Briefing always starts at 5:00 PM IST.
             const digestStartMinute = 0;
+
+            // Saturday and Sunday are a hard stop for scheduled briefings.
+            if (!isWeekday) {
+                return;
+            }
 
             // Only fire between 17:00–17:59 IST, once per day
             if (istHour === 17 && istMinute >= digestStartMinute && lastDigestDate !== todayKey) {

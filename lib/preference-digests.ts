@@ -205,6 +205,11 @@ function getStartOfIstDay(date: Date): Date {
     return shiftFromIst(start);
 }
 
+function isIstWeekday(date: Date): boolean {
+    const day = shiftToIst(date).getUTCDay();
+    return day >= 1 && day <= 5;
+}
+
 function getStartOfIstWeek(date: Date): Date {
     const ist = shiftToIst(date);
     const day = ist.getUTCDay();
@@ -602,8 +607,12 @@ function buildSections(
     return sections;
 }
 
+function hasFreshNews(sections: DigestSection[]): boolean {
+    return (sections.find((section) => section.format === "News Briefing")?.items.length || 0) > 0;
+}
+
 function hasEnoughTopNews(sections: DigestSection[]): boolean {
-    // A Daily Briefing is only useful when it has at least two fresh news stories.
+    // Retained for manually requested preview emails only.
     return (sections.find((section) => section.format === "News Briefing")?.items.length || 0) >= 2;
 }
 
@@ -997,6 +1006,20 @@ export async function processPreferenceDigests(
 ): Promise<ProcessDigestsResult> {
     const now = new Date();
 
+    // Authoritative delivery guard: this also protects authenticated external
+    // cron calls, not just the in-app scheduler.
+    if (!isIstWeekday(now)) {
+        return {
+            success: true,
+            processed: 0,
+            due: 0,
+            sent: 0,
+            skipped: 0,
+            errors: 0,
+            results: [],
+        };
+    }
+
     const candidates = await getDigestCandidates(options);
     const dueCandidates = candidates.filter((row) =>
         isDigestDue(
@@ -1055,16 +1078,13 @@ export async function processPreferenceDigests(
         if (cached) return cached;
 
         const formats = ["News Briefing", "Upcoming Events"] as DigestFormat[];
-        const since = getDueWindowStart({ preferred_frequency: frequency }, now);
-        let sections = buildSections(formats, since, catalog, frequency);
-        // A daily briefing should not disappear merely because fewer than two
-        // stories were published in the last 24 hours. Fall back to the
-        // latest available editorial items while retaining upcoming events.
-        if (!hasEnoughTopNews(sections)) {
-            sections = buildSections(formats, null, catalog, frequency);
-        }
+        // Scheduled briefings only include news published today in IST.
+        const since = getStartOfIstDay(now);
+        const sections = buildSections(formats, since, catalog, frequency);
         const itemKeys = sections.flatMap((section) => section.items.map((item) => item.key));
-        const prepared = sections.length === 0 || itemKeys.length === 0
+        // Never send an event-only, empty, or backfilled briefing. Delivery
+        // requires at least one fresh News Briefing item in today's window.
+        const prepared = !hasFreshNews(sections) || itemKeys.length === 0
                 ? "no_new_matching_content" as const
                 : { sections, itemKeys, extras: await loadDailyBriefingExtras(catalog, sections) };
 
