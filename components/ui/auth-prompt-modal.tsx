@@ -99,7 +99,13 @@ export default function AuthPromptModal() {
             }
         }
 
-        fetchCurrentIssue();
+        // The prompt cannot render before its five-second delay. Deferring its
+        // CMS request keeps an unused modal from competing with initial paint.
+        const timer = window.setTimeout(() => {
+            void fetchCurrentIssue();
+        }, POPUP_DELAY_MS);
+
+        return () => window.clearTimeout(timer);
     }, []);
 
     useEffect(() => {
@@ -178,7 +184,6 @@ export default function AuthPromptModal() {
                                     fill
                                     style={{ objectFit: "contain" }}
                                     sizes="(max-width: 768px) 240px, 320px"
-                                    priority
                                 />
                             </div>
                         </div>

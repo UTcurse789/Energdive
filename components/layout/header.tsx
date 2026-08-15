@@ -306,9 +306,15 @@ export function Header() {
                 console.error("Failed to fetch menu data", e);
             }
         }
-        fetchMenuData();
+        // Mega-menu data is not needed for the first screen. Starting this
+        // after initial rendering avoids competing with the hero image and
+        // keeps the menu behaviour unchanged by the time it is normally used.
+        const timer = window.setTimeout(() => {
+            void fetchMenuData();
+        }, 1500);
         return () => {
             cancelled = true;
+            window.clearTimeout(timer);
         };
     }, []);
 
@@ -1213,7 +1219,7 @@ export function Header() {
                                                             <div className="flex items-center gap-2 mt-2">
                                                                 {item?.author?.avatar?.url && (
                                                                     <div className="relative w-5 h-5 rounded-full overflow-hidden border border-gray-200 shrink-0">
-                                                                        <Image src={strapiImageUrl(item.author.avatar.url)} alt={authorName} fill className="object-cover" />
+                                                                        <Image src={strapiImageUrl(item.author.avatar.url)} alt={authorName} fill sizes="20px" className="object-cover" />
                                                                     </div>
                                                                 )}
                                                                 <p className="text-[11px] text-gray-400">{authorName}</p>
@@ -1255,7 +1261,7 @@ export function Header() {
                                                             <div className="flex items-center gap-2 mt-2">
                                                                 {item?.author?.avatar?.url && (
                                                                     <div className="relative w-5 h-5 rounded-full overflow-hidden border border-gray-200 shrink-0">
-                                                                        <Image src={strapiImageUrl(item.author.avatar.url)} alt={authorName} fill className="object-cover" />
+                                                                        <Image src={strapiImageUrl(item.author.avatar.url)} alt={authorName} fill sizes="20px" className="object-cover" />
                                                                     </div>
                                                                 )}
                                                                 <p className="text-[11px] text-gray-400">{authorName}</p>

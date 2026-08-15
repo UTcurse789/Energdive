@@ -66,8 +66,8 @@ function RotatingPartnerAd({ ads }: { ads: PartnerAd[] }) {
         alt={ad.title || "Advertisement"}
         width={300}
         height={600}
+        sizes="300px"
         className="w-full h-auto object-contain"
-        unoptimized
       />
     </div>
   );

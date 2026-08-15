@@ -188,9 +188,11 @@ export function AdBanner({
 }: AdBannerProps) {
     const [selectedAds, setSelectedAds] = useState<Ad[]>([]);
     const [activeAdIndex, setActiveAdIndex] = useState(0);
+    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
         async function fetchAd() {
+            setIsLoading(true);
             try {
                 const nowDate = new Date();
                 const year = nowDate.getFullYear();
@@ -250,6 +252,8 @@ export function AdBanner({
             } catch (err) {
                 console.error("[AdBanner] Failed to fetch ad:", err);
                 setSelectedAds([]);
+            } finally {
+                setIsLoading(false);
             }
         }
 
@@ -267,6 +271,22 @@ export function AdBanner({
     }, [placement, selectedAds.length]);
 
     if (selectedAds.length === 0) {
+        // Client-fetched ads otherwise appear after the page has painted and
+        // push the editorial content down. Keep the known slot size while the
+        // request is in flight, then collapse it when no eligible ad exists.
+        if (isLoading) {
+            const slotClassName = variant === "mobile_banner"
+                ? "mx-auto w-full max-w-[320px] aspect-[320/100]"
+                : variant === "card"
+                    ? (EXACT_VERTICAL_CARD_PLACEMENTS.has(placement)
+                        ? "mx-auto w-full max-w-[300px] aspect-[300/600]"
+                        : "mx-auto w-full max-w-[300px] aspect-[300/250]")
+                    : variant === "vertical"
+                        ? "mx-auto w-full max-w-[300px] aspect-[300/600]"
+                        : "mx-auto w-full max-w-[728px] aspect-[728/90]";
+
+            return <div className={slotClassName} aria-hidden="true" />;
+        }
         return null;
     }
 
@@ -508,7 +528,6 @@ function VerticalBannerAd({
                 fill
                 sizes="(max-width: 1024px) 300px, 300px"
                 loading="lazy"
-                unoptimized
                 className="object-cover"
             />
         </div>

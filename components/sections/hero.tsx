@@ -256,6 +256,7 @@ export function Hero({ heroStories: propHeroStories, topStories: propTopStories,
                                     alt={featured.Title || "Featured energy story"}
                                     fill
                                     priority
+                                    fetchPriority="high"
                                     sizes="(max-width: 1024px) 100vw, 66vw"
                                     className={`object-cover transition-transform duration-700 ${
                                         isTransitioning ? "opacity-50 scale-105" : "opacity-100 scale-100"

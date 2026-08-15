@@ -82,8 +82,8 @@ function HeroAd({ ad, className = "" }: { ad: Advertisement; className?: string 
                     src={imageUrl}
                     alt={ad.title || "Industry Partner"}
                     fill
+                    sizes="100vw"
                     loading="lazy"
-                    unoptimized
                     className="object-cover transition-transform duration-500 group-hover:scale-[1.015]"
                 />
             </div>
@@ -120,8 +120,8 @@ function VerticalAd({ ad, className = "" }: { ad: Advertisement; className?: str
                     src={imageUrl}
                     alt={ad.title || "Industry Partner"}
                     fill
+                    sizes="300px"
                     loading="lazy"
-                    unoptimized
                     className="object-cover transition-transform duration-700 group-hover:scale-[1.02]"
                 />
                 {/* Gradient overlay at bottom */}
@@ -136,7 +136,7 @@ function VerticalAd({ ad, className = "" }: { ad: Advertisement; className?: str
                             src={logoUrl}
                             alt={ad.partner_name || ""}
                             fill
-                            unoptimized
+                            sizes="32px"
                             className="object-contain p-0.5"
                         />
                     </div>
@@ -181,7 +181,7 @@ function NativeAd({ ad, className = "" }: { ad: Advertisement; className?: strin
                             alt={ad.partner_name || ""}
                             fill
                             loading="lazy"
-                            unoptimized
+                            sizes="64px"
                             className="object-contain p-1.5"
                         />
                     </div>
@@ -246,7 +246,6 @@ function BannerAdServer({ ad, className = "" }: { ad: Advertisement; className?:
                         fill
                         sizes="(max-width: 767px) 100vw, 728px"
                         priority
-                        unoptimized
                         className="object-contain transition-transform duration-500 group-hover:scale-[1.01]"
                     />
                 </div>
@@ -283,7 +282,6 @@ function CardAdServer({ ad, className = "" }: { ad: Advertisement; className?: s
                         fill
                         sizes="(max-width: 1024px) 100vw, 360px"
                         loading="lazy"
-                        unoptimized
                         className="object-contain bg-white transition-transform duration-500 group-hover:scale-[1.02]"
                     />
                 </div>

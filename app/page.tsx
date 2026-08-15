@@ -314,8 +314,25 @@ async function getOpinionBuckets() {
 
 // ─── Main Homepage ─────────────────────────────────────────────────────────────
 
+async function getHomepageSectorArticles() {
+  return Promise.all(
+    HOMEPAGE_SECTORS.map(async (sector) => {
+      try {
+        const res = await fetch(buildSectorArticlesUrl(sector.slug), {
+          next: { revalidate: 300 },
+        });
+        if (!res.ok) return [];
+        const json = await res.json();
+        return (json.data || []) as any[];
+      } catch {
+        return [];
+      }
+    })
+  );
+}
+
 export default async function Home() {
-  const [allContents, featuredContents, heroBannerContents, latestIssue, { opinions, interviews }, videos, featuredPartnerAds] = await Promise.all([
+  const [allContents, featuredContents, heroBannerContents, latestIssue, { opinions, interviews }, videos, featuredPartnerAds, sectorFetchResults] = await Promise.all([
     getAllContents(),
     getFeaturedContents(),
     getHeroBannerContents(),
@@ -323,6 +340,7 @@ export default async function Home() {
     getOpinionBuckets(),
     getLatestVideos(),
     getFeaturedPartnerAds(),
+    getHomepageSectorArticles(),
   ]);
 
   // Bento: Featured articles
@@ -366,20 +384,6 @@ export default async function Home() {
       })
       .slice(0, 25)
     : [];
-
-  // Fetch articles for each sector in parallel directly from Strapi
-  const sectorFetchResults: any[][] = await Promise.all(
-    HOMEPAGE_SECTORS.map(async (sector) => {
-      try {
-        const res = await fetch(buildSectorArticlesUrl(sector.slug), { next: { revalidate: 300 } });
-        if (!res.ok) return [];
-        const json = await res.json();
-        return (json.data || []) as any[];
-      } catch {
-        return [];
-      }
-    })
-  );
 
   const sectorsWithArticles = HOMEPAGE_SECTORS.map((sector, idx) => {
     const sectorArticles = sectorFetchResults?.[idx] || [];

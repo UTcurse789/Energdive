@@ -86,7 +86,6 @@ export function CurrentIssueSection({
                   height={293}
                   sizes="(max-width: 640px) 200px, (max-width: 1024px) 170px, 190px"
                   className="h-auto w-[180px] sm:w-[170px] lg:w-[190px] bg-white object-cover transition-transform duration-500 group-hover:scale-[1.02] rounded-xs"
-                  unoptimized
                 />
               </div>
             </Link>
