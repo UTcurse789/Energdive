@@ -6,6 +6,7 @@ import Image from "next/image";
 import { Search, LayoutGrid, List, Bookmark, Share2, ShieldCheck, Zap, ArrowRight } from "lucide-react";
 import { slugify } from "@/lib/utils";
 import { AdBanner } from "@/components/ads/AdBanner";
+import { SidebarAdSlider } from "@/components/ads/SidebarAdSlider";
 import { LatestIssueWidget } from "@/components/news/LatestIssueWidget";
 import { SidebarNewsletterForm } from "@/components/news/SidebarNewsletterForm";
 import { StickySidebar } from "@/components/ui/StickySidebar";
@@ -17,18 +18,26 @@ export default function NewsFeedClient({
     totalPages,
     isFirstPage,
     sidebarAd,
+    sidebarBottomAd,
     mobileTopAd,
     mobileFeedAd,
-    latestIssue
+    latestIssue,
+    basePath = "/news",
+    hideAds = false,
+    allTopicLabel = "All News"
 }: { 
     initialArticles: any[]; 
     page: number; 
     totalPages: number;
     isFirstPage: boolean;
     sidebarAd?: React.ReactNode;
+    sidebarBottomAd?: React.ReactNode;
     mobileTopAd?: React.ReactNode;
     mobileFeedAd?: React.ReactNode;
     latestIssue?: LatestIssueData | null;
+    basePath?: string;
+    hideAds?: boolean;
+    allTopicLabel?: string;
 }) {
     const TOPICS = useMemo(() => {
         const sectors = new Set<string>();
@@ -37,19 +46,17 @@ export default function NewsFeedClient({
                 sectors.add(a.sector);
             }
         });
-        return ["All News", ...Array.from(sectors)];
-    }, [initialArticles]);
+        return [allTopicLabel, ...Array.from(sectors)];
+    }, [initialArticles, allTopicLabel]);
 
-    const [activeTopic, setActiveTopic] = useState("All News");
+    const [activeTopic, setActiveTopic] = useState(allTopicLabel);
     const [searchQuery, setSearchQuery] = useState("");
     const [viewMode, setViewMode] = useState<"grid" | "compact">("grid");
 
     const filteredArticles = useMemo(() => {
         let filtered = initialArticles;
         
-        if (activeTopic !== "All News") {
-            // Very simplistic filtering since categories might not match exactly.
-            // In a real app, mapping topics to Strapi tags/sectors would be more precise.
+        if (activeTopic !== allTopicLabel) {
             const topicSlug = slugify(activeTopic);
             filtered = filtered.filter(a => 
                 slugify(a.sector).includes(topicSlug) || 
@@ -67,12 +74,12 @@ export default function NewsFeedClient({
         }
 
         return filtered;
-    }, [initialArticles, activeTopic, searchQuery]);
+    }, [initialArticles, activeTopic, searchQuery, allTopicLabel]);
 
     return (
         <section className="flex flex-col">
             {/* Mobile Only Ad: Before Filter Bar (Top Mobile Ad) */}
-            {mobileTopAd && (
+            {!hideAds && mobileTopAd && (
                 <div className="block lg:hidden my-6 py-3 px-4 flex justify-center bg-slate-50/70 border-y border-slate-200/80 rounded-lg">
                     {mobileTopAd}
                 </div>
@@ -104,7 +111,7 @@ export default function NewsFeedClient({
                             <Search size={16} className="absolute left-3.5 text-slate-400 group-focus-within:text-emerald-600 transition-colors z-10" />
                             <input 
                                 type="text"
-                                placeholder="Filter news..."
+                                placeholder="Filter stories..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 className="h-full w-full md:w-56 pl-10 pr-4 bg-white border border-slate-200 rounded-full text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all placeholder:text-slate-400 leading-normal flex items-center"
@@ -130,10 +137,10 @@ export default function NewsFeedClient({
                 </div>
             </div>
 
-            {/* PRIMARY NEWS STREAM (8:4 Layout) */}
+            {/* PRIMARY STREAM (8:4 Layout) */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
                 
-                {/* Left Column (8 cols - News Stream) */}
+                {/* Left Column (8 cols - News/Stories Stream) */}
                 <div className="lg:col-span-8">
                     
                     {filteredArticles.length === 0 ? (
@@ -144,7 +151,7 @@ export default function NewsFeedClient({
                             <h3 className="text-lg font-bold text-slate-900 mb-2">No articles match your filter</h3>
                             <p className="text-slate-500 text-sm">Try adjusting your category or search terms.</p>
                             <button 
-                                onClick={() => { setActiveTopic("All News"); setSearchQuery(""); }}
+                                onClick={() => { setActiveTopic(allTopicLabel); setSearchQuery(""); }}
                                 className="mt-6 text-emerald-600 font-bold text-sm hover:underline"
                             >
                                 Clear all filters
@@ -183,7 +190,7 @@ export default function NewsFeedClient({
                                                 </div>
                                             </div>
                                             
-                                            <Link href={`/news/${item.slug}`} className="before:absolute before:inset-0 z-10">
+                                            <Link href={`${basePath}/${item.slug}`} className="before:absolute before:inset-0 z-10">
                                                 <h3 className={`font-bold text-slate-900 leading-snug group-hover:text-emerald-700 transition-colors ${viewMode === 'compact' ? 'text-[15px] line-clamp-2' : 'text-base line-clamp-3'}`}>
                                                     {item.title}
                                                 </h3>
@@ -210,7 +217,7 @@ export default function NewsFeedClient({
                                     </article>
 
                                     {/* Mobile Only: Inline Ad after 6th news item (Middle Mobile Ad) */}
-                                    {idx === 5 && mobileFeedAd && (
+                                    {!hideAds && idx === 5 && mobileFeedAd && (
                                         <div className="col-span-full block lg:hidden my-8 py-4 px-4 flex justify-center bg-slate-50/70 border-y border-slate-200/80 rounded-xl">
                                             {mobileFeedAd}
                                         </div>
@@ -221,11 +228,11 @@ export default function NewsFeedClient({
                     )}
 
                     {/* Pagination */}
-                    {activeTopic === "All News" && !searchQuery && totalPages > 1 && (
+                    {activeTopic === allTopicLabel && !searchQuery && totalPages > 1 && (
                         <div className="mt-12 mb-16 flex flex-wrap items-center justify-center gap-2 border-t border-slate-200 pt-8">
                             {/* Prev Button */}
                             <Link 
-                                href={page === 2 ? "/news" : `/news?page=${page - 1}`}
+                                href={page === 2 ? basePath : `${basePath}?page=${page - 1}`}
                                 className={`w-10 h-10 flex items-center justify-center rounded-full border border-slate-200 transition-all ${page > 1 ? 'hover:border-emerald-600 hover:text-emerald-600 text-slate-700' : 'opacity-40 pointer-events-none text-slate-400'}`}
                             >
                                 <ArrowRight size={16} className="rotate-180" />
@@ -239,7 +246,7 @@ export default function NewsFeedClient({
                                     return (
                                         <Link 
                                             key={p}
-                                            href={p === 1 ? "/news" : `/news?page=${p}`}
+                                            href={p === 1 ? basePath : `${basePath}?page=${p}`}
                                             className={`w-10 h-10 flex items-center justify-center rounded-full text-sm font-bold transition-all ${page === p ? 'bg-slate-900 text-white shadow-md' : 'border border-slate-200 text-slate-700 hover:border-emerald-600 hover:text-emerald-600'}`}
                                         >
                                             {p}
@@ -255,7 +262,7 @@ export default function NewsFeedClient({
                             
                             {/* Next Button */}
                             <Link 
-                                href={`/news?page=${page + 1}`}
+                                href={`${basePath}?page=${page + 1}`}
                                 className={`w-10 h-10 flex items-center justify-center rounded-full border border-slate-200 transition-all ${page < totalPages ? 'hover:border-emerald-600 hover:text-emerald-600 text-slate-700' : 'opacity-40 pointer-events-none text-slate-400'}`}
                             >
                                 <ArrowRight size={16} />
@@ -268,10 +275,17 @@ export default function NewsFeedClient({
                 <aside className="hidden lg:block lg:col-span-4 relative">
                     <StickySidebar className="flex flex-col space-y-8 pb-12 pr-2 lg:pr-4">
 
-                        {/* AD: new_sidebar */}
-                        <div>
-                            {sidebarAd || <AdBanner placement="new_sidebar" variant="card" />}
-                        </div>
+                        {/* Both Sidebar AD slots at the TOP */}
+                        {!hideAds && (
+                            <div className="flex flex-col space-y-6">
+                                <div>
+                                    {sidebarAd || <SidebarAdSlider slot="top" placement="new_sidebar" />}
+                                </div>
+                                <div>
+                                    {sidebarBottomAd || <SidebarAdSlider slot="bottom" placement="new_sidebar" />}
+                                </div>
+                            </div>
+                        )}
 
                         {/* Widget: Latest Issue */}
                         {latestIssue && <LatestIssueWidget latestIssue={latestIssue} />}

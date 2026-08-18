@@ -37,7 +37,8 @@ export async function GET(request: Request) {
         // Populate content type info
         contentsUrl.searchParams.append("populate", "type_of_content");
         contentsUrl.searchParams.append("pagination[limit]", "20");
-        contentsUrl.searchParams.append("sort", "Date:desc");
+        contentsUrl.searchParams.append("sort[0]", "publishedAt:desc");
+        contentsUrl.searchParams.append("sort[1]", "Date:desc");
 
         // ─── 2. Search videos ───
         const videosUrl = new URL(`${STRAPI_BASE}/api/videos`);

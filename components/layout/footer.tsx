@@ -19,6 +19,7 @@ const brandGreen = "#00A651";
 
 const QUICK_LINKS = [
     { name: "News", href: "/news" },
+    { name: "Featured Stories", href: "/featured-stories" },
     { name: "Opinions", href: "/opinion" },
     { name: "Editorials", href: "/editorial" },
     { name: "Editorial Collaboration", href: "/editorial-collaboration" },

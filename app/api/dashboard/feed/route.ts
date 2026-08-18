@@ -54,7 +54,7 @@ export async function GET(request: Request) {
         const url =
             `${STRAPI}/api/contents?` +
             `populate=*` +
-            `&sort=Date:desc` +
+            `&sort[0]=publishedAt:desc&sort[1]=Date:desc&sort[2]=createdAt:desc` +
             `&pagination[page]=${page}` +
             `&pagination[pageSize]=${pageSize}` +
             sectorFilter +

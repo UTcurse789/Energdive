@@ -32,7 +32,7 @@ function formatOpinionDate(value?: string) {
 
 async function fetchInterviews() {
   const res = await fetch(
-    `${STRAPI}/api/contents?filters[type_of_content][name][$eq]=Opinion&populate[FeaturedImage]=true&populate[content_tag]=true&populate[author][populate]=avatar&sort=Date:desc`,
+    `${STRAPI}/api/contents?filters[type_of_content][name][$eq]=Opinion&populate[FeaturedImage]=true&populate[content_tag]=true&populate[author][populate]=avatar&sort[0]=publishedAt:desc&sort[1]=Date:desc&sort[2]=createdAt:desc`,
     { cache: "no-store" } // Force fresh fetch to bust old cached response without content_tag
   );
 
