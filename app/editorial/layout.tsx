@@ -65,7 +65,7 @@ const DESK_REGEX = /\b(desk|editorial|team|energdive|newsroom)\b/i;
 async function getEditorialListSchemas() {
     try {
         const res = await fetch(
-            `${STRAPI}/api/contents?filters[type_of_content][name][$eq]=Opinion&filters[content_tag][title][$eq]=Editorial&populate[FeaturedImage]=true&populate[author][populate]=avatar&sort=Date:desc&pagination[pageSize]=30`,
+            `${STRAPI}/api/contents?filters[type_of_content][name][$eq]=Opinion&filters[content_tag][title][$eq]=Editorial&populate[FeaturedImage]=true&populate[author][populate]=avatar&sort[0]=publishedAt:desc&sort[1]=Date:desc&sort[2]=createdAt:desc&pagination[pageSize]=30`,
             { next: { revalidate: 600 } }
         );
         if (!res.ok) return null;
