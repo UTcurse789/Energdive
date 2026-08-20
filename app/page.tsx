@@ -432,16 +432,61 @@ export default async function Home() {
 
 
 
-      {/* Lower editorial lane: Opinion, Interviews + Right Rail */}
-      <section className="bg-white">
+      {/* Editorial & Sector Intelligence Lane */}
+      <section className="bg-white py-4 lg:py-6">
         <div className="max-w-7xl mx-auto px-5 sm:px-10 lg:px-16">
           <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_300px] gap-6 lg:gap-8 items-start">
-            <div className="min-w-0">
+            
+            {/* Left Content Column: Opinion, Current Issue, and Sectors */}
+            <div className="min-w-0 space-y-4">
               {/* Executive Opinion & Interviews Vertical */}
               <OpinionSection opinions={opinions} interviews={interviews} contained={false} />
+
+              {/* Current Issue — full width inside left column if present */}
+              {latestIssue && (
+                <CurrentIssueSection
+                  month={latestIssue.month}
+                  year={latestIssue.year}
+                  coverImage={latestIssue.coverImage}
+                  issueSlug={latestIssue.slug}
+                  articles={latestIssue.articles}
+                />
+              )}
+
+              {/* Sector Intelligence Hubs */}
+              <div>
+                {sectorsWithArticles.map((sector) => (
+                  <div key={sector.slug} className="mb-3 last:mb-0">
+                    <AdBanner
+                      placement="sector_hero"
+                      sectorSlug={sector.slug}
+                      variant="banner"
+                      showSkeleton={false}
+                      className="py-2"
+                    />
+                    <SectorBlock
+                      title={sector.title}
+                      slug={sector.slug}
+                      articles={sector.articles}
+                    />
+                  </div>
+                ))}
+
+                {/* View All Sectors Action Callout */}
+                <div className="flex justify-center mt-6">
+                  <Link
+                    href="/sectors"
+                    className="group inline-flex items-center gap-3 px-8 py-4 bg-emerald-600 text-white text-xs font-black uppercase tracking-[0.2em] rounded-full hover:bg-emerald-700 transition-all duration-300 shadow-md hover:shadow-xl hover:-translate-y-0.5"
+                  >
+                    Explore All Sectors
+                    <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
+                  </Link>
+                </div>
+              </div>
             </div>
 
-            <aside className="w-full lg:w-[300px] flex flex-col gap-5 pt-6 lg:pt-8" aria-label="Opinion and interview right rail">
+            {/* Unified Right Rail */}
+            <aside className="w-full lg:w-[300px] flex flex-col gap-5 pt-2" aria-label="Main right rail">
               {/* Ad 1 */}
               <AdBanner
                 placement="article_sidebar"
@@ -482,59 +527,11 @@ export default async function Home() {
                   <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover/btn:translate-x-1" />
                 </Link>
               </div>
-            </aside>
-          </div>
-        </div>
-      </section>
 
-      {/* Current Issue — full width, between Opinion and Sectors */}
-      {latestIssue && (
-        <CurrentIssueSection
-          month={latestIssue.month}
-          year={latestIssue.year}
-          coverImage={latestIssue.coverImage}
-          issueSlug={latestIssue.slug}
-          articles={latestIssue.articles}
-        />
-      )}
-
-      {/* Sector Intelligence Hubs */}
-      <section className="bg-white py-8 lg:py-6">
-        <div className="max-w-7xl mx-auto px-5 sm:px-10 lg:px-16">
-          <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_300px] gap-6 lg:gap-8">
-            <div className="min-w-0">
-              {sectorsWithArticles.map((sector) => (
-                <div key={sector.slug} className="mb-3 last:mb-0">
-                  <AdBanner
-                    placement="sector_hero"
-                    sectorSlug={sector.slug}
-                    variant="banner"
-                    showSkeleton={false}
-                    className="py-2"
-                  />
-                  <SectorBlock
-                    title={sector.title}
-                    slug={sector.slug}
-                    articles={sector.articles}
-                  />
-                </div>
-              ))}
-
-              {/* View All Sectors Action Callout */}
-              <div className="flex justify-center mt-6">
-                <Link
-                  href="/sectors"
-                  className="group inline-flex items-center gap-3 px-8 py-4 bg-emerald-600 text-white text-xs font-black uppercase tracking-[0.2em] rounded-full hover:bg-emerald-700 transition-all duration-300 shadow-md hover:shadow-xl hover:-translate-y-0.5"
-                >
-                  Explore All Sectors
-                  <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
-                </Link>
-              </div>
-            </div>
-
-            {/* Right Rail: Videos + Upcoming Events */}
-            <aside className="w-full lg:w-[300px] pt-2 flex flex-col gap-6" aria-label="Sector right rail">
+              {/* Featured Videos */}
               <FeaturedVideosSidebar videos={videos} />
+
+              {/* Upcoming Events */}
               <EventsSection variant="sidebar" />
             </aside>
           </div>

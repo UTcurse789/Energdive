@@ -88,7 +88,7 @@ export function OpinionSection({
             {opinions.length > 0 && (
                 <section
                     aria-label="Opinion & Commentary"
-                    className="py-6 lg:py-8 bg-white"
+                    className={contained ? "py-6 lg:py-8 bg-white" : "py-2 lg:py-3 bg-white"}
                 >
                     <div className={containerClassName}>
 
@@ -290,7 +290,7 @@ export function OpinionSection({
             {interviews.length > 0 && (
                 <section
                     aria-label="Exclusive Interviews"
-                    className="py-6 lg:py-8 bg-white"
+                    className={contained ? "py-6 lg:py-8 bg-white" : "py-2 lg:py-3 bg-white"}
                 >
                     <div className={containerClassName}>
 

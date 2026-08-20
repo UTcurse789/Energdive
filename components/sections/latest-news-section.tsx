@@ -68,7 +68,6 @@ function NewsCard({ item }: { item: NewsItem }) {
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
           className="object-cover group-hover:scale-105 transition-transform duration-500"
         />
-
       </div>
 
       <div className="p-4 sm:p-5 flex flex-col justify-between flex-1 min-w-0">

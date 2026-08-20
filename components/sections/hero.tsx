@@ -373,7 +373,7 @@ export function Hero({ heroStories: propHeroStories, topStories: propTopStories,
 
                                 return (
                                     <article key={item.id} className="flex items-center gap-4 group relative">
-                                        <div className="relative w-32 aspect-[4/3] shrink-0 rounded-xl overflow-hidden bg-slate-100 border border-slate-200 shadow-sm">
+                                        <div className="relative w-32 aspect-[16/10] shrink-0 rounded-xl overflow-hidden bg-slate-100 border border-slate-200 shadow-xs">
                                             <Image
                                                 src={imgUrl}
                                                 alt={item.Title || "News thumbnail"}
