@@ -118,7 +118,7 @@ export function LatestNewsSection({ news }: LatestNewsSectionProps) {
 
   return (
     <section className="bg-slate-50/80 border-t border-b border-slate-200/90 py-10 lg:py-14">
-      <div className="max-w-7xl mx-auto px-5 sm:px-10 lg:px-16">
+      <div className="max-w-7xl mx-auto px-8 sm:px-10 lg:px-16">
         
         {/* Section Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 mb-8 border-b border-slate-200">

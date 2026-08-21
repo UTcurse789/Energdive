@@ -398,8 +398,15 @@ export default async function Home() {
     ]
   };
 
+  const heroLcpImageUrl = heroBannerContents?.[0] ? extractImageUrl(heroBannerContents[0]) : null;
+
   return (
     <main className="min-h-screen bg-white text-slate-900 font-sans selection:bg-emerald-500/20">
+      {/* High priority preload for LCP cover story image */}
+      {heroLcpImageUrl && (
+        <link rel="preload" as="image" href={heroLcpImageUrl} fetchPriority="high" />
+      )}
+
       {/* Structured Data */}
       <script
         type="application/ld+json"
@@ -407,7 +414,7 @@ export default async function Home() {
       />
 
       {/* Home Platform Hero Ad Banner */}
-      <div className="max-w-6xl mx-auto px-5 sm:px-10 lg:px-16 pt-3 pb-1">
+      <div className="max-w-6xl mx-auto px-8 sm:px-10 lg:px-16 pt-3 pb-1">
         <AdBanner
           placement="home_platform_hero"
           variant="banner"
@@ -434,7 +441,7 @@ export default async function Home() {
 
       {/* Editorial & Sector Intelligence Lane */}
       <section className="bg-white py-4 lg:py-6">
-        <div className="max-w-7xl mx-auto px-5 sm:px-10 lg:px-16">
+        <div className="max-w-7xl mx-auto px-8 sm:px-10 lg:px-16">
           <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_300px] gap-6 lg:gap-8 items-start">
             
             {/* Left Content Column: Opinion, Current Issue, and Sectors */}

@@ -63,7 +63,7 @@ export function CurrentIssueSection({
 
   return (
     <section className="bg-white py-8 lg:py-7">
-      <div className="mx-auto max-w-7xl px-6 sm:px-10 lg:px-16">
+      <div className="w-full">
         <div className="border-t border-slate-200 pt-8">
           <header className="mb-6 text-center sm:text-left">
             <p className="font-serif text-xl font-normal italic leading-tight text-[#D71913] sm:text-2xl">
