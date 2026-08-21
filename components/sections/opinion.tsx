@@ -77,7 +77,7 @@ export function OpinionSection({
     const currentOpinion = opinions[opinionIndex];
     const currentInterview = interviews[interviewIndex];
     const containerClassName = contained
-        ? "max-w-6xl mx-auto px-5 sm:px-10 lg:px-16"
+        ? "max-w-6xl mx-auto px-8 sm:px-10 lg:px-16"
         : "w-full";
 
     return (

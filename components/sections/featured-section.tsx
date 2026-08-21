@@ -98,7 +98,7 @@ export function FeaturedSection({ articles, partnerAds = [] }: FeaturedSectionPr
 
   return (
     <section className="bg-white py-8 border-t border-slate-100">
-      <div className="max-w-7xl mx-auto px-5 sm:px-10 lg:px-16">
+      <div className="max-w-7xl mx-auto px-8 sm:px-10 lg:px-16">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
 
           {/* Left Side: Featured Content (8 cols) */}

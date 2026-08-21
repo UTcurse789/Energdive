@@ -9,7 +9,7 @@ export function SubscriptionsCTASection() {
 
   return (
     <section className="bg-white py-10 lg:py-12 border-t border-slate-200">
-      <div className="max-w-7xl mx-auto px-5 sm:px-10 lg:px-16">
+      <div className="max-w-7xl mx-auto px-8 sm:px-10 lg:px-16">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
 
           {/* CTA 1: Login CTA */}

@@ -243,7 +243,7 @@ export function Hero({ heroStories: propHeroStories, topStories: propTopStories,
 
     return (
         <section className="bg-white py-4 sm:py-6">
-            <div className="max-w-7xl mx-auto px-5 sm:px-10 lg:px-16">
+            <div className="max-w-7xl mx-auto px-8 sm:px-10 lg:px-16">
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
 
                     {/* ── 1. LEFT COLUMN: Cover Story (8 cols) ── */}
@@ -256,7 +256,9 @@ export function Hero({ heroStories: propHeroStories, topStories: propTopStories,
                                     alt={featured.Title || "Featured energy story"}
                                     fill
                                     priority
-                                    sizes="(max-width: 1024px) 100vw, 66vw"
+                                    fetchPriority="high"
+                                    loading="eager"
+                                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 90vw, 66vw"
                                     className={`object-cover transition-transform duration-700 ${
                                         isTransitioning ? "opacity-50 scale-105" : "opacity-100 scale-100"
                                     }`}
