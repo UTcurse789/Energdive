@@ -9,11 +9,11 @@ export function SubscriptionsCTASection() {
 
   return (
     <section className="bg-white py-10 lg:py-12 border-t border-slate-200">
-      <div className="max-w-7xl mx-auto px-8 sm:px-10 lg:px-16">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
+      <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 lg:gap-6">
 
           {/* CTA 1: Login CTA */}
-          <div className="relative overflow-hidden bg-slate-50/80 border border-slate-200/90 p-6 sm:p-8 rounded-2xl shadow-xs flex flex-col justify-between group hover:border-emerald-500/50 hover:bg-slate-50 transition-all duration-300">
+          <div className="relative overflow-hidden bg-slate-50/80 border border-slate-200/90 p-6 xl:p-7 rounded-2xl shadow-xs flex flex-col justify-between group hover:border-emerald-500/50 hover:bg-slate-50 transition-all duration-300">
             <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full blur-2xl group-hover:bg-emerald-500/10 transition-all" />
 
             <div>
@@ -22,7 +22,7 @@ export function SubscriptionsCTASection() {
                 Member Access
               </div>
 
-              <h3 className="text-xl sm:text-2xl font-black text-slate-900 leading-tight tracking-tight mb-3">
+              <h3 className="text-lg xl:text-xl font-bold text-slate-900 leading-tight tracking-tight mb-3">
                 Login to ENERGClub
               </h3>
 
@@ -44,7 +44,7 @@ export function SubscriptionsCTASection() {
           </div>
 
           {/* CTA 2: Print Subscription */}
-          <div className="relative overflow-hidden bg-slate-50/80 border border-slate-200/90 p-6 sm:p-8 rounded-2xl shadow-xs flex flex-col justify-between group hover:border-emerald-500/50 hover:bg-slate-50 transition-all duration-300">
+          <div className="relative overflow-hidden bg-slate-50/80 border border-slate-200/90 p-6 xl:p-7 rounded-2xl shadow-xs flex flex-col justify-between group hover:border-emerald-500/50 hover:bg-slate-50 transition-all duration-300">
             <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full blur-2xl group-hover:bg-emerald-500/10 transition-all" />
 
             <div>
@@ -53,7 +53,7 @@ export function SubscriptionsCTASection() {
                 Print Edition
               </div>
 
-              <h3 className="text-xl sm:text-2xl font-black text-slate-900 leading-tight tracking-tight mb-3">
+              <h3 className="text-lg xl:text-xl font-bold text-slate-900 leading-tight tracking-tight mb-3">
                 Subscribe to ENERGDIVE Magazine
               </h3>
 
@@ -74,7 +74,7 @@ export function SubscriptionsCTASection() {
           </div>
 
           {/* CTA 3: Newsletter Subscription */}
-          <div className="relative overflow-hidden bg-slate-50/80 border border-slate-200/90 p-6 sm:p-8 rounded-2xl shadow-xs flex flex-col justify-between group hover:border-emerald-500/50 hover:bg-slate-50 transition-all duration-300">
+          <div className="relative overflow-hidden bg-slate-50/80 border border-slate-200/90 p-6 xl:p-7 rounded-2xl shadow-xs flex flex-col justify-between group hover:border-emerald-500/50 hover:bg-slate-50 transition-all duration-300">
             <div className="absolute top-0 right-0 w-32 h-32 bg-teal-500/5 rounded-full blur-2xl group-hover:bg-teal-500/10 transition-all" />
 
             <div>
@@ -83,7 +83,7 @@ export function SubscriptionsCTASection() {
                 Daily & Weekly Briefings
               </div>
 
-              <h3 className="text-xl sm:text-2xl font-black text-slate-900 leading-tight tracking-tight mb-3">
+              <h3 className="text-lg xl:text-xl font-bold text-slate-900 leading-tight tracking-tight mb-3">
                 Join ENERGDIVE Newsletter
               </h3>
 
