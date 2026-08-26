@@ -50,14 +50,30 @@ export default async function NewsPage(props: { searchParams: Promise<{ [key: st
     const latestIssue = await getLatestIssue();
 
     try {
-        const url = `${STRAPI_BASE_URL}/api/contents?filters[type_of_content][name][$eq]=News&populate=*&pagination[start]=${start}&pagination[limit]=${limit}&sort[0]=Date:desc&sort[1]=publishedAt:desc&sort[2]=createdAt:desc`;
-        const res = await fetch(url, { next: { revalidate: 60 } });
-        const json = await res.json();
-        
-        totalCount = json?.meta?.pagination?.total || 0;
+        // Strapi paginates before returning data. Fetch every News batch, sort all
+        // records by the editorial Date locally, and only then select this UI page.
+        const query = `filters[type_of_content][name][$eq]=News&populate=*&pagination[pageSize]=100&sort[0]=Date:desc&sort[1]=publishedAt:desc&sort[2]=createdAt:desc`;
+        const firstResponse = await fetch(`${STRAPI_BASE_URL}/api/contents?${query}&pagination[page]=1`, {
+            next: { revalidate: 60 },
+        });
+        const firstPage = await firstResponse.json();
+        const pageCount = firstPage?.meta?.pagination?.pageCount || 1;
+        const remainingPages = await Promise.all(
+            Array.from({ length: Math.max(0, pageCount - 1) }, (_, index) =>
+                fetch(`${STRAPI_BASE_URL}/api/contents?${query}&pagination[page]=${index + 2}`, {
+                    next: { revalidate: 60 },
+                }).then((response) => response.json())
+            )
+        );
+        const allNews = [
+            ...(firstPage?.data || []),
+            ...remainingPages.flatMap((response) => response?.data || []),
+        ];
 
-        if (json.data) {
-            articles = json.data.map((item: any) => {
+        totalCount = allNews.length;
+
+        if (allNews.length > 0) {
+            articles = allNews.map((item: any) => {
                 const attrs = item.attributes || item;
 
                 let excerptText = "Strategic insights into the global energy transition.";
@@ -106,6 +122,8 @@ export default async function NewsPage(props: { searchParams: Promise<{ [key: st
             articles.sort((a: any, b: any) => {
                 return getTimestamp(b.rawDate) - getTimestamp(a.rawDate);
             });
+
+            articles = articles.slice(start, start + limit);
         }
     } catch (error) {
         console.error("Error fetching news:", error);
