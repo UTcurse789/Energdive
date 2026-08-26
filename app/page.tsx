@@ -195,7 +195,7 @@ async function getAllContents() {
 async function getFeaturedContents() {
   try {
     const res = await fetch(
-      `${STRAPI_BASE}/api/contents?filters[featured][$eq]=true&populate=*&sort[0]=updatedAt:desc&sort[1]=publishedAt:desc&pagination[pageSize]=20`,
+      `${STRAPI_BASE}/api/contents?filters[featured][$eq]=true&populate=*&sort[0]=Date:desc&sort[1]=publishedAt:desc&pagination[pageSize]=20`,
       { next: { revalidate: 60, tags: ["strapi-contents"] } }
     );
     if (!res.ok) return [];
@@ -210,7 +210,7 @@ async function getFeaturedContents() {
 async function getHeroBannerContents() {
   try {
     const res = await fetchCms(
-      `${STRAPI_BASE}/api/contents?filters[show_hero_banner][$eq]=true&populate=*&pagination[pageSize]=10&sort=publishedAt:desc`,
+      `${STRAPI_BASE}/api/contents?filters[show_hero_banner][$eq]=true&populate=*&pagination[pageSize]=10&sort=Date:desc`,
       { next: { revalidate: 60, tags: ["strapi-contents"] } }
     );
     if (!res.ok) return [];
@@ -390,7 +390,7 @@ export default async function Home() {
             "@type": "NewsArticle",
             "headline": article.Title || "",
             "url": `https://www.energdive.com${buildContentUrl({ slug: article.slug || "", type_of_content: article.type_of_content })}`,
-            "datePublished": article.publishedAt || article.Date || article.createdAt || "",
+            "datePublished": article.Date || article.publishedAt || article.createdAt || "",
             "dateModified": article.updatedAt || article.publishedAt || article.createdAt || ""
           }
         }))
