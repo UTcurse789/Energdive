@@ -85,6 +85,10 @@ function getImageUrl(article: any): string {
     return strapiImageUrl(url);
 }
 
+function getImageAlt(article: any, fallback: string): string {
+    return article?.FeaturedImage?.alternativeText?.trim() || fallback;
+}
+
 function getExcerpt(article: any): string {
     const excerpt = article?.Excerpt;
     if (!excerpt || !Array.isArray(excerpt)) return "";
@@ -174,7 +178,7 @@ export function Hero({ heroStories: propHeroStories, topStories: propTopStories,
         if (propHeroStories?.length) return;
 
         fetch(
-            `${STRAPI_BASE}/api/contents?filters[show_hero_banner][$eq]=true&populate=*&pagination[pageSize]=10&sort=Date:desc`
+            `${STRAPI_BASE}/api/contents?filters[type_of_content][name][$eq]=Cover%20Story&populate=*&pagination[pageSize]=10&sort=Date:desc`
         )
             .then((r) => r.json())
             .then((d) => {
@@ -253,7 +257,7 @@ export function Hero({ heroStories: propHeroStories, topStories: propTopStories,
                             {featured.FeaturedImage?.url ? (
                                 <Image
                                     src={getImageUrl(featured)}
-                                    alt={featured.Title || "Featured energy story"}
+                                    alt={getImageAlt(featured, featured.Title || "Featured energy story")}
                                     fill
                                     priority
                                     fetchPriority="high"
@@ -378,7 +382,7 @@ export function Hero({ heroStories: propHeroStories, topStories: propTopStories,
                                         <div className="relative w-32 aspect-[16/10] shrink-0 rounded-xl overflow-hidden bg-slate-100 border border-slate-200 shadow-xs">
                                             <Image
                                                 src={imgUrl}
-                                                alt={item.Title || "News thumbnail"}
+                                                alt={getImageAlt(item, item.Title || "News thumbnail")}
                                                 fill
                                                 sizes="128px"
                                                 className="object-cover group-hover:scale-105 transition-transform duration-500"

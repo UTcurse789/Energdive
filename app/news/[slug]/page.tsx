@@ -205,6 +205,7 @@ export default async function NewsDetailPage({
         image: attrs.FeaturedImage?.url
             ? strapiImageUrl(attrs.FeaturedImage.url)
             : "/magazine-default.jpg",
+        imageAlt: attrs.FeaturedImage?.alternativeText || attrs.Title || "News image",
         date: formatContentDate(attrs.Date || attrs.publishedAt || attrs.createdAt),
         author: authorName
             ? {
@@ -342,7 +343,7 @@ export default async function NewsDetailPage({
                         <div className="relative aspect-video mb-10 rounded-xl overflow-hidden shadow-lg shadow-black/10 group">
                             <Image
                                 src={article.image}
-                                alt={article.title || ""}
+                                alt={article.imageAlt}
                                 fill
                                 priority
                                 className="object-cover transition-transform duration-700 group-hover:scale-[1.02]"
