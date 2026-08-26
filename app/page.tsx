@@ -210,7 +210,7 @@ async function getFeaturedContents() {
 async function getHeroBannerContents() {
   try {
     const res = await fetchCms(
-      `${STRAPI_BASE}/api/contents?filters[show_hero_banner][$eq]=true&populate=*&pagination[pageSize]=10&sort=Date:desc`,
+      `${STRAPI_BASE}/api/contents?filters[type_of_content][name][$eq]=Cover%20Story&populate=*&pagination[pageSize]=10&sort=Date:desc`,
       { next: { revalidate: 60, tags: ["strapi-contents"] } }
     );
     if (!res.ok) return [];
