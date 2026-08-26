@@ -174,7 +174,7 @@ export function Hero({ heroStories: propHeroStories, topStories: propTopStories,
         if (propHeroStories?.length) return;
 
         fetch(
-            `${STRAPI_BASE}/api/contents?filters[show_hero_banner][$eq]=true&populate=*&pagination[pageSize]=10&sort=publishedAt:desc`
+            `${STRAPI_BASE}/api/contents?filters[show_hero_banner][$eq]=true&populate=*&pagination[pageSize]=10&sort=Date:desc`
         )
             .then((r) => r.json())
             .then((d) => {
@@ -187,7 +187,7 @@ export function Hero({ heroStories: propHeroStories, topStories: propTopStories,
 
         if (!propTopStories) {
             fetch(
-                `${STRAPI_BASE}/api/contents?filters[featured][$eq]=true&pagination[pageSize]=10&populate=*&sort=publishedAt:desc`
+                `${STRAPI_BASE}/api/contents?filters[featured][$eq]=true&pagination[pageSize]=10&populate=*&sort=Date:desc`
             )
                 .then((r) => r.json())
                 .then((d) => {

@@ -47,7 +47,7 @@ export default async function FeaturedStoriesPage(props: { searchParams: Promise
     const latestIssue = await getLatestIssue();
 
     try {
-        const url = `${STRAPI_BASE_URL}/api/contents?filters[type_of_content][name][$eq]=Featured Stories&populate=*&pagination[start]=${start}&pagination[limit]=${limit}&sort[0]=publishedAt:desc&sort[1]=Date:desc&sort[2]=createdAt:desc`;
+        const url = `${STRAPI_BASE_URL}/api/contents?filters[type_of_content][name][$eq]=Featured Stories&populate=*&pagination[start]=${start}&pagination[limit]=${limit}&sort[0]=Date:desc&sort[1]=publishedAt:desc&sort[2]=createdAt:desc`;
         const res = await fetch(url, { next: { revalidate: 60 } });
         const json = await res.json();
         
@@ -71,7 +71,7 @@ export default async function FeaturedStoriesPage(props: { searchParams: Promise
                 let finalImage = imgUrl ? strapiImageUrl(imgUrl) : null;
                 if (finalImage && finalImage.includes("placeholder")) finalImage = null;
 
-                const rawDateVal = attrs.publishedAt || attrs.Date || attrs.createdAt;
+                const rawDateVal = attrs.Date || attrs.publishedAt || attrs.createdAt;
 
                 return {
                     id: item.id,

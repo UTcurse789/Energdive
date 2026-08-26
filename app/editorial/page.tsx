@@ -18,7 +18,7 @@ const STRAPI = process.env.NEXT_PUBLIC_STRAPI_URL;
 
 async function fetchEditorials() {
   const res = await fetch(
-    `${STRAPI}/api/contents?filters[type_of_content][name][$eq]=Opinion&filters[content_tag][title][$eq]=Editorial&populate[FeaturedImage]=true&populate[content_tag]=true&populate[author][populate]=avatar&sort[0]=publishedAt:desc&sort[1]=Date:desc&sort[2]=createdAt:desc`,
+    `${STRAPI}/api/contents?filters[type_of_content][name][$eq]=Opinion&filters[content_tag][title][$eq]=Editorial&populate[FeaturedImage]=true&populate[content_tag]=true&populate[author][populate]=avatar&sort[0]=Date:desc&sort[1]=publishedAt:desc&sort[2]=createdAt:desc`,
     { cache: "no-store" }
   );
 
@@ -40,7 +40,7 @@ export default function EditorialPage() {
         id: item.id,
         title: item.Title,
         slug: item.slug,
-        date: item.publishedAt || item.Date || item.createdAt,
+        date: item.Date || item.publishedAt || item.createdAt,
         image: item?.FeaturedImage?.url
           ? strapiImageUrl(item.FeaturedImage.url)
           : null,

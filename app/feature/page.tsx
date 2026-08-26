@@ -21,7 +21,7 @@ export default function FeaturePage() {
     useEffect(() => {
         async function fetchData() {
             try {
-                const url = `${STRAPI_BASE_URL}/api/contents?filters[type_of_content][name][$eq]=Feature&populate=*&pagination[pageSize]=100&sort[0]=publishedAt:desc&sort[1]=Date:desc&sort[2]=createdAt:desc`;
+                const url = `${STRAPI_BASE_URL}/api/contents?filters[type_of_content][name][$eq]=Feature&populate=*&pagination[pageSize]=100&sort[0]=Date:desc&sort[1]=publishedAt:desc&sort[2]=createdAt:desc`;
                 const res = await fetch(url);
                 const json = await res.json();
 
@@ -44,7 +44,7 @@ export default function FeaturePage() {
                                 : "/placeholder.jpg",
                             excerpt: excerptText,
                             sector: attrs.sectors?.[0]?.name || attrs.sectors?.data?.[0]?.attributes?.name || "Energy",
-                            date: formatContentDate(attrs.publishedAt || attrs.Date || attrs.createdAt),
+                            date: formatContentDate(attrs.Date || attrs.publishedAt || attrs.createdAt),
                         };
                     });
                     setArticles(formattedData);

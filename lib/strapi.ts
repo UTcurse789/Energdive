@@ -112,7 +112,7 @@ export async function fetchContent(
 ): Promise<StrapiCollection<ContentItem>> {
     const params = {
         populate: ["author.avatar", "cover", "tags", "industry", "sector"],
-        sort: ["publishedAt:desc"],
+        sort: ["Date:desc", "publishedAt:desc"],
         pagination: {
             page,
             pageSize,
