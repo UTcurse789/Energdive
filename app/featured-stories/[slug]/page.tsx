@@ -206,7 +206,7 @@ export default async function FeaturedStoryDetailPage({
     const categorySectorSlug = getSectorSlugForTagOrCategory(sectorName || article.category, sectorSlug);
     const dataBlocks = await fetchDataBlocks(article.content);
 
-    const rawDate = attrs.publishedAt || attrs.createdAt || attrs.Date || "";
+    const rawDate = attrs.Date || attrs.publishedAt || attrs.createdAt || "";
     const modifiedDate = attrs.updatedAt || rawDate;
     const excerptText = Array.isArray(attrs.Excerpt)
         ? attrs.Excerpt[0]?.children?.[0]?.text || ""

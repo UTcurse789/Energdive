@@ -70,7 +70,7 @@ async function getRelated(tags: string[], currentSlug: string, sectorSlug?: stri
         }
     }
     if (sectorSlug) {
-        const url = `${STRAPI_BASE_URL}/api/contents?filters[type_of_content][name][$eq]=News&filters[sectors][slug][$eq]=${sectorSlug}&filters[slug][$ne]=${currentSlug}&populate=*&pagination[limit]=5&sort=publishedAt:desc`;
+        const url = `${STRAPI_BASE_URL}/api/contents?filters[type_of_content][name][$eq]=News&filters[sectors][slug][$eq]=${sectorSlug}&filters[slug][$ne]=${currentSlug}&populate=*&pagination[limit]=5&sort=Date:desc`;
         const res = await fetch(url, { next: { revalidate: 3600 } });
         if (res.ok) {
             const json = await res.json();
@@ -78,7 +78,7 @@ async function getRelated(tags: string[], currentSlug: string, sectorSlug?: stri
         }
     }
     const res = await fetch(
-        `${STRAPI_BASE_URL}/api/contents?filters[type_of_content][name][$eq]=News&filters[slug][$ne]=${currentSlug}&pagination[limit]=5&populate=*&sort=publishedAt:desc`,
+        `${STRAPI_BASE_URL}/api/contents?filters[type_of_content][name][$eq]=News&filters[slug][$ne]=${currentSlug}&pagination[limit]=5&populate=*&sort=Date:desc`,
         { cache: "no-store" }
     );
     if (!res.ok) return [];
@@ -221,7 +221,7 @@ export default async function NewsDetailPage({
 
     const categorySectorSlug = getSectorSlugForTagOrCategory(sectorName || article.category, sectorSlug);
 
-    const rawDate = attrs.publishedAt || attrs.createdAt || attrs.Date || new Date().toISOString();
+    const rawDate = attrs.Date || attrs.publishedAt || attrs.createdAt || new Date().toISOString();
     const modifiedDate = attrs.updatedAt || attrs.publishedAt || attrs.createdAt || rawDate;
     const excerptText = Array.isArray(attrs.Excerpt)
         ? attrs.Excerpt[0]?.children?.[0]?.text || ""

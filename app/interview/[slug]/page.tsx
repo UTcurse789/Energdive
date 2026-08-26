@@ -163,7 +163,7 @@ export default async function InterviewDetailPage({ params }: { params: Promise<
     const dataBlocks = await fetchDataBlocks(article.content);
 
     // Raw date for JSON-LD and display (prioritizing publishedAt for accurate automatic time)
-    const rawDate = attrs.publishedAt || attrs.createdAt || attrs.Date || "";
+    const rawDate = attrs.Date || attrs.publishedAt || attrs.createdAt || "";
     const modifiedDate = attrs.updatedAt || rawDate;
     const excerptText = Array.isArray(attrs.Excerpt)
         ? attrs.Excerpt[0]?.children?.[0]?.text || ""
