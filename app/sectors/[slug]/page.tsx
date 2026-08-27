@@ -571,14 +571,14 @@ export default function SectorIntelligencePage() {
                                         className={`group flex bg-white border border-slate-200/80 rounded-xl overflow-hidden hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 relative ${viewMode === 'compact' ? 'flex-row items-center p-4 gap-6' : 'flex-col'}`}
                                     >
                                         {/* Image */}
-                                        <div className={`relative bg-slate-900 shrink-0 overflow-hidden ${viewMode === 'compact' ? 'w-32 h-32 sm:w-48 sm:h-32 rounded-lg' : 'w-full aspect-[16/10] mb-4'}`}>
+                                        <div className={`relative bg-slate-900 shrink-0 overflow-hidden ${viewMode === 'compact' ? 'w-32 h-32 sm:w-48 sm:h-32 rounded-lg' : 'w-full aspect-[16/9] mb-4'}`}>
                                             {item.image ? (
                                                 <Image 
                                                     src={item.image} 
                                                     alt={item.title} 
                                                     fill 
                                                     sizes={viewMode === 'compact' ? "192px" : "(max-width: 768px) 100vw, 50vw"} 
-                                                    className="object-cover group-hover:scale-105 transition-transform duration-500" 
+                                                    className="object-cover object-center group-hover:scale-105 transition-transform duration-500" 
                                                     loading="lazy" 
                                                 />
                                             ) : (

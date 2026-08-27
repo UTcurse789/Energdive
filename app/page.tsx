@@ -66,15 +66,19 @@ function extractImageUrl(article: any): string {
 }
 
 function extractExcerpt(article: any): string {
-  const excerpt = article.Excerpt;
-  if (!excerpt || !Array.isArray(excerpt)) return "";
-  return excerpt
-    .map((block: any) =>
-      (block.children || []).map((child: any) => child.text || "").join("")
-    )
-    .filter(Boolean)
-    .join(" ")
-    .trim();
+  const excerpt = article.Excerpt || article.excerpt;
+  if (!excerpt) return "";
+  if (typeof excerpt === "string") return excerpt.trim();
+  if (Array.isArray(excerpt)) {
+    return excerpt
+      .map((block: any) =>
+        (block.children || []).map((child: any) => child.text || "").join("")
+      )
+      .filter(Boolean)
+      .join(" ")
+      .trim();
+  }
+  return "";
 }
 
 function getContentDateValue(article: any): string {
