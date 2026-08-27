@@ -25,12 +25,13 @@ const nextConfig: NextConfig = {
       "framer-motion",
       "recharts",
       "react-icons",
+      "clsx",
+      "tailwind-merge",
+      "date-fns",
     ],
   },
 
-  // Cache headers for static assets & images (immutable, long TTL)
-  // For HTML pages: short stale-while-revalidate so Cloudflare doesn't
-  // serve stale content for a year (Next.js ISR default is ~1 year SWR).
+  // Cache & Security headers for Best Practices, SEO & Performance
   async headers() {
     return [
       {
@@ -43,7 +44,7 @@ const nextConfig: NextConfig = {
         ],
       },
       {
-        source: "/:path*(jpg|jpeg|png|gif|svg|webp|ico|woff|woff2|ttf|otf|eot)",
+        source: "/:all*(jpg|jpeg|png|gif|svg|webp|ico|woff|woff2|ttf|otf|eot)",
         headers: [
           {
             key: "Cache-Control",
@@ -52,8 +53,37 @@ const nextConfig: NextConfig = {
         ],
       },
       {
-        // All HTML pages: tell Cloudflare max 60s stale-while-revalidate.
-        // This prevents CDN from serving stale news pages for days/hours.
+        // Global Security & Best Practices headers for all routes
+        source: "/:path*",
+        headers: [
+          {
+            key: "X-Content-Type-Options",
+            value: "nosniff",
+          },
+          {
+            key: "X-Frame-Options",
+            value: "SAMEORIGIN",
+          },
+          {
+            key: "Referrer-Policy",
+            value: "strict-origin-when-cross-origin",
+          },
+          {
+            key: "Strict-Transport-Security",
+            value: "max-age=31536000; includeSubDomains; preload",
+          },
+          {
+            key: "Permissions-Policy",
+            value: "camera=(), microphone=(), geolocation=()",
+          },
+          {
+            key: "Cross-Origin-Opener-Policy",
+            value: "same-origin-allow-popups",
+          },
+        ],
+      },
+      {
+        // All HTML pages: tell CDN/Cloudflare max 60s stale-while-revalidate.
         source: "/:path*",
         missing: [
           { type: "header", key: "x-no-cache-override" },

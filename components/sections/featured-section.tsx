@@ -67,7 +67,6 @@ function RotatingPartnerAd({ ads }: { ads: PartnerAd[] }) {
         width={300}
         height={600}
         className="w-full h-auto object-contain"
-        unoptimized
       />
     </div>
   );
@@ -153,7 +152,7 @@ export function FeaturedSection({ articles, partnerAds = [] }: FeaturedSectionPr
                       >
                         {mainArticle.title}
                       </h3>
-                      <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400">
+                      <div className="flex items-center gap-2 text-[10px] font-bold text-slate-300">
                         <time dateTime={mainArticle.date}>
                           {formatContentDate(mainArticle.date || "")}
                         </time>
@@ -205,7 +204,7 @@ export function FeaturedSection({ articles, partnerAds = [] }: FeaturedSectionPr
                         </h3>
                       </Link>
 
-                      <div className="flex items-center gap-1.5 text-[10px] text-slate-500 font-medium pt-2 border-t border-slate-100 mt-auto">
+                      <div className="flex items-center gap-1.5 text-[10px] text-slate-600 font-semibold pt-2 border-t border-slate-100 mt-auto">
                         <time dateTime={article.date}>
                           {formatContentDate(article.date || "")}
                         </time>

@@ -82,8 +82,8 @@ function HeroAd({ ad, className = "" }: { ad: Advertisement; className?: string 
                     src={imageUrl}
                     alt={ad.title || "Industry Partner"}
                     fill
+                    sizes="(max-width: 1024px) 100vw, 1200px"
                     loading="lazy"
-                    unoptimized
                     className="object-cover transition-transform duration-500 group-hover:scale-[1.015]"
                 />
             </div>
@@ -120,8 +120,8 @@ function VerticalAd({ ad, className = "" }: { ad: Advertisement; className?: str
                     src={imageUrl}
                     alt={ad.title || "Industry Partner"}
                     fill
+                    sizes="320px"
                     loading="lazy"
-                    unoptimized
                     className="object-cover transition-transform duration-700 group-hover:scale-[1.02]"
                 />
                 {/* Gradient overlay at bottom */}
@@ -245,8 +245,7 @@ function BannerAdServer({ ad, className = "" }: { ad: Advertisement; className?:
                         alt={ad.title || "Advertisement"}
                         fill
                         sizes="(max-width: 767px) 100vw, 728px"
-                        priority
-                        unoptimized
+                        loading="lazy"
                         className="object-contain transition-transform duration-500 group-hover:scale-[1.01]"
                     />
                 </div>
@@ -283,7 +282,6 @@ function CardAdServer({ ad, className = "" }: { ad: Advertisement; className?: s
                         fill
                         sizes="(max-width: 1024px) 100vw, 360px"
                         loading="lazy"
-                        unoptimized
                         className="object-contain bg-white transition-transform duration-500 group-hover:scale-[1.02]"
                     />
                 </div>

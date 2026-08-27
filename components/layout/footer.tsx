@@ -181,9 +181,11 @@ export function Footer() {
                                     key={label}
                                     href={href}
                                     aria-label={label}
-                                    className="w-9 h-9 rounded-full border border-gray-700/60 flex items-center justify-center text-gray-400 hover:text-white hover:border-[#00A651] hover:bg-[#00A651]/10 transition-all bg-transparent"
+                                    target="_blank"
+                                    rel="noopener"
+                                    className="w-10 h-10 rounded-full border border-gray-700/60 flex items-center justify-center text-gray-300 hover:text-white hover:border-[#00A651] hover:bg-[#00A651]/10 transition-all bg-transparent"
                                 >
-                                    <Icon size={14} />
+                                    <Icon size={16} />
                                 </a>
                             ))}
                         </div>

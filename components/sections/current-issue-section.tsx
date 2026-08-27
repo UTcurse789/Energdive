@@ -86,7 +86,6 @@ export function CurrentIssueSection({
                   height={293}
                   sizes="(max-width: 640px) 200px, (max-width: 1024px) 170px, 190px"
                   className="h-auto w-[180px] sm:w-[170px] lg:w-[190px] bg-white object-cover transition-transform duration-500 group-hover:scale-[1.02] rounded-xs"
-                  unoptimized
                 />
               </div>
             </Link>
@@ -125,14 +124,14 @@ export function CurrentIssueSection({
                       {article.date && (
                         <time
                           dateTime={article.date}
-                          className="mt-1 block text-[10px] text-slate-400 font-medium uppercase tracking-wide"
+                          className="mt-1 block text-[10px] text-slate-600 font-medium uppercase tracking-wide"
                         >
                           {article.date}
                         </time>
                       )}
 
                       {article.excerpt && (
-                        <p className="mt-1.5 line-clamp-2 font-serif text-xs leading-snug text-slate-500 sm:text-[13px]">
+                        <p className="mt-1.5 line-clamp-2 font-serif text-xs leading-snug text-slate-600 sm:text-[13px]">
                           {article.excerpt}
                         </p>
                       )}
@@ -147,7 +146,7 @@ export function CurrentIssueSection({
                     <div className="relative aspect-square w-full overflow-hidden bg-slate-100">
                       <Image
                         src={article.image || "/magazine-default.jpg"}
-                        alt=""
+                        alt={article.title || "Article thumbnail"}
                         fill
                         sizes="(max-width: 640px) 64px, (max-width: 1280px) 72px, 84px"
                         className="object-cover transition-transform duration-500 group-hover:scale-105"

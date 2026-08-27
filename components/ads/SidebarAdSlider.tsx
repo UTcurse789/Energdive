@@ -194,7 +194,7 @@ function SingleCardAd({ ad, imageUrl }: { ad: Ad; imageUrl: string }) {
                     alt={ad.title || "Advertisement"}
                     fill
                     loading="lazy"
-                    unoptimized
+                    sizes="300px"
                     className="object-contain bg-white transition-transform duration-500 group-hover:scale-[1.02]"
                 />
             </div>

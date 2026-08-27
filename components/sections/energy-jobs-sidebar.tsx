@@ -53,13 +53,13 @@ export async function EnergyJobsSidebar() {
               <div className="mt-1.5 flex items-center gap-3 text-[11px] text-slate-500 flex-wrap">
                 {job.companyName && (
                   <span className="inline-flex items-center gap-1 font-medium text-slate-600">
-                    <Building2 className="w-3 h-3 text-slate-400 shrink-0" />
+                    <Building2 className="w-3 h-3 text-slate-500 shrink-0" />
                     {job.companyName}
                   </span>
                 )}
                 {job.location && (
-                  <span className="inline-flex items-center gap-1 text-slate-400">
-                    <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
+                  <span className="inline-flex items-center gap-1 text-slate-600 font-medium">
+                    <MapPin className="w-3 h-3 text-slate-500 shrink-0" />
                     {job.location}
                   </span>
                 )}

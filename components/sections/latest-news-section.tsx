@@ -6,7 +6,7 @@ import { ArrowRight, Clock, Newspaper, ChevronRight } from "lucide-react";
 import { strapiMediaUrl } from "@/lib/strapi-image";
 import { buildContentUrl } from "@/lib/content-routes";
 import { formatContentDate } from "@/lib/date";
-import { AdBanner } from "@/components/ads/AdBanner";
+import { DeferredAdBanner } from "@/components/ads/deferred-ad-banner";
 
 interface NewsItem {
   id: number | string;
@@ -81,7 +81,7 @@ function NewsCard({ item }: { item: NewsItem }) {
             </h3>
           </Link>
           {extractExcerpt(item) && (
-            <p className="text-[13px] text-slate-500 leading-relaxed line-clamp-2 mt-1.5 mb-3">
+            <p className="text-[13px] text-slate-600 leading-relaxed line-clamp-2 mt-1.5 mb-3">
               {extractExcerpt(item)}
             </p>
           )}
@@ -97,7 +97,7 @@ function NewsCard({ item }: { item: NewsItem }) {
             </Link>
           ) : <span />}
           {dateStr && (
-            <div className="flex items-center gap-1 text-slate-400">
+            <div className="flex items-center gap-1 text-slate-600 font-medium">
               <Clock className="w-3 h-3" />
               <span>{dateStr}</span>
             </div>
@@ -153,12 +153,11 @@ export function LatestNewsSection({ news }: LatestNewsSectionProps) {
 
           {/* Ad Card (3rd Column) */}
           <div className="flex items-center justify-center w-full h-full overflow-hidden">
-            <AdBanner
+            <DeferredAdBanner
               placement="new_sidebar"
               variant="card"
               adIndex={0}
               maxItems={1}
-              showSkeleton={false}
               className="w-full flex justify-center"
             />
           </div>
