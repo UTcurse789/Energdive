@@ -4,18 +4,23 @@ import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
+import dynamic from "next/dynamic";
 import { cn } from "@/lib/utils";
 import { formatContentDate } from "@/lib/date";
 import { Search, ChevronDown, Facebook, Linkedin, Megaphone, ChevronRight, Zap, Menu, X, MapPin, Mail, Phone, Play, ArrowRight, Youtube, Instagram, LibraryBig, FileDown } from "lucide-react";
 import { SECTORS } from "@/data/dummy";
 import { motion, AnimatePresence } from "framer-motion";
 import { SignedIn, SignedOut, useAuth } from "@clerk/nextjs";
-import { GlobalSearch } from "@/components/global-search";
 import { strapiImageUrl } from "@/lib/strapi-image";
 import { CustomUserMenu } from "@/components/layout/CustomUserMenu";
 import { useAuthModal } from "@/hooks/use-auth-modal";
 
 import { usePostHog } from "@posthog/react";
+
+const GlobalSearch = dynamic(
+    () => import("@/components/global-search").then((module) => module.GlobalSearch),
+    { ssr: false }
+);
 
 type MagazineIssue = {
     id: number | string;
@@ -369,7 +374,7 @@ export function Header() {
             <header className="fixed top-0 inset-x-0 z-50 transition-all duration-300 font-sans bg-white" onMouseLeave={closeMenus}>
                 {/* 1. TOP BLACK BAR */}
                 <div className="bg-black text-white py-1.5 px-4 md:px-12 flex justify-between items-center text-[10px] md:text-[11px] font-semibold tracking-wider">
-                    <div className="flex gap-4 items-center">
+                    <div className="flex gap-2 items-center">
                         {SOCIAL_ICONS.map(({ Icon, href, label }) => (
                             <a
                                 key={label}
@@ -377,7 +382,7 @@ export function Header() {
                                 aria-label={label}
                                 target="_blank"
                                 rel="noopener"
-                                className="hover:opacity-70 transition-opacity"
+                                className="p-1.5 rounded-md hover:bg-white/10 hover:opacity-100 transition-all flex items-center justify-center text-gray-300 hover:text-white"
                             >
                                 <Icon className="w-3.5 h-3.5 cursor-pointer" />
                             </a>
@@ -1480,7 +1485,7 @@ export function Header() {
                     )}
                 </AnimatePresence>
             </header >
-            <GlobalSearch isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
+            {isSearchOpen && <GlobalSearch isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />}
         </>
     );
 }

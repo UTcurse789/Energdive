@@ -118,7 +118,6 @@ export function OpinionSection({
                                         fill
                                         className="object-cover object-top grayscale group-hover/img:grayscale-0 transition-all duration-700"
                                         sizes="(max-width: 1024px) 100vw, 30vw"
-                                        priority
                                     />
                                     {/* Dark gradient overlay */}
                                     <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
@@ -168,7 +167,7 @@ export function OpinionSection({
                                     {currentOpinion.date && (
                                         <time
                                             dateTime={currentOpinion.date}
-                                            className="mb-2 block text-[10px] text-slate-400 font-medium uppercase tracking-wide"
+                                            className="mb-2 block text-[10px] text-slate-600 font-medium uppercase tracking-wide"
                                         >
                                             {currentOpinion.date}
                                         </time>
@@ -331,7 +330,7 @@ export function OpinionSection({
                                     {currentInterview.date && (
                                         <time
                                             dateTime={currentInterview.date}
-                                            className="mb-2 block text-[10px] text-slate-400 font-medium uppercase tracking-wide"
+                                            className="mb-2 block text-[10px] text-slate-600 font-medium uppercase tracking-wide"
                                         >
                                             {currentInterview.date}
                                         </time>
@@ -379,7 +378,6 @@ export function OpinionSection({
                                         fill
                                         className="object-cover object-top grayscale group-hover/img:grayscale-0 transition-all duration-700"
                                         sizes="(max-width: 1024px) 100vw, 30vw"
-                                        priority
                                     />
                                     {/* Gradient overlay */}
                                     <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />

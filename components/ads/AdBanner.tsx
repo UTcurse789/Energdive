@@ -374,7 +374,6 @@ function BannerAd({
                         fill
                         sizes="(max-width: 767px) 100vw, 728px"
                         loading="lazy"
-                        unoptimized
                         className="object-contain transition-transform duration-500 group-hover:scale-[1.015]"
                     />
                 </div>
@@ -397,8 +396,8 @@ function BannerAd({
                     src={imageUrl}
                     alt={ad.title || "Advertisement"}
                     fill
+                    sizes="(max-width: 767px) 100vw, 728px"
                     loading="lazy"
-                    unoptimized
                     className="object-contain transition-transform duration-500 group-hover:scale-[1.015]"
                 />
             </div>
@@ -444,8 +443,8 @@ function CardAd({
                     src={imageUrl}
                     alt={ad.title || "Industry Partner"}
                     fill
+                    sizes="300px"
                     loading="lazy"
-                    unoptimized
                     className={`${isExactVerticalCardPlacement ? "object-contain" : "object-cover"} transition-transform duration-500 group-hover:scale-[1.02]`}
                 />
             </div>
@@ -466,11 +465,10 @@ function HeroBannerAd({ ad, className }: { ad: Ad; className: string }) {
             <Image
                 src={imageUrl}
                 alt={ad.title || "Advertisement"}
-                width={0}
-                height={0}
-                sizes="100vw"
+                width={728}
+                height={90}
+                sizes="(max-width: 767px) 100vw, 728px"
                 loading="lazy"
-                unoptimized
                 className="max-w-full h-auto w-auto object-contain transition-transform duration-500 group-hover:scale-[1.015]"
             />
         </div>
@@ -510,7 +508,6 @@ function VerticalBannerAd({
                 fill
                 sizes="(max-width: 1024px) 300px, 300px"
                 loading="lazy"
-                unoptimized
                 className="object-cover"
             />
         </div>
@@ -528,7 +525,7 @@ function NativeBannerAd({ ad, className }: { ad: Ad; className: string }) {
             <div className="flex items-center gap-5">
                 {logoUrl ? (
                     <div className="relative w-14 h-14 sm:w-16 sm:h-16 shrink-0 rounded-xl overflow-hidden bg-white shadow-sm ring-1 ring-gray-100">
-                        <Image src={logoUrl} alt={ad.partner_name || ""} fill loading="lazy" unoptimized className="object-contain p-1.5" />
+                        <Image src={logoUrl} alt={ad.partner_name || ""} fill sizes="64px" loading="lazy" className="object-contain p-1.5" />
                     </div>
                 ) : (
                     <div className="w-14 h-14 sm:w-16 sm:h-16 shrink-0 rounded-xl bg-teal-50 flex items-center justify-center text-teal-600 font-bold text-xl">
@@ -565,8 +562,8 @@ function MobileBannerAd({ ad, className }: { ad: Ad; className: string }) {
                     src={imageUrl}
                     alt={ad.title || "Advertisement"}
                     fill
+                    sizes="320px"
                     loading="lazy"
-                    unoptimized
                     className="object-cover transition-transform duration-500 group-hover:scale-[1.015]"
                 />
             </div>
