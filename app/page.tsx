@@ -185,7 +185,7 @@ function FeaturedVideosSidebar({ videos }: { videos: VideoItem[] }) {
 async function getAllContents() {
   try {
     const res = await fetchCms(
-      `${STRAPI_BASE}/api/contents?filters[type_of_content][name][$eq]=News&fields[0]=Title&fields[1]=slug&fields[2]=Date&fields[3]=publishedAt&fields[4]=createdAt&fields[5]=updatedAt&fields[6]=Excerpt&populate[0]=FeaturedImage&populate[1]=sectors&populate[2]=type_of_content&populate[3]=content_tag&sort[0]=Date:desc&sort[1]=publishedAt:desc&pagination[pageSize]=7`,
+      `${STRAPI_BASE}/api/contents?filters[type_of_content][name][$eq]=News&fields[0]=Title&fields[1]=slug&fields[2]=Date&fields[3]=publishedAt&fields[4]=createdAt&fields[5]=updatedAt&fields[6]=Excerpt&populate[0]=FeaturedImage&populate[1]=sectors&populate[2]=type_of_content&populate[3]=content_tag&sort[0]=publishedAt:desc&pagination[pageSize]=25`,
       { next: { revalidate: 60, tags: ["strapi-contents"] } }
     );
     if (!res.ok) return null;
@@ -200,7 +200,7 @@ async function getAllContents() {
 async function getFeaturedContents() {
   try {
     const res = await fetch(
-      `${STRAPI_BASE}/api/contents?filters[featured][$eq]=true&populate=*&sort[0]=Date:desc&sort[1]=publishedAt:desc&pagination[pageSize]=20`,
+      `${STRAPI_BASE}/api/contents?filters[featured][$eq]=true&populate=*&sort[0]=publishedAt:desc&pagination[pageSize]=25`,
       { next: { revalidate: 60, tags: ["strapi-contents"] } }
     );
     if (!res.ok) return [];
@@ -215,12 +215,13 @@ async function getFeaturedContents() {
 async function getHeroBannerContents() {
   try {
     const res = await fetchCms(
-      `${STRAPI_BASE}/api/contents?filters[type_of_content][name][$eq]=Cover%20Story&fields[0]=Title&fields[1]=slug&fields[2]=Date&fields[3]=publishedAt&fields[4]=createdAt&fields[5]=Excerpt&populate[0]=FeaturedImage&populate[1]=sectors&populate[2]=type_of_content&populate[3]=content_tag&pagination[pageSize]=10&sort=Date:desc`,
+      `${STRAPI_BASE}/api/contents?filters[type_of_content][name][$eq]=Cover%20Story&fields[0]=Title&fields[1]=slug&fields[2]=Date&fields[3]=publishedAt&fields[4]=createdAt&fields[5]=Excerpt&populate[0]=FeaturedImage&populate[1]=sectors&populate[2]=type_of_content&populate[3]=content_tag&pagination[pageSize]=10&sort[0]=publishedAt:desc`,
       { next: { revalidate: 60, tags: ["strapi-contents"] } }
     );
     if (!res.ok) return [];
     const json = await res.json();
-    return json.data || [];
+    const items = json.data || [];
+    return items.sort((a: any, b: any) => getArticleTimestamp(b) - getArticleTimestamp(a));
   } catch (err) {
     logCmsError("Hero banner fetch error:", err);
     return [];
@@ -258,12 +259,14 @@ async function getOpinionBuckets() {
       `&populate[author][populate]=avatar` +
       `&populate=FeaturedImage` +
       `&populate[content_tag]=true` +
-      `&sort=Date:desc`,
+      `&sort[0]=publishedAt:desc`,
       { next: { revalidate: 120 } }
     );
     if (!res.ok) return { opinions: [], interviews: [] };
     const json = await res.json();
-    const allItems = json.data || [];
+    const allItems = (json.data || []).sort(
+      (a: any, b: any) => getArticleTimestamp(b) - getArticleTimestamp(a)
+    );
 
     const opinionItems: any[] = [];
     const interviewItems: any[] = [];
@@ -316,11 +319,7 @@ async function HomeDeferredContent({ latestNews }: { latestNews: any[] }) {
   // Bento: Featured articles
   const finalBentoItems = featuredContents.length > 0
     ? featuredContents
-      .sort((a: any, b: any) => {
-        const aDate = Date.parse(a.updatedAt || a.Date || a.publishedAt || a.createdAt || "") || 0;
-        const bDate = Date.parse(b.updatedAt || b.Date || b.publishedAt || a.createdAt || "") || 0;
-        return bDate - aDate;
-      })
+      .sort((a: any, b: any) => getArticleTimestamp(b) - getArticleTimestamp(a))
       .map((article: any) => ({
         id: article.id || article.documentId,
         title: article.Title || "",
@@ -350,7 +349,10 @@ async function HomeDeferredContent({ latestNews }: { latestNews: any[] }) {
 
   const sectorsWithArticles = HOMEPAGE_SECTORS.map((sector, idx) => {
     const sectorArticles = sectorFetchResults?.[idx] || [];
-    const finalArticles = sectorArticles.slice(0, 4);
+    const sortedArticles = [...sectorArticles].sort(
+      (a: any, b: any) => getArticleTimestamp(b) - getArticleTimestamp(a)
+    );
+    const finalArticles = sortedArticles.slice(0, 4);
     const articles = finalArticles.map((article: any) => mapArticle(article, sector.title));
 
     return {
