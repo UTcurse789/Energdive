@@ -152,11 +152,17 @@ export function Hero({ heroStories: propHeroStories, topStories: propTopStories 
         if (propHeroStories?.length) return;
 
         fetch(
-            `${STRAPI_BASE}/api/contents?filters[type_of_content][name][$eq]=Cover%20Story&populate=*&pagination[pageSize]=10&sort=Date:desc`
+            `${STRAPI_BASE}/api/contents?filters[type_of_content][name][$eq]=Cover%20Story&populate=*&pagination[pageSize]=10&sort[0]=publishedAt:desc`
         )
             .then((r) => r.json())
             .then((d) => {
-                if (isMounted) setCoverStories(d?.data || []);
+                const items = d?.data || [];
+                const sorted = items.sort((a: any, b: any) => {
+                    const aT = Date.parse(a.Date || a.publishedAt || a.createdAt || "") || 0;
+                    const bT = Date.parse(b.Date || b.publishedAt || b.createdAt || "") || 0;
+                    return bT - aT;
+                });
+                if (isMounted) setCoverStories(sorted);
             })
             .catch(console.error)
             .finally(() => {
@@ -165,11 +171,17 @@ export function Hero({ heroStories: propHeroStories, topStories: propTopStories 
 
         if (!propTopStories) {
             fetch(
-                `${STRAPI_BASE}/api/contents?filters[featured][$eq]=true&pagination[pageSize]=10&populate=*&sort=Date:desc`
+                `${STRAPI_BASE}/api/contents?filters[featured][$eq]=true&pagination[pageSize]=15&populate=*&sort[0]=publishedAt:desc`
             )
                 .then((r) => r.json())
                 .then((d) => {
-                    if (isMounted) setArticles(d?.data || []);
+                    const items = d?.data || [];
+                    const sorted = items.sort((a: any, b: any) => {
+                        const aT = Date.parse(a.Date || a.publishedAt || a.createdAt || "") || 0;
+                        const bT = Date.parse(b.Date || b.publishedAt || b.createdAt || "") || 0;
+                        return bT - aT;
+                    });
+                    if (isMounted) setArticles(sorted);
                 })
                 .catch(console.error)
                 .finally(() => {
