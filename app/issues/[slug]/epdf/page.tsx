@@ -1,8 +1,8 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import IssueDetailClient from "@/components/issue-detail-client";
 import { getCanonicalUrl } from "@/lib/seo";
 import { getIssue, generateIssueStaticParams } from "@/lib/api/issue-detail";
+import EpdfReaderClient from "@/components/epdf-reader/epdf-reader-client";
 
 export async function generateMetadata({
     params,
@@ -14,17 +14,17 @@ export async function generateMetadata({
 
     if (!issue) {
         return {
-            title: { absolute: "Issue - ENERGDIVE" },
-            description: "Explore ENERGDIVE magazine issues and editions.",
+            title: { absolute: "ePDF Reader - ENERGDIVE" },
+            description: "Read digital magazine editions on ENERGDIVE.",
         };
     }
 
     const cleanIssueTitle = String(issue.title).replace(/^['"“”‘’]+|['"“”‘’]+$/g, "").trim();
-    const shareTitle = `${cleanIssueTitle} - ENERGDIVE`;
+    const shareTitle = `Read ${cleanIssueTitle} Digital ePDF Edition | ENERGDIVE Magazine`;
     const canonicalUrl = getCanonicalUrl(`/issues/${slug}`);
     const description =
         issue.description?.trim() ||
-        `Explore ${issue.title} featuring expert insights on India's energy transition.`;
+        `Read the complete digital ePDF edition of ${issue.title} featuring insights on India's energy transition directly in your browser.`;
     const imageUrl = issue.coverImage?.startsWith("http")
         ? issue.coverImage
         : getCanonicalUrl(issue.coverImage || "/fav.jpg");
@@ -38,7 +38,7 @@ export async function generateMetadata({
         openGraph: {
             title: shareTitle,
             description,
-            url: canonicalUrl,
+            url: getCanonicalUrl(`/issues/${slug}/epdf`),
             siteName: "ENERGDIVE",
             images: [
                 {
@@ -63,13 +63,17 @@ export async function generateStaticParams() {
     return generateIssueStaticParams();
 }
 
-export default async function IssueDetailPage({
+export default async function EpdfReaderPage({
     params,
 }: {
     params: Promise<{ slug: string }>;
 }) {
     const { slug } = await params;
     const issue = await getIssue(slug);
-    if (!issue) notFound();
-    return <IssueDetailClient issue={issue} />;
+
+    if (!issue) {
+        notFound();
+    }
+
+    return <EpdfReaderClient issue={issue} />;
 }
