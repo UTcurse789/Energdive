@@ -13,12 +13,14 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
     const isAuthPage = pathname === "/auth" || pathname.startsWith("/auth/");
     const isDashboard = pathname.startsWith("/dashboard");
     const isOnboarding = pathname.startsWith("/onboarding");
+    const isEpdfReader = pathname.endsWith("/epdf") || pathname.includes("/epdf/");
 
     const isRecruiterReview =
         pathname.startsWith("/energjob/applications/") ||
         pathname.startsWith("/energyjobs/applications/");
 
-    if (isAuthPage || isDashboard || isOnboarding || isRecruiterReview) {
+    // Standalone full-screen pages without global site header/footer
+    if (isAuthPage || isDashboard || isOnboarding || isRecruiterReview || isEpdfReader) {
         return <main className="min-h-screen">{children}</main>;
     }
 
