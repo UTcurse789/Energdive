@@ -109,6 +109,11 @@ export function extractTypeOfContentName(typeOfContent: any): string | null {
     return typeOfContent.name ?? typeOfContent.Name ?? typeOfContent.data?.attributes?.name ?? null;
 }
 
+// Lightweight populate for list calls — only cover image + PDF, NO full contents
+// This keeps the response small (< 50KB total for all issues vs ~3MB with full contents)
+export const LIST_POPULATE_PARAMS = "populate[0]=CoverImage&populate[1]=issue_Epdf";
+
+// Full populate — used only when fetching a SINGLE issue by ID
 export const BASE_POPULATE_PARAMS = [
     "populate[0]=CoverImage",
     "populate[1]=contents",
@@ -127,6 +132,19 @@ export function getPopulateParams(includeIssuePdf = true) {
         : BASE_POPULATE_PARAMS;
 }
 
+/** Lightweight fetch of all issues — only CoverImage + PDF, NO contents.
+ *  Keeps response well under Next.js 2MB cache limit. */
+export async function fetchIssuesListLightweight(): Promise<Response> {
+    const STRAPI_TOKEN = process.env.STRAPI_API_TOKEN || "";
+    return fetch(`${STRAPI_URL}/api/issues?${LIST_POPULATE_PARAMS}&sort=createdAt:desc`, {
+        next: { revalidate: 120 },
+        headers: {
+            ...(STRAPI_TOKEN ? { Authorization: `Bearer ${STRAPI_TOKEN}` } : {}),
+        },
+    });
+}
+
+/** @deprecated — fetches ALL issues with full contents populate (~3MB). Use fetchIssuesListLightweight() instead for list use-cases. */
 export async function fetchIssuesWithFallback(includeIssuePdf = true): Promise<Response> {
     const STRAPI_TOKEN = process.env.STRAPI_API_TOKEN || "";
     const res = await fetch(`${STRAPI_URL}/api/issues?${getPopulateParams(includeIssuePdf)}`, {
@@ -284,22 +302,28 @@ export async function getIssue(slug: string): Promise<Issue | null> {
     if (!parsed) return null;
 
     const { month, year } = parsed;
+    const STRAPI_TOKEN = process.env.STRAPI_API_TOKEN || "";
 
-    // First fetch: list
-    const res = await fetchIssuesWithFallback();
-
-    if (!res.ok) return null;
-
-    const json = await res.json();
-
-    const item = json.data?.find((d: any) =>
-        String(d.Month).toLowerCase() === month.toLowerCase() &&
-        String(d.Year) === String(year)
+    // Step 1: Lightweight filter query — only fetch the ONE matching issue (no contents populate)
+    // This keeps each request well under Next.js 2MB cache limit
+    const filterRes = await fetch(
+        `${STRAPI_URL}/api/issues?filters[Month][$eqi]=${encodeURIComponent(month)}&filters[Year][$eq]=${year}&populate[0]=CoverImage&populate[1]=issue_Epdf&pagination[limit]=1`,
+        {
+            next: { revalidate: 120 },
+            headers: {
+                ...(STRAPI_TOKEN ? { Authorization: `Bearer ${STRAPI_TOKEN}` } : {}),
+            },
+        }
     );
+
+    if (!filterRes.ok) return null;
+
+    const filterJson = await filterRes.json();
+    const item = filterJson.data?.[0];
 
     if (!item) return null;
 
-    // Second fetch: detail (USE ID, NOT documentId)
+    // Step 2: Full detail fetch by ID (single issue ~271KB — well under 2MB cache limit)
     const detailRes = await fetchIssueDetailWithFallback(item.id);
 
     if (!detailRes.ok) return mapIssue(item, slug);
