@@ -75,7 +75,8 @@ export function extractText(blocks: any[]) {
 }
 
 export function parseSlug(slug: string): { month: string; year: number } | null {
-    const parts = slug.split("-");
+    const clean = decodeURIComponent(slug || "").trim().replace(/[\s_]+/g, "-");
+    const parts = clean.split("-");
     if (parts.length < 2) return null;
     const yearStr = parts[parts.length - 1];
     const year = parseInt(yearStr, 10);
@@ -303,34 +304,43 @@ export async function getIssue(slug: string): Promise<Issue | null> {
 
     const { month, year } = parsed;
     const STRAPI_TOKEN = process.env.STRAPI_API_TOKEN || "";
+    const headers = {
+        ...(STRAPI_TOKEN ? { Authorization: `Bearer ${STRAPI_TOKEN}` } : {}),
+    };
 
-    // Step 1: Lightweight filter query — only fetch the ONE matching issue (no contents populate)
-    // This keeps each request well under Next.js 2MB cache limit
+    // Single targeted filter query with FULL populate for the ONE matching issue.
+    // A single fully-populated issue is ~267KB — well under Next.js 2MB cache limit.
     const filterRes = await fetch(
-        `${STRAPI_URL}/api/issues?filters[Month][$eqi]=${encodeURIComponent(month)}&filters[Year][$eq]=${year}&populate[0]=CoverImage&populate[1]=issue_Epdf&pagination[limit]=1`,
+        `${STRAPI_URL}/api/issues?filters[Month][$eqi]=${encodeURIComponent(month)}&filters[Year][$eq]=${year}&${getPopulateParams(true)}&pagination[limit]=1`,
         {
             next: { revalidate: 120 },
-            headers: {
-                ...(STRAPI_TOKEN ? { Authorization: `Bearer ${STRAPI_TOKEN}` } : {}),
-            },
+            headers,
         }
     );
 
-    if (!filterRes.ok) return null;
+    if (filterRes.ok) {
+        const filterJson = await filterRes.json();
+        const item = filterJson.data?.[0];
+        if (item) return mapIssue(item, slug);
+    }
 
-    const filterJson = await filterRes.json();
-    const item = filterJson.data?.[0];
+    // Fallback without PDF populate if first request returned 400
+    const fallbackRes = await fetch(
+        `${STRAPI_URL}/api/issues?filters[Month][$eqi]=${encodeURIComponent(month)}&filters[Year][$eq]=${year}&${getPopulateParams(false)}&pagination[limit]=1`,
+        {
+            next: { revalidate: 120 },
+            headers,
+        }
+    );
+
+    if (!fallbackRes.ok) return null;
+
+    const fallbackJson = await fallbackRes.json();
+    const item = fallbackJson.data?.[0];
 
     if (!item) return null;
 
-    // Step 2: Full detail fetch by ID (single issue ~271KB — well under 2MB cache limit)
-    const detailRes = await fetchIssueDetailWithFallback(item.id);
-
-    if (!detailRes.ok) return mapIssue(item, slug);
-
-    const detail = await detailRes.json();
-
-    return mapIssue(detail.data, slug);
+    return mapIssue(item, slug);
 }
 
 export async function generateIssueStaticParams() {
