@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { slugify } from "@/lib/utils";
+import { cn, slugify } from "@/lib/utils";
 
 interface TagBadgeProps {
     name: string;
@@ -13,7 +13,10 @@ export function TagBadge({ name, slug, className = "" }: TagBadgeProps) {
     return (
         <Link
             href={`/tags/${tagSlug}`}
-            className={`inline-block bg-zinc-100 hover:bg-[#00A651] text-zinc-600 hover:text-white text-[9px] font-bold uppercase tracking-widest px-2.5 py-1 rounded transition-all duration-200 ${className}`}
+            className={cn(
+                "inline-block bg-zinc-100 hover:bg-[#00A651] text-zinc-600 hover:text-white text-[9px] font-bold uppercase tracking-widest px-2.5 py-1 rounded transition-all duration-200",
+                className
+            )}
         >
             {name}
         </Link>

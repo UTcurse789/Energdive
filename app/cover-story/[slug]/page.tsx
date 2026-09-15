@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { buildContentUrl } from "@/lib/content-routes";
+import { TagBadge } from "@/components/ui/tag-badge";
 import Image from "next/image";
 import { Header } from "@/components/layout/header";
 import { notFound } from "next/navigation";
@@ -45,14 +47,40 @@ async function getArticle(slug: string) {
     return json.data?.[0] || null;
 }
 
+function sortByEffectiveDate(items: any[]): any[] {
+    const getTimestamp = (item: any) => {
+        const a = item.attributes || item;
+        const dt = a.Date || a.publishedAt || a.createdAt;
+        if (!dt) return 0;
+        const t = new Date(dt).getTime();
+        return isNaN(t) ? 0 : t;
+    };
+    return [...items].sort((a, b) => getTimestamp(b) - getTimestamp(a));
+}
+
 async function getRelated(currentSlug: string) {
-    const res = await fetch(
-        `${STRAPI_BASE_URL}/api/contents?filters[type_of_content][name][$eq]=Cover Story&filters[slug][$ne]=${currentSlug}&pagination[limit]=5&populate=*&sort=publishedAt:desc`,
-        { cache: "no-store" }
-    );
-    if (!res.ok) return [];
-    const json = await res.json();
-    return json.data || [];
+    try {
+        const res = await fetch(
+            `${STRAPI_BASE_URL}/api/contents?filters[type_of_content][name][\$eq]=Cover Story&filters[slug][\$ne]=${currentSlug}&pagination[limit]=15&populate=*&sort=publishedAt:desc`,
+            { next: { revalidate: 60 } }
+        );
+        if (res.ok) {
+            const json = await res.json();
+            const items = sortByEffectiveDate(json.data || []);
+            if (items.length >= 3) return items.slice(0, 5);
+        }
+
+        // Fallback: Latest Featured Stories or News
+        const fbRes = await fetch(
+            `${STRAPI_BASE_URL}/api/contents?filters[type_of_content][name][\$in][0]=Featured Stories&filters[type_of_content][name][\$in][1]=News&filters[slug][\$ne]=${currentSlug}&pagination[limit]=15&sort=publishedAt:desc`,
+            { next: { revalidate: 60 } }
+        );
+        if (!fbRes.ok) return [];
+        const fbJson = await fbRes.json();
+        return sortByEffectiveDate(fbJson.data || []).slice(0, 5);
+    } catch {
+        return [];
+    }
 }
 
 /* ================= METADATA (OG tags for WhatsApp / social) ================= */
@@ -321,18 +349,14 @@ first:prose-p:first-letter:text-6xl first:prose-p:first-letter:font-serif first:
                                     Tags
                                 </h4>
                                 <div className="flex flex-wrap gap-2">
-                                    {article.tags.map((tag: any, i: number) => {
-                                        const targetSector = getSectorSlugForTagOrCategory(tag.name, tag.slug);
-                                        return (
-                                            <Link
-                                                key={`${tag.slug}-${i}`}
-                                                href={`/sectors/${targetSector}`}
-                                                className="bg-teal-50 text-teal-700 px-3 py-1.5 text-xs font-medium uppercase tracking-wider rounded-full border border-teal-100 hover:bg-teal-600 hover:text-white hover:border-teal-600 transition-colors"
-                                            >
-                                                {tag.name}
-                                            </Link>
-                                        );
-                                    })}
+                                    {article.tags.map((tag: any, i: number) => (
+                                        <TagBadge
+                                            key={`${tag.slug || tag.name}-${i}`}
+                                            name={tag.name}
+                                            slug={tag.slug}
+                                            className="bg-teal-50 text-teal-700 px-3 py-1.5 text-xs font-medium uppercase tracking-wider rounded-full border border-teal-100 hover:bg-teal-600 hover:text-white hover:border-teal-600 transition-colors"
+                                        />
+                                    ))}
                                 </div>
                             </div>
                         )}
@@ -388,7 +412,7 @@ first:prose-p:first-letter:text-6xl first:prose-p:first-letter:font-serif first:
                                             return (
                                                 <Link
                                                     key={item.id}
-                                                    href={`/cover-story/${r.slug}`}
+                                                    href={buildContentUrl({ slug: r.slug, type_of_content: r.type_of_content || "Cover Story" })}
                                                     className="group flex gap-3 py-4 hover:bg-gray-50 -mx-2 px-2 transition-colors"
                                                 >
                                                     <div className="relative w-20 h-16 shrink-0 overflow-hidden rounded-sm bg-gray-100 border border-gray-100">
