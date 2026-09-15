@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { TagBadge } from "@/components/ui/tag-badge";
 import Image from "next/image";
 import { Header } from "@/components/layout/header";
 import { notFound } from "next/navigation";
@@ -57,33 +58,55 @@ async function getArticle(slug: string) {
 
 /* ================= FETCH RELATED ================= */
 
+function sortByEffectiveDate(items: any[]): any[] {
+    const getTimestamp = (item: any) => {
+        const a = item.attributes || item;
+        const dt = a.Date || a.publishedAt || a.createdAt;
+        if (!dt) return 0;
+        const t = new Date(dt).getTime();
+        return isNaN(t) ? 0 : t;
+    };
+    return [...items].sort((a, b) => getTimestamp(b) - getTimestamp(a));
+}
+
 async function getRelated(tags: string[], currentSlug: string, sectorSlug?: string) {
-    if (tags.length) {
-        const tagFilters = tags
-            .map((tag, i) => `filters[tags][slug][$in][${i}]=${tag}`)
-            .join("&");
-        const url = `${STRAPI_BASE_URL}/api/contents?filters[type_of_content][name][$eq]=News&${tagFilters}&filters[slug][$ne]=${currentSlug}&populate=*&pagination[limit]=5`;
-        const res = await fetch(url, { next: { revalidate: 3600 } });
-        if (res.ok) {
-            const json = await res.json();
-            if ((json.data || []).length > 0) return json.data;
+    try {
+        // 1. First priority: Related news from same sector, newest first
+        if (sectorSlug) {
+            const url = `${STRAPI_BASE_URL}/api/contents?filters[type_of_content][name][\$eq]=News&filters[sectors][slug][\$eq]=${sectorSlug}&filters[slug][\$ne]=${currentSlug}&populate=*&pagination[limit]=15&sort=publishedAt:desc`;
+            const res = await fetch(url, { next: { revalidate: 60 } });
+            if (res.ok) {
+                const json = await res.json();
+                const items = sortByEffectiveDate(json.data || []);
+                if (items.length > 0) return items.slice(0, 5);
+            }
         }
-    }
-    if (sectorSlug) {
-        const url = `${STRAPI_BASE_URL}/api/contents?filters[type_of_content][name][$eq]=News&filters[sectors][slug][$eq]=${sectorSlug}&filters[slug][$ne]=${currentSlug}&populate=*&pagination[limit]=5&sort=Date:desc`;
-        const res = await fetch(url, { next: { revalidate: 3600 } });
-        if (res.ok) {
-            const json = await res.json();
-            if ((json.data || []).length > 0) return json.data;
+
+        // 2. Second priority: Matching tags, newest first
+        if (tags.length) {
+            const tagFilters = tags
+                .map((tag, i) => `filters[tags][slug][\$in][${i}]=${tag}`)
+                .join("&");
+            const url = `${STRAPI_BASE_URL}/api/contents?filters[type_of_content][name][\$eq]=News&${tagFilters}&filters[slug][\$ne]=${currentSlug}&populate=*&pagination[limit]=15&sort=publishedAt:desc`;
+            const res = await fetch(url, { next: { revalidate: 60 } });
+            if (res.ok) {
+                const json = await res.json();
+                const items = sortByEffectiveDate(json.data || []);
+                if (items.length > 0) return items.slice(0, 5);
+            }
         }
+
+        // 3. Fallback: Latest news stories overall, newest first
+        const res = await fetch(
+            `${STRAPI_BASE_URL}/api/contents?filters[type_of_content][name][\$eq]=News&filters[slug][\$ne]=${currentSlug}&pagination[limit]=15&sort=publishedAt:desc`,
+            { next: { revalidate: 60 } }
+        );
+        if (!res.ok) return [];
+        const json = await res.json();
+        return sortByEffectiveDate(json.data || []).slice(0, 5);
+    } catch {
+        return [];
     }
-    const res = await fetch(
-        `${STRAPI_BASE_URL}/api/contents?filters[type_of_content][name][$eq]=News&filters[slug][$ne]=${currentSlug}&pagination[limit]=5&populate=*&sort=Date:desc`,
-        { cache: "no-store" }
-    );
-    if (!res.ok) return [];
-    const json = await res.json();
-    return json.data || [];
 }
 
 /* ================= METADATA (OG tags for WhatsApp / social) ================= */
@@ -376,18 +399,14 @@ first:prose-p:first-letter:text-6xl first:prose-p:first-letter:font-serif first:
                                     Tags
                                 </h4>
                                 <div className="flex flex-wrap gap-2">
-                                    {article.tags.map((tag: any, i: number) => {
-                                        const targetSector = getSectorSlugForTagOrCategory(tag.name, tag.slug);
-                                        return (
-                                            <Link
-                                                key={`${tag.slug}-${i}`}
-                                                href={`/sectors/${targetSector}`}
-                                                className="bg-teal-50 text-teal-700 px-3 py-1.5 text-xs font-medium uppercase tracking-wider rounded-full border border-teal-100 hover:bg-teal-600 hover:text-white hover:border-teal-600 transition-colors"
-                                            >
-                                                {tag.name}
-                                            </Link>
-                                        );
-                                    })}
+                                    {article.tags.map((tag: any, i: number) => (
+                                        <TagBadge
+                                            key={`${tag.slug || tag.name}-${i}`}
+                                            name={tag.name}
+                                            slug={tag.slug}
+                                            className="bg-teal-50 text-teal-700 px-3 py-1.5 text-xs font-medium uppercase tracking-wider rounded-full border border-teal-100 hover:bg-teal-600 hover:text-white hover:border-teal-600 transition-colors"
+                                        />
+                                    ))}
                                 </div>
                             </div>
                         )}
