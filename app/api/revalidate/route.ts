@@ -1,19 +1,38 @@
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { NextRequest, NextResponse } from "next/server";
 
-/**
- * On-demand revalidation API
- *
- * Usage:
- *   POST /api/revalidate
- *   Body: { "secret": "energdive-revalidate-2026", "paths": ["/articles/some-slug", "/opinion/some-slug"] }
- *
- *   OR to purge everything:
- *   POST /api/revalidate
- *   Body: { "secret": "energdive-revalidate-2026", "all": true }
- */
 
 const REVALIDATE_SECRET = "energdive-revalidate-2026";
+
+// ─── Cloudflare Cache Purge ───────────────────────────────────────────────────
+// Set CF_API_TOKEN and CF_ZONE_ID in .env to enable CDN purging.
+async function purgeCloudflareCache(paths?: string[]) {
+  const token = process.env.CF_API_TOKEN;
+  const zoneId = process.env.CF_ZONE_ID;
+  if (!token || !zoneId) return;
+  try {
+    const body = paths && paths.length > 0
+      ? { files: paths.map(p => `https://www.energdive.com${p}`) }
+      : { purge_everything: true };
+
+    const res = await fetch(`https://api.cloudflare.com/client/v4/zones/${zoneId}/purge_cache`, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
+    const json = await res.json();
+    if (!json.success) {
+      console.error("[REVALIDATE] Cloudflare purge failed:", JSON.stringify(json.errors));
+    }
+  } catch (err) {
+    console.error("[REVALIDATE] Cloudflare purge error:", err);
+  }
+}
+
+
 
 export async function POST(req: NextRequest) {
     try {
@@ -26,6 +45,10 @@ export async function POST(req: NextRequest) {
 
         // Purge ALL paths
         if (body.all === true) {
+            // Bust the fetch Data Cache first
+            (revalidateTag as any)("strapi-contents");
+
+
             const allPaths = [
                 "/",
                 "/news",
@@ -68,6 +91,9 @@ export async function POST(req: NextRequest) {
             revalidatePath("/author/[slug]", "page");
             revalidatePath("/tags/[slug]", "page");
 
+            // Purge Cloudflare CDN cache too
+            await purgeCloudflareCache();
+
             return NextResponse.json({
                 revalidated: true,
                 message: `Purged all ${allPaths.length} paths + dynamic routes`,
@@ -80,6 +106,8 @@ export async function POST(req: NextRequest) {
             for (const p of body.paths) {
                 revalidatePath(p);
             }
+            // Purge specific paths from Cloudflare CDN too
+            await purgeCloudflareCache(body.paths);
             return NextResponse.json({
                 revalidated: true,
                 paths: body.paths,

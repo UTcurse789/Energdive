@@ -262,6 +262,7 @@ export function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
                                 )}
                                 <button
                                     onClick={onClose}
+                                    aria-label="Close search"
                                     style={{
                                         position: "absolute",
                                         right: "12px",
@@ -270,7 +271,7 @@ export function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
                                         background: "transparent",
                                         border: "none",
                                         cursor: "pointer",
-                                        color: "#9ca3af",
+                                        color: "#6b7280",
                                         display: "flex",
                                         alignItems: "center",
                                     }}

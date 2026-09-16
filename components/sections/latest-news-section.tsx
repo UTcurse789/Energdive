@@ -6,7 +6,7 @@ import { ArrowRight, Clock, Newspaper, ChevronRight } from "lucide-react";
 import { strapiMediaUrl } from "@/lib/strapi-image";
 import { buildContentUrl } from "@/lib/content-routes";
 import { formatContentDate } from "@/lib/date";
-import { AdBanner } from "@/components/ads/AdBanner";
+import { DeferredAdBanner } from "@/components/ads/deferred-ad-banner";
 
 interface NewsItem {
   id: number | string;
@@ -68,7 +68,6 @@ function NewsCard({ item }: { item: NewsItem }) {
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
           className="object-cover group-hover:scale-105 transition-transform duration-500"
         />
-
       </div>
 
       <div className="p-4 sm:p-5 flex flex-col justify-between flex-1 min-w-0">
@@ -82,7 +81,7 @@ function NewsCard({ item }: { item: NewsItem }) {
             </h3>
           </Link>
           {extractExcerpt(item) && (
-            <p className="text-[13px] text-slate-500 leading-relaxed line-clamp-2 mt-1.5 mb-3">
+            <p className="text-[13px] text-slate-600 leading-relaxed line-clamp-2 mt-1.5 mb-3">
               {extractExcerpt(item)}
             </p>
           )}
@@ -98,7 +97,7 @@ function NewsCard({ item }: { item: NewsItem }) {
             </Link>
           ) : <span />}
           {dateStr && (
-            <div className="flex items-center gap-1 text-slate-400">
+            <div className="flex items-center gap-1 text-slate-600 font-medium">
               <Clock className="w-3 h-3" />
               <span>{dateStr}</span>
             </div>
@@ -119,7 +118,7 @@ export function LatestNewsSection({ news }: LatestNewsSectionProps) {
 
   return (
     <section className="bg-slate-50/80 border-t border-b border-slate-200/90 py-10 lg:py-14">
-      <div className="max-w-7xl mx-auto px-5 sm:px-10 lg:px-16">
+      <div className="max-w-7xl mx-auto px-8 sm:px-10 lg:px-16">
         
         {/* Section Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 mb-8 border-b border-slate-200">
@@ -154,12 +153,11 @@ export function LatestNewsSection({ news }: LatestNewsSectionProps) {
 
           {/* Ad Card (3rd Column) */}
           <div className="flex items-center justify-center w-full h-full overflow-hidden">
-            <AdBanner
+            <DeferredAdBanner
               placement="new_sidebar"
               variant="card"
               adIndex={0}
               maxItems={1}
-              showSkeleton={false}
               className="w-full flex justify-center"
             />
           </div>

@@ -172,7 +172,7 @@ export default async function EditorialDetailPage({ params }: { params: Promise<
         : "";
 
     // Raw date for JSON-LD and display (prioritizing publishedAt for accurate automatic time)
-    const rawDate = attrs.publishedAt || attrs.createdAt || attrs.Date || "";
+    const rawDate = attrs.Date || attrs.publishedAt || attrs.createdAt || "";
     const modifiedDate = attrs.updatedAt || rawDate;
 
     const article = {

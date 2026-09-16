@@ -8,6 +8,7 @@ import { useUser } from "@clerk/nextjs";
 import { Issue } from "@/types";
 import { ScrollProgress } from "@/components/ui/scroll-progress";
 import { useAuthModal } from "@/hooks/use-auth-modal";
+import { BookOpen, Download } from "lucide-react";
 
 interface IssueDetailClientProps {
     issue: Issue;
@@ -66,30 +67,46 @@ function IssueArticleThumbnail({
     );
 }
 
-function PdfDownloadLink({ slug }: { slug: string }) {
+function IssueActionButtons({ slug, hasPdf }: { slug: string; hasPdf: boolean }) {
     const { isSignedIn, isLoaded } = useUser();
     const { openAuthModal } = useAuthModal();
-
     const isLoggedIn = isLoaded && isSignedIn === true;
 
     return (
-        <div className="border-t border-gray-200 pt-4 mb-5 px-1 font-serif text-[16px] text-gray-600 relative">
-            <span>Download:</span>
-            {isLoggedIn ? (
-                <a
-                    href={`/issues/${slug}/download`}
-                    className="ml-2 underline underline-offset-4 transition-colors hover:text-black"
+        <div className="border-t border-gray-200 pt-5 mb-6 px-1">
+            <div className="flex flex-col gap-2.5">
+                {/* 1. View ePDF (Public, no login required) */}
+                <Link
+                    href={`/issues/${slug}/epdf`}
+                    className="flex items-center justify-center gap-2 w-full rounded-md bg-[#00A651] px-4 py-2.5 text-center font-sans text-[14px] font-semibold tracking-wide text-white transition-colors duration-200 hover:bg-[#008c44] shadow-xs"
                 >
-                    PDF
-                </a>
-            ) : (
-                <button
-                    onClick={() => openAuthModal(`/issues/${slug}?download=true`)}
-                    className="ml-2 underline underline-offset-4 transition-colors hover:text-black cursor-pointer bg-transparent border-none p-0 inline font-serif text-[16px] text-gray-600"
-                >
-                    PDF
-                </button>
-            )}
+                    <BookOpen className="w-4 h-4" />
+                    <span>View ePDF</span>
+                </Link>
+
+                {/* 2. Download PDF (Requires authentication) */}
+                {hasPdf && (
+                    <div className="text-center">
+                        {isLoggedIn ? (
+                            <a
+                                href={`/issues/${slug}/download`}
+                                className="flex items-center justify-center gap-2 w-full rounded-md border border-neutral-300 bg-white px-4 py-2 text-center font-sans text-[13px] font-medium tracking-wide text-neutral-700 transition-colors duration-200 hover:border-neutral-900 hover:text-black"
+                            >
+                                <Download className="w-4 h-4 text-neutral-500" />
+                                <span>Download PDF</span>
+                            </a>
+                        ) : (
+                            <button
+                                onClick={() => openAuthModal(`/issues/${slug}?download=true`)}
+                                className="flex items-center justify-center gap-2 w-full rounded-md border border-neutral-300 bg-white px-4 py-2 text-center font-sans text-[13px] font-medium tracking-wide text-neutral-700 transition-colors duration-200 hover:border-neutral-900 hover:text-black cursor-pointer"
+                            >
+                                <Download className="w-4 h-4 text-neutral-500" />
+                                <span>Download PDF</span>
+                            </button>
+                        )}
+                    </div>
+                )}
+            </div>
         </div>
     );
 }
@@ -157,6 +174,8 @@ function AutoDownloadTrigger({ slug }: { slug: string }) {
 }
 
 export function IssueDetailClient({ issue }: IssueDetailClientProps) {
+    const hasPdf = Boolean(issue.pdfUrl);
+
     return (
         <main className="min-h-screen bg-white text-black font-serif selection:bg-red-500/30">
             <AutoDownloadTrigger slug={issue.slug} />
@@ -171,7 +190,7 @@ export function IssueDetailClient({ issue }: IssueDetailClientProps) {
                     <div className="flex-1 lg:max-w-[700px]">
 
                         {/* Issue Header */}
-                        <div className="mb-16">
+                        <div className="mb-10 sm:mb-16">
                             <h1 className="text-4xl sm:text-5xl md:text-[54px] leading-[1.1] mb-4 text-[#1a1a1a]">
                                 {issue.month} {itemYearFallback(issue.year)}
                             </h1>
@@ -183,6 +202,21 @@ export function IssueDetailClient({ issue }: IssueDetailClientProps) {
                                     {issue.subTitle}
                                 </p>
                             )}
+
+                            {/* Mobile action bar for quick reading access */}
+                            <div className="mt-6 lg:hidden flex flex-wrap items-center gap-3">
+                                <Link
+                                    href={`/issues/${issue.slug}/epdf`}
+                                    className="inline-flex items-center gap-2 rounded-md bg-[#00A651] px-5 py-2.5 text-center font-sans text-[14px] font-semibold text-white transition-colors duration-200 hover:bg-[#008c44] shadow-xs"
+                                >
+                                    <BookOpen className="w-4 h-4" />
+                                    <span>View ePDF</span>
+                                </Link>
+
+                                {hasPdf && (
+                                    <PdfDownloadMobileButton slug={issue.slug} />
+                                )}
+                            </div>
                         </div>
 
                         {/* Sections & Articles */}
@@ -207,7 +241,7 @@ export function IssueDetailClient({ issue }: IssueDetailClientProps) {
 
                                                     <article className="group grid gap-5 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start sm:gap-7">
 
-                                                        {/* Article Info (Left Side) - Now title goes inside link area properly linked to title & excerpt */}
+                                                        {/* Article Info (Left Side) */}
                                                         <div className="flex-1 min-w-0">
                                                             <Link href={article.href ?? "#"} className="block group-hover:opacity-80 transition-opacity">
                                                                 <h3 className="text-[20px] sm:text-[23px] leading-[1.22] text-[#1a1a1a] mb-2 font-serif">
@@ -257,29 +291,34 @@ export function IssueDetailClient({ issue }: IssueDetailClientProps) {
                         <div className="sticky top-[120px] pb-10">
 
                             {/* Magazine Cover */}
-                            <div className="relative w-full aspect-[3/4] shadow-[0_10px_30px_rgba(0,0,0,0.15)] bg-white flex items-center justify-center mb-8 border border-gray-200 p-2">
-                                <div className="relative w-full h-full">
+                            <div className="relative w-full aspect-[3/4] shadow-[0_10px_30px_rgba(0,0,0,0.15)] bg-white flex items-center justify-center mb-6 border border-gray-200 p-2 group">
+                                <Link href={`/issues/${issue.slug}/epdf`} className="relative w-full h-full block" title="Read digital ePDF edition">
                                     <Image
                                         src={issue.coverImage}
                                         alt={`${issue.month} ${issue.year} Cover`}
                                         fill
                                         sizes="(max-width: 1280px) 280px, 320px"
-                                        className="object-contain"
+                                        className="object-contain transition-transform duration-300 group-hover:scale-[1.02]"
                                         priority
                                     />
-                                </div>
+                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-xs">
+                                        <span className="bg-white text-neutral-900 font-sans text-xs font-semibold px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1.5">
+                                            <BookOpen className="w-3.5 h-3.5 text-[#00A651]" />
+                                            Read ePDF
+                                        </span>
+                                    </div>
+                                </Link>
                             </div>
 
                             {/* Browse the Full Archive */}
-                            <div className="text-gray-600 font-serif text-[17px] mb-6 px-1">
+                            <div className="text-gray-600 font-serif text-[16px] mb-4 px-1">
                                 <Link href="/issues" className="hover:text-black transition-colors flex items-center gap-2">
                                     Browse the Full Archive <span className="font-sans">→</span>
                                 </Link>
                             </div>
 
-                            {issue.pdfUrl && (
-                                <PdfDownloadLink slug={issue.slug} />
-                            )}
+                            {/* Actions: View ePDF & Download PDF */}
+                            <IssueActionButtons slug={issue.slug} hasPdf={hasPdf} />
 
                             {/* CTA Buttons */}
                             <div className="flex flex-col gap-2.5">
@@ -309,8 +348,34 @@ export function IssueDetailClient({ issue }: IssueDetailClientProps) {
     );
 }
 
-// Small helper since Foreign Affairs format shows "March/April 2026", 
-// but we just have single month and year. We'll format what we have.
+function PdfDownloadMobileButton({ slug }: { slug: string }) {
+    const { isSignedIn, isLoaded } = useUser();
+    const { openAuthModal } = useAuthModal();
+    const isLoggedIn = isLoaded && isSignedIn === true;
+
+    if (isLoggedIn) {
+        return (
+            <a
+                href={`/issues/${slug}/download`}
+                className="inline-flex items-center gap-1.5 rounded-md border border-neutral-300 bg-white px-4 py-2.5 text-center font-sans text-[14px] font-medium text-neutral-700 transition-colors hover:border-neutral-900 hover:text-black"
+            >
+                <Download className="w-4 h-4 text-neutral-500" />
+                <span>Download PDF</span>
+            </a>
+        );
+    }
+
+    return (
+        <button
+            onClick={() => openAuthModal(`/issues/${slug}?download=true`)}
+            className="inline-flex items-center gap-1.5 rounded-md border border-neutral-300 bg-white px-4 py-2.5 text-center font-sans text-[14px] font-medium text-neutral-700 transition-colors hover:border-neutral-900 hover:text-black cursor-pointer"
+        >
+            <Download className="w-4 h-4 text-neutral-500" />
+            <span>Download PDF</span>
+        </button>
+    );
+}
+
 function itemYearFallback(year: string): string {
     return year;
 }

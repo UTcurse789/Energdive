@@ -49,16 +49,17 @@ import { ClerkProvider } from "@clerk/nextjs";
 import type { Metadata } from "next";
 import "./globals.css";
 import SiteLayout from "@/components/layout/site-layout";
+import { ClientAuthModals, ClientConsentAwareGTM } from "@/components/layout/client-layout-features";
 import { UtmTracker } from "@/components/UtmTracker";
 import { Suspense } from "react";
-import ConsentAwareGTM from "@/components/ConsentAwareGTM";
-import AuthPromptModal from "@/components/ui/auth-prompt-modal";
-import OnboardingModal from "@/components/onboarding/onboarding-modal";
 import { PostHogProvider } from "./providers";
 import { PostHogIdentify } from "@/components/PostHogIdentify";
 import { AuthModalProvider } from "@/hooks/use-auth-modal";
+<<<<<<< HEAD
 import AuthModal from "@/components/auth/auth-modal";
 import { ScrollToTop } from "@/components/scroll-to-top";
+=======
+>>>>>>> 8dd387824b3d621f0f1487e9afb1bfe5d2208896
 import { ORGANIZATION_SCHEMA } from "@/lib/organization-schema";
 
 // export const metadata: Metadata = {
@@ -117,15 +118,17 @@ export default function RootLayout({
           <PostHogProvider>
             <AuthModalProvider>
               {/* GTM — only loads after cookie consent is accepted */}
+<<<<<<< HEAD
               <ConsentAwareGTM gtmId="GTM-5P4C363M" />
               <ScrollToTop />
+=======
+              <ClientConsentAwareGTM />
+>>>>>>> 8dd387824b3d621f0f1487e9afb1bfe5d2208896
               <Suspense fallback={null}>
                 <UtmTracker />
               </Suspense>
               <PostHogIdentify />
-              <AuthPromptModal />
-              <OnboardingModal />
-              <AuthModal />
+              <ClientAuthModals />
               <SiteLayout>
                 {children}
               </SiteLayout>

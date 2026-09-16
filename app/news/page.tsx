@@ -7,6 +7,7 @@ import { formatContentDate, toIsoDate } from "@/lib/date";
 import { strapiImageUrl } from "@/lib/strapi-image";
 import { AdBanner } from "@/components/ads/AdBanner";
 import { AdRenderer } from "@/components/ads/AdRenderer";
+import { SidebarAdSlider } from "@/components/ads/SidebarAdSlider";
 import { getLatestIssue } from "@/lib/api/getLatestIssue";
 import { slugify } from "@/lib/utils";
 import NewsFeedClient from "./NewsFeedClient";
@@ -50,14 +51,30 @@ export default async function NewsPage(props: { searchParams: Promise<{ [key: st
     const latestIssue = await getLatestIssue();
 
     try {
-        const url = `${STRAPI_BASE_URL}/api/contents?filters[type_of_content][name][$eq]=News&populate=*&pagination[start]=${start}&pagination[limit]=${limit}&sort=Date:desc`;
-        const res = await fetch(url, { next: { revalidate: 60 } });
-        const json = await res.json();
-        
-        totalCount = json?.meta?.pagination?.total || 0;
+        // Strapi paginates before returning data. Fetch every News batch, sort all
+        // records by the editorial Date locally, and only then select this UI page.
+        const query = `filters[type_of_content][name][$eq]=News&populate=*&pagination[pageSize]=100&sort[0]=Date:desc&sort[1]=publishedAt:desc&sort[2]=createdAt:desc`;
+        const firstResponse = await fetch(`${STRAPI_BASE_URL}/api/contents?${query}&pagination[page]=1`, {
+            next: { revalidate: 60 },
+        });
+        const firstPage = await firstResponse.json();
+        const pageCount = firstPage?.meta?.pagination?.pageCount || 1;
+        const remainingPages = await Promise.all(
+            Array.from({ length: Math.max(0, pageCount - 1) }, (_, index) =>
+                fetch(`${STRAPI_BASE_URL}/api/contents?${query}&pagination[page]=${index + 2}`, {
+                    next: { revalidate: 60 },
+                }).then((response) => response.json())
+            )
+        );
+        const allNews = [
+            ...(firstPage?.data || []),
+            ...remainingPages.flatMap((response) => response?.data || []),
+        ];
 
-        if (json.data) {
-            articles = json.data.map((item: any) => {
+        totalCount = allNews.length;
+
+        if (allNews.length > 0) {
+            articles = allNews.map((item: any) => {
                 const attrs = item.attributes || item;
 
                 let excerptText = "Strategic insights into the global energy transition.";
@@ -74,6 +91,8 @@ export default async function NewsPage(props: { searchParams: Promise<{ [key: st
                 let finalImage = imgUrl ? strapiImageUrl(imgUrl) : null;
                 if (finalImage && finalImage.includes("placeholder")) finalImage = null;
 
+                const rawDateVal = attrs.Date || attrs.publishedAt || attrs.createdAt;
+
                 return {
                     id: item.id,
                     title: attrs.TITLE || attrs.Title || "Untitled",
@@ -88,16 +107,24 @@ export default async function NewsPage(props: { searchParams: Promise<{ [key: st
                         attrs.sector?.data?.attributes?.name ||
                         "Energy"
                     ),
-                    date: formatContentDate(attrs.Date || attrs.publishedAt || attrs.createdAt),
-                    rawDate: attrs.Date || attrs.publishedAt || attrs.createdAt,
+                    date: formatContentDate(rawDateVal),
+                    rawDate: rawDateVal,
                     author: attrs.Author?.name || "ENERGDIVE News Desk",
                     readingTime: estimateReadingTime(excerptText + " " + (attrs.CONTENT || "")),
                 };
             });
             
+            const getTimestamp = (d: any) => {
+                if (!d) return 0;
+                const t = new Date(d).getTime();
+                return isNaN(t) ? 0 : t;
+            };
+
             articles.sort((a: any, b: any) => {
-                return new Date(b.rawDate).getTime() - new Date(a.rawDate).getTime();
+                return getTimestamp(b.rawDate) - getTimestamp(a.rawDate);
             });
+
+            articles = articles.slice(start, start + limit);
         }
     } catch (error) {
         console.error("Error fetching news:", error);
@@ -296,7 +323,8 @@ export default async function NewsPage(props: { searchParams: Promise<{ [key: st
                     page={page} 
                     totalPages={totalPages} 
                     isFirstPage={isFirstPage} 
-                    sidebarAd={<AdRenderer placement="new_sidebar" variant="card" />}
+                    sidebarAd={<SidebarAdSlider slot="top" placement="new_sidebar" />}
+                    sidebarBottomAd={<SidebarAdSlider slot="bottom" placement="new_sidebar" />}
                     mobileTopAd={<AdRenderer placement="new_sidebar" variant="card" adIndex={0} />}
                     mobileFeedAd={<AdRenderer placement="new_sidebar" variant="card" adIndex={1} />}
                     latestIssue={latestIssue}

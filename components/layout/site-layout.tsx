@@ -4,7 +4,7 @@ import { usePathname } from "next/navigation";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { EnergClubHeader } from "@/components/layout/energclub-header";
-import { AdBanner } from "@/components/ads/AdBanner";
+import { DeferredAdBanner } from "@/components/ads/deferred-ad-banner";
 import ZohoSalesIQ from "@/components/ZohoSalesIQ";
 
 export default function SiteLayout({ children }: { children: React.ReactNode }) {
@@ -14,12 +14,14 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
     const isAuthPage = pathname === "/auth" || pathname.startsWith("/auth/");
     const isDashboard = pathname.startsWith("/dashboard");
     const isOnboarding = pathname.startsWith("/onboarding");
+    const isEpdfReader = pathname.endsWith("/epdf") || pathname.includes("/epdf/");
 
     const isRecruiterReview =
         pathname.startsWith("/energjob/applications/") ||
         pathname.startsWith("/energyjobs/applications/");
 
-    if (isAuthPage || isDashboard || isOnboarding || isRecruiterReview) {
+    // Standalone full-screen pages without global site header/footer
+    if (isAuthPage || isDashboard || isOnboarding || isRecruiterReview || isEpdfReader) {
         return <main className="min-h-screen">{children}</main>;
     }
 
@@ -32,11 +34,11 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
                 <div className="w-full flex justify-center bg-white">
                     {/* Desktop: 728×90 Leaderboard */}
                     <div className="hidden md:block">
-                        <AdBanner placement="header_banner" variant="banner" />
+                        <DeferredAdBanner placement="header_banner" variant="banner" />
                     </div>
                     {/* Mobile: 320×100 Large Mobile Banner */}
                     <div className="block md:hidden">
-                        <AdBanner placement="header_banner_mobile" variant="mobile_banner" />
+                        <DeferredAdBanner placement="header_banner_mobile" variant="mobile_banner" />
                     </div>
                 </div>
             )}

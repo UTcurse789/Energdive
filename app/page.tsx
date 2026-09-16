@@ -5,7 +5,7 @@ import { FeaturedSection } from "@/components/sections/featured-section";
 import { LatestNewsSection } from "@/components/sections/latest-news-section";
 import { EnergbitsSection } from "@/components/sections/energbits-section";
 import { SubscriptionsCTASection } from "@/components/sections/subscriptions-cta-section";
-import { AdBanner } from "@/components/ads/AdBanner";
+import { DeferredAdBanner } from "@/components/ads/deferred-ad-banner";
 import { SectorBlock } from "@/components/ui/sector-block";
 import { OpinionSection } from "@/components/sections/opinion";
 import type { OpinionItem } from "@/components/sections/opinion";
@@ -14,7 +14,6 @@ import { getLatestVideos } from "@/components/sections/homepage-videos";
 import { ARTICLES } from "@/data/dummy";
 import { Article } from "@/types";
 import { formatContentDate } from "@/lib/date";
-import { Publication2 } from "@/components/sections/publication2";
 import { getLatestIssueWithArticles } from "@/lib/api/getLatestIssue";
 import { CurrentIssueSection } from "@/components/sections/current-issue-section";
 import { EnergyJobsSidebar } from "@/components/sections/energy-jobs-sidebar";
@@ -25,9 +24,11 @@ import { getOpinionContentKind } from "@/lib/content-tags";
 import { ORGANIZATION_SCHEMA } from "@/lib/organization-schema";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, BookOpen, ChevronRight, Mail, Play } from "lucide-react";
+import { ArrowRight, ChevronRight, Play } from "lucide-react";
+import { Suspense } from "react";
 
 export const metadata = HOME_PAGE_METADATA;
+export const revalidate = 60;
 
 const STRAPI_BASE = process.env.NEXT_PUBLIC_STRAPI_URL || "https://cms.energdive.com";
 const CMS_REQUEST_TIMEOUT_MS = 10_000;
@@ -66,15 +67,19 @@ function extractImageUrl(article: any): string {
 }
 
 function extractExcerpt(article: any): string {
-  const excerpt = article.Excerpt;
-  if (!excerpt || !Array.isArray(excerpt)) return "";
-  return excerpt
-    .map((block: any) =>
-      (block.children || []).map((child: any) => child.text || "").join("")
-    )
-    .filter(Boolean)
-    .join(" ")
-    .trim();
+  const excerpt = article.Excerpt || article.excerpt;
+  if (!excerpt) return "";
+  if (typeof excerpt === "string") return excerpt.trim();
+  if (Array.isArray(excerpt)) {
+    return excerpt
+      .map((block: any) =>
+        (block.children || []).map((child: any) => child.text || "").join("")
+      )
+      .filter(Boolean)
+      .join(" ")
+      .trim();
+  }
+  return "";
 }
 
 function getContentDateValue(article: any): string {
@@ -167,7 +172,7 @@ function FeaturedVideosSidebar({ videos }: { videos: VideoItem[] }) {
               {video.title}
             </h4>
             {video.date && (
-              <time className="mt-1 block text-[10px] font-medium text-slate-500">
+              <time className="mt-1 block text-[10px] font-medium text-slate-600">
                 {video.date}
               </time>
             )}
@@ -181,8 +186,8 @@ function FeaturedVideosSidebar({ videos }: { videos: VideoItem[] }) {
 async function getAllContents() {
   try {
     const res = await fetchCms(
-      `${STRAPI_BASE}/api/contents?pagination[pageSize]=40&populate=*&sort=Date:desc`,
-      { next: { revalidate: 300 } }
+      `${STRAPI_BASE}/api/contents?filters[type_of_content][name][$eq]=News&fields[0]=Title&fields[1]=slug&fields[2]=Date&fields[3]=publishedAt&fields[4]=createdAt&fields[5]=updatedAt&fields[6]=Excerpt&populate[0]=FeaturedImage&populate[1]=sectors&populate[2]=type_of_content&populate[3]=content_tag&sort[0]=publishedAt:desc&pagination[pageSize]=25`,
+      { next: { revalidate: 60, tags: ["strapi-contents"] } }
     );
     if (!res.ok) return null;
     const json = await res.json();
@@ -196,8 +201,8 @@ async function getAllContents() {
 async function getFeaturedContents() {
   try {
     const res = await fetch(
-      `${STRAPI_BASE}/api/contents?filters[featured][$eq]=true&populate=*&sort[0]=updatedAt:desc&sort[1]=publishedAt:desc&pagination[pageSize]=20`,
-      { next: { revalidate: 120 } }
+      `${STRAPI_BASE}/api/contents?filters[featured][$eq]=true&populate=*&sort[0]=publishedAt:desc&pagination[pageSize]=25`,
+      { next: { revalidate: 60, tags: ["strapi-contents"] } }
     );
     if (!res.ok) return [];
     const json = await res.json();
@@ -211,12 +216,13 @@ async function getFeaturedContents() {
 async function getHeroBannerContents() {
   try {
     const res = await fetchCms(
-      `${STRAPI_BASE}/api/contents?filters[show_hero_banner][$eq]=true&populate=*&pagination[pageSize]=10&sort=publishedAt:desc`,
-      { next: { revalidate: 120 } }
+      `${STRAPI_BASE}/api/contents?filters[type_of_content][name][$eq]=Cover%20Story&fields[0]=Title&fields[1]=slug&fields[2]=Date&fields[3]=publishedAt&fields[4]=createdAt&fields[5]=Excerpt&populate[0]=FeaturedImage&populate[1]=sectors&populate[2]=type_of_content&populate[3]=content_tag&pagination[pageSize]=10&sort[0]=publishedAt:desc`,
+      { next: { revalidate: 60, tags: ["strapi-contents"] } }
     );
     if (!res.ok) return [];
     const json = await res.json();
-    return json.data || [];
+    const items = json.data || [];
+    return items.sort((a: any, b: any) => getArticleTimestamp(b) - getArticleTimestamp(a));
   } catch (err) {
     logCmsError("Hero banner fetch error:", err);
     return [];
@@ -254,12 +260,14 @@ async function getOpinionBuckets() {
       `&populate[author][populate]=avatar` +
       `&populate=FeaturedImage` +
       `&populate[content_tag]=true` +
-      `&sort=Date:desc`,
+      `&sort[0]=publishedAt:desc`,
       { next: { revalidate: 120 } }
     );
     if (!res.ok) return { opinions: [], interviews: [] };
     const json = await res.json();
-    const allItems = json.data || [];
+    const allItems = (json.data || []).sort(
+      (a: any, b: any) => getArticleTimestamp(b) - getArticleTimestamp(a)
+    );
 
     const opinionItems: any[] = [];
     const interviewItems: any[] = [];
@@ -287,11 +295,22 @@ async function getOpinionBuckets() {
 
 // ─── Main Homepage ─────────────────────────────────────────────────────────────
 
-export default async function Home() {
-  const [allContents, featuredContents, heroBannerContents, latestIssue, { opinions, interviews }, videos, featuredPartnerAds] = await Promise.all([
-    getAllContents(),
+async function HomeDeferredContent({ latestNews }: { latestNews: any[] }) {
+  const sectorFetchPromise = Promise.all(
+    HOMEPAGE_SECTORS.map(async (sector) => {
+      try {
+        const res = await fetch(buildSectorArticlesUrl(sector.slug), { next: { revalidate: 300 } });
+        if (!res.ok) return [];
+        const json = await res.json();
+        return (json.data || []) as any[];
+      } catch {
+        return [];
+      }
+    })
+  );
+
+  const [featuredContents, latestIssue, { opinions, interviews }, videos, featuredPartnerAds] = await Promise.all([
     getFeaturedContents(),
-    getHeroBannerContents(),
     getLatestIssueWithArticles(),
     getOpinionBuckets(),
     getLatestVideos(),
@@ -301,11 +320,7 @@ export default async function Home() {
   // Bento: Featured articles
   const finalBentoItems = featuredContents.length > 0
     ? featuredContents
-      .sort((a: any, b: any) => {
-        const aDate = Date.parse(a.updatedAt || a.Date || a.publishedAt || a.createdAt || "") || 0;
-        const bDate = Date.parse(b.updatedAt || b.Date || b.publishedAt || a.createdAt || "") || 0;
-        return bDate - aDate;
-      })
+      .sort((a: any, b: any) => getArticleTimestamp(b) - getArticleTimestamp(a))
       .map((article: any) => ({
         id: article.id || article.documentId,
         title: article.Title || "",
@@ -330,33 +345,15 @@ export default async function Home() {
       date: a.date,
     }));
 
-  // Hero Sidebar: Top 5 News items + Next stories for Latest News section
-  const heroTopStories = allContents
-    ? allContents
-      .filter((a: any) => a.type_of_content?.name === "News")
-      .sort((a: any, b: any) => {
-        return getArticleTimestamp(b) - getArticleTimestamp(a);
-      })
-      .slice(0, 25)
-    : [];
-
   // Fetch articles for each sector in parallel directly from Strapi
-  const sectorFetchResults: any[][] = await Promise.all(
-    HOMEPAGE_SECTORS.map(async (sector) => {
-      try {
-        const res = await fetch(buildSectorArticlesUrl(sector.slug), { next: { revalidate: 300 } });
-        if (!res.ok) return [];
-        const json = await res.json();
-        return (json.data || []) as any[];
-      } catch {
-        return [];
-      }
-    })
-  );
+  const sectorFetchResults: any[][] = await sectorFetchPromise;
 
   const sectorsWithArticles = HOMEPAGE_SECTORS.map((sector, idx) => {
     const sectorArticles = sectorFetchResults?.[idx] || [];
-    const finalArticles = sectorArticles.slice(0, 4);
+    const sortedArticles = [...sectorArticles].sort(
+      (a: any, b: any) => getArticleTimestamp(b) - getArticleTimestamp(a)
+    );
+    const finalArticles = sortedArticles.slice(0, 4);
     const articles = finalArticles.map((article: any) => mapArticle(article, sector.title));
 
     return {
@@ -366,71 +363,15 @@ export default async function Home() {
     };
   }).filter((s) => s.articles.length > 0);
 
-  // Structured Data / Schema.org JSON-LD
-  const homeJsonLd = {
-    "@context": "https://schema.org",
-    "@graph": [
-      ORGANIZATION_SCHEMA,
-      {
-        "@type": "WebSite",
-        "@id": "https://www.energdive.com/#website",
-        "url": "https://www.energdive.com",
-        "name": "ENERGDIVE",
-        "description": "India's High-Authority Digital Media & Energy Market Intelligence Platform",
-        "publisher": {
-          "@id": "https://www.energdive.com/#organization"
-        }
-      },
-      {
-        "@type": "ItemList",
-        "name": "Latest Energy News & Market Intelligence",
-        "itemListElement": (allContents || []).slice(0, 10).map((article: any, index: number) => ({
-          "@type": "ListItem",
-          "position": index + 1,
-          "item": {
-            "@type": "NewsArticle",
-            "headline": article.Title || "",
-            "url": `https://www.energdive.com${buildContentUrl({ slug: article.slug || "", type_of_content: article.type_of_content })}`,
-            "datePublished": article.publishedAt || article.Date || article.createdAt || "",
-            "dateModified": article.updatedAt || article.publishedAt || article.createdAt || ""
-          }
-        }))
-      }
-    ]
-  };
-
   return (
-    <main className="min-h-screen bg-white text-slate-900 font-sans selection:bg-emerald-500/20">
-      {/* Structured Data */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(homeJsonLd).replace(/</g, "\\u003c") }}
-      />
-
-      {/* Home Platform Hero Ad Banner */}
-      <div className="max-w-6xl mx-auto px-5 sm:px-10 lg:px-16 pt-3 pb-1">
-        <AdBanner
-          placement="home_platform_hero"
-          variant="banner"
-          maxItems={1}
-          showSkeleton={false}
-        />
-      </div>
-
-      {/* Main Portal Section (Left: Latest News, Center: Cover Story Title + Image + Featured Content, Right: Partner Ad + Featured Videos) */}
-      <Hero
-        heroStories={heroBannerContents}
-        topStories={heroTopStories}
-        featuredStories={finalBentoItems}
-        videos={videos}
-      />
-
+    <>
       {/* Featured Section */}
       <FeaturedSection articles={finalBentoItems} partnerAds={featuredPartnerAds} />
 
       {/* Latest News Section (full-width detailed view of hero section's top 5 news) */}
-      <LatestNewsSection news={heroTopStories.slice(0, 7)} />
+      <LatestNewsSection news={latestNews.slice(0, 7)} />
 
+<<<<<<< HEAD
       <EnergbitsSection news={heroTopStories.slice(7, 15)} />
 
 
@@ -438,28 +379,75 @@ export default async function Home() {
       {/* Lower editorial lane: Opinion, Interviews + Right Rail */}
       <section className="bg-white">
         <div className="max-w-7xl mx-auto px-5 sm:px-10 lg:px-16">
+=======
+      {/* Editorial & Sector Intelligence Lane */}
+      <section className="bg-white py-4 lg:py-6">
+        <div className="max-w-7xl mx-auto px-8 sm:px-10 lg:px-16">
+>>>>>>> 8dd387824b3d621f0f1487e9afb1bfe5d2208896
           <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_300px] gap-6 lg:gap-8 items-start">
-            <div className="min-w-0">
+            
+            {/* Left Content Column: Opinion, Current Issue, and Sectors */}
+            <div className="min-w-0 space-y-4">
               {/* Executive Opinion & Interviews Vertical */}
               <OpinionSection opinions={opinions} interviews={interviews} contained={false} />
+
+              {/* Current Issue — full width inside left column if present */}
+              {latestIssue && (
+                <CurrentIssueSection
+                  month={latestIssue.month}
+                  year={latestIssue.year}
+                  coverImage={latestIssue.coverImage}
+                  issueSlug={latestIssue.slug}
+                  articles={latestIssue.articles}
+                />
+              )}
+
+              {/* Sector Intelligence Hubs */}
+              <div>
+                {sectorsWithArticles.map((sector) => (
+                  <div key={sector.slug} className="mb-3 last:mb-0">
+                    <DeferredAdBanner
+                      placement="sector_hero"
+                      sectorSlug={sector.slug}
+                      variant="banner"
+                      className="py-2"
+                    />
+                    <SectorBlock
+                      title={sector.title}
+                      slug={sector.slug}
+                      articles={sector.articles}
+                    />
+                  </div>
+                ))}
+
+                {/* View All Sectors Action Callout */}
+                <div className="flex justify-center mt-6">
+                  <Link
+                    href="/sectors"
+                    className="group inline-flex items-center gap-3 px-8 py-4 bg-emerald-600 text-white text-xs font-black uppercase tracking-[0.2em] rounded-full hover:bg-emerald-700 transition-all duration-300 shadow-md hover:shadow-xl hover:-translate-y-0.5"
+                  >
+                    Explore All Sectors
+                    <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
+                  </Link>
+                </div>
+              </div>
             </div>
 
-            <aside className="w-full lg:w-[300px] flex flex-col gap-5 pt-6 lg:pt-8" aria-label="Opinion and interview right rail">
+            {/* Unified Right Rail */}
+            <aside className="w-full lg:w-[300px] flex flex-col gap-5 pt-2" aria-label="Main right rail">
               {/* Ad 1 */}
-              <AdBanner
+              <DeferredAdBanner
                 placement="article_sidebar"
                 variant="card"
                 maxItems={1}
-                showSkeleton={false}
               />
 
               {/* Ad 2 */}
-              <AdBanner
+              <DeferredAdBanner
                 placement="new_sidebar"
                 variant="card"
                 adIndex={1}
                 maxItems={1}
-                showSkeleton={false}
               />
 
               {/* EnergyJobs */}
@@ -485,59 +473,11 @@ export default async function Home() {
                   <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover/btn:translate-x-1" />
                 </Link>
               </div>
-            </aside>
-          </div>
-        </div>
-      </section>
 
-      {/* Current Issue — full width, between Opinion and Sectors */}
-      {latestIssue && (
-        <CurrentIssueSection
-          month={latestIssue.month}
-          year={latestIssue.year}
-          coverImage={latestIssue.coverImage}
-          issueSlug={latestIssue.slug}
-          articles={latestIssue.articles}
-        />
-      )}
-
-      {/* Sector Intelligence Hubs */}
-      <section className="bg-white py-8 lg:py-6">
-        <div className="max-w-7xl mx-auto px-5 sm:px-10 lg:px-16">
-          <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_300px] gap-6 lg:gap-8">
-            <div className="min-w-0">
-              {sectorsWithArticles.map((sector) => (
-                <div key={sector.slug} className="mb-3 last:mb-0">
-                  <AdBanner
-                    placement="sector_hero"
-                    sectorSlug={sector.slug}
-                    variant="banner"
-                    showSkeleton={false}
-                    className="py-2"
-                  />
-                  <SectorBlock
-                    title={sector.title}
-                    slug={sector.slug}
-                    articles={sector.articles}
-                  />
-                </div>
-              ))}
-
-              {/* View All Sectors Action Callout */}
-              <div className="flex justify-center mt-6">
-                <Link
-                  href="/sectors"
-                  className="group inline-flex items-center gap-3 px-8 py-4 bg-emerald-600 text-white text-xs font-black uppercase tracking-[0.2em] rounded-full hover:bg-emerald-700 transition-all duration-300 shadow-md hover:shadow-xl hover:-translate-y-0.5"
-                >
-                  Explore All Sectors
-                  <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
-                </Link>
-              </div>
-            </div>
-
-            {/* Right Rail: Videos + Upcoming Events */}
-            <aside className="w-full lg:w-[300px] pt-2 flex flex-col gap-6" aria-label="Sector right rail">
+              {/* Featured Videos */}
               <FeaturedVideosSidebar videos={videos} />
+
+              {/* Upcoming Events */}
               <EventsSection variant="sidebar" />
             </aside>
           </div>
@@ -546,6 +486,70 @@ export default async function Home() {
 
       {/* Subscriptions CTA Section: Login + Print Subscription + Newsletter (Light Theme) */}
       <SubscriptionsCTASection />
+    </>
+  );
+}
+
+export default async function Home() {
+  const [allContents, heroBannerContents] = await Promise.all([
+    getAllContents(),
+    getHeroBannerContents(),
+  ]);
+
+  const latestNews = (allContents || [])
+    .sort((a: any, b: any) => getArticleTimestamp(b) - getArticleTimestamp(a))
+    .slice(0, 7);
+
+  const homeJsonLd = {
+    "@context": "https://schema.org",
+    "@graph": [
+      ORGANIZATION_SCHEMA,
+      {
+        "@type": "WebSite",
+        "@id": "https://www.energdive.com/#website",
+        "url": "https://www.energdive.com",
+        "name": "ENERGDIVE",
+        "description": "India's High-Authority Digital Media & Energy Market Intelligence Platform",
+        "publisher": { "@id": "https://www.energdive.com/#organization" },
+      },
+      {
+        "@type": "ItemList",
+        "name": "Latest Energy News & Market Intelligence",
+        "itemListElement": latestNews.map((article: any, index: number) => ({
+          "@type": "ListItem",
+          "position": index + 1,
+          "item": {
+            "@type": "NewsArticle",
+            "headline": article.Title || "",
+            "url": `https://www.energdive.com${buildContentUrl({ slug: article.slug || "", type_of_content: article.type_of_content })}`,
+            "datePublished": article.Date || article.publishedAt || article.createdAt || "",
+            "dateModified": article.updatedAt || article.publishedAt || article.createdAt || "",
+          },
+        })),
+      },
+    ],
+  };
+
+  return (
+    <main className="min-h-screen bg-white text-slate-900 font-sans selection:bg-emerald-500/20">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(homeJsonLd).replace(/</g, "\\u003c") }}
+      />
+
+      <div className="max-w-6xl mx-auto px-8 sm:px-10 lg:px-16 pt-3 pb-1">
+        <DeferredAdBanner
+          placement="home_platform_hero"
+          variant="banner"
+          maxItems={1}
+        />
+      </div>
+
+      <Hero heroStories={heroBannerContents} topStories={latestNews} />
+
+      <Suspense fallback={null}>
+        <HomeDeferredContent latestNews={latestNews} />
+      </Suspense>
     </main>
   );
 }

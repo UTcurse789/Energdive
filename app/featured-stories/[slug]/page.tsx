@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { buildContentUrl } from "@/lib/content-routes";
+import { TagBadge } from "@/components/ui/tag-badge";
 import Image from "next/image";
 import { Header } from "@/components/layout/header";
 import { notFound } from "next/navigation";
@@ -45,33 +47,66 @@ async function getArticle(slug: string) {
     return json.data?.[0] || null;
 }
 
+function sortByEffectiveDate(items: any[]): any[] {
+    const getTimestamp = (item: any) => {
+        const a = item.attributes || item;
+        const dt = a.Date || a.publishedAt || a.createdAt;
+        if (!dt) return 0;
+        const t = new Date(dt).getTime();
+        return isNaN(t) ? 0 : t;
+    };
+    return [...items].sort((a, b) => getTimestamp(b) - getTimestamp(a));
+}
+
 async function getRelated(tags: string[], currentSlug: string, sectorSlug?: string) {
-    if (tags.length) {
-        const tagFilters = tags
-            .map((tag, i) => `filters[tags][slug][$in][${i}]=${tag}`)
-            .join("&");
-        const url = `${STRAPI_BASE_URL}/api/contents?filters[type_of_content][name][$eq]=Featured Stories&${tagFilters}&filters[slug][$ne]=${currentSlug}&populate=*&pagination[limit]=5`;
-        const res = await fetch(url, { next: { revalidate: 3600 } });
+    try {
+        // 1. Try matching sector first, newest first
+        if (sectorSlug) {
+            const url = `${STRAPI_BASE_URL}/api/contents?filters[type_of_content][name][\$eq]=Featured Stories&filters[sectors][slug][\$eq]=${sectorSlug}&filters[slug][\$ne]=${currentSlug}&populate=*&pagination[limit]=15&sort=publishedAt:desc`;
+            const res = await fetch(url, { next: { revalidate: 60 } });
+            if (res.ok) {
+                const json = await res.json();
+                const items = sortByEffectiveDate(json.data || []);
+                if (items.length > 0) return items.slice(0, 5);
+            }
+        }
+
+        // 2. Try matching tags, newest first
+        if (tags.length) {
+            const tagFilters = tags
+                .map((tag, i) => `filters[tags][slug][\$in][${i}]=${tag}`)
+                .join("&");
+            const url = `${STRAPI_BASE_URL}/api/contents?filters[type_of_content][name][\$eq]=Featured Stories&${tagFilters}&filters[slug][\$ne]=${currentSlug}&populate=*&pagination[limit]=15&sort=publishedAt:desc`;
+            const res = await fetch(url, { next: { revalidate: 60 } });
+            if (res.ok) {
+                const json = await res.json();
+                const items = sortByEffectiveDate(json.data || []);
+                if (items.length > 0) return items.slice(0, 5);
+            }
+        }
+
+        // 3. Fallback: Latest Featured Stories, or latest News if not enough
+        const res = await fetch(
+            `${STRAPI_BASE_URL}/api/contents?filters[type_of_content][name][\$eq]=Featured Stories&filters[slug][\$ne]=${currentSlug}&pagination[limit]=15&sort=publishedAt:desc`,
+            { next: { revalidate: 60 } }
+        );
         if (res.ok) {
             const json = await res.json();
-            if ((json.data || []).length > 0) return json.data;
+            const items = sortByEffectiveDate(json.data || []);
+            if (items.length >= 3) return items.slice(0, 5);
         }
+
+        // 4. If fewer than 3, fallback to latest News stories
+        const newsRes = await fetch(
+            `${STRAPI_BASE_URL}/api/contents?filters[type_of_content][name][\$eq]=News&filters[slug][\$ne]=${currentSlug}&pagination[limit]=15&sort=publishedAt:desc`,
+            { next: { revalidate: 60 } }
+        );
+        if (!newsRes.ok) return [];
+        const newsJson = await newsRes.json();
+        return sortByEffectiveDate(newsJson.data || []).slice(0, 5);
+    } catch {
+        return [];
     }
-    if (sectorSlug) {
-        const url = `${STRAPI_BASE_URL}/api/contents?filters[type_of_content][name][$eq]=Featured Stories&filters[sectors][slug][$eq]=${sectorSlug}&filters[slug][$ne]=${currentSlug}&populate=*&pagination[limit]=5&sort=publishedAt:desc`;
-        const res = await fetch(url, { next: { revalidate: 3600 } });
-        if (res.ok) {
-            const json = await res.json();
-            if ((json.data || []).length > 0) return json.data;
-        }
-    }
-    const res = await fetch(
-        `${STRAPI_BASE_URL}/api/contents?filters[type_of_content][name][$eq]=Featured Stories&filters[slug][$ne]=${currentSlug}&pagination[limit]=5&populate=*&sort=publishedAt:desc`,
-        { cache: "no-store" }
-    );
-    if (!res.ok) return [];
-    const json = await res.json();
-    return json.data || [];
 }
 
 /* ================= METADATA (OG tags for WhatsApp / social) ================= */
@@ -206,7 +241,7 @@ export default async function FeaturedStoryDetailPage({
     const categorySectorSlug = getSectorSlugForTagOrCategory(sectorName || article.category, sectorSlug);
     const dataBlocks = await fetchDataBlocks(article.content);
 
-    const rawDate = attrs.publishedAt || attrs.createdAt || attrs.Date || "";
+    const rawDate = attrs.Date || attrs.publishedAt || attrs.createdAt || "";
     const modifiedDate = attrs.updatedAt || rawDate;
     const excerptText = Array.isArray(attrs.Excerpt)
         ? attrs.Excerpt[0]?.children?.[0]?.text || ""
@@ -329,7 +364,6 @@ export default async function FeaturedStoryDetailPage({
                                 priority
                                 className="object-cover transition-transform duration-700 group-hover:scale-[1.02]"
                             />
-                            <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/20 to-transparent" />
                         </div>
 
                         {/* Article Body */}
@@ -358,18 +392,14 @@ first:prose-p:first-letter:text-6xl first:prose-p:first-letter:font-serif first:
                                     Tags
                                 </h4>
                                 <div className="flex flex-wrap gap-2">
-                                    {article.tags.map((tag: any, i: number) => {
-                                        const targetSector = getSectorSlugForTagOrCategory(tag.name, tag.slug);
-                                        return (
-                                            <Link
-                                                key={`${tag.slug}-${i}`}
-                                                href={`/sectors/${targetSector}`}
-                                                className="bg-teal-50 text-teal-700 px-3 py-1.5 text-xs font-medium uppercase tracking-wider rounded-full border border-teal-100 hover:bg-teal-600 hover:text-white hover:border-teal-600 transition-colors"
-                                            >
-                                                {tag.name}
-                                            </Link>
-                                        );
-                                    })}
+                                    {article.tags.map((tag: any, i: number) => (
+                                        <TagBadge
+                                            key={`${tag.slug || tag.name}-${i}`}
+                                            name={tag.name}
+                                            slug={tag.slug}
+                                            className="bg-teal-50 text-teal-700 px-3 py-1.5 text-xs font-medium uppercase tracking-wider rounded-full border border-teal-100 hover:bg-teal-600 hover:text-white hover:border-teal-600 transition-colors"
+                                        />
+                                    ))}
                                 </div>
                             </div>
                         )}
@@ -425,7 +455,7 @@ first:prose-p:first-letter:text-6xl first:prose-p:first-letter:font-serif first:
                                             return (
                                                 <Link
                                                     key={item.id}
-                                                    href={`/featured-stories/${r.slug}`}
+                                                    href={buildContentUrl({ slug: r.slug, type_of_content: r.type_of_content || "Featured Stories" })}
                                                     className="group flex gap-3 py-4 hover:bg-gray-50 -mx-2 px-2 transition-colors"
                                                 >
                                                     <div className="relative w-20 h-16 shrink-0 overflow-hidden rounded-sm bg-gray-100 border border-gray-100">

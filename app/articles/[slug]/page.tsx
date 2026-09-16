@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { buildContentUrl } from "@/lib/content-routes";
 import Image from "next/image";
 import { Header } from "@/components/layout/header";
 import { notFound } from "next/navigation";
@@ -17,6 +18,7 @@ import { ArticleJsonLd } from "@/components/seo/ArticleJsonLd";
 import { AuthorBioBox } from "@/components/article/AuthorBioBox";
 import { ArticleStickyShare } from "@/components/article/ArticleStickyShare";
 import { SaveArticleButton } from "@/components/article/SaveArticleButton";
+import { TagBadge } from "@/components/ui/tag-badge";
 import { getSectorSlugForTagOrCategory } from "@/lib/sector-mapping";
 import { StickySidebar } from "@/components/ui/StickySidebar";
 import type { Metadata } from "next";
@@ -61,33 +63,55 @@ async function getArticle(slug: string) {
 
 /* ================= FETCH RELATED ================= */
 
+function sortByEffectiveDate(items: any[]): any[] {
+    const getTimestamp = (item: any) => {
+        const a = item.attributes || item;
+        const dt = a.Date || a.publishedAt || a.createdAt;
+        if (!dt) return 0;
+        const t = new Date(dt).getTime();
+        return isNaN(t) ? 0 : t;
+    };
+    return [...items].sort((a, b) => getTimestamp(b) - getTimestamp(a));
+}
+
 async function getRelated(tags: string[], currentSlug: string, sectorSlug?: string) {
-    if (tags.length) {
-        const tagFilters = tags
-            .map((tag, i) => `filters[tags][slug][$in][${i}]=${tag}`)
-            .join("&");
-        const url = `${STRAPI}/api/contents?filters[type_of_content][name][$eq]=Articles&${tagFilters}&filters[slug][$ne]=${currentSlug}&populate=*&pagination[limit]=5`;
-        const res = await fetch(url, { next: { revalidate: 3600 } });
-        if (res.ok) {
-            const json = await res.json();
-            if ((json.data || []).length > 0) return json.data;
+    try {
+        // 1. Try matching sector first from Articles, Featured Stories, or News, newest first
+        if (sectorSlug) {
+            const url = `${STRAPI}/api/contents?filters[type_of_content][name][\$in][0]=Articles&filters[type_of_content][name][\$in][1]=Featured Stories&filters[type_of_content][name][\$in][2]=News&filters[sectors][slug][\$eq]=${sectorSlug}&filters[slug][\$ne]=${currentSlug}&populate=*&pagination[limit]=15&sort=publishedAt:desc`;
+            const res = await fetch(url, { next: { revalidate: 60 } });
+            if (res.ok) {
+                const json = await res.json();
+                const items = sortByEffectiveDate(json.data || []);
+                if (items.length > 0) return items.slice(0, 5);
+            }
         }
-    }
-    if (sectorSlug) {
-        const url = `${STRAPI}/api/contents?filters[type_of_content][name][$eq]=Articles&filters[sectors][slug][$eq]=${sectorSlug}&filters[slug][$ne]=${currentSlug}&populate=*&pagination[limit]=5&sort=publishedAt:desc`;
-        const res = await fetch(url, { next: { revalidate: 3600 } });
-        if (res.ok) {
-            const json = await res.json();
-            if ((json.data || []).length > 0) return json.data;
+
+        // 2. Try matching tags, newest first
+        if (tags.length) {
+            const tagFilters = tags
+                .map((tag, i) => `filters[tags][slug][\$in][${i}]=${tag}`)
+                .join("&");
+            const url = `${STRAPI}/api/contents?filters[type_of_content][name][\$in][0]=Articles&filters[type_of_content][name][\$in][1]=Featured Stories&filters[type_of_content][name][\$in][2]=News&${tagFilters}&filters[slug][\$ne]=${currentSlug}&populate=*&pagination[limit]=15&sort=publishedAt:desc`;
+            const res = await fetch(url, { next: { revalidate: 60 } });
+            if (res.ok) {
+                const json = await res.json();
+                const items = sortByEffectiveDate(json.data || []);
+                if (items.length > 0) return items.slice(0, 5);
+            }
         }
+
+        // 3. Fallback: Latest stories overall (Featured Stories and News), newest first
+        const res = await fetch(
+            `${STRAPI}/api/contents?filters[type_of_content][name][\$in][0]=Featured Stories&filters[type_of_content][name][\$in][1]=News&filters[slug][\$ne]=${currentSlug}&pagination[limit]=15&sort=publishedAt:desc`,
+            { next: { revalidate: 60 } }
+        );
+        if (!res.ok) return [];
+        const json = await res.json();
+        return sortByEffectiveDate(json.data || []).slice(0, 5);
+    } catch {
+        return [];
     }
-    const res = await fetch(
-        `${STRAPI}/api/contents?filters[type_of_content][name][$eq]=Articles&filters[slug][$ne]=${currentSlug}&pagination[limit]=5&populate=*&sort=publishedAt:desc`,
-        { cache: "no-store" }
-    );
-    if (!res.ok) return [];
-    const json = await res.json();
-    return json?.data || [];
 }
 
 /* ================= METADATA (OG tags for WhatsApp / social) ================= */
@@ -229,7 +253,7 @@ export default async function ArticlePage({
 
     const categorySectorSlug = getSectorSlugForTagOrCategory(sectorName || article.category, sectorSlug);
 
-    const rawDate = attrs.publishedAt || attrs.createdAt || attrs.Date || "";
+    const rawDate = attrs.Date || attrs.publishedAt || attrs.createdAt || "";
     const modifiedDate = attrs.updatedAt || rawDate;
     const excerptText = Array.isArray(attrs.Excerpt)
         ? attrs.Excerpt[0]?.children?.[0]?.text || ""
@@ -352,7 +376,6 @@ export default async function ArticlePage({
                                 priority
                                 className="object-cover transition-transform duration-700 group-hover:scale-[1.02]"
                             />
-                            <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/20 to-transparent" />
                         </div>
 
                         {/* Article Body */}
@@ -399,18 +422,14 @@ first:prose-p:first-letter:text-6xl first:prose-p:first-letter:font-serif first:
                                     Tags
                                 </h4>
                                 <div className="flex flex-wrap gap-2">
-                                    {article.tags.map((tag: any, i: number) => {
-                                        const targetSector = getSectorSlugForTagOrCategory(tag.name, tag.slug);
-                                        return (
-                                            <Link
-                                                key={`${tag.slug}-${i}`}
-                                                href={`/sectors/${targetSector}`}
-                                                className="bg-teal-50 text-teal-700 px-3 py-1.5 text-xs font-medium uppercase tracking-wider rounded-full border border-teal-100 hover:bg-teal-600 hover:text-white hover:border-teal-600 transition-colors"
-                                            >
-                                                {tag.name}
-                                            </Link>
-                                        );
-                                    })}
+                                    {article.tags.map((tag: any, i: number) => (
+                                        <TagBadge
+                                            key={`${tag.slug || tag.name}-${i}`}
+                                            name={tag.name}
+                                            slug={tag.slug}
+                                            className="bg-teal-50 text-teal-700 px-3 py-1.5 text-xs font-medium uppercase tracking-wider rounded-full border border-teal-100 hover:bg-teal-600 hover:text-white hover:border-teal-600 transition-colors"
+                                        />
+                                    ))}
                                 </div>
                             </div>
                         )}
@@ -466,7 +485,7 @@ first:prose-p:first-letter:text-6xl first:prose-p:first-letter:font-serif first:
                                             return (
                                                 <Link
                                                     key={item.id}
-                                                    href={`/articles/${r.slug}`}
+                                                    href={buildContentUrl({ slug: r.slug, type_of_content: r.type_of_content || "Articles" })}
                                                     className="group flex gap-3 py-4 hover:bg-gray-50 -mx-2 px-2 transition-colors"
                                                 >
                                                     <div className="relative w-20 h-16 shrink-0 overflow-hidden rounded-sm bg-gray-100 border border-gray-100">

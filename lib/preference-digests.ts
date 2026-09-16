@@ -408,7 +408,7 @@ function normalizeContentItem(item: StrapiDigestContent): DigestItem | null {
         return null;
     }
 
-    const publishedAtRaw = item.publishedAt || item.Date || item.createdAt;
+    const publishedAtRaw = item.Date || item.publishedAt || item.createdAt;
     const publishedAt = publishedAtRaw ? new Date(publishedAtRaw) : new Date();
     if (Number.isNaN(publishedAt.getTime())) {
         return null;
@@ -487,8 +487,8 @@ function normalizeEventItem(item: StrapiDigestEvent): DigestItem | null {
 async function fetchRecentContents(earliestPublishedAt?: Date): Promise<DigestItem[]> {
     const url = new URL(`${STRAPI_BASE}/api/contents`);
     url.searchParams.set("pagination[pageSize]", "200");
-    url.searchParams.set("sort[0]", "publishedAt:desc");
-    url.searchParams.set("sort[1]", "createdAt:desc");
+    url.searchParams.set("sort[0]", "Date:desc");
+    url.searchParams.set("sort[1]", "publishedAt:desc");
     url.searchParams.set("populate[0]", "FeaturedImage");
     url.searchParams.set("populate[1]", "type_of_content");
     url.searchParams.set("populate[2]", "content_tag");

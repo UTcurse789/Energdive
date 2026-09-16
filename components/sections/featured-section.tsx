@@ -67,7 +67,6 @@ function RotatingPartnerAd({ ads }: { ads: PartnerAd[] }) {
         width={300}
         height={600}
         className="w-full h-auto object-contain"
-        unoptimized
       />
     </div>
   );
@@ -98,7 +97,7 @@ export function FeaturedSection({ articles, partnerAds = [] }: FeaturedSectionPr
 
   return (
     <section className="bg-white py-8 border-t border-slate-100">
-      <div className="max-w-7xl mx-auto px-5 sm:px-10 lg:px-16">
+      <div className="max-w-7xl mx-auto px-8 sm:px-10 lg:px-16">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
 
           {/* Left Side: Featured Content (8 cols) */}
@@ -122,44 +121,57 @@ export function FeaturedSection({ articles, partnerAds = [] }: FeaturedSectionPr
               {/* Main Big Card */}
               {mainArticle && (
                 <div className="md:col-span-6 flex flex-col">
-                  <Link
-                    href={
-                      mainArticle.href ||
-                      buildContentUrl({
-                        slug: mainArticle.slug,
-                        type_of_content: { name: mainArticle.contentType },
-                      })
-                    }
-                    className="group flex flex-col justify-end relative w-full h-full min-h-[380px] rounded-2xl overflow-hidden shadow-sm border border-slate-200"
-                  >
-                    <Image
-                      src={mainArticle.image}
-                      alt={mainArticle.title}
-                      fill
-                      className="object-cover transition-transform duration-700 group-hover:scale-105"
-                      sizes="(max-width: 768px) 100vw, 40vw"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/50 to-transparent" />
-
-                    <div className="relative z-10 p-5 sm:p-6 flex flex-col justify-end">
+                  <article className="group flex flex-col bg-white rounded-2xl overflow-hidden border border-slate-200 shadow-2xs hover:shadow-md hover:border-emerald-500/40 transition-all duration-300 h-full">
+                    <div className="relative aspect-[16/9] w-full bg-slate-900 overflow-hidden">
+                      <Image
+                        src={mainArticle.image}
+                        alt={mainArticle.title}
+                        fill
+                        className="object-cover object-center transition-transform duration-700 group-hover:scale-105"
+                        sizes="(max-width: 768px) 100vw, 45vw"
+                        priority
+                      />
                       {mainArticle.category && (
-                        <span className="self-start px-2.5 py-1 bg-emerald-700 text-white text-[9px] font-black uppercase tracking-widest rounded-md mb-2.5 shadow-sm">
-                          {mainArticle.category}
-                        </span>
+                        <div className="absolute top-3 left-3 z-10">
+                          <span className="px-3 py-1 bg-emerald-700 text-white text-[10px] font-black uppercase tracking-widest rounded-md shadow-sm">
+                            {mainArticle.category}
+                          </span>
+                        </div>
                       )}
-                      <h3
-                        className="text-xl sm:text-2xl font-black text-white leading-tight mb-2 group-hover:text-emerald-300 transition-colors"
-                        style={{ fontFamily: "var(--font-playfair, serif)" }}
-                      >
-                        {mainArticle.title}
-                      </h3>
-                      <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400">
+                    </div>
+
+                    <div className="p-5 sm:p-6 flex flex-col justify-between flex-1 min-w-0">
+                      <div>
+                        <Link
+                          href={
+                            mainArticle.href ||
+                            buildContentUrl({
+                              slug: mainArticle.slug,
+                              type_of_content: { name: mainArticle.contentType },
+                            })
+                          }
+                        >
+                          <h3
+                            className="text-lg sm:text-xl md:text-2xl font-black text-slate-900 leading-snug group-hover:text-emerald-700 transition-colors mb-2.5"
+                            style={{ fontFamily: "var(--font-playfair, serif)" }}
+                          >
+                            {mainArticle.title}
+                          </h3>
+                        </Link>
+                        {mainArticle.excerpt && (
+                          <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-normal mb-4">
+                            {mainArticle.excerpt}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-2 text-[11px] font-semibold text-slate-600 pt-3 border-t border-slate-100 mt-auto">
                         <time dateTime={mainArticle.date}>
                           {formatContentDate(mainArticle.date || "")}
                         </time>
                       </div>
                     </div>
-                  </Link>
+                  </article>
                 </div>
               )}
 
@@ -170,13 +182,13 @@ export function FeaturedSection({ articles, partnerAds = [] }: FeaturedSectionPr
                     key={article.id || idx}
                     className="group flex flex-col bg-white rounded-xl overflow-hidden border border-slate-200/90 shadow-2xs hover:shadow-md hover:border-emerald-500/40 transition-all duration-300 h-full"
                   >
-                    <div className="relative aspect-[16/10] w-full bg-slate-100 overflow-hidden">
+                    <div className="relative aspect-[16/9] w-full bg-slate-100 overflow-hidden">
                       <Image
                         src={article.image}
                         alt={article.title}
                         fill
                         sizes="(max-width: 640px) 100vw, 25vw"
-                        className="object-cover group-hover:scale-105 transition-transform duration-500"
+                        className="object-cover object-center group-hover:scale-105 transition-transform duration-500"
                       />
                       {article.category && (
                         <div className="absolute top-2 left-2 z-10">
@@ -205,7 +217,7 @@ export function FeaturedSection({ articles, partnerAds = [] }: FeaturedSectionPr
                         </h3>
                       </Link>
 
-                      <div className="flex items-center gap-1.5 text-[10px] text-slate-500 font-medium pt-2 border-t border-slate-100 mt-auto">
+                      <div className="flex items-center gap-1.5 text-[10px] text-slate-600 font-semibold pt-2 border-t border-slate-100 mt-auto">
                         <time dateTime={article.date}>
                           {formatContentDate(article.date || "")}
                         </time>

@@ -6,6 +6,7 @@ import { ArticleStickyShare } from "@/components/article/ArticleStickyShare";
 import { SaveArticleButton } from "@/components/article/SaveArticleButton";
 import { getCanonicalUrl } from "@/lib/seo";
 import Link from "next/link";
+import { buildContentUrl } from "@/lib/content-routes";
 import Image from "next/image";
 import { Header } from "@/components/layout/header";
 import { notFound } from "next/navigation";
@@ -45,14 +46,40 @@ async function getArticle(slug: string) {
     return json.data?.[0] || null;
 }
 
+function sortByEffectiveDate(items: any[]): any[] {
+    const getTimestamp = (item: any) => {
+        const a = item.attributes || item;
+        const dt = a.Date || a.publishedAt || a.createdAt;
+        if (!dt) return 0;
+        const t = new Date(dt).getTime();
+        return isNaN(t) ? 0 : t;
+    };
+    return [...items].sort((a, b) => getTimestamp(b) - getTimestamp(a));
+}
+
 async function getRelated(currentSlug: string) {
-    const res = await fetch(
-        `${STRAPI_BASE_URL}/api/contents?filters[type_of_content][name][$eq]=Analysis&filters[slug][$ne]=${currentSlug}&pagination[limit]=4&populate=*&sort=publishedAt:desc`,
-        { cache: "no-store" }
-    );
-    if (!res.ok) return [];
-    const json = await res.json();
-    return json.data || [];
+    try {
+        const res = await fetch(
+            `${STRAPI_BASE_URL}/api/contents?filters[type_of_content][name][\$eq]=Analysis&filters[slug][\$ne]=${currentSlug}&pagination[limit]=15&sort=publishedAt:desc`,
+            { next: { revalidate: 60 } }
+        );
+        if (res.ok) {
+            const json = await res.json();
+            const items = sortByEffectiveDate(json.data || []);
+            if (items.length >= 3) return items.slice(0, 4);
+        }
+
+        // Fallback: Latest Featured Stories and News
+        const fbRes = await fetch(
+            `${STRAPI_BASE_URL}/api/contents?filters[type_of_content][name][\$in][0]=Featured Stories&filters[type_of_content][name][\$in][1]=News&filters[slug][\$ne]=${currentSlug}&pagination[limit]=15&sort=publishedAt:desc`,
+            { next: { revalidate: 60 } }
+        );
+        if (!fbRes.ok) return [];
+        const fbJson = await fbRes.json();
+        return sortByEffectiveDate(fbJson.data || []).slice(0, 4);
+    } catch {
+        return [];
+    }
 }
 
 import type { Metadata } from "next";
@@ -167,7 +194,7 @@ export default async function AnalysisDetailPage({ params }: { params: Promise<{
     const dataBlocks = await fetchDataBlocks(article.content);
 
     // Raw date for JSON-LD and display (prioritizing publishedAt for accurate automatic time)
-    const rawDate = attrs.publishedAt || attrs.createdAt || attrs.Date || "";
+    const rawDate = attrs.Date || attrs.publishedAt || attrs.createdAt || "";
     const modifiedDate = attrs.updatedAt || rawDate;
     const excerptText = Array.isArray(attrs.Excerpt)
         ? attrs.Excerpt[0]?.children?.[0]?.text || ""
@@ -287,7 +314,6 @@ export default async function AnalysisDetailPage({ params }: { params: Promise<{
                                 priority
                                 className="object-cover transition-transform duration-700 group-hover:scale-[1.02]"
                             />
-                            <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/20 to-transparent" />
                         </div>
 
                         {/* Article Body */}
@@ -353,7 +379,7 @@ first:prose-p:first-letter:text-6xl first:prose-p:first-letter:font-serif first:
                             {/* ── Subscribe CTA ── */}
                             <SidebarSubscribe />
                             {latestIssue && (<div className="rounded-xl border border-gray-100 bg-white p-2 shadow-sm"><div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-widest text-[#00A651] bg-white/90 backdrop-blur-md px-4 py-2 rounded-full w-fit shadow-lg bg-linear-to-b from-white to-zinc-50 border border-white/20"><Calendar className="h-3.5 w-3.5 text-teal-500" />Latest Issue</div><Link href={`/issues/${latestIssue.slug}`} className="group block mt-3"><div className="relative aspect-3/4 w-full overflow-hidden rounded-lg border border-gray-100 shadow-md mb-4 transition-all duration-500 group-hover:shadow-xl group-hover:-translate-y-0.5"><Image src={latestIssue.coverImage} alt={latestIssue.title} fill className="object-contain bg-white p-1 transition-transform duration-700 group-hover:scale-[1.02]" /></div><h4 className="font-serif font-bold text-gray-900 group-hover:text-teal-600 transition-colors mb-1">{latestIssue.month} {latestIssue.year}</h4><span className="inline-flex items-center gap-1 text-xs font-bold text-teal-600 group-hover:gap-2 transition-all">Read Issue <ArrowRight className="h-3.5 w-3.5" /></span></Link></div>)}
-                            {relatedArticles.length > 0 && (<div><h3 className="mb-5 flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-gray-400"><span className="h-px flex-1 bg-gray-200" />Related Stories<span className="h-px flex-1 bg-gray-200" /></h3><div className="space-y-5">{relatedArticles.map((item: any) => { const r = item.attributes || item; const imgUrl = r.FeaturedImage?.url ? strapiImageUrl(r.FeaturedImage.url) : "/magazine-default.jpg"; const itemDate = formatContentDate(r.Date || r.publishedAt || item.publishedAt); return (<Link key={item.id} href={`/analysis/${r.slug}`} className="group flex gap-4 rounded-lg p-2 -mx-2 transition-colors hover:bg-gray-50"><div className="relative w-24 h-20 shrink-0 overflow-hidden rounded-lg bg-gray-100"><Image src={imgUrl} alt="" fill className="object-contain bg-white p-0.5 transition-transform duration-500 group-hover:scale-[1.02]" /></div><div className="flex-1 min-w-0"><h4 className="font-serif font-bold text-sm leading-snug text-gray-900 group-hover:text-teal-600 transition-colors line-clamp-2 mb-1">{r.Title}</h4>{itemDate && <DateChip value={itemDate} className="text-[10px]" />}</div></Link>); })}</div></div>)}
+                            {relatedArticles.length > 0 && (<div><h3 className="mb-5 flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-gray-400"><span className="h-px flex-1 bg-gray-200" />Related Stories<span className="h-px flex-1 bg-gray-200" /></h3><div className="space-y-5">{relatedArticles.map((item: any) => { const r = item.attributes || item; const imgUrl = r.FeaturedImage?.url ? strapiImageUrl(r.FeaturedImage.url) : "/magazine-default.jpg"; const itemDate = formatContentDate(r.Date || r.publishedAt || item.publishedAt); return (<Link key={item.id} href={buildContentUrl({ slug: r.slug, type_of_content: r.type_of_content || "Analysis" })} className="group flex gap-4 rounded-lg p-2 -mx-2 transition-colors hover:bg-gray-50"><div className="relative w-24 h-20 shrink-0 overflow-hidden rounded-lg bg-gray-100"><Image src={imgUrl} alt="" fill className="object-contain bg-white p-0.5 transition-transform duration-500 group-hover:scale-[1.02]" /></div><div className="flex-1 min-w-0"><h4 className="font-serif font-bold text-sm leading-snug text-gray-900 group-hover:text-teal-600 transition-colors line-clamp-2 mb-1">{r.Title}</h4>{itemDate && <DateChip value={itemDate} className="text-[10px]" />}</div></Link>); })}</div></div>)}
                         </div>
                     </aside>
                 </div>
