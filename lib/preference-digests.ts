@@ -96,7 +96,7 @@ export interface PreviewDigestOptions {
     firstName?: string;
     frequency?: DigestFrequency;
     formats?: DigestFormat[];
-    /** Test-only escape hatch. Scheduled subscriber sends always require two Top News items. */
+    /** Test-only escape hatch for manually requested previews. */
     allowInsufficientTopNews?: boolean;
 }
 
@@ -612,7 +612,8 @@ function hasFreshNews(sections: DigestSection[]): boolean {
 }
 
 function hasEnoughTopNews(sections: DigestSection[]): boolean {
-    // Retained for manually requested preview emails only.
+    // The editorial email has a two-story minimum for both previews and
+    // scheduled delivery.
     return (sections.find((section) => section.format === "News Briefing")?.items.length || 0) >= 2;
 }
 
@@ -1082,9 +1083,11 @@ export async function processPreferenceDigests(
         const since = getStartOfIstDay(now);
         const sections = buildSections(formats, since, catalog, frequency);
         const itemKeys = sections.flatMap((section) => section.items.map((item) => item.key));
-        // Never send an event-only, empty, or backfilled briefing. Delivery
-        // requires at least one fresh News Briefing item in today's window.
-        const prepared = !hasFreshNews(sections) || itemKeys.length === 0
+        // Never send an event-only, empty, backfilled, or thin briefing.
+        // A daily email needs at least two fresh Top News stories; otherwise
+        // the two-column email layout renders with an empty card, as well as
+        // sending subscribers a briefing that has too little editorial value.
+        const prepared = !hasFreshNews(sections) || !hasEnoughTopNews(sections) || itemKeys.length === 0
                 ? "no_new_matching_content" as const
                 : { sections, itemKeys, extras: await loadDailyBriefingExtras(catalog, sections) };
 

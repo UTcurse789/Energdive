@@ -927,3 +927,80 @@ a.inline-link:hover {
   text-decoration-color: #008741 !important;
 }
 
+@keyframes energbits-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+@keyframes energbits-confetti-pop {
+  0% {
+    opacity: 1;
+    transform: translate(0, 0) rotate(0deg) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--confetti-x), var(--confetti-y)) rotate(240deg) scale(0.35);
+  }
+}
+
+.energbits-confetti-piece {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 6px;
+  height: 10px;
+  border-radius: 2px;
+  animation: energbits-confetti-pop 700ms cubic-bezier(.12,.75,.2,1) forwards;
+}
+
+@keyframes energbits-comments-slide-in {
+  from { opacity: 0; transform: translateX(72px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@media (min-width: 1024px) {
+  .energbits-comments-drawer {
+    animation: energbits-comments-slide-in 260ms cubic-bezier(.2,.8,.2,1) both;
+  }
+}
+
+.energbits-track {
+  animation: energbits-scroll 44s linear infinite;
+  will-change: transform;
+}
+
+.energbits-marquee {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+}
+
+.energbits-marquee::-webkit-scrollbar {
+  display: none;
+}
+
+@media (max-width: 639px) {
+  .energbits-marquee {
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    touch-action: pan-x;
+  }
+
+  .energbits-marquee::-webkit-scrollbar {
+    display: none;
+  }
+
+  .energbits-track { animation-duration: 32s; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .energbits-marquee {
+    overflow-x: auto;
+    scrollbar-width: thin;
+  }
+
+  .energbits-track {
+    animation: none;
+  }
+}

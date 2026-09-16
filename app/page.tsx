@@ -3,6 +3,7 @@ import { Hero } from "@/components/sections/hero";
 import type { VideoItem } from "@/components/sections/hero";
 import { FeaturedSection } from "@/components/sections/featured-section";
 import { LatestNewsSection } from "@/components/sections/latest-news-section";
+import { EnergbitsSection } from "@/components/sections/energbits-section";
 import { SubscriptionsCTASection } from "@/components/sections/subscriptions-cta-section";
 import { AdBanner } from "@/components/ads/AdBanner";
 import { SectorBlock } from "@/components/ui/sector-block";
@@ -429,6 +430,8 @@ export default async function Home() {
 
       {/* Latest News Section (full-width detailed view of hero section's top 5 news) */}
       <LatestNewsSection news={heroTopStories.slice(0, 7)} />
+
+      <EnergbitsSection news={heroTopStories.slice(7, 15)} />
 
 
 

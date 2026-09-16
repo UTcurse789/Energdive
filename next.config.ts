@@ -52,9 +52,13 @@ const nextConfig: NextConfig = {
     ];
   },
 
-  // PostHog reverse proxy — routes PostHog requests through Next.js to avoid ad blockers
+  // PostHog & Tender API reverse proxies
   async rewrites() {
     return [
+      {
+        source: "/api/tender-backend/:path*",
+        destination: `${process.env.TENDER_API_INTERNAL_URL || "http://127.0.0.1:8000"}/api/v1/:path*`,
+      },
       {
         source: "/ingest/static/:path*",
         destination: "https://us-assets.i.posthog.com/static/:path*",
@@ -75,6 +79,11 @@ const nextConfig: NextConfig = {
 
   async redirects() {
     return [
+      {
+        source: "/news",
+        destination: "/",
+        permanent: false,
+      },
       {
         source: "/:path*",
         has: [

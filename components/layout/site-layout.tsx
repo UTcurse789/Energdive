@@ -10,6 +10,7 @@ import ZohoSalesIQ from "@/components/ZohoSalesIQ";
 export default function SiteLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const isEnergClub = pathname.startsWith("/energclub");
+    const isEnergbits = pathname.startsWith("/energbits");
     const isAuthPage = pathname === "/auth" || pathname.startsWith("/auth/");
     const isDashboard = pathname.startsWith("/dashboard");
     const isOnboarding = pathname.startsWith("/onboarding");
@@ -27,7 +28,7 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
             {isEnergClub ? <EnergClubHeader /> : <Header />}
 
             {/* Header Banner Ad — 728×90 desktop / 320×100 mobile */}
-            {!isEnergClub && (
+            {!isEnergClub && !isEnergbits && (
                 <div className="w-full flex justify-center bg-white">
                     {/* Desktop: 728×90 Leaderboard */}
                     <div className="hidden md:block">
@@ -44,7 +45,7 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
                 {children}
             </main>
 
-            {!isEnergClub && <Footer />}
+            {!isEnergClub && !isEnergbits && <Footer />}
 
             {/* Zoho Sales IQ - Handles its own visibility across SPA navigations */}
             <ZohoSalesIQ />
