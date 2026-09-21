@@ -452,7 +452,7 @@ export default function OnboardingWizard({ returnTo = "/", mode = "page", onComp
                 <div className="h-full bg-[#0AB996] w-full" />
             </div>
 
-            <form onSubmit={handleSubmit(onFormSubmit)} className={mode === "modal" ? "p-5 md:p-6 space-y-4" : "p-8 md:p-12 space-y-8"}>
+            <form onSubmit={handleSubmit(onFormSubmit)} className={mode === "modal" ? "p-3.5 sm:p-5 md:p-6 space-y-3.5 sm:space-y-4" : "p-4 sm:p-8 md:p-12 space-y-6 sm:space-y-8"}>
                 {/* ── Header ── */}
                 {mode !== "modal" && (
                 <div className="space-y-1">
@@ -466,21 +466,17 @@ export default function OnboardingWizard({ returnTo = "/", mode = "page", onComp
                 )}
 
                 {/* ════════════════════════════════════════════════════════ */}
-                {/*  Section 1 – Name Details                              */}
+                {/*  Section 1 – Name & Contact Details                    */}
                 {/* ════════════════════════════════════════════════════════ */}
-                <div className={mode === "modal" ? "rounded-lg border border-zinc-200 bg-zinc-50/50 p-3" : "rounded-xl border border-zinc-200 bg-zinc-50/50 p-4"}>
-                    <div className={mode === "modal" ? "mb-2" : "mb-3"}>
-                        <h3 className="text-sm font-semibold text-zinc-900">Name details</h3>
-                        <p className="text-xs text-zinc-500">
-                            This name will appear on your ENERGClub profile.
-                        </p>
-                    </div>
-                    <div className={mode === "modal" ? "grid gap-3 sm:grid-cols-3 xl:grid-cols-[140px_minmax(0,1fr)_minmax(0,1fr)]" : "grid gap-4 sm:grid-cols-3 xl:grid-cols-[160px_minmax(0,1fr)_minmax(0,1fr)]"}>
-                        <div className="min-w-0 space-y-1 sm:col-span-2 xl:col-span-1">
-                            <label className="block text-sm font-medium text-zinc-700">Salutation</label>
+                <div className={mode === "modal" ? "rounded-lg border border-zinc-200 bg-zinc-50/50 p-2.5 sm:p-3 space-y-2.5" : "rounded-xl border border-zinc-200 bg-zinc-50/50 p-3 sm:p-4 space-y-3"}>
+
+                    {/* Row 1: Salutation (50%) + First Name (50%) */}
+                    <div className="grid grid-cols-2 gap-2 sm:gap-3">
+                        <div className="min-w-0 space-y-1">
+                            <label className="block text-xs sm:text-sm font-medium text-zinc-700 truncate">Salutation</label>
                             <select
                                 {...register("salutation")}
-                                className={`${mode === "modal" ? "h-10" : "h-12"} w-full rounded-lg border border-zinc-200 bg-white px-4 text-base outline-none transition-all focus:border-[#0AB996] focus:ring-2 focus:ring-[#0AB996]/20`}
+                                className={`${mode === "modal" ? "h-9 sm:h-10" : "h-10 sm:h-12"} w-full rounded-lg border border-zinc-200 bg-white px-2.5 sm:px-3 text-xs sm:text-sm outline-none transition-all focus:border-[#0AB996] focus:ring-2 focus:ring-[#0AB996]/20`}
                             >
                                 <option value="">Select</option>
                                 {SALUTATION_OPTIONS.map((s) => (
@@ -489,37 +485,35 @@ export default function OnboardingWizard({ returnTo = "/", mode = "page", onComp
                             </select>
                         </div>
                         <div className="min-w-0 space-y-1">
-                            <label className="block text-sm font-medium text-zinc-700">First Name</label>
+                            <label className="block text-xs sm:text-sm font-medium text-zinc-700 truncate">First Name</label>
                             <input
                                 {...register("firstName")}
-                                className={`${mode === "modal" ? "h-10" : "h-12"} w-full rounded-lg border border-zinc-200 bg-white px-4 text-base outline-none transition-all focus:border-[#0AB996] focus:ring-2 focus:ring-[#0AB996]/20`}
+                                className={`${mode === "modal" ? "h-9 sm:h-10" : "h-10 sm:h-12"} w-full rounded-lg border border-zinc-200 bg-white px-2.5 sm:px-4 text-xs sm:text-sm outline-none transition-all focus:border-[#0AB996] focus:ring-2 focus:ring-[#0AB996]/20`}
                                 placeholder="First name"
                             />
-                            {errors.firstName && <p className="text-red-500 text-xs">{errors.firstName.message}</p>}
-                        </div>
-                        <div className="min-w-0 space-y-1">
-                            <label className="block text-sm font-medium text-zinc-700">Last Name</label>
-                            <input
-                                {...register("lastName")}
-                                className={`${mode === "modal" ? "h-10" : "h-12"} w-full rounded-lg border border-zinc-200 bg-white px-4 text-base outline-none transition-all focus:border-[#0AB996] focus:ring-2 focus:ring-[#0AB996]/20`}
-                                placeholder="Last name"
-                            />
-                            {errors.lastName && <p className="text-red-500 text-xs">{errors.lastName.message}</p>}
+                            {errors.firstName && <p className="text-red-500 text-[10px] sm:text-xs">{errors.firstName.message}</p>}
                         </div>
                     </div>
-                </div>
 
-                {/* ════════════════════════════════════════════════════════ */}
-                {/*  Section 2 – Contact (simple inputs, no verification)  */}
-                {/* ════════════════════════════════════════════════════════ */}
-                <div className={mode === "modal" ? "grid gap-3 md:grid-cols-2" : "grid gap-4 md:grid-cols-2"}>
+                    {/* Row 2: Last Name (100%) */}
                     <div className="min-w-0 space-y-1">
-                        <label className="block text-sm font-medium text-zinc-700">Email</label>
+                        <label className="block text-xs sm:text-sm font-medium text-zinc-700 truncate">Last Name</label>
+                        <input
+                            {...register("lastName")}
+                            className={`${mode === "modal" ? "h-9 sm:h-10" : "h-10 sm:h-12"} w-full rounded-lg border border-zinc-200 bg-white px-2.5 sm:px-4 text-xs sm:text-sm outline-none transition-all focus:border-[#0AB996] focus:ring-2 focus:ring-[#0AB996]/20`}
+                            placeholder="Last name"
+                        />
+                        {errors.lastName && <p className="text-red-500 text-[10px] sm:text-xs">{errors.lastName.message}</p>}
+                    </div>
+
+                    {/* Row 3: Email (100%) */}
+                    <div className="min-w-0 space-y-1">
+                        <label className="block text-xs sm:text-sm font-medium text-zinc-700 truncate">Email</label>
                         <input
                             {...register("email")}
                             type="email"
                             readOnly={hasRealEmail}
-                            className={`${mode === "modal" ? "h-10" : "h-12"} w-full rounded-lg border border-zinc-200 px-4 text-base outline-none transition-all focus:border-[#0AB996] focus:ring-2 focus:ring-[#0AB996]/20 ${
+                            className={`${mode === "modal" ? "h-9 sm:h-10" : "h-10 sm:h-12"} w-full rounded-lg border border-zinc-200 px-2.5 sm:px-4 text-xs sm:text-sm outline-none transition-all focus:border-[#0AB996] focus:ring-2 focus:ring-[#0AB996]/20 ${
                                 hasRealEmail
                                     ? "bg-zinc-100 text-zinc-500 cursor-not-allowed"
                                     : "bg-white"
@@ -527,58 +521,62 @@ export default function OnboardingWizard({ returnTo = "/", mode = "page", onComp
                             placeholder="your@email.com"
                         />
                     </div>
-                    <div className="min-w-0 space-y-1">
-                        <label className="block text-sm font-medium text-zinc-700">Phone Number</label>
-                        <div className="flex">
-                            <select
-                                value={dialCode}
-                                onChange={(e) => setDialCode(e.target.value)}
-                                aria-label="Country dial code"
-                                className={`${mode === "modal" ? "h-10" : "h-12"} w-[90px] shrink-0 rounded-l-lg border border-r-0 border-zinc-200 bg-zinc-50 px-2 text-sm font-medium text-zinc-700 outline-none transition-all focus:border-[#0AB996] focus:ring-2 focus:ring-[#0AB996]/20`}
-                            >
-                                {COUNTRIES.map((c) => (
-                                    <option key={c.code} value={c.dial_code}>
-                                        {c.dial_code}
-                                    </option>
-                                ))}
-                            </select>
-                            <input
-                                {...register("phone")}
-                                type="tel"
-                                className={`${mode === "modal" ? "h-10" : "h-12"} w-full rounded-r-lg border border-zinc-200 bg-white px-4 text-base outline-none transition-all focus:border-[#0AB996] focus:ring-2 focus:ring-[#0AB996]/20`}
-                                placeholder="9876543210"
-                            />
-                        </div>
+                </div>
+
+                {/* ════════════════════════════════════════════════════════ */}
+                {/*  Section 2 – Contact: Phone Number                     */}
+                {/* ════════════════════════════════════════════════════════ */}
+                <div className="min-w-0 space-y-1">
+                    <label className="block text-xs sm:text-sm font-medium text-zinc-700">Phone Number</label>
+                    <div className="flex">
+                        <select
+                            value={dialCode}
+                            onChange={(e) => setDialCode(e.target.value)}
+                            aria-label="Country dial code"
+                            className={`${mode === "modal" ? "h-9 sm:h-10" : "h-10 sm:h-12"} w-[78px] sm:w-[90px] shrink-0 rounded-l-lg border border-r-0 border-zinc-200 bg-zinc-50 px-2 text-xs sm:text-sm font-medium text-zinc-700 outline-none transition-all focus:border-[#0AB996] focus:ring-2 focus:ring-[#0AB996]/20`}
+                        >
+                            {COUNTRIES.map((c) => (
+                                <option key={c.code} value={c.dial_code}>
+                                    {c.dial_code}
+                                </option>
+                            ))}
+                        </select>
+                        <input
+                            {...register("phone")}
+                            type="tel"
+                            className={`${mode === "modal" ? "h-9 sm:h-10" : "h-10 sm:h-12"} w-full rounded-r-lg border border-zinc-200 bg-white px-3 sm:px-4 text-xs sm:text-sm outline-none transition-all focus:border-[#0AB996] focus:ring-2 focus:ring-[#0AB996]/20`}
+                            placeholder="9876543210"
+                        />
                     </div>
                 </div>
 
                 {/* ════════════════════════════════════════════════════════ */}
                 {/*  Section 3 – Location (auto-detected via IP)           */}
                 {/* ════════════════════════════════════════════════════════ */}
-                <div className={mode === "modal" ? "grid gap-3 md:grid-cols-2" : "grid gap-4 md:grid-cols-2"}>
+                <div className="grid grid-cols-2 gap-2 sm:gap-3">
                     <div className="min-w-0 space-y-1">
-                        <label className="block text-sm font-medium text-zinc-700">Country</label>
+                        <label className="block text-xs sm:text-sm font-medium text-zinc-700 truncate">Country</label>
                         <select
                             {...register("country")}
-                            className={`${mode === "modal" ? "h-10" : "h-12"} w-full rounded-lg border border-zinc-200 bg-white px-4 text-base outline-none transition-all focus:ring-2 focus:ring-[#0AB996]`}
+                            className={`${mode === "modal" ? "h-9 sm:h-10" : "h-10 sm:h-12"} w-full rounded-lg border border-zinc-200 bg-white px-2.5 sm:px-4 text-xs sm:text-sm outline-none transition-all focus:ring-2 focus:ring-[#0AB996]`}
                         >
                             {COUNTRIES.map((c) => (
                                 <option key={c.code} value={c.name}>{c.name}</option>
                             ))}
                         </select>
                         {geoLoading && (
-                            <p className="text-xs text-zinc-400 flex items-center gap-1">
-                                <Loader2 className="w-3 h-3 animate-spin" /> Detecting location…
+                            <p className="text-[10px] sm:text-xs text-zinc-400 flex items-center gap-1">
+                                <Loader2 className="w-2.5 h-2.5 sm:w-3 sm:h-3 animate-spin" /> Detecting location…
                             </p>
                         )}
-                        {errors.country && <p className="text-red-500 text-xs">{errors.country.message}</p>}
+                        {errors.country && <p className="text-red-500 text-[10px] sm:text-xs">{errors.country.message}</p>}
                     </div>
                     <div className="min-w-0 space-y-1">
-                        <label className="block text-sm font-medium text-zinc-700">State / Region</label>
+                        <label className="block text-xs sm:text-sm font-medium text-zinc-700 truncate">State / Region</label>
                         {states.length > 0 ? (
                             <select
                                 {...register("state")}
-                                className={`${mode === "modal" ? "h-10" : "h-12"} w-full rounded-lg border border-zinc-200 bg-white px-4 text-base outline-none transition-all focus:ring-2 focus:ring-[#0AB996]`}
+                                className={`${mode === "modal" ? "h-9 sm:h-10" : "h-10 sm:h-12"} w-full rounded-lg border border-zinc-200 bg-white px-2.5 sm:px-4 text-xs sm:text-sm outline-none transition-all focus:ring-2 focus:ring-[#0AB996]`}
                             >
                                 <option value="">Select state / region</option>
                                 {states.map((s) => (
@@ -588,35 +586,35 @@ export default function OnboardingWizard({ returnTo = "/", mode = "page", onComp
                         ) : (
                             <input
                                 {...register("state")}
-                                className={`${mode === "modal" ? "h-10" : "h-12"} w-full rounded-lg border border-zinc-200 px-4 text-base outline-none transition-all focus:ring-2 focus:ring-[#0AB996]`}
+                                className={`${mode === "modal" ? "h-9 sm:h-10" : "h-10 sm:h-12"} w-full rounded-lg border border-zinc-200 px-2.5 sm:px-4 text-xs sm:text-sm outline-none transition-all focus:ring-2 focus:ring-[#0AB996]`}
                                 placeholder="State / region"
                             />
                         )}
-                        {errors.state && <p className="text-red-500 text-xs">{errors.state.message}</p>}
+                        {errors.state && <p className="text-red-500 text-[10px] sm:text-xs">{errors.state.message}</p>}
                     </div>
                 </div>
 
                 {/* ════════════════════════════════════════════════════════ */}
                 {/*  Section 4 – Professional Details                      */}
                 {/* ════════════════════════════════════════════════════════ */}
-                <div className={mode === "modal" ? "grid gap-3 md:grid-cols-2" : "grid gap-4 md:grid-cols-2"}>
+                <div className="grid grid-cols-2 gap-2 sm:gap-3">
                     <div className="min-w-0 space-y-1">
-                        <label className="block text-sm font-medium text-zinc-700">Job Title</label>
+                        <label className="block text-xs sm:text-sm font-medium text-zinc-700 truncate">Job Title</label>
                         <input
                             {...register("jobTitle")}
-                            className={`${mode === "modal" ? "h-10" : "h-12"} w-full rounded-lg border border-zinc-200 px-4 text-base outline-none transition-all focus:border-transparent focus:ring-2 focus:ring-[#0AB996]`}
+                            className={`${mode === "modal" ? "h-9 sm:h-10" : "h-10 sm:h-12"} w-full rounded-lg border border-zinc-200 px-2.5 sm:px-4 text-xs sm:text-sm outline-none transition-all focus:border-transparent focus:ring-2 focus:ring-[#0AB996]`}
                             placeholder="e.g. Senior Analyst"
                         />
-                        {errors.jobTitle && <p className="text-red-500 text-xs">{errors.jobTitle.message}</p>}
+                        {errors.jobTitle && <p className="text-red-500 text-[10px] sm:text-xs">{errors.jobTitle.message}</p>}
                     </div>
                     <div className="min-w-0 space-y-1">
-                        <label className="block text-sm font-medium text-zinc-700">Organisation</label>
+                        <label className="block text-xs sm:text-sm font-medium text-zinc-700 truncate">Organisation</label>
                         <input
                             {...register("organization")}
-                            className={`${mode === "modal" ? "h-10" : "h-12"} w-full rounded-lg border border-zinc-200 px-4 text-base outline-none transition-all focus:border-transparent focus:ring-2 focus:ring-[#0AB996]`}
+                            className={`${mode === "modal" ? "h-9 sm:h-10" : "h-10 sm:h-12"} w-full rounded-lg border border-zinc-200 px-2.5 sm:px-4 text-xs sm:text-sm outline-none transition-all focus:border-transparent focus:ring-2 focus:ring-[#0AB996]`}
                             placeholder="Organisation name"
                         />
-                        {errors.organization && <p className="text-red-500 text-xs">{errors.organization.message}</p>}
+                        {errors.organization && <p className="text-red-500 text-[10px] sm:text-xs">{errors.organization.message}</p>}
                     </div>
                 </div>
 
@@ -627,20 +625,20 @@ export default function OnboardingWizard({ returnTo = "/", mode = "page", onComp
                 {/*  Section 5 – Your Interests                            */}
                 {/* ════════════════════════════════════════════════════════ */}
                 <div>
-                    <h2 className={mode === "modal" ? "text-lg font-bold text-zinc-900" : "text-2xl font-bold text-zinc-900"}>Your interests</h2>
-                    <p className={mode === "modal" ? "text-zinc-500 text-sm mt-0.5" : "text-zinc-500 mt-1"}>
+                    <h2 className={mode === "modal" ? "text-base sm:text-lg font-bold text-zinc-900" : "text-xl sm:text-2xl font-bold text-zinc-900"}>Your interests</h2>
+                    <p className="text-xs sm:text-sm text-zinc-500 mt-0.5">
                         Pick the communities and briefings that should shape your ENERGClub feed.
                     </p>
-                    <p className="text-xs text-emerald-600 mt-1.5 flex items-center gap-1">
+                    <p className="text-[11px] sm:text-xs text-emerald-600 mt-1 flex items-center gap-1">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5 shrink-0"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z" clipRule="evenodd" /></svg>
                         You can choose multiple communities &amp; sub-communities
                     </p>
                 </div>
 
                 {/* Communities & Sub-communities Dropdowns (Parallel layout) */}
-                <div className={mode === "modal" ? "grid gap-3 md:grid-cols-2" : "grid gap-4 md:grid-cols-2"}>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
                     <div className="space-y-1">
-                        <label className="block text-sm font-medium text-zinc-700">Community</label>
+                        <label className="block text-xs sm:text-sm font-medium text-zinc-700">Community</label>
                         <div className="relative">
                             <select
                                 aria-label="Select a community"
@@ -649,7 +647,7 @@ export default function OnboardingWizard({ returnTo = "/", mode = "page", onComp
                                     const val = e.target.value;
                                     handleCommunityChange(val ? Number(val) : null);
                                 }}
-                                className="w-full px-4 py-2.5 border border-zinc-200 rounded-lg focus:ring-2 focus:ring-[#0AB996] focus:border-transparent outline-none transition-all bg-white appearance-none pr-10"
+                                className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm border border-zinc-200 rounded-lg focus:ring-2 focus:ring-[#0AB996] focus:border-transparent outline-none transition-all bg-white appearance-none pr-10"
                             >
                                 <option value="">Select a community</option>
                                 {communities.map((c) => (
@@ -658,12 +656,12 @@ export default function OnboardingWizard({ returnTo = "/", mode = "page", onComp
                                     </option>
                                 ))}
                             </select>
-                            <ChevronDown className="absolute right-3 top-3 w-4 h-4 text-zinc-400 pointer-events-none" />
+                            <ChevronDown className="absolute right-3 top-2.5 sm:top-3 w-4 h-4 text-zinc-400 pointer-events-none" />
                         </div>
                     </div>
 
                     <div className="space-y-1">
-                        <label className="block text-sm font-medium text-zinc-700">Sub-community</label>
+                        <label className="block text-xs sm:text-sm font-medium text-zinc-700">Sub-community</label>
                         <div className="relative">
                             <select
                                 aria-label="Select sub-community"
@@ -673,7 +671,7 @@ export default function OnboardingWizard({ returnTo = "/", mode = "page", onComp
                                     const val = e.target.value;
                                     handleSubCommunityChange(val ? Number(val) : null);
                                 }}
-                                className="w-full px-4 py-2.5 border border-zinc-200 rounded-lg focus:ring-2 focus:ring-[#0AB996] focus:border-transparent outline-none transition-all bg-white disabled:bg-zinc-100 disabled:text-zinc-400 appearance-none pr-10"
+                                className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm border border-zinc-200 rounded-lg focus:ring-2 focus:ring-[#0AB996] focus:border-transparent outline-none transition-all bg-white disabled:bg-zinc-100 disabled:text-zinc-400 appearance-none pr-10"
                             >
                                 <option value="">Select sub-community</option>
                                 {currentSubCommunities.map((sub) => (
@@ -682,14 +680,14 @@ export default function OnboardingWizard({ returnTo = "/", mode = "page", onComp
                                     </option>
                                 ))}
                             </select>
-                            <ChevronDown className="absolute right-3 top-3 w-4 h-4 text-zinc-400 pointer-events-none" />
+                            <ChevronDown className="absolute right-3 top-2.5 sm:top-3 w-4 h-4 text-zinc-400 pointer-events-none" />
                         </div>
                     </div>
                 </div>
 
                 {/* Selected Selections Tags */}
                 {selectedSelections.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mt-2">
+                    <div className="flex flex-wrap gap-1.5 sm:gap-2 mt-2">
                         {selectedSelections.map((sel) => {
                             const comm = communities.find((c) => c.id === sel.communityId);
                             const sub = comm?.sub_communities.find((s) => s.id === sel.subCommunityId);
@@ -697,13 +695,13 @@ export default function OnboardingWizard({ returnTo = "/", mode = "page", onComp
                             return (
                                 <span
                                     key={`${sel.communityId}-${sel.subCommunityId}`}
-                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium bg-[#0AB996]/10 border border-[#0AB996] text-[#0AB996]"
+                                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-[#0AB996]/10 border border-[#0AB996] text-[#0AB996]"
                                 >
                                     {comm.name} - {sub.name}
                                     <button
                                         type="button"
                                         onClick={() => removeSelection(sel.communityId, sel.subCommunityId)}
-                                        className="hover:text-red-500 font-bold transition-colors ml-0.5 text-base leading-none"
+                                        className="hover:text-red-500 font-bold transition-colors ml-0.5 text-sm leading-none"
                                         aria-label={`Remove ${comm.name} - ${sub.name}`}
                                     >
                                         ×
@@ -721,43 +719,43 @@ export default function OnboardingWizard({ returnTo = "/", mode = "page", onComp
                 {/* ════════════════════════════════════════════════════════ */}
                 {/*  Section 6 – Industry                                  */}
                 {/* ════════════════════════════════════════════════════════ */}
-                <div className={mode === "modal" ? "grid gap-3 md:grid-cols-2" : "grid gap-4 md:grid-cols-2"}>
+                <div className="grid grid-cols-2 gap-2 sm:gap-3">
                     <div className="space-y-1">
-                        <label className="block text-sm font-medium text-zinc-700">Industry</label>
+                        <label className="block text-xs sm:text-sm font-medium text-zinc-700 truncate">Industry</label>
                         <div className="relative">
                             <select
                                 {...industrySelectProps}
-                                className="w-full px-4 py-2.5 border border-zinc-200 rounded-lg focus:ring-2 focus:ring-[#0AB996] focus:border-transparent outline-none transition-all bg-white appearance-none pr-10"
+                                className="w-full px-2.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm border border-zinc-200 rounded-lg focus:ring-2 focus:ring-[#0AB996] focus:border-transparent outline-none transition-all bg-white appearance-none pr-7 sm:pr-10 truncate"
                             >
-                                <option value={0}>Select your industry</option>
+                                <option value={0}>Select industry</option>
                                 {industries.map((ind) => (
                                     <option key={ind.id} value={ind.id}>{ind.name}</option>
                                 ))}
                             </select>
-                            <ChevronDown className="absolute right-3 top-3 w-4 h-4 text-zinc-400 pointer-events-none" />
+                            <ChevronDown className="absolute right-2 sm:right-3 top-2.5 sm:top-3 w-3.5 h-3.5 sm:w-4 sm:h-4 text-zinc-400 pointer-events-none" />
                         </div>
                         {errors.industryId && (
-                            <p className="text-red-500 text-xs">{errors.industryId.message}</p>
+                            <p className="text-red-500 text-[10px] sm:text-xs">{errors.industryId.message}</p>
                         )}
                     </div>
 
                     <div className="space-y-1">
-                        <label className="block text-sm font-medium text-zinc-700">Sub-Industry</label>
+                        <label className="block text-xs sm:text-sm font-medium text-zinc-700 truncate">Sub-Industry</label>
                         <div className="relative">
                             <select
                                 {...subIndustrySelectProps}
                                 disabled={!selectedIndustryId}
-                                className="w-full px-4 py-2.5 border border-zinc-200 rounded-lg focus:ring-2 focus:ring-[#0AB996] focus:border-transparent outline-none transition-all bg-white disabled:bg-zinc-100 disabled:text-zinc-400 appearance-none pr-10"
+                                className="w-full px-2.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm border border-zinc-200 rounded-lg focus:ring-2 focus:ring-[#0AB996] focus:border-transparent outline-none transition-all bg-white disabled:bg-zinc-100 disabled:text-zinc-400 appearance-none pr-7 sm:pr-10 truncate"
                             >
                                 <option value={0}>Select sub-industry</option>
                                 {currentSubIndustries.map((sub) => (
                                     <option key={sub.id} value={sub.id}>{sub.name}</option>
                                 ))}
                             </select>
-                            <ChevronDown className="absolute right-3 top-3 w-4 h-4 text-zinc-400 pointer-events-none" />
+                            <ChevronDown className="absolute right-2 sm:right-3 top-2.5 sm:top-3 w-3.5 h-3.5 sm:w-4 sm:h-4 text-zinc-400 pointer-events-none" />
                         </div>
                         {errors.subIndustryId && (
-                            <p className="text-red-500 text-xs">{errors.subIndustryId.message}</p>
+                            <p className="text-red-500 text-[10px] sm:text-xs">{errors.subIndustryId.message}</p>
                         )}
                     </div>
                 </div>
@@ -765,12 +763,12 @@ export default function OnboardingWizard({ returnTo = "/", mode = "page", onComp
                 {/* ════════════════════════════════════════════════════════ */}
                 {/*  Section 7 – Frequency & Formats                       */}
                 {/* ════════════════════════════════════════════════════════ */}
-                <div className={mode === "modal" ? "grid gap-3 md:grid-cols-[0.8fr_1.2fr]" : "grid gap-5 md:grid-cols-[0.8fr_1.2fr]"}>
-                    <div className={mode === "modal" ? "space-y-2" : "space-y-3"}>
-                        <label className="block text-sm font-medium text-zinc-700 uppercase tracking-wider">
+                <div className={mode === "modal" ? "grid gap-3 md:grid-cols-[0.8fr_1.2fr]" : "grid gap-4 md:grid-cols-[0.8fr_1.2fr]"}>
+                    <div className="space-y-1.5 sm:space-y-2">
+                        <label className="block text-xs sm:text-sm font-medium text-zinc-700">
                             Frequency
                         </label>
-                        <div className="grid grid-cols-2 gap-3">
+                        <div className="grid grid-cols-2 gap-2 sm:gap-3">
                             {FREQUENCIES.map((freq) => {
                                 const isActive = currentFrequency === freq.value;
                                 return (
@@ -778,18 +776,18 @@ export default function OnboardingWizard({ returnTo = "/", mode = "page", onComp
                                         key={freq.value}
                                         type="button"
                                         onClick={() => selectFrequency(freq.value)}
-                                        className={`relative px-4 py-3 rounded-xl text-sm font-semibold border-2 transition-all ${
+                                        className={`relative px-3 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-semibold border-2 transition-all ${
                                             isActive
                                                 ? "bg-[#0AB996]/10 border-[#0AB996] text-[#0AB996] shadow-sm"
                                                 : "bg-white border-zinc-200 text-zinc-600 hover:border-zinc-300"
                                         }`}
                                     >
-                                        <div className="flex items-center gap-2 justify-center">
+                                        <div className="flex items-center gap-1.5 justify-center">
                                             {isActive && (
                                                 <motion.span
                                                     initial={{ scale: 0 }}
                                                     animate={{ scale: 1 }}
-                                                    className="w-4 h-4 rounded-full bg-[#0AB996] flex items-center justify-center"
+                                                    className="w-3.5 h-3.5 rounded-full bg-[#0AB996] flex items-center justify-center"
                                                 >
                                                     <Check className="w-2.5 h-2.5 text-white" />
                                                 </motion.span>
@@ -805,11 +803,11 @@ export default function OnboardingWizard({ returnTo = "/", mode = "page", onComp
                         )}
                     </div>
 
-                    <div className={mode === "modal" ? "space-y-2" : "space-y-3"}>
-                        <label className="block text-sm font-medium text-zinc-700 uppercase tracking-wider">
+                    <div className="space-y-1.5 sm:space-y-2">
+                        <label className="block text-xs sm:text-sm font-medium text-zinc-700">
                             Preferences
                         </label>
-                        <div className="flex flex-wrap gap-2">
+                        <div className="flex flex-wrap gap-1.5 sm:gap-2">
                             {FORMATS.map((format) => {
                                 const isActive = selectedFormats.has(format);
                                 return (
@@ -817,13 +815,13 @@ export default function OnboardingWizard({ returnTo = "/", mode = "page", onComp
                                         key={format}
                                         type="button"
                                         onClick={() => toggleFormat(format)}
-                                        className={`px-4 py-2 rounded-full text-sm font-medium border transition-all flex items-center gap-2 ${
+                                        className={`px-3 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-medium border transition-all flex items-center gap-1.5 ${
                                             isActive
                                                 ? "bg-[#0AB996]/10 border-[#0AB996] text-[#0AB996]"
                                                 : "bg-white border-zinc-200 text-zinc-600 hover:border-zinc-300"
                                         }`}
                                     >
-                                        {isActive && <Check className="w-3.5 h-3.5" />}
+                                        {isActive && <Check className="w-3 h-3 text-[#0AB996]" />}
                                         {format}
                                     </button>
                                 );
