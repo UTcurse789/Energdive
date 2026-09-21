@@ -2,6 +2,49 @@
 
 import { useEffect, useRef } from "react";
 
+type Confetti = (
+    idOrOptions: string | Record<string, unknown>,
+    options?: Record<string, unknown>
+) => void;
+
+declare global {
+    interface Window {
+        confetti?: Confetti;
+        __energdiveConfettiPromise?: Promise<Confetti | null>;
+    }
+}
+
+async function fireSubscriptionConfetti() {
+    if (!window.__energdiveConfettiPromise) {
+        window.__energdiveConfettiPromise = new Promise((resolve) => {
+            const existing = document.querySelector<HTMLScriptElement>('script[data-energdive-confetti="true"]');
+            if (existing) {
+                existing.addEventListener("load", () => resolve(window.confetti ?? null), { once: true });
+                return;
+            }
+
+            const script = document.createElement("script");
+            script.src = "https://cdn.jsdelivr.net/npm/@tsparticles/confetti@4.2.1/tsparticles.confetti.bundle.min.js";
+            script.async = true;
+            script.dataset.energdiveConfetti = "true";
+            script.onload = () => resolve(window.confetti ?? null);
+            script.onerror = () => resolve(null);
+            document.head.appendChild(script);
+        });
+    }
+
+    const confetti = window.confetti ?? await window.__energdiveConfettiPromise;
+    if (!confetti) return;
+
+    confetti({
+        particleCount: 120,
+        spread: 75,
+        startVelocity: 42,
+        origin: { y: 0.65 },
+        colors: ["#00A651", "#00C853", "#ffffff", "#f4c430"],
+    });
+}
+
 /**
  * Shared Brevo embedded newsletter form.
  *
@@ -77,10 +120,47 @@ export function BrevoNewsletterForm({
         if (!container) return;
 
         // Capture email on submit
-        const captureEmail = () => {
+        const captureEmail = async (event: Event) => {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+
             const emailInput = container.querySelector<HTMLInputElement>(`#${emailId}`);
-            if (emailInput?.value) {
-                lastEmailRef.current = emailInput.value.trim().toLowerCase();
+            const email = emailInput?.value.trim().toLowerCase();
+            if (!email) return;
+
+            lastEmailRef.current = email;
+            const nativeForm = event.currentTarget as HTMLFormElement;
+            const submitButton = nativeForm.querySelector<HTMLButtonElement>('button[type="submit"]');
+            const errorPanel = container.querySelector<HTMLElement>(`#${errorId}`);
+            const successPanel = container.querySelector<HTMLElement>(`#${successId}`);
+            submitButton?.setAttribute("disabled", "true");
+            if (errorPanel) errorPanel.style.display = "none";
+
+            try {
+                const response = await fetch("/api/subscribe", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        email,
+                        frequency: "Daily x1",
+                        preferences: ["News Briefing"],
+                        communities: [],
+                        subCommunities: [],
+                        source,
+                        subscribedFromUrl: window.location.href,
+                        subscribedFromTitle: document.title,
+                    }),
+                });
+                const result = await response.json().catch(() => ({}));
+                if (!response.ok || result.success === false) throw new Error("Brevo subscription failed");
+
+                lastEmailRef.current = "";
+                nativeForm.style.display = "none";
+                if (successPanel) successPanel.style.display = "block";
+                void fireSubscriptionConfetti();
+            } catch {
+                if (errorPanel) errorPanel.style.display = "block";
+                submitButton?.removeAttribute("disabled");
             }
         };
 
