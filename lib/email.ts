@@ -1896,8 +1896,8 @@ export async function sendPreferenceDigestEmail(
     </td>`).join("");
 
     const eventsHtml = eventItems.map((item) => `<td class="mobile-event-card" width="33.33%" valign="top" style="width:33.33%;padding:0 5px;">
-        <table class="briefing-event-card" width="100%" height="236" cellpadding="0" cellspacing="0" role="presentation" style="height:236px;border:1px solid #dfe5e2;border-radius:7px;background:#ffffff;">
-            <tr><td class="briefing-logo-cell" height="76" align="center" valign="middle" style="height:76px;padding:10px;">${item.imageUrl ? `<img src="${getEmailImageUrl(item.imageUrl)}" alt="${escapeHtml(item.title)}" width="120" height="56" border="0" style="display:block;width:120px;height:56px;object-fit:contain;" />` : `<table width="120" height="56" cellpadding="0" cellspacing="0" role="presentation" style="width:120px;height:56px;background:#f4f7f5;border-radius:3px;"><tr><td>&nbsp;</td></tr></table>`}</td></tr>
+        <table class="briefing-event-card" width="100%" height="260" cellpadding="0" cellspacing="0" role="presentation" style="height:260px;border:1px solid #dfe5e2;border-radius:7px;background:#ffffff;">
+            <tr><td class="briefing-logo-cell" height="100" align="center" valign="middle" style="height:100px;padding:10px;">${item.imageUrl ? `<img src="${getEmailImageUrl(item.imageUrl)}" alt="${escapeHtml(item.title)}" width="150" height="78" border="0" style="display:block;width:150px;height:78px;object-fit:contain;" />` : `<table width="150" height="78" cellpadding="0" cellspacing="0" role="presentation" style="width:150px;height:78px;background:#f4f7f5;border-radius:3px;"><tr><td>&nbsp;</td></tr></table>`}</td></tr>
             <tr><td class="briefing-event-copy" height="112" valign="top" align="center" style="height:112px;padding:8px 14px 0;text-align:center;">
                 <p class="briefing-card-title" style="margin:0 0 10px;color:#071b2c;font-size:12px;font-weight:800;line-height:1.32;height:32px;overflow:hidden;"><a href="${item.href}" target="_blank" style="color:#071b2c;text-decoration:none;">${escapeHtml(item.title)}</a></p>
                 <p style="margin:0 0 5px;color:#667085;font-size:10px;line-height:1.3;white-space:nowrap;">&#9635; ${escapeHtml(item.eventDate || "Date to be announced")}</p>
@@ -1907,7 +1907,7 @@ export async function sendPreferenceDigestEmail(
         </table>
     </td>`).join("");
 
-    const topNewsBlock = hasTopNews ? `<tr><td class="section-pad" style="padding:30px 32px 8px;"><table width="100%" cellpadding="0" cellspacing="0" role="presentation"><tr><td>${sectionTitle("news", "Top News")}</td><td align="right"><a href="${appUrl}" target="_blank" style="color:#087a66;font-size:11px;font-weight:800;text-decoration:none;white-space:nowrap;">View all →</a></td></tr></table></td></tr>
+    const topNewsBlock = hasTopNews ? `<tr><td class="section-pad" style="padding:30px 32px 8px;"><table width="100%" cellpadding="0" cellspacing="0" role="presentation"><tr><td>${sectionTitle("news", "Top Stories")}</td><td align="right"><a href="${appUrl}" target="_blank" style="color:#087a66;font-size:11px;font-weight:800;text-decoration:none;white-space:nowrap;">View all →</a></td></tr></table></td></tr>
             <tr><td class="section-pad" style="padding:12px 32px 26px;"><table width="100%" cellpadding="0" cellspacing="0" role="presentation">${topNewsHtml}</table></td></tr>` : `<tr><td class="section-pad" style="padding:30px 32px 26px;">
                 <p style="margin:0;color:#667085;font-size:14px;line-height:1.5;">No major energy news was published today. We'll be back tomorrow with the latest updates.</p>
             </td></tr>`;
@@ -1966,8 +1966,8 @@ export async function sendPreferenceDigestEmail(
             .mobile-job-col { display:block !important; width:100% !important; box-sizing:border-box !important; padding:0 0 12px !important; border-bottom:1px solid #edf0ee !important; }
             .mobile-event-card { padding:0 0 8px !important; }
             .featured-article-card { padding:0 0 12px !important; }
-            .briefing-logo-cell { height:52px !important; padding:8px 10px 4px !important; }
-            .briefing-logo-cell img { width:88px !important; height:42px !important; }
+            .briefing-logo-cell { height:70px !important; padding:8px 10px 4px !important; }
+            .briefing-logo-cell img { width:116px !important; height:58px !important; }
             .briefing-event-copy { padding:5px 12px 0 !important; }
             .briefing-event-copy .briefing-card-title { margin-bottom:5px !important; min-height:0 !important; }
             .footer-meta { padding:16px 0 0 !important; }
