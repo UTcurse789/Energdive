@@ -6,8 +6,8 @@ const CRON_SECRET = process.env.CRON_SECRET || "";
 /**
  * POST /api/cron/preference-digests
  *
- * Cron job: send personalized digests for users who completed onboarding and
- * selected subscription preferences.
+ * Cron job: send personalized digests for opted-in completed members and the
+ * Daily Briefing to every active contact in Brevo Newsletter Subscribe list 24.
  *
  * Protected by CRON_SECRET header.
  */

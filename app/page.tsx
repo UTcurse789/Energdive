@@ -371,19 +371,9 @@ async function HomeDeferredContent({ latestNews }: { latestNews: any[] }) {
       {/* Latest News Section (full-width detailed view of hero section's top 5 news) */}
       <LatestNewsSection news={latestNews.slice(0, 7)} />
 
-<<<<<<< HEAD
-      <EnergbitsSection news={heroTopStories.slice(7, 15)} />
-
-
-
-      {/* Lower editorial lane: Opinion, Interviews + Right Rail */}
-      <section className="bg-white">
-        <div className="max-w-7xl mx-auto px-5 sm:px-10 lg:px-16">
-=======
       {/* Editorial & Sector Intelligence Lane */}
       <section className="bg-white py-4 lg:py-6">
         <div className="max-w-7xl mx-auto px-8 sm:px-10 lg:px-16">
->>>>>>> 8dd387824b3d621f0f1487e9afb1bfe5d2208896
           <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_300px] gap-6 lg:gap-8 items-start">
             
             {/* Left Content Column: Opinion, Current Issue, and Sectors */}

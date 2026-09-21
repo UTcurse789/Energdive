@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
+import { BrevoNewsletterForm } from "@/components/shared/BrevoNewsletterForm";
 import NextImage from "next/image";
 import {
     X,
@@ -9,8 +9,6 @@ import {
     Youtube,
     Instagram,
     Facebook,
-    Loader2,
-    CheckCircle2,
 } from "lucide-react";
 
 import { SECTORS } from "@/data/dummy";
@@ -58,89 +56,8 @@ const SECTOR_ORDER = [
     "sustainability-and-safety",
 ];
 
-function FooterNewsletterForm() {
-    const [email, setEmail] = useState("");
-    const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
-    const [errorMsg, setErrorMsg] = useState("");
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        const normalizedEmail = email.trim().toLowerCase();
-        if (!normalizedEmail) return;
-
-        setErrorMsg("");
-        setStatus("loading");
-
-        try {
-            const res = await fetch("/api/subscribe", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    email: normalizedEmail,
-                    frequency: "Daily x1",
-                    preferences: ["News Briefing"],
-                    communities: [],
-                    subCommunities: [],
-                    source: "Footer Newsletter CTA",
-                    subscribedFromUrl: window.location.href,
-                    subscribedFromTitle: document.title,
-                }),
-            });
-
-            const data = await res.json().catch(() => ({}));
-
-            if (!res.ok) {
-                setStatus("error");
-                setErrorMsg(data.error || "Subscription failed. Please try again.");
-                return;
-            }
-
-            setStatus("success");
-            setEmail("");
-        } catch {
-            setStatus("error");
-            setErrorMsg("Network error. Please try again.");
-        }
-    };
-
-    if (status === "success") {
-        return (
-            <div className="bg-white/[0.04] border border-[#00A651]/20 rounded-xl p-5 text-center flex flex-col items-center justify-center">
-                <div className="w-8 h-8 bg-[#00A651]/20 text-[#00A651] rounded-full flex items-center justify-center mb-3">
-                    <CheckCircle2 className="w-4 h-4" />
-                </div>
-                <h4 className="font-bold text-white text-[14px] mb-1">Subscribed!</h4>
-                <p className="text-gray-400 text-[11px]">Check your inbox for insights.</p>
-            </div>
-        );
-    }
-
-    return (
-        <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-            <input
-                type="email"
-                placeholder="Enter your email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full bg-white/[0.04] text-white placeholder-gray-500 py-2.5 px-4 rounded-lg border border-white/[0.06] focus:outline-none focus:border-[#00A651] text-[13px] transition-colors"
-            />
-            <button
-                type="submit"
-                disabled={status === "loading"}
-                className="w-full bg-[#00A651] hover:bg-[#008F46] text-white font-bold py-2.5 rounded-lg text-[13px] transition-colors flex items-center justify-center gap-2"
-            >
-                {status === "loading" ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                    "Subscribe"
-                )}
-            </button>
-            {status === "error" && errorMsg && (
-                <p className="text-[11px] text-red-400 text-center mt-1">{errorMsg}</p>
-            )}
-        </form>
-    );
+function FooterBrevoForm() {
+    return <BrevoNewsletterForm variant="dark" source="Footer Newsletter CTA (Brevo)" formId="footer" />;
 }
 
 export function Footer() {
@@ -239,7 +156,7 @@ export function Footer() {
                         <p className="text-gray-400 text-[12px] mb-4 leading-relaxed">
                             Get our daily insights and market intelligence delivered directly to your inbox.
                         </p>
-                        <FooterNewsletterForm />
+                        <FooterBrevoForm />
                     </div>
 
 

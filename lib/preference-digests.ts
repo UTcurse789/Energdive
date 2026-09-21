@@ -36,6 +36,13 @@ const DEFAULT_TEST_FORMATS: DigestFormat[] = [
     "Insights",
 ];
 
+const DAILY_BRIEFING_EDITORIAL_FORMATS: DigestFormat[] = [
+    "News Briefing",
+    "Opinion",
+    "Case Study & Technical Papers",
+    "Insights",
+];
+
 type DigestLogStatus = "sent" | "failed" | "preview";
 
 interface DigestCandidateRow {
@@ -172,6 +179,8 @@ interface BrevoListContact {
     emailBlacklisted?: boolean;
     attributes?: Record<string, unknown>;
 }
+
+const BREVO_NEWSLETTER_LIST_ID = 24;
 
 function getStrapiHeaders(): HeadersInit {
     return STRAPI_TOKEN
@@ -566,7 +575,7 @@ function buildSections(
 
     for (const format of formats) {
         if (format !== "News Briefing" && format !== "Upcoming Events") {
-            continue; // Only process News Briefing and Upcoming Events
+            continue;
         }
 
         if (frequency === "monthly") {
@@ -582,9 +591,17 @@ function buildSections(
             limit = 4;
         }
 
-        const items = catalog
-            .filter((item) => item.formats.includes(format))
-            .filter((item) => isEvent || !since || item.publishedAt >= since)
+        const isFeaturedStory = (item: DigestItem) => /featured stor(?:y|ies)|cover stor(?:y|ies)|^feature$/i.test(item.badge);
+        const candidates = catalog
+            .filter((item) => format === "News Briefing"
+                ? item.formats.some((itemFormat) => DAILY_BRIEFING_EDITORIAL_FORMATS.includes(itemFormat))
+                : item.formats.includes(format))
+            // Keep daily News fresh, while Opinion, Reports, Insights and
+            // Featured Stories remain available as an evergreen rotation.
+            .filter((item) => {
+                if (isEvent || !since || format !== "News Briefing" || item.publishedAt >= since) return true;
+                return item.formats.some((itemFormat) => itemFormat !== "News Briefing");
+            })
             .filter((item) => !usedKeys.has(item.key))
             .sort((a, b) => {
                 if (isEvent) {
@@ -593,8 +610,68 @@ function buildSections(
                 }
                 // Descending order for news (latest first)
                 return b.sortAt.getTime() - a.sortAt.getTime();
-            })
-            .slice(0, limit);
+            });
+
+        let items: DigestItem[];
+        if (format === "News Briefing") {
+            const dayKey = getIstDateKey();
+            const featuredCandidates = candidates.filter(isFeaturedStory);
+            const nonFeaturedCandidates = candidates.filter((item) => !isFeaturedStory(item));
+
+            // One Featured Story is included in every briefing. Each cycle
+            // visits every available feature once; a new shuffled order starts
+            // only after the current cycle is exhausted.
+            const dayNumber = Math.floor(Date.now() / (24 * 60 * 60 * 1_000));
+            const featuredCycle = featuredCandidates.length > 0
+                ? Math.floor(dayNumber / featuredCandidates.length)
+                : 0;
+            const featuredOrder = [...featuredCandidates].sort(
+                (left, right) => hashForDay(left.key, `featured-${featuredCycle}`) - hashForDay(right.key, `featured-${featuredCycle}`)
+            );
+
+            // Rotate the remaining editorial formats daily, so News, Opinion,
+            // Reports and Insights share the remaining card positions.
+            const buckets = new Map<DigestFormat, DigestItem[]>(
+                DAILY_BRIEFING_EDITORIAL_FORMATS.map((editorialFormat) => [
+                    editorialFormat,
+                    nonFeaturedCandidates
+                        .filter((item) => item.formats.includes(editorialFormat))
+                        .sort((left, right) => hashForDay(left.key, `${dayKey}-${editorialFormat}`) - hashForDay(right.key, `${dayKey}-${editorialFormat}`)),
+                ])
+            );
+            // Prioritize one fresh News, Opinion and Report alongside the
+            // rotating feature. Insights fill any slot whose primary type is
+            // unavailable.
+            const primaryFormats: DigestFormat[] = [
+                "News Briefing",
+                "Opinion",
+                "Case Study & Technical Papers",
+                "Insights",
+            ];
+            const formatOffset = hashForDay("editorial-format-order", dayKey) % primaryFormats.length;
+            const formatOrder = primaryFormats.map(
+                (_, index) => primaryFormats[(index + formatOffset) % primaryFormats.length]
+            );
+
+            items = featuredOrder.length > 0
+                ? [featuredOrder[dayNumber % featuredOrder.length]]
+                : [];
+            while (items.length < limit) {
+                let added = false;
+                for (const editorialFormat of formatOrder) {
+                    const next = buckets.get(editorialFormat)?.shift();
+                    if (next) {
+                        items.push(next);
+                        added = true;
+                    }
+                    if (items.length === limit) break;
+                }
+                if (!added) break;
+            }
+            items.sort((left, right) => hashForDay(left.key, `${dayKey}-card-order`) - hashForDay(right.key, `${dayKey}-card-order`));
+        } else {
+            items = candidates.slice(0, limit);
+        }
 
         if (items.length === 0) {
             continue;
@@ -607,12 +684,12 @@ function buildSections(
     return sections;
 }
 
-function hasFreshNews(sections: DigestSection[]): boolean {
+function hasFreshEditorialContent(sections: DigestSection[]): boolean {
     return (sections.find((section) => section.format === "News Briefing")?.items.length || 0) > 0;
 }
 
-function hasEnoughTopNews(sections: DigestSection[]): boolean {
-    // The editorial email has a two-story minimum for both previews and
+function hasEnoughTopStories(sections: DigestSection[]): boolean {
+    // The mixed editorial block has a two-story minimum for both previews and
     // scheduled delivery.
     return (sections.find((section) => section.format === "News Briefing")?.items.length || 0) >= 2;
 }
@@ -812,8 +889,8 @@ function dedupeCandidatesByEmail(rows: DigestCandidateRow[]): DigestEmailCandida
 
         existing.userIds.push(row.id);
 
-        // Brevo is the source of truth for contact frequency. A portal profile can be older than
-        // the latest Brevo preference, so keep the Brevo value on a match.
+        // List 24 is the source of truth for newsletter inclusion, so retain
+        // its daily schedule when an address also has a portal profile.
         if (row.source === "brevo") {
             existing.preferred_frequency = row.preferred_frequency;
             if (row.first_name) {
@@ -851,7 +928,10 @@ function dedupeCandidatesByEmail(rows: DigestCandidateRow[]): DigestEmailCandida
     });
 }
 
-async function getBrevoActiveContactCandidates(): Promise<DigestCandidateRow[]> {
+async function getBrevoContactCandidates(
+    endpoint: string,
+    forceDailyBriefing = false
+): Promise<DigestCandidateRow[]> {
     const apiKey = process.env.BREVO_API_KEY;
     if (!apiKey) {
         throw new Error("BREVO_API_KEY is not configured");
@@ -862,7 +942,7 @@ async function getBrevoActiveContactCandidates(): Promise<DigestCandidateRow[]> 
 
     while (true) {
         const response = await fetch(
-            `https://api.brevo.com/v3/contacts?limit=${BREVO_CONTACTS_PAGE_SIZE}&offset=${offset}`,
+            `${endpoint}?limit=${BREVO_CONTACTS_PAGE_SIZE}&offset=${offset}`,
             { headers: { "api-key": apiKey, Accept: "application/json" } }
         );
         if (!response.ok) {
@@ -897,7 +977,9 @@ async function getBrevoActiveContactCandidates(): Promise<DigestCandidateRow[]> 
             email,
             first_name: firstName || null,
             last_name: null,
-            preferred_frequency: normalizeScheduledFrequency(rawFrequency),
+            preferred_frequency: forceDailyBriefing
+                ? "Daily"
+                : normalizeScheduledFrequency(rawFrequency),
             preferred_formats: ["News Briefing", "Upcoming Events"],
             last_content_digest_sent_at: null,
             source: "brevo" as const,
@@ -949,7 +1031,7 @@ async function getDigestCandidates(options: ProcessDigestsOptions): Promise<Dige
     params.push(options.limit || 10_000);
     const limitPlaceholder = `$${params.length}`;
 
-    // Ensure last_content_digest_sent_at column exists in subscribe_letterbox
+    // Keep the existing direct-letterbox delivery audience intact.
     await query(`ALTER TABLE subscribe_letterbox ADD COLUMN IF NOT EXISTS last_content_digest_sent_at TIMESTAMPTZ`);
 
     const result = await query<DigestCandidateRow>(
@@ -991,11 +1073,18 @@ async function getDigestCandidates(options: ProcessDigestsOptions): Promise<Dige
         params
     );
 
-    const [brevoRows, suppressedEmails] = await Promise.all([
-        getBrevoActiveContactCandidates(),
+    const [allBrevoRows, newsletterBrevoRows, suppressedEmails] = await Promise.all([
+        // Preserve the existing general Brevo audience.
+        getBrevoContactCandidates("https://api.brevo.com/v3/contacts"),
+        // Add list 24 explicitly so every Newsletter Subscribe contact gets
+        // the Daily Briefing, even if its general Brevo frequency differs.
+        getBrevoContactCandidates(
+            `https://api.brevo.com/v3/contacts/lists/${BREVO_NEWSLETTER_LIST_ID}/contacts`,
+            true
+        ),
         getSuppressedDigestEmails(),
     ]);
-    const allRows = [...result.rows, ...brevoRows]
+    const allRows = [...result.rows, ...allBrevoRows, ...newsletterBrevoRows]
         .filter((row) => !suppressedEmails.has(row.email.trim().toLowerCase()));
 
     await hydrateBrevoLastSentAt(allRows);
@@ -1079,15 +1168,15 @@ export async function processPreferenceDigests(
         if (cached) return cached;
 
         const formats = ["News Briefing", "Upcoming Events"] as DigestFormat[];
-        // Scheduled briefings only include news published today in IST.
+        // Scheduled briefings include fresh News, Opinion, Reports and Insights.
         const since = getStartOfIstDay(now);
         const sections = buildSections(formats, since, catalog, frequency);
         const itemKeys = sections.flatMap((section) => section.items.map((item) => item.key));
         // Never send an event-only, empty, backfilled, or thin briefing.
-        // A daily email needs at least two fresh Top News stories; otherwise
+        // A daily email needs at least two fresh editorial stories; otherwise
         // the two-column email layout renders with an empty card, as well as
         // sending subscribers a briefing that has too little editorial value.
-        const prepared = !hasFreshNews(sections) || !hasEnoughTopNews(sections) || itemKeys.length === 0
+        const prepared = !hasFreshEditorialContent(sections) || !hasEnoughTopStories(sections) || itemKeys.length === 0
                 ? "no_new_matching_content" as const
                 : { sections, itemKeys, extras: await loadDailyBriefingExtras(catalog, sections) };
 
@@ -1184,7 +1273,7 @@ export async function sendPreferenceDigestPreview(
         return { success: false, items: 0, email, frequency: "monthly", formats: [] };
     }
 
-    // Force formats to ONLY be News Briefing and Upcoming Events
+    // The News Briefing section is an interleaved editorial feed.
     const formats = ["News Briefing", "Upcoming Events"] as DigestFormat[];
     const mockRow = { preferred_frequency: frequency } as any;
     const since = getDueWindowStart(mockRow, new Date());
@@ -1216,8 +1305,8 @@ export async function sendPreferenceDigestPreview(
         throw new Error("No matching content or events are available for the requested preview.");
     }
 
-    if (!options.allowInsufficientTopNews && !hasEnoughTopNews(sections)) {
-        throw new Error("At least two Top News articles are required to send a Daily Briefing preview.");
+    if (!options.allowInsufficientTopNews && !hasEnoughTopStories(sections)) {
+        throw new Error("At least two fresh editorial stories are required to send a Daily Briefing preview.");
     }
 
     const extras = await loadDailyBriefingExtras(catalog, sections);
