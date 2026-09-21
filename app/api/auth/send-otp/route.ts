@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { query } from "@/lib/db";
 import { createOtp } from "@/lib/otp";
 import { sendOtpEmail } from "@/lib/email";
+import { syncPartialContactToBrevo } from "@/lib/brevoSync";
 
 /**
  * POST /api/auth/send-otp
@@ -60,6 +61,21 @@ export async function POST(req: NextRequest) {
                    updated_at          = NOW()`,
                 [email, name, phone || null, company || null, source]
             );
+
+            // This route is also used by the direct-signup UI. Mirror the
+            // signup route so every incomplete registration reaches list #21.
+            try {
+                await syncPartialContactToBrevo({
+                    email,
+                    name,
+                    phone: phone || undefined,
+                    company: company || undefined,
+                    source: "Portal signup",
+                });
+            } catch (brevoError: unknown) {
+                const message = brevoError instanceof Error ? brevoError.message : String(brevoError);
+                console.warn(`[SEND-OTP] Partial Brevo sync failed (non-fatal): ${message}`);
+            }
         }
 
         // Generate and send OTP

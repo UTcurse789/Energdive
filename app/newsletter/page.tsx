@@ -1,11 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { BrevoNewsletterForm } from "@/components/shared/BrevoNewsletterForm";
 import Link from "next/link";
 import {
     Mail,
     ArrowRight,
-    Loader2,
     CheckCircle2,
     Zap,
     BarChart2,
@@ -55,49 +54,6 @@ const TAGS = ["Daily briefings", "Weekly deep-dives", "Event alerts", "Market da
 
 export default function NewsletterPage() {
     const { openAuthModal } = useAuthModal();
-    const [email, setEmail] = useState("");
-    const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
-    const [errorMsg, setErrorMsg] = useState("");
- 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        const normalizedEmail = email.trim().toLowerCase();
-        if (!normalizedEmail) return;
-
-        setErrorMsg("");
-        setStatus("loading");
-
-        try {
-            const res = await fetch("/api/subscribe", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    email: normalizedEmail,
-                    frequency: "Daily x1",
-                    preferences: ["News Briefing"],
-                    communities: [],
-                    subCommunities: [],
-                    source: "Newsletter Page",
-                    subscribedFromUrl: window.location.href,
-                    subscribedFromTitle: document.title,
-                }),
-            });
-
-            const data = await res.json().catch(() => ({}));
-
-            if (!res.ok) {
-                setStatus("error");
-                setErrorMsg(data.error || "Subscription failed. Please try again.");
-                return;
-            }
-
-            setStatus("success");
-            setEmail("");
-        } catch {
-            setStatus("error");
-            setErrorMsg("Network error. Please try again.");
-        }
-    };
 
     return (
         <div className="min-h-screen bg-white text-slate-900">
@@ -209,81 +165,33 @@ export default function NewsletterPage() {
                             </div>
 
                             <div className="p-7">
-                                {status === "success" ? (
-                                    <div className="text-center py-10">
-                                        <div className="w-14 h-14 bg-[#F0FDF4] rounded-full flex items-center justify-center mx-auto mb-4">
-                                            <CheckCircle2 className="w-7 h-7 text-[#00C853]" />
+                                <h4 className="text-lg font-bold text-slate-900 mb-1">Enter your email to subscribe</h4>
+                                <p className="text-slate-400 text-[13px] mb-6">
+                                    Your daily briefing — curated, concise, and delivered every morning.
+                                </p>
+
+                                <BrevoNewsletterForm variant="light" source="Newsletter Page (Brevo)" formId="newsletter-page" />
+
+                                {/* Trust signals */}
+                                <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2">
+                                    {[
+                                        { icon: ShieldCheck, label: "No spam." },
+                                        { icon: CheckCircle2, label: "Unsubscribe anytime." },
+                                        { icon: ShieldCheck, label: "Always free." },
+                                    ].map(({ icon: Icon, label }) => (
+                                        <div key={label} className="flex items-center gap-1.5 text-slate-400 text-[11px]">
+                                            <Icon className="w-3.5 h-3.5 text-[#00C853]" />
+                                            {label}
                                         </div>
-                                        <h4 className="font-serif text-2xl font-bold text-slate-900 mb-2">You&apos;re Subscribed!</h4>
-                                        <p className="text-slate-500 text-sm mb-6">
-                                            Welcome aboard. Your first briefing is on its way.
-                                        </p>
-                                        <Link href="/" className="inline-flex items-center gap-2 text-[#00C853] font-bold text-sm hover:underline">
-                                            Back to Homepage <ArrowRight className="w-4 h-4" />
-                                        </Link>
-                                    </div>
-                                ) : (
-                                    <>
-                                        <h4 className="text-lg font-bold text-slate-900 mb-1">Enter your email to subscribe</h4>
-                                        <p className="text-slate-400 text-[13px] mb-6">
-                                            Your daily briefing — curated, concise, and delivered every morning.
-                                        </p>
+                                    ))}
+                                </div>
 
-                                        <form onSubmit={handleSubmit} className="space-y-4">
-                                            <div>
-                                                <label htmlFor="nl-email" className="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2">
-                                                    Email Address
-                                                </label>
-                                                <input
-                                                    id="nl-email"
-                                                    type="email"
-                                                    placeholder="you@company.com"
-                                                    required
-                                                    value={email}
-                                                    onChange={(e) => setEmail(e.target.value)}
-                                                    className="w-full border border-slate-200 rounded-xl px-4 py-3.5 text-slate-900 placeholder-slate-300 focus:outline-none focus:ring-2 focus:ring-[#00C853]/25 focus:border-[#00C853] text-[14px] transition-all bg-slate-50"
-                                                />
-                                            </div>
-
-                                            {status === "error" && errorMsg && (
-                                                <p className="text-red-500 text-[12px] font-medium">{errorMsg}</p>
-                                            )}
-
-                                            <button
-                                                type="submit"
-                                                disabled={status === "loading"}
-                                                className="w-full bg-[#00C853] hover:bg-[#00b347] disabled:opacity-70 text-white font-bold py-3.5 rounded-xl text-[14px] transition-colors flex items-center justify-center gap-2 tracking-wide"
-                                            >
-                                                {status === "loading" ? (
-                                                    <Loader2 className="w-5 h-5 animate-spin" />
-                                                ) : (
-                                                    <>Subscribe Now <ArrowRight className="w-4 h-4" /></>
-                                                )}
-                                            </button>
-                                        </form>
-
-                                        {/* Trust signals */}
-                                        <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2">
-                                            {[
-                                                { icon: ShieldCheck, label: "No spam." },
-                                                { icon: CheckCircle2, label: "Unsubscribe anytime." },
-                                                { icon: ShieldCheck, label: "Always free." },
-                                            ].map(({ icon: Icon, label }) => (
-                                                <div key={label} className="flex items-center gap-1.5 text-slate-400 text-[11px]">
-                                                    <Icon className="w-3.5 h-3.5 text-[#00C853]" />
-                                                    {label}
-                                                </div>
-                                            ))}
-                                        </div>
-
-                                        <p className="text-[11px] text-slate-300 mt-4 leading-relaxed">
-                                            By subscribing, you agree to our{" "}
-                                            <Link href="/terms" className="text-[#00C853] hover:underline">Terms</Link>{" "}
-                                            and{" "}
-                                            <Link href="/privacy" className="text-[#00C853] hover:underline">Privacy Policy</Link>.
-                                        </p>
-                                    </>
-                                )}
+                                <p className="text-[11px] text-slate-300 mt-4 leading-relaxed">
+                                    By subscribing, you agree to our{" "}
+                                    <Link href="/terms" className="text-[#00C853] hover:underline">Terms</Link>{" "}
+                                    and{" "}
+                                    <Link href="/privacy" className="text-[#00C853] hover:underline">Privacy Policy</Link>.
+                                </p>
                             </div>
                         </div>
 

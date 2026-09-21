@@ -13,6 +13,7 @@
     "build": "next build",
     "start": "next start",
     "test:backstage-local": "tsx scripts/test-backstage-registration.ts",
+    "sync:newsletter-brevo": "tsx scripts/sync-newsletter-letterbox-to-brevo.ts",
     "lint": "eslint"
   },
   "dependencies": {
