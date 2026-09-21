@@ -46,7 +46,7 @@ export function BrevoNewsletterForm({
         }
 
         // Set Brevo globals
-        const w = window as Record<string, unknown>;
+        const w = window as unknown as Record<string, unknown>;
         w.REQUIRED_CODE_ERROR_MESSAGE = "Please choose a country code";
         w.LOCALE = "en";
         w.EMAIL_INVALID_MESSAGE = "The information provided is invalid. Please review the field format and try again.";
