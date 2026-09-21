@@ -82,22 +82,22 @@ export default function OnboardingModal() {
                     className="fixed inset-0 z-[200] flex items-start justify-center bg-zinc-900/60 backdrop-blur-sm overflow-y-auto"
                 >
                     <motion.div
-                        initial={{ opacity: 0, scale: 0.95, y: 30 }}
+                        initial={{ opacity: 0, scale: 0.95, y: 20 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.95, y: 30 }}
-                        transition={{ type: "spring", duration: 0.5, bounce: 0.15 }}
-                        className="relative w-full max-w-3xl mx-4 my-8 sm:my-12"
+                        exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                        transition={{ type: "spring", duration: 0.45, bounce: 0.15 }}
+                        className="relative w-full max-w-3xl mx-2.5 my-3 sm:mx-4 sm:my-10"
                     >
                         {/* Modal Card */}
                         <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
                             {/* Logo */}
-                            <div className="flex justify-center px-6 pt-5 pb-2">
+                            <div className="flex justify-center px-4 pt-4 pb-1 sm:px-6 sm:pt-5 sm:pb-2">
                                 <Image
                                     src="/logo - energclub-energdive.png"
                                     alt="ENERGDIVE"
-                                    width={250}
-                                    height={70}
-                                    className="w-auto h-14 sm:h-16 object-contain"
+                                    width={220}
+                                    height={55}
+                                    className="w-auto h-9 sm:h-14 object-contain"
                                     priority
                                 />
                             </div>

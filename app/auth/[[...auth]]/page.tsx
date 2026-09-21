@@ -541,21 +541,22 @@ export default function UnifiedAuthPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-                className="relative z-10 w-full max-w-[420px] mx-4"
+                className="relative z-10 w-full max-w-[360px] sm:max-w-[420px] mx-3.5 sm:mx-4"
             >
-                <div className="bg-white/95 backdrop-blur-xl rounded-2xl shadow-xl shadow-black/6 border border-zinc-200/60 p-8">
+                <div className="bg-white/95 backdrop-blur-xl rounded-2xl shadow-xl shadow-black/6 border border-zinc-200/60 px-5 py-6 sm:p-8">
                     {/* Header */}
-                    <div className="text-center mb-6">
-                        <div className="flex justify-center mb-4">
+                    <div className="text-center mb-4 sm:mb-6">
+                        <div className="flex justify-center mb-3 sm:mb-4">
                             <Image
                                 src="/logo - energclub-energdive.png"
                                 alt="Energdive"
-                                width={250}
-                                height={60}
+                                width={220}
+                                height={50}
+                                className="h-9 sm:h-12 w-auto object-contain"
                                 priority
                             />
                         </div>
-                        <p className="text-sm text-zinc-500 mt-1">
+                        <p className="text-xs sm:text-sm text-zinc-500 mt-1">
                             {step === "identifier"
                                 ? "Sign in or create your account"
                                 : "Enter the verification code"}
