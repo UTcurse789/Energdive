@@ -459,6 +459,9 @@ export function Header() {
                         <div className="relative flex items-center gap-x-3 md:gap-x-5 xl:gap-x-7 flex-1 justify-end">
                             <nav className="hidden sm:flex items-center gap-x-3 md:gap-x-5 xl:gap-x-7">
                                 <Link href="/energclub" target="_blank" className="text-[12px] xl:text-[13px] font-bold uppercase tracking-[1px] hover:opacity-70 whitespace-nowrap" onClick={closeMenus}>ENERGCLUB</Link>
+                                
+                                <Link href="/marketplace" className="text-[12px] xl:text-[13px] font-bold uppercase tracking-[1px] hover:opacity-70 whitespace-nowrap" onClick={closeMenus}>MARKETPLACE</Link>
+
                                 <div className="relative group cursor-pointer" onMouseEnter={() => { setActiveMenu(null); }}>
                                     <span style={{ color: brandGreen }} className="flex items-center gap-1 text-[12px] xl:text-[13px] font-bold uppercase tracking-[1px] hover:opacity-70 whitespace-nowrap py-2">
                                         SUBSCRIBE <ChevronDown className="w-3 h-3 transition-transform group-hover:rotate-180" />
@@ -1388,6 +1391,10 @@ export function Header() {
                                         )}
                                     </AnimatePresence>
                                 </div>
+
+                                <Link href="/marketplace" onClick={closeAll} className="px-6 py-4 text-[13px] font-bold uppercase tracking-[1px] text-[#00A651] hover:bg-gray-50 transition-colors border-t border-gray-100">
+                                    MARKETPLACE
+                                </Link>
 
                                 {/* MORE - Expandable */}
                                 <div className="border-t border-gray-100">
