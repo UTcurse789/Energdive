@@ -7,7 +7,7 @@ import Image from "next/image";
 import dynamic from "next/dynamic";
 import { cn } from "@/lib/utils";
 import { formatContentDate } from "@/lib/date";
-import { Search, ChevronDown, Facebook, Linkedin, Megaphone, ChevronRight, Zap, Menu, X, MapPin, Mail, Phone, Play, ArrowRight, Youtube, Instagram, LibraryBig, FileDown } from "lucide-react";
+import { Search, ChevronDown, Facebook, Linkedin, Megaphone, ChevronRight, Zap, Menu, X, MapPin, Mail, Phone, Play, ArrowRight, Youtube, Instagram, LibraryBig, FileDown, Briefcase, BookOpen } from "lucide-react";
 import { SECTORS } from "@/data/dummy";
 import { motion, AnimatePresence } from "framer-motion";
 import { SignedIn, SignedOut, useAuth } from "@clerk/nextjs";
@@ -388,11 +388,23 @@ export function Header() {
                             </a>
                         ))}
                     </div>
-                    <Link href="/advertise-with-us" className="flex items-center gap-2 uppercase cursor-pointer hover:text-gray-300 transition-colors">
-                        <Megaphone className="w-3.5 h-3.5" />
-                        <span className="whitespace-nowrap uppercase hidden sm:inline">ADVERTISE WITH US</span>
-                        <span className="whitespace-nowrap uppercase sm:hidden">ADVERTISE</span>
-                    </Link>
+                    <div className="flex items-center gap-3 sm:gap-6">
+                        <Link href="/energyjobs" className="flex items-center gap-1.5 uppercase cursor-pointer hover:text-gray-300 transition-colors">
+                            <Briefcase className="w-3.5 h-3.5" />
+                            <span className="whitespace-nowrap uppercase hidden sm:inline">ENERGY Jobs</span>
+                            <span className="whitespace-nowrap uppercase sm:hidden">Jobs</span>
+                        </Link>
+                        <Link href="/insights-exchange" className="flex items-center gap-1.5 uppercase cursor-pointer hover:text-gray-300 transition-colors">
+                            <BookOpen className="w-3.5 h-3.5" />
+                            <span className="whitespace-nowrap uppercase hidden sm:inline">Insights Exchange</span>
+                            <span className="whitespace-nowrap uppercase sm:hidden">Insights</span>
+                        </Link>
+                        <Link href="/advertise-with-us" className="flex items-center gap-1.5 uppercase cursor-pointer hover:text-gray-300 transition-colors">
+                            <Megaphone className="w-3.5 h-3.5" />
+                            <span className="whitespace-nowrap uppercase hidden sm:inline">ADVERTISE WITH US</span>
+                            <span className="whitespace-nowrap uppercase sm:hidden">ADVERTISE</span>
+                        </Link>
+                    </div>
                 </div>
 
                 {/* 2. MAIN NAVIGATION */}
@@ -806,7 +818,21 @@ export function Header() {
                                             Resource Hub <ChevronRight size={14} />
                                         </Link>
 
-                                        {/* <Link
+                                        <Link
+                                            href="/energyjobs"
+                                            onClick={closeMenus}
+                                            className={cn(
+                                                "px-4 py-3 text-[14px] font-bold text-gray-800 flex justify-between items-center transition-colors",
+                                                hoveredMoreItem === "energyjobs"
+                                                    ? "bg-[#00A651] text-white"
+                                                    : "hover:bg-[#00A651] hover:text-white"
+                                            )}
+                                            onMouseEnter={() => setHoveredMoreItem("energyjobs")}
+                                        >
+                                            ENERGY Jobs <ChevronRight size={14} />
+                                        </Link>
+
+                                        <Link
                                             href="/insights-exchange"
                                             onClick={closeMenus}
                                             className={cn(
@@ -818,7 +844,7 @@ export function Header() {
                                             onMouseEnter={() => setHoveredMoreItem("insights-exchange")}
                                         >
                                             Insights Exchange <ChevronRight size={14} />
-                                        </Link> */}
+                                        </Link>
 
                                         <Link
                                             href="/about"
@@ -1043,8 +1069,28 @@ export function Header() {
                                         </div>
                                     )}
 
+                                    {/* ENERGY Jobs hover content */}
+                                    {hoveredMoreItem === "energyjobs" && (
+                                        <div className="flex items-start gap-12 h-full">
+                                            <div className="flex-1">
+                                                <h4 className="text-[12px] font-bold uppercase text-gray-400 border-b pb-3 mb-6 tracking-widest">ENERGY Jobs</h4>
+                                                <div className="w-14 h-14 rounded-lg flex items-center justify-center mb-5" style={{ background: '#00A65112' }}>
+                                                    <Briefcase size={24} style={{ color: '#00A651' }} />
+                                                </div>
+                                                <h3 className="text-2xl font-serif font-bold text-zinc-900 mb-4 leading-tight">Careers &amp; Hiring in Energy Transition</h3>
+                                                <p className="text-[14px] text-gray-500 leading-relaxed mb-4">ENERGY Jobs is ENERGDIVE&apos;s specialized platform for careers across power, renewables, oil &amp; gas, energy storage, clean mobility, and climate tech.</p>
+                                                <p className="text-[14px] text-gray-500 leading-relaxed mb-6">Explore curated job opportunities or recruit qualified energy professionals for your team.</p>
+                                                <div className="flex flex-wrap gap-3">
+                                                    <Link href="/energyjobs" onClick={closeMenus} className="inline-flex items-center gap-1.5 text-[11px] font-bold text-[#00A651] uppercase tracking-widest hover:underline">
+                                                        Explore Jobs <ArrowRight size={13} />
+                                                    </Link>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
                                     {/* Insights Exchange hover content */}
-                                    {/* {hoveredMoreItem === "insights-exchange" && (
+                                    {hoveredMoreItem === "insights-exchange" && (
                                         <div className="flex items-start gap-12 h-full">
                                             <div className="flex-1">
                                                 <h4 className="text-[12px] font-bold uppercase text-gray-400 border-b pb-3 mb-6 tracking-widest">ENERGDIVE Insights Exchange</h4>
@@ -1058,13 +1104,13 @@ export function Header() {
                                                     <Link href="/insights-exchange" onClick={closeMenus} className="inline-flex items-center gap-1.5 text-[11px] font-bold text-[#00A651] uppercase tracking-widest hover:underline">
                                                         Explore EIX <ArrowRight size={13} />
                                                     </Link>
-                                                    <Link href="/knowledge-hub/submit" onClick={closeMenus} className="inline-flex items-center gap-1.5 text-[11px] font-bold text-zinc-900 uppercase tracking-widest hover:underline">
+                                                    <Link href="/insights-exchange/call-for-papers" onClick={closeMenus} className="inline-flex items-center gap-1.5 text-[11px] font-bold text-zinc-900 uppercase tracking-widest hover:underline">
                                                         Submit a Paper <ArrowRight size={13} />
                                                     </Link>
                                                 </div>
                                             </div>
                                         </div>
-                                    )} */}
+                                    )}
 
                                     {/* About hover content — BRIEF OVERVIEW */}
                                     {hoveredMoreItem === "about" && (
@@ -1415,6 +1461,9 @@ export function Header() {
                                                 </Link>
                                                 <Link href="/resource-hub" onClick={closeAll} className="block px-10 py-3 text-[13px] font-medium text-gray-700 hover:text-[#00A651] hover:bg-white transition-colors border-b border-gray-100">
                                                     Resource Hub
+                                                </Link>
+                                                <Link href="/energyjobs" onClick={closeAll} className="block px-10 py-3 text-[13px] font-medium text-gray-700 hover:text-[#00A651] hover:bg-white transition-colors border-b border-gray-100">
+                                                    ENERGY Jobs
                                                 </Link>
                                                 <Link href="/insights-exchange" onClick={closeAll} className="block px-10 py-3 text-[13px] font-medium text-gray-700 hover:text-[#00A651] hover:bg-white transition-colors border-b border-gray-100">
                                                     Insights Exchange
