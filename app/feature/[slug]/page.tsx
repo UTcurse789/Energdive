@@ -176,6 +176,11 @@ export default async function FeatureDetailPage({ params }: { params: Promise<{ 
         author?.Avatar?.url ||
         author?.Avatar?.data?.attributes?.url ||
         null;
+    const authorDesignation: string | undefined = author?.designation || undefined;
+    const authorBioRaw = author?.bio;
+    const authorBioText: string | undefined = Array.isArray(authorBioRaw)
+        ? authorBioRaw.map((b: any) => (b.children || []).map((c: any) => c.text || "").join("")).filter(Boolean).join(" ")
+        : typeof authorBioRaw === "string" ? authorBioRaw : undefined;
     const latestIssue = await getLatestIssue();
 
     const article = {
@@ -185,7 +190,7 @@ export default async function FeatureDetailPage({ params }: { params: Promise<{ 
         image: attrs.FeaturedImage?.url ? strapiImageUrl(attrs.FeaturedImage.url) : "/magazine-default.jpg",
         date: formatContentDate(attrs.Date || attrs.publishedAt || attrs.createdAt),
         author: authorName
-            ? { name: authorName, avatar: authorAvatarUrl ? strapiImageUrl(authorAvatarUrl) : null }
+            ? { name: authorName, avatar: authorAvatarUrl ? strapiImageUrl(authorAvatarUrl) : null, role: authorDesignation, bio: authorBioText }
             : null,
         tags: normalizedTags,
         category: attrs.type_of_content?.name || attrs.type_of_content?.data?.attributes?.name || "Feature",

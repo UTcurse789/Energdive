@@ -224,6 +224,11 @@ export default async function ArticlePage({
         author?.Avatar?.url ||
         author?.Avatar?.data?.attributes?.url ||
         null;
+    const authorDesignation: string | undefined = author?.designation || undefined;
+    const authorBioRaw = author?.bio;
+    const authorBioText: string | undefined = Array.isArray(authorBioRaw)
+        ? authorBioRaw.map((b: any) => (b.children || []).map((c: any) => c.text || "").join("")).filter(Boolean).join(" ")
+        : typeof authorBioRaw === "string" ? authorBioRaw : undefined;
 
     const latestIssue = await getLatestIssue();
 
@@ -242,6 +247,8 @@ export default async function ArticlePage({
             ? {
                 name: authorName,
                 avatar: authorAvatarUrl ? strapiImageUrl(authorAvatarUrl) : null,
+                role: authorDesignation,
+                bio: authorBioText,
             }
             : null,
         tags: normalizedTags,

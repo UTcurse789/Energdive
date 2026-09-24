@@ -53,10 +53,12 @@ export function AuthorBioBox({ author }: AuthorBioBoxProps) {
                                 {author.name}
                             </Link>
                         </h4>
-                        <p className="text-sm font-medium text-teal-600 flex items-center gap-1.5 mt-1">
-                            <Award className="w-4 h-4" />
-                            {author.role || "Energy Market Analyst"}
-                        </p>
+                        {author.role && (
+                            <p className="text-sm font-medium text-teal-600 flex items-center gap-1.5 mt-1">
+                                <Award className="w-4 h-4" />
+                                {author.role}
+                            </p>
+                        )}
                     </div>
 
                     {/* Social Links */}
