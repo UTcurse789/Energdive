@@ -78,13 +78,19 @@ async function fetchSectorVideos(slug: string) {
         names.forEach((n, i) => {
             filterStr += `&filters[$or][${i + 1}][sectors][name][$containsi]=${encodeURIComponent(n)}`;
         });
-        const url = `${STRAPI}/api/videos?${filterStr}&populate=*&sort=createdAt:desc`;
+        const url = `${STRAPI}/api/videos?${filterStr}&populate=*&sort[0]=date:desc&sort[1]=publishedAt:desc&sort[2]=createdAt:desc&pagination[pageSize]=100`;
         const res = await fetch(url, { next: { revalidate: 3600 } });
         const json = await res.json();
         return json?.data || [];
     } catch {
         return [];
     }
+}
+
+function parseDateScore(val?: string | null): number {
+    if (!val) return 0;
+    const t = new Date(val).getTime();
+    return Number.isNaN(t) ? 0 : t;
 }
 
 function normalizeText(value: string) {
@@ -275,6 +281,7 @@ export default function SectorIntelligencePage() {
                 excerpt: item.Excerpt?.[0]?.children?.[0]?.text || "",
                 type_of_content: item.type_of_content,
             }));
+            formatted.sort((a: any, b: any) => parseDateScore(b.date) - parseDateScore(a.date));
             setArticles(formatted);
         });
 
@@ -291,6 +298,7 @@ export default function SectorIntelligencePage() {
                 sectors: extractNames(item.sectors),
                 tags: extractNames(item.tags),
             }));
+            formatted.sort((a: any, b: any) => parseDateScore(b.date) - parseDateScore(a.date));
             setVideos(formatted);
             setLoading(false);
         });
@@ -391,34 +399,43 @@ export default function SectorIntelligencePage() {
     }, [subParam, subCategories]);
 
     const filteredReports = useMemo(() => {
-        return articles.filter((report) => {
-            const search = searchQuery.toLowerCase().trim();
-            const matchesTab = matchesActiveTab(report.sectors || [], activeTab);
-            const matchesSearch =
-                !search ||
-                report.title?.toLowerCase().includes(search) ||
-                report.excerpt?.toLowerCase().includes(search) ||
-                report.tags?.some((tag: any) => tag.name?.toLowerCase().includes(search)) ||
-                report.sectors?.some((name: string) => name.toLowerCase().includes(search));
-            return matchesTab && matchesSearch;
-        });
+        return articles
+            .filter((report) => {
+                const search = searchQuery.toLowerCase().trim();
+                // Include BOTH sectors and tags for tab matching
+                const reportTagNames = (report.tags || []).map((t: any) => t.name).filter(Boolean);
+                const matchesTab = matchesActiveTab(
+                    [...(report.sectors || []), ...reportTagNames],
+                    activeTab
+                );
+                const matchesSearch =
+                    !search ||
+                    report.title?.toLowerCase().includes(search) ||
+                    report.excerpt?.toLowerCase().includes(search) ||
+                    report.tags?.some((tag: any) => tag.name?.toLowerCase().includes(search)) ||
+                    report.sectors?.some((name: string) => name.toLowerCase().includes(search));
+                return matchesTab && matchesSearch;
+            })
+            .sort((a, b) => parseDateScore(b.date) - parseDateScore(a.date));
     }, [activeTab, searchQuery, articles]);
 
     const filteredVideos = useMemo(() => {
-        return videos.filter((video) => {
-            const search = searchQuery.toLowerCase().trim();
-            const tabPools = [
-                ...(video.sectors || []),
-                ...(video.tags || []),
-            ];
-            const matchesTab = matchesActiveTab(tabPools, activeTab);
-            const matchesSearch =
-                !search ||
-                video.title?.toLowerCase().includes(search) ||
-                video.sectors?.some((name: string) => name.toLowerCase().includes(search)) ||
-                video.tags?.some((name: string) => name.toLowerCase().includes(search));
-            return matchesTab && matchesSearch;
-        });
+        return videos
+            .filter((video) => {
+                const search = searchQuery.toLowerCase().trim();
+                const tabPools = [
+                    ...(video.sectors || []),
+                    ...(video.tags || []),
+                ];
+                const matchesTab = matchesActiveTab(tabPools, activeTab);
+                const matchesSearch =
+                    !search ||
+                    video.title?.toLowerCase().includes(search) ||
+                    video.sectors?.some((name: string) => name.toLowerCase().includes(search)) ||
+                    video.tags?.some((name: string) => name.toLowerCase().includes(search));
+                return matchesTab && matchesSearch;
+            })
+            .sort((a, b) => parseDateScore(b.date) - parseDateScore(a.date));
     }, [videos, activeTab, searchQuery]);
 
     if (loading) {
