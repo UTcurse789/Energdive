@@ -35,11 +35,24 @@ export default function VideosPage() {
         async function getVideos() {
             try {
                 // We populate author and sectors to get names and images
-                const baseUrl = process.env.NEXT_PUBLIC_STRAPI_URL || "http://localhost:1337";
-                const response = await fetch(`${baseUrl}/api/videos?populate[0]=thumbnail&populate[1]=author.avatar&populate[2]=sectors&sort=publishedAt:desc`);
-                const { data } = await response.json();
+                const baseUrl = process.env.NEXT_PUBLIC_STRAPI_URL || "https://cms.energdive.com";
+                let allData: any[] = [];
+                let page = 1;
+                let pageCount = 1;
 
-                const mappedData: Video[] = data.map((item: any) => {
+                do {
+                    const response = await fetch(
+                        `${baseUrl}/api/videos?populate[0]=thumbnail&populate[1]=author.avatar&populate[2]=sectors&sort=publishedAt:desc&pagination[page]=${page}&pagination[pageSize]=100`
+                    );
+                    const json = await response.json();
+                    if (Array.isArray(json?.data)) {
+                        allData = allData.concat(json.data);
+                    }
+                    pageCount = json?.meta?.pagination?.pageCount || 1;
+                    page++;
+                } while (page <= pageCount);
+
+                const mappedData: Video[] = allData.map((item: any) => {
                     // Fallback: If Strapi thumbnail is null, use YouTube's image service
                     const thumbUrl = item.thumbnail?.url
                         ? strapiImageUrl(item.thumbnail.url)
@@ -74,7 +87,12 @@ export default function VideosPage() {
         getVideos();
     }, []);
 
-    const categories = ["All", ...Array.from(new Set(videos.map((v) => v.category)))];
+    const categories = [
+        "All",
+        ...Array.from(new Set(videos.map((v) => v.category).filter(Boolean))).sort((a, b) =>
+            a.localeCompare(b)
+        ),
+    ];
 
     const filteredVideos = activeCategory === "All"
         ? videos

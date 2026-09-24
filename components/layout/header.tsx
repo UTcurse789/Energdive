@@ -7,7 +7,7 @@ import Image from "next/image";
 import dynamic from "next/dynamic";
 import { cn } from "@/lib/utils";
 import { formatContentDate } from "@/lib/date";
-import { Search, ChevronDown, Facebook, Linkedin, Megaphone, ChevronRight, Zap, Menu, X, MapPin, Mail, Phone, Play, ArrowRight, Youtube, Instagram, LibraryBig, FileDown, Briefcase, BookOpen } from "lucide-react";
+import { Search, ChevronDown, Facebook, Linkedin, Megaphone, ChevronRight, Zap, Menu, X, MapPin, Mail, Phone, Play, ArrowRight, Youtube, Instagram, LibraryBig, FileDown, Briefcase, BookOpen, Home } from "lucide-react";
 import { SECTORS } from "@/data/dummy";
 import { motion, AnimatePresence } from "framer-motion";
 import { SignedIn, SignedOut, useAuth } from "@clerk/nextjs";
@@ -375,6 +375,13 @@ export function Header() {
                 {/* 1. TOP BLACK BAR */}
                 <div className="bg-black text-white py-1.5 px-4 md:px-12 flex justify-between items-center text-[10px] md:text-[11px] font-semibold tracking-wider">
                     <div className="flex gap-2 items-center">
+                        <Link
+                            href="/"
+                            aria-label="Home"
+                            className="p-1.5 rounded-md hover:bg-white/10 hover:opacity-100 transition-all flex items-center justify-center text-gray-300 hover:text-white"
+                        >
+                            <Home className="w-3.5 h-3.5 cursor-pointer" />
+                        </Link>
                         {SOCIAL_ICONS.map(({ Icon, href, label }) => (
                             <a
                                 key={label}

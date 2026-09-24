@@ -30,7 +30,8 @@ export function buildSectorArticlesUrl(slug: string): string {
     `&filters[$and][0][$or][1][type_of_content][name][$eq]=Featured Stories` +
     `&${filterStr}` +
     `&populate=*` +
-    `&sort[0]=publishedAt:desc`
+    `&sort[0]=Date:desc&sort[1]=publishedAt:desc&sort[2]=createdAt:desc` +
+    `&pagination[pageSize]=100`
   );
 }
 
