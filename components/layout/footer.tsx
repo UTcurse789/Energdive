@@ -22,6 +22,7 @@ const QUICK_LINKS = [
     { name: "Editorials", href: "/editorial" },
     { name: "Editorial Collaboration", href: "/editorial-collaboration" },
     { name: "Reports", href: "/reports" },
+    { name: "Marketplace", href: "/marketplace" },
     { name: "Submit Paper", href: "/insights-exchange/call-for-papers" },
     { name: "Energy Jobs", href: "/energyjobs" },
     { name: "Videos", href: "/videos" },
