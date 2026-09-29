@@ -1,16 +1,48 @@
 import type { Metadata } from "next";
 import { getAllCategories } from "@/data/marketplace";
+import { getMarketplaceSectorSummaries } from "@/data/marketplace/sector-summaries";
+import {
+  getMarketplaceCompanies,
+  getMarketplaceProducts,
+} from "@/lib/marketplace-strapi";
 import { SectorCard } from "@/components/marketplace/sector-card";
 import { MarketplaceBreadcrumbs } from "@/components/marketplace/marketplace-breadcrumbs";
 
 export const metadata: Metadata = {
   title: "Energy Industry Sectors | Energdive Marketplace",
   description:
-    "Explore 12 energy sectors across the entire value chain from generation and solar to hydrogen, transmission, storage and mobility.",
+    "Explore energy sectors with active companies and solutions in the Energdive Marketplace.",
 };
 
-export default function SectorsPage() {
-  const categories = getAllCategories();
+export const revalidate = 300;
+
+function normalizedSectorName(value: string): string {
+  return value.trim().toLowerCase().replace(/&/g, "and").replace(/[^a-z0-9]+/g, "");
+}
+
+export default async function SectorsPage() {
+  const [companies, products] = await Promise.all([
+    getMarketplaceCompanies(),
+    getMarketplaceProducts(),
+  ]);
+  const categoryByName = new Map(
+    getAllCategories().map((category) => [normalizedSectorName(category.name), category]),
+  );
+  const sectors = getMarketplaceSectorSummaries(companies, products).map((sector, index) => {
+    const category = categoryByName.get(normalizedSectorName(sector.name));
+
+    return {
+      id: category?.id ?? `marketplace-sector-${index}`,
+      slug: category?.slug ?? sector.key,
+      name: sector.name,
+      description: sector.description,
+      iconName: category?.iconName ?? "Zap",
+      image: sector.image ?? category?.image ?? "",
+      subSectors: category?.subSectors ?? [],
+      companyCount: sector.companyCount,
+      productCount: sector.productCount,
+    };
+  });
 
   return (
     <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
@@ -29,14 +61,14 @@ export default function SectorsPage() {
           Energy Sectors
         </h1>
         <p className="text-sm sm:text-base text-zinc-600 font-light mt-2 max-w-3xl leading-relaxed">
-          Navigate specialized solutions, equipment manufacturers, and EPC partners across the 12 core domains driving the energy transition.
+          Browse sectors with active companies and solutions across the energy transition.
         </p>
       </div>
 
       {/* Sectors Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
-        {categories.map((category) => (
-          <SectorCard key={category.id} category={category} />
+        {sectors.map((sector) => (
+          <SectorCard key={sector.id} category={sector} />
         ))}
       </div>
     </div>

@@ -38,12 +38,6 @@ export default async function MarketplaceHomePage() {
       {/* 1. EDITORIAL HERO — Command Search + Discovery Strip */}
       <MarketplaceHero />
 
-      {/* 2. MARKETPLACE SNAPSHOT — real counts from Strapi */}
-      <MarketplaceSnapshot
-        companyCount={allCompanies.length}
-        productCount={allProducts.length}
-        sectorCount={marketplaceSectors.length}
-      />
 
       {/* 3. EXPLORE THE ENERGY LANDSCAPE — Asymmetric Sector Grid */}
       <EnergyLandscape sectors={marketplaceSectors} />
