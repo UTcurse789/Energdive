@@ -1,5 +1,5 @@
+import { Building2, ExternalLink, Landmark, MapPin } from "lucide-react";
 import { MarketplaceCompany } from "@/data/marketplace/types";
-import { ExternalLink } from "lucide-react";
 
 interface CompanyInfoGridProps {
   company: MarketplaceCompany;
@@ -7,58 +7,59 @@ interface CompanyInfoGridProps {
 
 export function CompanyInfoGrid({ company }: CompanyInfoGridProps) {
   const fields = [
-    { label: "Industry", value: company.industry },
-    { label: "Sector", value: company.sector },
-    { label: "Sub-Sector", value: company.subSector },
-    { label: "Company Type", value: company.companyType },
-    { label: "Headquarters", value: company.headquarters },
-    { label: "Founded Year", value: String(company.founded) },
-    { label: "Listed Status", value: company.listed ? "Listed on Public Exchange" : "Unlisted / Private" },
-    { label: "NSE Ticker", value: company.ticker || "N/A" },
-    { label: "BSE Security Code", value: company.bseCode || "N/A" },
+    { label: "Industry", value: company.industry, icon: Building2 },
+    { label: "Sector", value: company.sector, icon: Landmark },
+    { label: "Headquarters", value: company.headquarters, icon: MapPin },
+    { label: "Founded", value: String(company.founded), icon: Building2 },
     {
-      label: "Official Website",
-      value: company.website,
-      isLink: true,
+      label: "Market status",
+      value: company.listed ? `Listed${company.exchange ? ` · ${company.exchange}` : ""}` : "Private company",
+      icon: Landmark,
     },
+    { label: "Trading symbol", value: company.ticker || "Not disclosed", icon: Landmark },
   ];
 
   return (
-    <div className="bg-white border border-zinc-200 rounded-xl p-5 sm:p-6 shadow-xs">
-      <div className="flex items-center justify-between border-b border-zinc-100 pb-3 mb-4">
-        <h3 className="text-xs font-black uppercase tracking-widest text-zinc-900 flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-[#00A651]" />
-          Corporate & Regulatory Profile
-        </h3>
-        <span className="text-[10px] uppercase font-bold text-zinc-400 tracking-wider">
-          Public Record
-        </span>
+    <section className="overflow-hidden rounded-xl border border-zinc-200 bg-white">
+      <div className="flex items-center justify-between border-b border-zinc-100 px-5 py-4 sm:px-6">
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#00A651]">Company record</p>
+          <h2 className="mt-1 font-sans text-base font-semibold text-zinc-900">Corporate snapshot</h2>
+        </div>
+        {company.website && (
+          <a
+            href={company.website}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#00A651] hover:underline"
+          >
+            Website
+            <ExternalLink className="h-3.5 w-3.5" />
+          </a>
+        )}
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-        {fields.map((f) => (
-          <div key={f.label} className="space-y-1">
-            <span className="block text-[10px] font-bold uppercase tracking-wider text-zinc-400">
-              {f.label}
-            </span>
-            {f.isLink ? (
-              <a
-                href={f.value}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 text-xs font-semibold text-[#00A651] hover:underline break-all"
-              >
-                <span>{f.value.replace(/^https?:\/\//, "")}</span>
-                <ExternalLink className="w-3 h-3 shrink-0" />
-              </a>
-            ) : (
-              <p className="text-xs sm:text-sm font-semibold text-zinc-800 break-words">
-                {f.value}
-              </p>
-            )}
-          </div>
-        ))}
-      </div>
-    </div>
+      <dl className="grid grid-cols-1 sm:grid-cols-2">
+        {fields.map((field, index) => {
+          const Icon = field.icon;
+          return (
+            <div
+              key={field.label}
+              className={`flex gap-3 px-5 py-4 sm:px-6 ${
+                index < fields.length - 2 ? "border-b border-zinc-100" : ""
+              } ${index % 2 === 0 ? "sm:border-r sm:border-zinc-100" : ""}`}
+            >
+              <Icon className="mt-0.5 h-4 w-4 shrink-0 text-zinc-400" />
+              <div className="min-w-0">
+                <dt className="text-[10px] font-bold uppercase tracking-[0.11em] text-zinc-400">
+                  {field.label}
+                </dt>
+                <dd className="mt-1 text-sm font-medium leading-snug text-zinc-800">{field.value}</dd>
+              </div>
+            </div>
+          );
+        })}
+      </dl>
+    </section>
   );
 }

@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { ProductsView } from "@/components/marketplace/products-view";
 import { GridLoadingSkeleton } from "@/components/marketplace/marketplace-skeletons";
 import { MarketplaceBreadcrumbs } from "@/components/marketplace/marketplace-breadcrumbs";
-import { getAllProducts, getAllCompanies } from "@/data/marketplace";
+import { getMarketplaceProducts, getMarketplaceCompanies } from "@/lib/marketplace-strapi";
 
 export const metadata: Metadata = {
   title: "Energy Products & Solutions Catalog",
@@ -11,9 +11,11 @@ export const metadata: Metadata = {
     "Explore utility-scale solar inverters, battery storage systems, turbines, hydrogen electrolyzers, and smart grid automation equipment.",
 };
 
-export default function ProductsPage() {
-  const allProducts = getAllProducts();
-  const allCompanies = getAllCompanies();
+export default async function ProductsPage() {
+  const [allProducts, allCompanies] = await Promise.all([
+    getMarketplaceProducts(),
+    getMarketplaceCompanies(),
+  ]);
 
   // Distinct filter options
   const categories = Array.from(new Set(allProducts.map((p) => p.category))).sort();

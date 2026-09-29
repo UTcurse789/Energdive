@@ -1,9 +1,9 @@
+import { getMarketplaceSectorSummaries } from "@/data/marketplace/sector-summaries";
 import {
-  getAllCategories,
-  getFeaturedCompanies,
-  getFeaturedProducts,
-  getMarketplaceArticles,
-} from "@/data/marketplace";
+  getMarketplaceArticlesFromStrapi,
+  getMarketplaceCompanies,
+  getMarketplaceProducts,
+} from "@/lib/marketplace-strapi";
 import { MarketplaceHero } from "@/components/marketplace/marketplace-hero";
 import { MarketplaceSnapshot } from "@/components/marketplace/marketplace-snapshot";
 import { EnergyLandscape } from "@/components/marketplace/energy-landscape";
@@ -19,38 +19,44 @@ export const metadata = {
     "Discover verified energy companies, utility-grade products, and breakthrough technologies shaping the global energy transition. Energdive Marketplace — institutional B2B discovery for the energy industry.",
 };
 
-export default function MarketplaceHomePage() {
-  const categories = getAllCategories();
-  const featuredCompanies = getFeaturedCompanies(5);
-  const featuredProducts = getFeaturedProducts(5);
-  const articles = getMarketplaceArticles(3);
+export default async function MarketplaceHomePage() {
+  const [allCompanies, allProducts, articles] = await Promise.all([
+    getMarketplaceCompanies(),
+    getMarketplaceProducts(),
+    getMarketplaceArticlesFromStrapi(4),
+  ]);
 
-  const spotlight = featuredCompanies[0];
-  const alsoExplore = featuredCompanies.slice(1, 5);
+  const spotlightCompanies = allCompanies.slice(0, 4);
+  const featuredProducts = allProducts.slice(0, 4);
+  const marketplaceSectors = getMarketplaceSectorSummaries(
+    allCompanies,
+    allProducts,
+  );
 
   return (
-    <div className="pb-24 space-y-20 sm:space-y-24">
+    <div className="pb-24 space-y-20 sm:space-y-24 font-sans">
       {/* 1. EDITORIAL HERO — Command Search + Discovery Strip */}
       <MarketplaceHero />
 
-      {/* 2. MARKETPLACE SNAPSHOT — Institutional Index Strip */}
-      <MarketplaceSnapshot />
+      {/* 2. MARKETPLACE SNAPSHOT — real counts from Strapi */}
+      <MarketplaceSnapshot
+        companyCount={allCompanies.length}
+        productCount={allProducts.length}
+        sectorCount={marketplaceSectors.length}
+      />
 
       {/* 3. EXPLORE THE ENERGY LANDSCAPE — Asymmetric Sector Grid */}
-      <EnergyLandscape categories={categories} />
+      <EnergyLandscape sectors={marketplaceSectors} />
 
-      {/* 4. COMPANY SPOTLIGHT — Feature Profile + Peer List */}
-      {spotlight && (
-        <CompanySpotlight
-          featuredCompany={spotlight}
-          alsoExplore={alsoExplore}
-        />
+      {/* 4. COMPANY SPOTLIGHT — 4-Column Company Grid with Logos */}
+      {spotlightCompanies.length > 0 && (
+        <CompanySpotlight companies={spotlightCompanies} />
       )}
 
-      {/* 5. TECHNOLOGY & SOLUTIONS — Cinematic Product Showcase */}
+      {/* 5. TECHNOLOGY & SOLUTIONS — 4-Column Product Grid */}
       <TechnologySolutions products={featuredProducts} />
 
-      {/* 6. LATEST ENERGY DISCOVERIES — Editorial Articles */}
+      {/* 6. LATEST ENERGY DISCOVERIES — 4-Column Editorial Articles */}
       <EnergyDiscoveries articles={articles} />
 
       {/* 7. EXPLORE BY NEED — Intent-Based Navigation */}

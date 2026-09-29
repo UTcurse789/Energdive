@@ -122,7 +122,7 @@ export function ProductSpecs({ product, company }: ProductSpecsProps) {
                     alt={company.name}
                     fill
                     sizes="56px"
-                    className="object-cover"
+                    className="object-contain p-1"
                   />
                 ) : (
                   <span>{company.name.slice(0, 2).toUpperCase()}</span>

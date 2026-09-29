@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { CompaniesView } from "@/components/marketplace/companies-view";
 import { GridLoadingSkeleton } from "@/components/marketplace/marketplace-skeletons";
 import { MarketplaceBreadcrumbs } from "@/components/marketplace/marketplace-breadcrumbs";
-import { getAllCompanies } from "@/data/marketplace";
+import { getMarketplaceCompanies } from "@/lib/marketplace-strapi";
 
 export const metadata: Metadata = {
   title: "Energy Companies Directory",
@@ -11,8 +11,8 @@ export const metadata: Metadata = {
     "Discover public, private, and multinational companies operating across generation, transmission, oil & gas, renewables, and clean energy.",
 };
 
-export default function CompaniesPage() {
-  const allCompanies = getAllCompanies();
+export default async function CompaniesPage() {
+  const allCompanies = await getMarketplaceCompanies();
 
   // Extract distinct filter values
   const sectors = Array.from(new Set(allCompanies.map((c) => c.sector))).sort();

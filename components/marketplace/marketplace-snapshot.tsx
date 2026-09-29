@@ -1,14 +1,16 @@
-import { MARKETPLACE_COMPANIES } from "@/data/marketplace/companies";
-import { MARKETPLACE_CATEGORIES } from "@/data/marketplace/categories";
-import { MARKETPLACE_PRODUCTS } from "@/data/marketplace/products";
+interface MarketplaceSnapshotProps {
+  companyCount?: number;
+  productCount?: number;
+  sectorCount?: number;
+}
 
-export function MarketplaceSnapshot() {
-  const companyCount = MARKETPLACE_COMPANIES.length;
-  const sectorCount = MARKETPLACE_CATEGORIES.length;
-  const productCount = MARKETPLACE_PRODUCTS.length;
-
+export function MarketplaceSnapshot({
+  companyCount = 0,
+  productCount = 0,
+  sectorCount = 0,
+}: MarketplaceSnapshotProps) {
   const stats = [
-    { label: "COMPANIES", value: `${companyCount}`, sub: "Verified Profiles" },
+    { label: "COMPANIES", value: `${companyCount}`, sub: "Directory Profiles" },
     { label: "SECTORS", value: `${sectorCount}`, sub: "Energy Domains" },
     { label: "PRODUCTS", value: `${productCount}+`, sub: "Hardware & Systems" },
     { label: "ENERGY CATEGORIES", value: "6", sub: "Market Verticals" },

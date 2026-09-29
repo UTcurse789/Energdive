@@ -2,15 +2,30 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { ExternalLink, Mail, MapPin, CheckCircle2, Building2 } from "lucide-react";
+import {
+  Building2,
+  CheckCircle2,
+  ExternalLink,
+  FileStack,
+  Mail,
+  MapPin,
+  ShieldCheck,
+  Sparkles,
+} from "lucide-react";
 import { MarketplaceCompany } from "@/data/marketplace/types";
 import { EnquiryModal } from "./enquiry-modal";
 
 interface CompanyHeaderProps {
   company: MarketplaceCompany;
+  productCount?: number;
+  documentCount?: number;
 }
 
-export function CompanyHeader({ company }: CompanyHeaderProps) {
+export function CompanyHeader({
+  company,
+  productCount = 0,
+  documentCount = 0,
+}: CompanyHeaderProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const monogram = company.name
@@ -20,91 +35,140 @@ export function CompanyHeader({ company }: CompanyHeaderProps) {
     .join("")
     .toUpperCase();
 
+  const metrics = [
+    {
+      label: "Profile status",
+      value: "Verified",
+      detail: "Directory reviewed",
+      icon: ShieldCheck,
+    },
+    {
+      label: "Compliance profile",
+      value: company.listed ? "Public disclosure" : "Vendor declared",
+      detail: company.listed ? company.exchange || "Public record" : "Company record",
+      icon: CheckCircle2,
+    },
+    {
+      label: "Active solutions",
+      value: `${productCount}`,
+      detail: productCount === 1 ? "Published offering" : "Published offerings",
+      icon: Sparkles,
+    },
+    {
+      label: "Technical library",
+      value: `${documentCount}`,
+      detail: documentCount === 1 ? "Downloadable asset" : "Downloadable assets",
+      icon: FileStack,
+    },
+  ];
+
   return (
     <>
-      <div className="w-full bg-white py-10 sm:py-14 border-b border-zinc-200 relative overflow-hidden">
-        {/* Thin green top accent stripe */}
-        <div className="absolute top-0 left-0 right-0 h-1 bg-[#00A651]" />
-
-        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 relative">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-            {/* Left: Logo and Details */}
-            <div className="flex items-start gap-4 sm:gap-6">
-              {/* Logo */}
-              <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-xl bg-zinc-100 text-zinc-700 flex items-center justify-center font-bold text-xl overflow-hidden border border-zinc-200 shrink-0 shadow-sm">
+      <header className="mx-auto max-w-[1200px] px-4 pt-6 sm:px-6 sm:pt-8 lg:px-8">
+        <div className="relative overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm">
+          <div className="absolute inset-x-0 top-0 h-1 bg-[#00A651]" />
+          <div className="px-5 pb-7 pt-8 sm:px-7 sm:pb-8 sm:pt-10">
+          <div className="flex flex-col justify-between gap-7 xl:flex-row xl:items-end">
+            <div className="flex min-w-0 items-start gap-4 sm:gap-5">
+              <div className="relative flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-zinc-200 bg-zinc-50 text-lg font-bold text-zinc-700 shadow-sm sm:h-[76px] sm:w-[76px] sm:text-xl">
                 {company.logo ? (
                   <Image
                     src={company.logo}
-                    alt={company.name}
+                    alt={`${company.name} logo`}
                     fill
-                    sizes="80px"
-                    className="object-cover"
+                    sizes="76px"
+                    className="object-contain p-1.5"
                   />
                 ) : (
                   <span>{monogram}</span>
                 )}
               </div>
 
-              {/* Meta */}
-              <div>
-                <div className="flex flex-wrap items-center gap-2 mb-2">
-                  <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-widest text-[#00A651] bg-[#00A651]/8 px-2.5 py-0.5 rounded border border-[#00A651]/20">
-                    {company.sector}
+              <div className="min-w-0">
+                <div className="mb-2 flex flex-wrap items-center gap-2">
+                  <span className="inline-flex items-center gap-1.5 rounded-md border border-[#00A651]/25 bg-[#00A651]/8 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-[#00A651]">
+                    <CheckCircle2 className="h-3 w-3" />
+                    Verified vendor
                   </span>
-                  <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-zinc-500 bg-zinc-100 px-2 py-0.5 rounded border border-zinc-200">
+                  <span className="rounded-md border border-zinc-200 bg-zinc-50 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-zinc-500">
                     {company.companyType}
                   </span>
                   {company.listed && (
-                    <span className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                      <CheckCircle2 className="w-3 h-3" />
-                      {company.ticker ? `NSE: ${company.ticker}` : "Listed"}
+                    <span className="rounded-md border border-zinc-200 bg-white px-2 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-zinc-600">
+                      {company.ticker ? `${company.exchange || "NSE"}: ${company.ticker}` : "Listed"}
                     </span>
                   )}
                 </div>
 
-                <h1 className="text-2xl sm:text-3xl md:text-4xl font-black uppercase tracking-tight text-zinc-900 leading-tight">
+                <h1 className="max-w-4xl font-sans text-2xl font-semibold tracking-[-0.035em] text-zinc-950 sm:text-3xl lg:text-[2.1rem]">
                   {company.name}
                 </h1>
 
-                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-zinc-500 mt-2">
-                  <span className="flex items-center gap-1.5">
-                    <MapPin className="w-3.5 h-3.5 text-[#00A651]" />
-                    <span>{company.location}</span>
+                <p className="mt-2 max-w-3xl text-sm leading-relaxed text-zinc-600 sm:text-[15px]">
+                  {company.shortDescription}
+                </p>
+
+                <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-zinc-500">
+                  <span className="inline-flex items-center gap-1.5">
+                    <MapPin className="h-3.5 w-3.5 text-[#00A651]" />
+                    Headquarters: {company.headquarters}
                   </span>
-                  <span className="w-1 h-1 rounded-full bg-zinc-300" />
-                  <span className="flex items-center gap-1.5">
-                    <Building2 className="w-3.5 h-3.5 text-zinc-400" />
-                    <span>Founded {company.founded}</span>
+                  <span className="hidden h-1 w-1 rounded-full bg-zinc-300 sm:block" />
+                  <span className="inline-flex items-center gap-1.5">
+                    <Building2 className="h-3.5 w-3.5 text-zinc-400" />
+                    Founded {company.founded}
                   </span>
                 </div>
               </div>
             </div>
 
-            {/* Right: Actions */}
-            <div className="flex flex-wrap items-center gap-3 pt-2 md:pt-0">
+            <div className="flex flex-wrap items-center gap-2 xl:justify-end">
+              {/* <button
+                type="button"
+                onClick={() => setIsModalOpen(true)}
+                className="inline-flex items-center gap-2 rounded-lg bg-[#00A651] px-4 py-2.5 text-xs font-bold uppercase tracking-[0.08em] text-white shadow-sm transition-colors hover:bg-[#008f45]"
+              >
+                <Mail className="h-3.5 w-3.5" />
+                Contact vendor
+              </button> */}
               {company.website && (
                 <a
                   href={company.website}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider px-4 py-2.5 rounded-lg bg-white text-zinc-700 border border-zinc-300 hover:border-zinc-500 hover:text-zinc-900 transition-all shadow-sm"
+                  aria-label={`Visit ${company.name} website`}
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-zinc-200 text-zinc-500 transition-colors hover:border-[#00A651] hover:text-[#00A651]"
                 >
-                  <span>Visit Website</span>
-                  <ExternalLink className="w-3.5 h-3.5 text-zinc-400" />
+                  <ExternalLink className="h-4 w-4" />
                 </a>
               )}
+            </div>
+          </div>
+          </div>
 
-              <button
-                onClick={() => setIsModalOpen(true)}
-                className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider px-5 py-2.5 rounded-lg bg-[#00A651] hover:bg-[#008f45] text-white transition-all shadow-sm cursor-pointer"
-              >
-                <Mail className="w-3.5 h-3.5" />
-                <span>Send Enquiry</span>
-              </button>
+          <div className="border-t border-zinc-200 bg-zinc-50/80">
+            <div className="grid grid-cols-2 divide-x divide-y divide-zinc-200 sm:grid-cols-4 sm:divide-y-0">
+            {metrics.map((metric) => {
+              const Icon = metric.icon;
+              return (
+                <div key={metric.label} className="flex min-w-0 items-center gap-3 px-4 py-4 sm:px-5">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[#00A651]/15 bg-white text-[#00A651]">
+                    <Icon className="h-4 w-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="truncate text-[10px] font-bold uppercase tracking-[0.1em] text-zinc-400">
+                      {metric.label}
+                    </p>
+                    <p className="truncate text-sm font-semibold text-zinc-900">{metric.value}</p>
+                    <p className="truncate text-[11px] text-zinc-500">{metric.detail}</p>
+                  </div>
+                </div>
+              );
+            })}
             </div>
           </div>
         </div>
-      </div>
+      </header>
 
       <EnquiryModal
         isOpen={isModalOpen}
@@ -112,6 +176,8 @@ export function CompanyHeader({ company }: CompanyHeaderProps) {
         targetId={company.id}
         targetName={company.name}
         defaultTargetType="company"
+        title={`Contact ${company.name}`}
+        subtitle="Send a direct enquiry to this verified vendor through Energdive Marketplace."
       />
     </>
   );

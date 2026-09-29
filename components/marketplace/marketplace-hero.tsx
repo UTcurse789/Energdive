@@ -1,18 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, Building2, Package, Layers, Wrench, ShieldCheck, TrendingUp, Sparkles } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { MarketplaceGlobalSearch } from "./marketplace-global-search";
 
 export function MarketplaceHero() {
-  const popularSearches = [
-    { label: "Power Generation", href: "/marketplace/companies?sector=Power Generation" },
-    { label: "Solar Energy", href: "/marketplace/companies?sector=Solar Energy" },
-    { label: "Energy Storage", href: "/marketplace/companies?sector=Energy Storage" },
-    { label: "Wind Energy", href: "/marketplace/companies?sector=Wind Energy" },
-    { label: "EV & Mobility", href: "/marketplace/companies?sector=EV & Mobility" },
-    { label: "Green Hydrogen", href: "/marketplace/companies?sector=Green Hydrogen" },
-  ];
 
   return (
     <section className="relative bg-gradient-to-b from-white via-zinc-50/40 to-white pt-12 pb-14 sm:pt-16 sm:pb-18 overflow-hidden border-b border-zinc-200/80">
@@ -24,40 +16,24 @@ export function MarketplaceHero() {
       <div className="relative max-w-[1240px] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="max-w-3xl mx-auto text-center">
           {/* Eyebrow badge */}
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-zinc-100/90 border border-zinc-200/80 text-[10px] sm:text-[11px] font-bold tracking-widest text-zinc-700 uppercase mb-5">
+          {/* <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-zinc-100/90 border border-zinc-200/80 text-[10px] sm:text-[11px] font-bold tracking-widest text-zinc-700 uppercase mb-5">
             <span className="w-1.5 h-1.5 rounded-full bg-[#00A651]" />
             ENERGDIVE MARKET INTELLIGENCE &bull; B2B DISCOVERY
-          </div>
+          </div> */}
 
-          {/* Headline with Editorial Serif Treatment */}
-          <h1 className="text-3xl sm:text-5xl lg:text-[3.4rem] font-serif font-black tracking-tight text-zinc-950 leading-[1.08] mb-4">
+          {/* Headline with Consistent Website Font Family */}
+          <h1 className="text-3xl sm:text-5xl lg:text-[3.4rem] font-sans font-black tracking-tight text-zinc-950 leading-[1.08] mb-4 uppercase">
             EXPLORE THE <span className="text-[#00A651]">ENERGY MARKETPLACE</span>
           </h1>
 
           {/* Supporting editorial copy */}
-          <p className="text-sm sm:text-base lg:text-lg text-zinc-600 font-normal leading-relaxed max-w-2xl mx-auto mb-8">
+          <p className="text-sm sm:text-base lg:text-lg text-zinc-600 font-normal leading-relaxed max-w-2xl mx-auto mb-8 font-sans">
             Discover verified companies, breakthrough technologies, utility equipment, and market capabilities across the global energy transition.
           </p>
 
           {/* Institutional Command Search Bar */}
-          <div className="max-w-2xl mx-auto mb-4">
+          <div className="max-w-2xl mx-auto mb-8">
             <MarketplaceGlobalSearch placeholder="Search companies, products, sectors & solutions..." />
-          </div>
-
-          {/* Hero Quick Links: Minimalist Text Pills */}
-          <div className="flex flex-wrap items-center justify-center gap-1.5 text-xs text-zinc-500 mb-8 max-w-2xl mx-auto">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 mr-1.5">
-              POPULAR SEARCHES:
-            </span>
-            {popularSearches.map((item) => (
-              <Link
-                key={item.label}
-                href={item.href}
-                className="px-2.5 py-0.5 rounded-md text-[11px] font-medium text-zinc-600 hover:text-[#00A651] hover:bg-emerald-50/70 border border-transparent hover:border-emerald-200/80 transition-all duration-150"
-              >
-                {item.label}
-              </Link>
-            ))}
           </div>
 
           {/* Primary Quick Gateway Actions */}

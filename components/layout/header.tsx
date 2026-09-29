@@ -472,7 +472,7 @@ export function Header() {
                             <nav className="hidden sm:flex items-center gap-x-3 md:gap-x-5 xl:gap-x-7">
                                 <Link href="/energclub" target="_blank" className="text-[12px] xl:text-[13px] font-bold uppercase tracking-[1px] hover:opacity-70 whitespace-nowrap" onClick={closeMenus}>ENERGCLUB</Link>
                                 
-                                <Link href="/marketplace" className="text-[12px] xl:text-[13px] font-bold uppercase tracking-[1px] hover:opacity-70 whitespace-nowrap" onClick={closeMenus}>MARKETPLACE</Link>
+                                {/* <Link href="/marketplace" className="text-[12px] xl:text-[13px] font-bold uppercase tracking-[1px] hover:opacity-70 whitespace-nowrap" onClick={closeMenus}>MARKETPLACE</Link> */}
 
                                 <div className="relative group cursor-pointer" onMouseEnter={() => { setActiveMenu(null); }}>
                                     <span style={{ color: brandGreen }} className="flex items-center gap-1 text-[12px] xl:text-[13px] font-bold uppercase tracking-[1px] hover:opacity-70 whitespace-nowrap py-2">

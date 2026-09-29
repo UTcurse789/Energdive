@@ -100,3 +100,56 @@ export interface ProductFilterState {
   sector: string;
   companySlug: string;
 }
+
+// ==========================================
+// Company Resource Hub Types & Taxonomy
+// ==========================================
+
+export type CompanyResourceType =
+  | "Presentation"
+  | "Video"
+  | "Company Brochure"
+  | "Product Catalogue"
+  | "Product Brochure"
+  | "Product Information"
+  | "Technical Document";
+
+export type ResourceFileType = "PDF" | "PPT" | "PPTX" | "ZIP" | "FILE";
+
+export interface CompanyResource {
+  id: string;
+  slug: string;
+  type: CompanyResourceType;
+  title: string;
+  description: string;
+  thumbnail?: string;
+  file: string;
+  fileName?: string;
+  fileType: ResourceFileType;
+  fileSize?: string;
+  date?: string;
+  companyId: string;
+  companySlug: string;
+  productId?: string;
+  productName?: string;
+  productSlug?: string;
+}
+
+export interface VideoResource {
+  id: string;
+  title: string;
+  description: string;
+  thumbnail: string;
+  videoUrl: string;
+  duration?: string;
+  videoType?: string;
+  date?: string;
+  companyId: string;
+  companySlug: string;
+}
+
+// Extensible type aliases for specialized uses
+export type Presentation = CompanyResource;
+export type Brochure = CompanyResource;
+export type ProductDocument = CompanyResource;
+

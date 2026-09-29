@@ -2,11 +2,14 @@ import { MARKETPLACE_CATEGORIES } from "./categories";
 import { MARKETPLACE_COMPANIES } from "./companies";
 import { MARKETPLACE_PRODUCTS } from "./products";
 import { MARKETPLACE_ARTICLES } from "./articles";
+import { MARKETPLACE_COMPANY_RESOURCES, MARKETPLACE_VIDEO_RESOURCES } from "./resources";
 import {
   MarketplaceCategory,
   MarketplaceCompany,
   MarketplaceProduct,
   MarketplaceArticle,
+  CompanyResource,
+  VideoResource,
   CompanyFilterState,
   ProductFilterState,
 } from "./types";
@@ -16,6 +19,8 @@ export * from "./categories";
 export * from "./companies";
 export * from "./products";
 export * from "./articles";
+export * from "./resources";
+
 
 // Categories
 export function getAllCategories(): MarketplaceCategory[] {
@@ -74,8 +79,11 @@ export function getFeaturedProducts(limit = 8): MarketplaceProduct[] {
 }
 
 export function getProductsByCompanySlug(companySlug: string): MarketplaceProduct[] {
+  const company = getCompanyBySlug(companySlug);
   return MARKETPLACE_PRODUCTS.filter(
-    (p) => p.companySlug.toLowerCase() === companySlug.toLowerCase()
+    (p) =>
+      p.companySlug.toLowerCase() === companySlug.toLowerCase() ||
+      (company?.productIds && company.productIds.includes(p.id))
   );
 }
 
@@ -89,6 +97,77 @@ export function getRelatedProducts(product: MarketplaceProduct, limit = 4): Mark
 export function getMarketplaceArticles(limit = 4): MarketplaceArticle[] {
   return MARKETPLACE_ARTICLES.slice(0, limit);
 }
+
+// ==========================================
+// Company Resources & Media Query Functions
+// ==========================================
+
+export function getAllCompanyResources(): CompanyResource[] {
+  return MARKETPLACE_COMPANY_RESOURCES;
+}
+
+export function getAllVideoResources(): VideoResource[] {
+  return MARKETPLACE_VIDEO_RESOURCES;
+}
+
+export function getResourcesByCompanySlug(companySlug: string): CompanyResource[] {
+  return MARKETPLACE_COMPANY_RESOURCES.filter(
+    (r) => r.companySlug.toLowerCase() === companySlug.toLowerCase()
+  );
+}
+
+export function getVideosByCompanySlug(companySlug: string): VideoResource[] {
+  return MARKETPLACE_VIDEO_RESOURCES.filter(
+    (v) => v.companySlug.toLowerCase() === companySlug.toLowerCase()
+  );
+}
+
+export function getPresentationsByCompanySlug(companySlug: string): CompanyResource[] {
+  return MARKETPLACE_COMPANY_RESOURCES.filter(
+    (r) =>
+      r.companySlug.toLowerCase() === companySlug.toLowerCase() &&
+      r.type === "Presentation"
+  );
+}
+
+export function getCompanyBrochuresByCompanySlug(companySlug: string): CompanyResource[] {
+  return MARKETPLACE_COMPANY_RESOURCES.filter(
+    (r) =>
+      r.companySlug.toLowerCase() === companySlug.toLowerCase() &&
+      r.type === "Company Brochure"
+  );
+}
+
+export function getProductResourcesByCompanySlug(companySlug: string): CompanyResource[] {
+  return MARKETPLACE_COMPANY_RESOURCES.filter(
+    (r) =>
+      r.companySlug.toLowerCase() === companySlug.toLowerCase() &&
+      (r.type === "Product Catalogue" ||
+        r.type === "Product Brochure" ||
+        r.type === "Product Information" ||
+        r.type === "Technical Document")
+  );
+}
+
+export function getResourcesByProductSlug(productSlug: string): CompanyResource[] {
+  return MARKETPLACE_COMPANY_RESOURCES.filter(
+    (r) =>
+      r.productSlug?.toLowerCase() === productSlug.toLowerCase() &&
+      (r.type === "Product Catalogue" ||
+        r.type === "Product Brochure" ||
+        r.type === "Product Information" ||
+        r.type === "Technical Document")
+  );
+}
+
+export function getResourceById(id: string): CompanyResource | undefined {
+  return MARKETPLACE_COMPANY_RESOURCES.find((r) => r.id === id);
+}
+
+export function getVideoById(id: string): VideoResource | undefined {
+  return MARKETPLACE_VIDEO_RESOURCES.find((v) => v.id === id);
+}
+
 
 // Client-side / In-memory Filtering Helpers
 export function filterCompanies(

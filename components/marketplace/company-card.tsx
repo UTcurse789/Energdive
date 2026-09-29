@@ -28,7 +28,7 @@ export function CompanyCard({ company }: CompanyCardProps) {
                 alt={company.name}
                 fill
                 sizes="48px"
-                className="object-cover group-hover:scale-105 transition-transform duration-300"
+                className="object-contain p-1.5"
               />
             ) : (
               <span>{monogram}</span>

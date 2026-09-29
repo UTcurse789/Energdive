@@ -1,242 +1,200 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
+import type { ReactNode } from "react";
 import Link from "next/link";
-import { ArrowLeft, ArrowRight, Building2, Layers, Newspaper } from "lucide-react";
 import {
-  getCompanyBySlug,
-  getAllCompanies,
-  getProductsByCompanySlug,
-  getRelatedCompanies,
-  getMarketplaceArticles,
-} from "@/data/marketplace";
+  ArrowLeft,
+  ArrowRight,
+  Building2,
+  Layers,
+  Newspaper,
+  Package,
+  ShieldCheck,
+  Video,
+} from "lucide-react";
+import {
+  getMarketplaceCompanies,
+  getMarketplaceCompanyBySlug,
+  getMarketplaceProductsByCompanySlug,
+  getMarketplaceRelatedCompanies,
+  getMarketplaceCompanyResources,
+  getMarketplaceCompanyVideos,
+  getMarketplaceArticlesFromStrapi,
+} from "@/lib/marketplace-strapi";
+import { CompanyCard } from "@/components/marketplace/company-card";
 import { CompanyHeader } from "@/components/marketplace/company-header";
 import { CompanyInfoGrid } from "@/components/marketplace/company-info-grid";
-import { ProductCard } from "@/components/marketplace/product-card";
-import { CompanyCard } from "@/components/marketplace/company-card";
+import { CompanyProfileTabs } from "@/components/marketplace/company-profile-tabs";
+import { CompanyResourceHub } from "@/components/marketplace/company-resource-hub";
 import { MarketplaceArticleCard } from "@/components/marketplace/marketplace-article-card";
 import { MarketplaceBreadcrumbs } from "@/components/marketplace/marketplace-breadcrumbs";
+import { ProductCard } from "@/components/marketplace/product-card";
 import { getCanonicalUrl } from "@/lib/seo";
 
-export function generateStaticParams() {
-  const companies = getAllCompanies();
-  return companies.map((c) => ({ slug: c.slug }));
+export async function generateStaticParams() {
+  const companies = await getMarketplaceCompanies();
+  return companies.map((company) => ({ slug: company.slug }));
 }
 
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}): Promise<Metadata> {
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
-  const company = getCompanyBySlug(slug);
-
-  if (!company) {
-    return {
-      title: "Company Not Found",
-    };
-  }
+  const company = await getMarketplaceCompanyBySlug(slug);
+  if (!company) return { title: "Company Not Found" };
 
   const title = `${company.name} - Profile, Operations & Solutions`;
   const description = `${company.name} operates in ${company.sector}. Explore corporate information, business areas, and specialized energy solutions on Energdive Marketplace.`;
   const canonicalUrl = getCanonicalUrl(`/marketplace/companies/${company.slug}`);
-
   return {
     title,
     description,
-    alternates: {
-      canonical: canonicalUrl,
-    },
-    openGraph: {
-      title,
-      description,
-      url: canonicalUrl,
-      images: company.coverImage ? [{ url: company.coverImage }] : undefined,
-      type: "website",
-    },
-    twitter: {
-      card: "summary_large_image",
-      title,
-      description,
-      images: company.coverImage ? [company.coverImage] : undefined,
-    },
+    alternates: { canonical: canonicalUrl },
+    openGraph: { title, description, url: canonicalUrl, images: company.coverImage ? [{ url: company.coverImage }] : undefined, type: "website" },
+    twitter: { card: "summary_large_image", title, description, images: company.coverImage ? [company.coverImage] : undefined },
   };
 }
 
-export default async function CompanyDetailPage({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}) {
+const sectionLabel = (icon: ReactNode, eyebrow: string, title: string, action?: ReactNode) => (
+  <div className="mb-6 flex items-end justify-between gap-4 border-b border-zinc-200 pb-4">
+    <div>
+      <p className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-[#00A651]">{icon}{eyebrow}</p>
+      <h2 className="mt-1 font-sans text-xl font-semibold tracking-tight text-zinc-950 sm:text-2xl">{title}</h2>
+    </div>
+    {action}
+  </div>
+);
+
+export default async function CompanyDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const company = getCompanyBySlug(slug);
+  const company = await getMarketplaceCompanyBySlug(slug);
+  if (!company) notFound();
 
-  if (!company) {
-    notFound();
-  }
+  const [attachedProducts, relatedCompanies, articles, allCompanyResources, videos] = await Promise.all([
+    getMarketplaceProductsByCompanySlug(company.slug, company.productIds),
+    getMarketplaceRelatedCompanies(company, 4),
+    getMarketplaceArticlesFromStrapi(3),
+    getMarketplaceCompanyResources(company.slug),
+    getMarketplaceCompanyVideos(company.slug, company.name),
+  ]);
 
-  const products = getProductsByCompanySlug(company.slug);
-  const relatedCompanies = getRelatedCompanies(company, 4);
-  const articles = getMarketplaceArticles(3);
+  const products = attachedProducts.map((product) => ({
+    ...product,
+    companyId: product.companyId || company.id,
+    companySlug: product.companySlug || company.slug,
+    companyName: product.companyName || company.name,
+    companyLogo: product.companyLogo || company.logo || undefined,
+  }));
+
+  const presentations = allCompanyResources.filter((r) => r.type === "Presentation");
+  const brochures = allCompanyResources.filter((r) => r.type === "Company Brochure");
+  const productResources = allCompanyResources.filter(
+    (r) =>
+      r.type === "Product Catalogue" ||
+      r.type === "Product Brochure" ||
+      r.type === "Product Information" ||
+      r.type === "Technical Document"
+  );
+  const documentCount = presentations.length + brochures.length + productResources.length;
+
+  const compactAction = (href: string, label: string) => (
+    <Link href={href} className="hidden items-center gap-1.5 text-xs font-semibold text-zinc-600 transition-colors hover:text-[#00A651] sm:inline-flex">
+      {label}<ArrowRight className="h-3.5 w-3.5" />
+    </Link>
+  );
+
+  const overview = (
+    <div className="grid gap-6 xl:grid-cols-[minmax(0,1.3fr)_minmax(330px,.7fr)]">
+      <div className="space-y-6">
+        <section className="rounded-xl border border-zinc-200 bg-white p-5 sm:p-6">
+          <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#00A651]">Investment & operational brief</p>
+          <h2 className="mt-1 font-sans text-xl font-semibold tracking-tight text-zinc-950">About {company.name}</h2>
+          <p className="mt-4 max-w-4xl text-sm leading-7 text-zinc-600">{company.description}</p>
+        </section>
+
+        <section className="rounded-xl border border-zinc-200 bg-white p-5 sm:p-6">
+          <div className="mb-5 flex items-center gap-2">
+            <Layers className="h-4 w-4 text-[#00A651]" />
+            <h2 className="font-sans text-base font-semibold text-zinc-900">Operating domains</h2>
+          </div>
+          <div className="grid grid-cols-1 gap-px overflow-hidden rounded-lg border border-zinc-200 bg-zinc-200 sm:grid-cols-2 lg:grid-cols-3">
+            {company.businessAreas.map((area, index) => (
+              <div key={area} className="flex items-center gap-3 bg-white px-4 py-3">
+                <span className="font-mono text-[10px] text-[#00A651]">0{index + 1}</span>
+                <span className="text-xs font-medium text-zinc-700">{area}</span>
+              </div>
+            ))}
+          </div>
+        </section>
+      </div>
+
+      <div className="space-y-6">
+        <CompanyInfoGrid company={company} />
+        <section className="rounded-xl border border-zinc-200 bg-white p-5 sm:p-6">
+          <div className="flex items-center gap-2 text-[#00A651]"><ShieldCheck className="h-4 w-4" /><p className="text-[10px] font-bold uppercase tracking-[0.14em]">Vendor intelligence</p></div>
+          <dl className="mt-4 divide-y divide-zinc-100">
+            <div className="flex items-center justify-between gap-4 py-3 text-xs"><dt className="text-zinc-500">Directory verification</dt><dd className="font-semibold text-zinc-900">Current</dd></div>
+            <div className="flex items-center justify-between gap-4 py-3 text-xs"><dt className="text-zinc-500">Primary sector</dt><dd className="max-w-[55%] text-right font-semibold text-zinc-900">{company.sector}</dd></div>
+            <div className="flex items-center justify-between gap-4 py-3 text-xs"><dt className="text-zinc-500">Record source</dt><dd className="font-semibold text-zinc-900">Company profile</dd></div>
+          </dl>
+        </section>
+      </div>
+
+      <section className="xl:col-span-2">
+        {sectionLabel(<Package className="h-3.5 w-3.5" />, "Featured offerings", "Selected products & solutions", compactAction("#solutions", "All solutions"))}
+        {products.length ? (
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
+            {products.slice(0, 3).map((product) => <ProductCard key={product.id} product={product} />)}
+          </div>
+        ) : (
+          <div className="rounded-xl border border-dashed border-zinc-300 bg-white px-6 py-10 text-sm text-zinc-500">No catalogue products are published for this company yet. Contact the vendor for a tailored brief.</div>
+        )}
+      </section>
+    </div>
+  );
+
+  const solutions = (
+    <section>
+      {sectionLabel(<Package className="h-3.5 w-3.5" />, "Vendor catalogue", `Products & solutions from ${company.name}`, compactAction("/marketplace/products", "Browse marketplace"))}
+      {products.length ? (
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">{products.map((product) => <ProductCard key={product.id} product={product} />)}</div>
+      ) : (
+        <div className="rounded-xl border border-dashed border-zinc-300 bg-white px-6 py-12 text-center text-sm text-zinc-500">No catalogued solutions are available. Use Contact Vendor to request specifications.</div>
+      )}
+    </section>
+  );
+
+  const assets = (
+    <CompanyResourceHub presentations={presentations} videos={videos} brochures={brochures} productResources={productResources} companyName={company.name} companySlug={company.slug} defaultKind="all" />
+  );
+
+  const insights = (
+    <div className="space-y-12">
+      {videos.length > 0 && <section>
+        {sectionLabel(<Video className="h-3.5 w-3.5" />, "Media desk", "Project videos & briefings")}
+        <CompanyResourceHub presentations={presentations} videos={videos} brochures={brochures} productResources={productResources} companyName={company.name} companySlug={company.slug} defaultKind="videos" />
+      </section>}
+      <section>
+        {sectionLabel(<Newspaper className="h-3.5 w-3.5" />, "Energdive intelligence", "Related market coverage", compactAction("/news", "All news"))}
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-3">{articles.map((article) => <MarketplaceArticleCard key={article.id} article={article} />)}</div>
+      </section>
+      {relatedCompanies.length > 0 && <section>
+        {sectionLabel(<Building2 className="h-3.5 w-3.5" />, "Sector peers", "Related companies", compactAction("/marketplace/companies", "Company directory"))}
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">{relatedCompanies.map((related) => <CompanyCard key={related.id} company={related} />)}</div>
+      </section>}
+    </div>
+  );
 
   return (
-    <div className="pb-20">
-      {/* Top Breadcrumb Nav Bar */}
-      <div className="bg-zinc-50 border-b border-zinc-200 py-3">
-        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
-          <MarketplaceBreadcrumbs
-            crumbs={[
-              { label: "Companies", href: "/marketplace/companies" },
-              { label: company.name },
-            ]}
-            className="mb-0"
-          />
-
-          <Link
-            href="/marketplace/companies"
-            className="inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider text-zinc-500 hover:text-[#00A651] transition-colors"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            <span>Back to Companies</span>
-          </Link>
+    <div className="min-h-screen pb-20">
+      <div className="border-b border-zinc-200 bg-zinc-50">
+        <div className="mx-auto flex max-w-[1200px] flex-col justify-between gap-2 px-4 py-3 text-xs sm:flex-row sm:items-center sm:px-6 lg:px-8">
+          <MarketplaceBreadcrumbs crumbs={[{ label: "Companies", href: "/marketplace/companies" }, { label: company.name }]} className="mb-0" />
+          <Link href="/marketplace/companies" className="inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-zinc-500 transition-colors hover:text-[#00A651]"><ArrowLeft className="h-3.5 w-3.5" /> Back to companies</Link>
         </div>
       </div>
 
-      {/* 1. Hero Header */}
-      <CompanyHeader company={company} />
-
-      {/* Main Container */}
-      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14 space-y-14">
-        {/* 2. Corporate Information Grid */}
-        <CompanyInfoGrid company={company} />
-
-        {/* 3. About Company */}
-        <section className="bg-white border border-zinc-200 rounded-xl p-6 sm:p-8 shadow-xs">
-          <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-zinc-900 mb-4">
-            <span className="w-2 h-2 rounded-full bg-[#00A651]" />
-            About {company.name}
-          </div>
-          <p className="text-sm sm:text-base text-zinc-700 leading-relaxed font-normal">
-            {company.description}
-          </p>
-        </section>
-
-        {/* 4. Business Areas */}
-        <section className="bg-white border border-zinc-200 rounded-xl p-6 sm:p-8 shadow-xs">
-          <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-zinc-900 mb-6">
-            <Layers className="w-4 h-4 text-[#00A651]" />
-            Business Areas & Operational Domains
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-            {company.businessAreas.map((area, idx) => (
-              <div
-                key={idx}
-                className="p-4 bg-zinc-50 border border-zinc-200 rounded-lg flex items-center justify-between hover:border-[#00A651] hover:bg-[#00A651]/5 transition-all"
-              >
-                <span className="text-xs font-bold text-zinc-800 leading-snug">
-                  {area}
-                </span>
-                <span className="w-1.5 h-1.5 rounded-full bg-[#00A651]" />
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* 5. Company Products / Solutions */}
-        <section>
-          <div className="flex items-end justify-between border-b border-zinc-200 pb-4 mb-8">
-            <div>
-              <div className="flex items-center gap-2 text-[11px] font-black tracking-widest text-[#00A651] uppercase mb-1">
-                <span className="w-2 h-2 rounded-full bg-[#00A651]" />
-                Catalog
-              </div>
-              <h2 className="text-xl sm:text-2xl font-black uppercase tracking-tight text-zinc-900">
-                Products & Solutions by {company.name}
-              </h2>
-            </div>
-
-            <Link
-              href="/marketplace/products"
-              className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-zinc-800 hover:text-[#00A651] transition-colors"
-            >
-              <span>Explore All Products</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
-          </div>
-
-          {products.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {products.map((product) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
-            </div>
-          ) : (
-            <div className="py-12 px-6 rounded-xl border border-dashed border-zinc-300 bg-zinc-50 text-center">
-              <p className="text-xs sm:text-sm text-zinc-500">
-                No specific catalog products currently listed under {company.name}. Contact company directly for custom equipment and EPC queries.
-              </p>
-            </div>
-          )}
-        </section>
-
-        {/* 6. Related Companies */}
-        {relatedCompanies.length > 0 && (
-          <section>
-            <div className="flex items-end justify-between border-b border-zinc-200 pb-4 mb-8">
-              <div>
-                <div className="flex items-center gap-2 text-[11px] font-black tracking-widest text-[#00A651] uppercase mb-1">
-                  <Building2 className="w-3.5 h-3.5" />
-                  Sector Peers
-                </div>
-                <h2 className="text-xl sm:text-2xl font-black uppercase tracking-tight text-zinc-900">
-                  Related Companies
-                </h2>
-              </div>
-
-              <Link
-                href="/marketplace/companies"
-                className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-zinc-800 hover:text-[#00A651] transition-colors"
-              >
-                <span>Directory</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {relatedCompanies.map((relComp) => (
-                <CompanyCard key={relComp.id} company={relComp} />
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* 7. Energdive Editorial Content Section */}
-        <section>
-          <div className="flex items-end justify-between border-b border-zinc-200 pb-4 mb-8">
-            <div>
-              <div className="flex items-center gap-2 text-[11px] font-black tracking-widest text-[#00A651] uppercase mb-1">
-                <Newspaper className="w-3.5 h-3.5" />
-                Editorial Intelligence
-              </div>
-              <h2 className="text-xl sm:text-2xl font-black uppercase tracking-tight text-zinc-900">
-                Latest from Energdive
-              </h2>
-            </div>
-
-            <Link
-              href="/news"
-              className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-zinc-800 hover:text-[#00A651] transition-colors"
-            >
-              <span>View All News</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {articles.map((art) => (
-              <MarketplaceArticleCard key={art.id} article={art} />
-            ))}
-          </div>
-        </section>
+      <CompanyHeader company={company} productCount={products.length} documentCount={documentCount} />
+      <div className="mx-auto max-w-[1200px] px-4 sm:px-6 lg:px-8">
+        <CompanyProfileTabs overview={overview} solutions={solutions} assets={assets} insights={insights} counts={{ solutions: products.length, assets: documentCount + videos.length, insights: videos.length + articles.length }} />
       </div>
     </div>
   );

@@ -1,208 +1,154 @@
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowRight, Building2, MapPin, CheckCircle2, ShieldCheck, ExternalLink } from "lucide-react";
+import { ArrowRight, Building2, MapPin, CheckCircle2 } from "lucide-react";
 import { MarketplaceCompany } from "@/data/marketplace/types";
 
 interface CompanySpotlightProps {
-  featuredCompany: MarketplaceCompany;
-  alsoExplore: MarketplaceCompany[];
+  companies?: MarketplaceCompany[];
+  featuredCompany?: MarketplaceCompany;
+  alsoExplore?: MarketplaceCompany[];
 }
 
-export function CompanySpotlight({ featuredCompany, alsoExplore }: CompanySpotlightProps) {
+export function CompanySpotlight({
+  companies,
+  featuredCompany,
+  alsoExplore = [],
+}: CompanySpotlightProps) {
+  // Support both direct list of companies or legacy featured + alsoExplore
+  const list: MarketplaceCompany[] =
+    companies && companies.length > 0
+      ? companies
+      : [featuredCompany, ...alsoExplore].filter(
+          (c): c is MarketplaceCompany => Boolean(c)
+        );
+
+  if (list.length === 0) return null;
+
   return (
-    <section className="max-w-[1240px] mx-auto px-4 sm:px-6 lg:px-8">
+    <section className="max-w-[1240px] mx-auto px-4 sm:px-6 lg:px-8 font-sans">
       {/* Editorial Section Header */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-zinc-200 pb-4 mb-8">
         <div>
           <div className="flex items-center gap-2 text-[10px] font-black tracking-widest text-[#00A651] uppercase mb-1">
             <span className="w-1.5 h-1.5 rounded-full bg-[#00A651]" />
-            ORGANIZATION PROFILE
+            ORGANIZATION DIRECTORY
           </div>
-          <h2 className="text-2xl sm:text-3xl font-serif font-black uppercase tracking-tight text-zinc-950">
+          <h2 className="text-2xl sm:text-3xl font-black uppercase tracking-tight text-zinc-950">
             COMPANY SPOTLIGHT
           </h2>
+          <p className="text-xs sm:text-sm text-zinc-500 font-normal mt-1 max-w-xl leading-relaxed">
+            Leading public, private, and multinational energy enterprises active on the Energdive Marketplace.
+          </p>
         </div>
 
         <Link
           href="/marketplace/companies"
-          className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-zinc-800 hover:text-[#00A651] transition-colors"
+          className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-zinc-800 hover:text-[#00A651] transition-colors shrink-0"
         >
           <span>View All Companies Directory</span>
           <ArrowRight className="w-3.5 h-3.5" />
         </Link>
       </div>
 
-      {/* Grid: Large Featured Profile (Left 8 cols) + Also Explore (Right 4 cols) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
-        {/* Large Featured Company Card */}
-        <div className="lg:col-span-8 bg-white border border-zinc-200/90 rounded-2xl p-6 sm:p-8 flex flex-col justify-between shadow-xs">
-          <div>
-            {/* Top metadata tags */}
-            <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="text-[10px] font-black uppercase tracking-widest text-[#00A651] bg-[#00A651]/8 border border-[#00A651]/20 px-2.5 py-1 rounded">
-                  {featuredCompany.sector}
-                </span>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-600 bg-zinc-100 border border-zinc-200/80 px-2.5 py-1 rounded">
-                  {featuredCompany.companyType}
-                </span>
-                {featuredCompany.listed && (
-                  <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-emerald-800 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded">
-                    <CheckCircle2 className="w-3 h-3 text-[#00A651]" />
-                    {featuredCompany.ticker ? `NSE: ${featuredCompany.ticker}` : "Publicly Listed"}
-                  </span>
-                )}
-              </div>
+      {/* 4-Column Grid: 4 Companies per Row */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {list.slice(0, 4).map((company) => {
+          const monogram = company.name
+            .split(" ")
+            .slice(0, 2)
+            .map((w) => w[0])
+            .join("")
+            .toUpperCase();
 
-              <span className="text-xs text-zinc-400 font-medium">
-                Est. {featuredCompany.founded}
-              </span>
-            </div>
-
-            {/* Split: Company Name/Info & Cover Visual */}
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-6 mb-6">
-              <div className="md:col-span-7 flex flex-col justify-center">
-                <h3 className="text-2xl sm:text-3xl font-serif font-black uppercase tracking-tight text-zinc-950 mb-3 leading-snug">
-                  {featuredCompany.name}
-                </h3>
-                <p className="text-xs sm:text-sm text-zinc-600 font-normal leading-relaxed mb-4">
-                  {featuredCompany.description}
-                </p>
-
-                {/* Structured Metadata Points */}
-                <div className="grid grid-cols-2 gap-3 py-3 border-y border-zinc-100 text-xs">
-                  <div>
-                    <span className="text-[10px] uppercase font-bold text-zinc-400 block tracking-wider">
-                      Headquarters
-                    </span>
-                    <span className="font-semibold text-zinc-800">
-                      {featuredCompany.headquarters || featuredCompany.location}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] uppercase font-bold text-zinc-400 block tracking-wider">
-                      Primary Sector
-                    </span>
-                    <span className="font-semibold text-zinc-800">
-                      {featuredCompany.sector}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] uppercase font-bold text-zinc-400 block tracking-wider">
-                      Listed Status
-                    </span>
-                    <span className="font-semibold text-zinc-800">
-                      {featuredCompany.exchange || "BSE / NSE"}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] uppercase font-bold text-zinc-400 block tracking-wider">
-                      Solutions Listed
-                    </span>
-                    <span className="font-semibold text-zinc-800">
-                      {featuredCompany.productIds?.length || 2} Technologies
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Company Visual / Facility Image */}
-              <div className="md:col-span-5 relative min-h-[220px] rounded-xl overflow-hidden bg-zinc-100 border border-zinc-200">
-                {featuredCompany.coverImage ? (
-                  <Image
-                    src={featuredCompany.coverImage}
-                    alt={featuredCompany.name}
-                    fill
-                    sizes="(max-width: 768px) 100vw, 30vw"
-                    className="object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-zinc-400">
-                    <Building2 className="w-12 h-12" />
-                  </div>
-                )}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                <div className="absolute bottom-3 left-3 right-3 text-white">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-300 block">
-                    Infrastructure Asset
-                  </span>
-                  <span className="text-xs font-semibold line-clamp-1">
-                    {featuredCompany.businessAreas?.[0] || "Energy Facility Operations"}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Action Row */}
-          <div className="pt-4 border-t border-zinc-100 flex flex-wrap items-center justify-between gap-3">
-            <div className="flex flex-wrap gap-1.5">
-              {featuredCompany.businessAreas?.slice(0, 3).map((area) => (
-                <span
-                  key={area}
-                  className="text-[10px] font-medium text-zinc-600 bg-zinc-50 border border-zinc-200/80 px-2 py-0.5 rounded"
-                >
-                  {area}
-                </span>
-              ))}
-            </div>
-
-            <Link
-              href={`/marketplace/companies/${featuredCompany.slug}`}
-              className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider px-5 py-2.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-white transition-all shadow-xs"
+          return (
+            <div
+              key={company.id}
+              className="group bg-white border border-zinc-200/90 rounded-2xl overflow-hidden hover:border-[#00A651] hover:shadow-xl transition-all duration-300 flex flex-col justify-between"
             >
-              <span>View Full Profile</span>
-              <ArrowRight className="w-3.5 h-3.5 text-[#00A651]" />
-            </Link>
-          </div>
-        </div>
+              <div>
+                {/* 1. Logo Showcase Box (Replaces generic image) */}
+                <div className="relative h-44 sm:h-48 bg-gradient-to-b from-zinc-50 to-zinc-100/60 border-b border-zinc-100 flex items-center justify-center p-6 group-hover:from-emerald-50/40 group-hover:to-zinc-50 transition-colors">
+                  {/* Floating Badges */}
+                  <div className="absolute top-3 inset-x-3 flex items-center justify-between gap-2 z-10">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-[#00A651] bg-white/95 backdrop-blur-xs border border-emerald-200/80 px-2.5 py-0.5 rounded shadow-2xs">
+                      {company.sector}
+                    </span>
+                    {company.listed && (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-emerald-800 bg-emerald-50/95 border border-emerald-200 px-2 py-0.5 rounded shadow-2xs">
+                        <CheckCircle2 className="w-2.5 h-2.5 text-[#00A651]" />
+                        {company.ticker ? `NSE: ${company.ticker}` : "Listed"}
+                      </span>
+                    )}
+                  </div>
 
-        {/* Right 4 cols: "ALSO EXPLORE" Peer Companies */}
-        <div className="lg:col-span-4 bg-zinc-50/70 border border-zinc-200/80 rounded-2xl p-6 flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between pb-3 mb-4 border-b border-zinc-200">
-              <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
-                ALSO EXPLORE
-              </span>
-              <span className="text-xs text-zinc-400 font-medium">
-                Verified Leaders
-              </span>
-            </div>
-
-            <div className="divide-y divide-zinc-200/80">
-              {alsoExplore.map((company) => (
-                <Link
-                  key={company.id}
-                  href={`/marketplace/companies/${company.slug}`}
-                  className="py-3.5 block group hover:translate-x-0.5 transition-transform"
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <h4 className="text-sm font-serif font-bold text-zinc-900 group-hover:text-[#00A651] transition-colors leading-snug">
-                        {company.name}
-                      </h4>
-                      <div className="flex items-center gap-2 text-[11px] text-zinc-500 mt-1 font-normal">
-                        <span>{company.sector}</span>
-                        <span className="w-1 h-1 rounded-full bg-zinc-300" />
-                        <span>{company.location.split(",")[0]}</span>
-                      </div>
+                  {/* Centered Company Logo */}
+                  {company.logo ? (
+                    <div className="relative w-full h-full flex items-center justify-center">
+                      <Image
+                        src={company.logo}
+                        alt={company.name}
+                        width={200}
+                        height={80}
+                        className="object-contain max-h-20 max-w-[85%] group-hover:scale-105 transition-transform duration-300 drop-shadow-xs"
+                      />
                     </div>
-                    <ArrowRight className="w-3.5 h-3.5 text-zinc-400 group-hover:text-[#00A651] group-hover:translate-x-1 transition-all mt-1 shrink-0" />
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </div>
+                  ) : (
+                    <div className="w-16 h-16 rounded-xl bg-zinc-200 text-zinc-700 flex items-center justify-center font-bold text-xl">
+                      {monogram}
+                    </div>
+                  )}
 
-          <div className="pt-4 border-t border-zinc-200 mt-4">
-            <Link
-              href="/marketplace/companies"
-              className="w-full py-2.5 text-center block text-xs font-bold uppercase tracking-wider text-zinc-700 hover:text-[#00A651] bg-white border border-zinc-300 hover:border-zinc-400 rounded-lg transition-colors"
-            >
-              Browse Complete Directory &rarr;
-            </Link>
-          </div>
-        </div>
+                  {/* Subtle bottom badge for company type */}
+                  <div className="absolute bottom-2.5 left-3">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 bg-white/90 border border-zinc-200 px-2 py-0.5 rounded">
+                      {company.companyType}
+                    </span>
+                  </div>
+                </div>
+
+                {/* 2. Company Details */}
+                <div className="p-5">
+                  <h3 className="text-base sm:text-lg font-bold text-zinc-950 group-hover:text-[#00A651] transition-colors leading-snug line-clamp-1 mb-1.5">
+                    <Link href={`/marketplace/companies/${company.slug}`}>
+                      {company.name}
+                    </Link>
+                  </h3>
+
+                  {/* Location info */}
+                  <div className="flex items-center gap-1 text-xs text-zinc-500 mb-3 font-medium">
+                    <MapPin className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+                    <span className="line-clamp-1">{company.location}</span>
+                  </div>
+
+                  {/* Short Description */}
+                  <p className="text-xs text-zinc-600 line-clamp-2 leading-relaxed">
+                    {company.shortDescription || company.description}
+                  </p>
+                </div>
+              </div>
+
+              {/* 3. Card Footer */}
+              <div className="p-5 pt-3 border-t border-zinc-100 flex items-center justify-between mt-auto">
+                <div className="flex items-center gap-1.5 text-[11px] font-semibold text-zinc-400">
+                  <Building2 className="w-3.5 h-3.5 text-zinc-400" />
+                  <span>
+                    {company.businessAreas?.length
+                      ? `${company.businessAreas.length} Domains`
+                      : "Verified Vendor"}
+                  </span>
+                </div>
+
+                <Link
+                  href={`/marketplace/companies/${company.slug}`}
+                  className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-zinc-900 group-hover:text-[#00A651] transition-colors"
+                >
+                  <span>View Profile</span>
+                  <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+                </Link>
+              </div>
+            </div>
+          );
+        })}
       </div>
     </section>
   );

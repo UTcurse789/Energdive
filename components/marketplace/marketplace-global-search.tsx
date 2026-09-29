@@ -130,7 +130,7 @@ export function MarketplaceGlobalSearch({
           aria-label="Search energy marketplace"
         />
 
-        {query ? (
+        {query && (
           <button
             type="button"
             onClick={() => {
@@ -143,10 +143,6 @@ export function MarketplaceGlobalSearch({
           >
             <X className="w-4 h-4" />
           </button>
-        ) : (
-          <span className="hidden md:inline-flex items-center text-[10px] font-bold text-zinc-400 border border-zinc-200 bg-zinc-50 px-2 py-0.5 rounded mr-2 uppercase tracking-wider select-none">
-            ESC to close
-          </span>
         )}
 
         <button

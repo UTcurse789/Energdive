@@ -44,7 +44,7 @@ export function ExploreByNeed() {
             <span className="w-1.5 h-1.5 rounded-full bg-[#00A651]" />
             INTENT-BASED DISCOVERY
           </div>
-          <h2 className="text-2xl sm:text-3xl font-serif font-black uppercase tracking-tight text-zinc-950 mb-3">
+          <h2 className="text-2xl sm:text-3xl font-sans font-black uppercase tracking-tight text-zinc-950 mb-3">
             WHAT ARE YOU LOOKING FOR?
           </h2>
           <p className="text-xs sm:text-sm text-zinc-500 font-normal leading-relaxed">

@@ -22,7 +22,7 @@ export const MARKETPLACE_COMPANIES: MarketplaceCompany[] = [
     bseCode: "532555",
     website: "https://www.ntpc.co.in",
     businessAreas: ["Thermal Power Generation", "Renewable Energy", "Hydroelectric Power", "Green Hydrogen", "Power Trading"],
-    productIds: ["prod-5", "prod-2"],
+    productIds: ["prod-ntpc-1", "prod-ntpc-2", "prod-ntpc-3"],
     relatedCompanyIds: ["comp-3", "comp-6", "comp-9"],
   },
   {

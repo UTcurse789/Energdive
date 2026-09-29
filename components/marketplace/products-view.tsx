@@ -226,13 +226,19 @@ export function ProductsView({
           {filtered.length === 0 ? (
             <EmptyState
               title={
-                filters.search
+                initialProducts.length === 0
+                  ? "No Products Available Yet"
+                  : filters.search
                   ? `No products found matching "${filters.search}"`
                   : "No energy solutions match your selection"
               }
-              description="Try adjusting your search keywords, clearing category filters, or browsing all equipment."
-              actionText="Clear All Filters"
-              onAction={handleClearAll}
+              description={
+                initialProducts.length === 0
+                  ? "The technology and product catalogue is currently being populated with verified equipment and solutions. In the meantime, explore our verified energy companies."
+                  : "Try adjusting your search keywords, clearing category filters, or browsing all equipment."
+              }
+              actionText={initialProducts.length === 0 ? "Browse Companies" : "Clear All Filters"}
+              onAction={initialProducts.length === 0 ? () => router.push("/marketplace/companies") : handleClearAll}
             />
           ) : (
             <>

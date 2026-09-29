@@ -1,13 +1,16 @@
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowRight, Building } from "lucide-react";
+import { ArrowRight, Building, FileText } from "lucide-react";
 import { MarketplaceProduct } from "@/data/marketplace/types";
+import { getResourcesByProductSlug } from "@/data/marketplace";
 
 interface ProductCardProps {
   product: MarketplaceProduct;
 }
 
 export function ProductCard({ product }: ProductCardProps) {
+  const resources = getResourcesByProductSlug(product.slug);
+
   return (
     <div className="group relative bg-white border border-zinc-200/90 rounded-xl overflow-hidden hover:border-[#00A651] hover:shadow-lg transition-all duration-300 flex flex-col justify-between h-full">
       {/* Product Image */}
@@ -20,14 +23,24 @@ export function ProductCard({ product }: ProductCardProps) {
           alt={product.name}
           fill
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-          className="object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
+          className="object-contain p-4"
         />
         <div className="absolute top-3 left-3">
           <span className="inline-block text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded bg-black/80 text-white backdrop-blur-xs">
             {product.category}
           </span>
         </div>
+
+        {resources.length > 0 && (
+          <div className="absolute top-3 right-3">
+            <span className="inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-black/85 text-emerald-400 backdrop-blur-xs border border-emerald-500/30">
+              <FileText className="w-2.5 h-2.5" />
+              <span>{resources.length} {resources.length === 1 ? "Doc" : "Docs"}</span>
+            </span>
+          </div>
+        )}
       </Link>
+
 
       {/* Product Content */}
       <div className="p-5 flex-1 flex flex-col justify-between">

@@ -11,6 +11,12 @@ export function MarketplaceNav() {
   const pathname = usePathname();
   const [isListingModalOpen, setIsListingModalOpen] = useState(false);
 
+  // The marketplace rail is a landing-page navigation aid. Detail and
+  // directory routes use their own local navigation and should not repeat it.
+  if (pathname !== "/marketplace") {
+    return null;
+  }
+
   const links = [
     {
       name: "Overview",
@@ -30,12 +36,12 @@ export function MarketplaceNav() {
       exact: false,
       icon: Package,
     },
-    {
-      name: "Sectors",
-      href: "/marketplace/sectors",
-      exact: false,
-      icon: Layers,
-    },
+    // {
+    //   name: "Sectors",
+    //   href: "/marketplace/sectors",
+    //   exact: false,
+    //   icon: Layers,
+    // },
   ];
 
   const isActive = (href: string, exact: boolean) => {
@@ -47,8 +53,8 @@ export function MarketplaceNav() {
 
   return (
     <>
-      <div className="w-full bg-white border-b border-zinc-200 sticky top-[60px] sm:top-[70px] md:top-[80px] z-40 shadow-xs">
-        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-12 sm:h-13">
+      <div className="w-full bg-white/95 backdrop-blur-md border-b border-zinc-200/90 sticky top-[73px] md:top-[89px] z-40 shadow-xs transition-all">
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-12 sm:h-13 font-sans">
           {/* Navigation Links */}
           <div className="flex items-center gap-1 sm:gap-2">
             <span className="hidden md:flex items-center text-[10px] font-black tracking-widest text-[#00A651] uppercase mr-3 pr-3 border-r border-zinc-200">
@@ -77,7 +83,7 @@ export function MarketplaceNav() {
           </div>
 
           {/* Quick CTA */}
-          <div className="flex items-center gap-2 sm:gap-3">
+          {/* <div className="flex items-center gap-2 sm:gap-3">
             <button
               onClick={() => setIsListingModalOpen(true)}
               className="inline-flex items-center gap-1.5 bg-[#00A651]/10 border border-[#00A651]/30 hover:bg-[#00A651] hover:text-white text-[#00A651] text-[10px] sm:text-[11px] font-black uppercase tracking-wider px-3 py-1.5 rounded-md transition-all cursor-pointer shadow-2xs"
@@ -86,7 +92,7 @@ export function MarketplaceNav() {
               <span className="hidden sm:inline">List Your Company</span>
               <span className="sm:hidden">List Company</span>
             </button>
-          </div>
+          </div> */}
         </div>
       </div>
 

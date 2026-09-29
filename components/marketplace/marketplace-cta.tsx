@@ -23,7 +23,7 @@ export function MarketplaceCTA() {
                 <span className="w-1.5 h-1.5 rounded-full bg-[#00A651]" />
                 PARTNER ECOSYSTEM
               </div>
-              <h2 className="text-2xl sm:text-3xl font-serif font-black uppercase tracking-tight text-zinc-950 leading-tight mb-3">
+              <h2 className="text-2xl sm:text-3xl font-sans font-black uppercase tracking-tight text-zinc-950 leading-tight mb-3">
                 BUILD YOUR PRESENCE ON ENERGDIVE
               </h2>
               <p className="text-xs sm:text-sm text-zinc-600 font-normal leading-relaxed">
