@@ -1,14 +1,41 @@
-export function formatContentDate(value?: string | Date | null): string {
+const SHORT_TO_FULL_MONTH: Record<string, string> = {
+    JAN: "JANUARY",
+    FEB: "FEBRUARY",
+    MAR: "MARCH",
+    APR: "APRIL",
+    MAY: "MAY",
+    JUN: "JUNE",
+    JUL: "JULY",
+    AUG: "AUGUST",
+    SEP: "SEPTEMBER",
+    SEPT: "SEPTEMBER",
+    OCT: "OCTOBER",
+    NOV: "NOVEMBER",
+    DEC: "DECEMBER",
+};
+
+export function formatContentDate(
+    value?: string | Date | null,
+    options?: { month?: "short" | "long" }
+): string {
     if (!value) return "";
 
     const date = value instanceof Date ? value : new Date(value);
     if (Number.isNaN(date.getTime())) {
-        return typeof value === "string" ? value.trim().toUpperCase() : "";
+        if (typeof value !== "string") return "";
+        let str = value.trim().toUpperCase();
+        if (options?.month === "long") {
+            str = str.replace(
+                /\b(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|SEPT|OCT|NOV|DEC)\b/g,
+                (m) => SHORT_TO_FULL_MONTH[m] || m
+            );
+        }
+        return str;
     }
 
     return new Intl.DateTimeFormat("en-GB", {
         day: "2-digit",
-        month: "short",
+        month: options?.month ?? "short",
         year: "numeric",
     }).format(date).toUpperCase();
 }
