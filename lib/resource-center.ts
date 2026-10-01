@@ -235,6 +235,68 @@ function emailList(value: unknown) {
   return Array.from(new Set(emails));
 }
 
+const MONTH_MAP: Record<string, number> = {
+  jan: 1, january: 1,
+  feb: 2, february: 2,
+  mar: 3, march: 3,
+  apr: 4, april: 4,
+  may: 5,
+  jun: 6, june: 6,
+  jul: 7, july: 7,
+  aug: 8, august: 8,
+  sep: 9, sept: 9, september: 9, septmber: 9,
+  oct: 10, october: 10,
+  nov: 11, november: 11,
+  dec: 12, december: 12,
+};
+
+function resolveResourceDate(entry: StrapiResourceCenterEntry, fallbackIso: string): string {
+  const text = `${entry.short_title || ""} ${entry.full_title || ""} ${entry.slug || ""}`;
+  const monthMatch = text.match(
+    /\b(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t(?:ember)?)?|septmber|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\b/i
+  );
+  const yearMatch = text.match(/\b(20\d{2})\b/);
+  const parsedYear = yearMatch ? parseInt(yearMatch[1], 10) : (Number(entry.year) || null);
+
+  const rawDate = new Date(fallbackIso);
+  const hasValidRawDate = !isNaN(rawDate.getTime());
+
+  if (monthMatch && parsedYear) {
+    const monthKey = monthMatch[1].toLowerCase();
+    const monthNum = MONTH_MAP[monthKey];
+    if (monthNum) {
+      const dayMatch = text.match(
+        new RegExp(
+          `(?:\\b(\\d{1,2})(?:st|nd|rd|th)?\\s+${monthMatch[1]}|${monthMatch[1]}\\s+(\\d{1,2})(?:st|nd|rd|th)?\\b)`,
+          "i"
+        )
+      );
+      const day = dayMatch ? parseInt(dayMatch[1] || dayMatch[2], 10) : 1;
+      const validDay = day >= 1 && day <= 31 ? day : 1;
+
+      const hours = hasValidRawDate ? rawDate.getUTCHours() : 0;
+      const mins = hasValidRawDate ? rawDate.getUTCMinutes() : 0;
+      const secs = hasValidRawDate ? rawDate.getUTCSeconds() : 0;
+      return new Date(Date.UTC(parsedYear, monthNum - 1, validDay, hours, mins, secs)).toISOString();
+    }
+  }
+
+  if (parsedYear && hasValidRawDate) {
+    return new Date(
+      Date.UTC(
+        parsedYear,
+        rawDate.getUTCMonth(),
+        rawDate.getUTCDate(),
+        rawDate.getUTCHours(),
+        rawDate.getUTCMinutes(),
+        rawDate.getUTCSeconds()
+      )
+    ).toISOString();
+  }
+
+  return fallbackIso;
+}
+
 function normalizeResource(item: StrapiResourceCenterEntry): EventResource | null {
   const entry = item.attributes || item;
   const shortTitle = (entry.short_title || "").trim();
@@ -253,7 +315,8 @@ function normalizeResource(item: StrapiResourceCenterEntry): EventResource | nul
   const eventName = (linkedEventTitle || entry.short_title || showCode || "Resource Hub").trim();
   const eventId = slugify(linkedEventSlug || showCode || eventName || "resource-hub");
   const slug = (entry.slug || slugify(title)).trim();
-  const publishedAt = entry.publishedAt || entry.updatedAt || entry.createdAt || "";
+  const rawPublishedAt = entry.publishedAt || entry.updatedAt || entry.createdAt || "";
+  const publishedAt = resolveResourceDate(entry, rawPublishedAt);
   const parsedYear = Number(entry.year) || new Date(publishedAt).getFullYear();
   const resourceFile = mediaAttributes(entry.resource_file);
   const coverImage = mediaAttributes(entry.cover_image);
