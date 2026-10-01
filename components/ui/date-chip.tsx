@@ -7,10 +7,11 @@ import { formatContentDate } from "@/lib/date";
 interface DateChipProps {
     value?: string | Date | null;
     className?: string;
+    monthFormat?: "short" | "long";
 }
 
-export function DateChip({ value, className }: DateChipProps) {
-    const formatted = formatContentDate(value);
+export function DateChip({ value, className, monthFormat = "short" }: DateChipProps) {
+    const formatted = formatContentDate(value, { month: monthFormat });
     if (!formatted) return null;
 
     return (
