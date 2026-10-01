@@ -17,6 +17,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@aws-sdk/client-sesv2": "^3.1143.0",
     "@clerk/nextjs": "^6.39.5",
     "@gsap/react": "^2.1.2",
     "@hookform/resolvers": "^5.2.2",

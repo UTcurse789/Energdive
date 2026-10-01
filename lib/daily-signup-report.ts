@@ -1,5 +1,8 @@
 import { query } from "@/lib/db";
 import { sendEmail } from "@/lib/email";
+// Type-only import — erased at runtime, does not trigger the server-only guard
+// in lib/email/transactional.ts at module load time.
+import type { SendTransactionalEmailOptions, TransactionalEmailResult } from "@/lib/email/transactional";
 
 const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
 
@@ -199,6 +202,76 @@ function buildDailySignupReportHtml(reportDate: string, users: SignupReportUser[
 </html>`;
 }
 
+export interface DeliverDailySignupReportOptions {
+    recipient: string;
+    subject: string;
+    htmlContent: string;
+    useSes?: boolean;
+    sendViaBrevo?: typeof sendEmail;
+    /**
+     * Override for the SES delivery function. When omitted, the production
+     * default is resolved via dynamic import at call time so that the
+     * server-only boundary in lib/email/transactional.ts is never violated
+     * at module load. Tests inject this directly to avoid touching server-only
+     * modules altogether.
+     */
+    sendViaSes?: (options: SendTransactionalEmailOptions) => Promise<TransactionalEmailResult>;
+}
+
+/**
+ * Deliver a single daily signup report email via SES or Brevo.
+ *
+ * Provider selection:
+ *   - USE_SES_DAILY_SIGNUP_REPORT=true  → AWS SES
+ *   - USE_SES_DAILY_SIGNUP_REPORT=false (or unset) → Brevo  ← default
+ *
+ * The flag is evaluated at call time (not module load), but changing a .env
+ * file value requires the running Node/Next.js process to be restarted or
+ * redeployed before the new value takes effect.
+ *
+ * There is NO silent Brevo fallback when SES fails. Errors surface normally.
+ */
+export async function deliverDailySignupReportEmail({
+    recipient,
+    subject,
+    htmlContent,
+    useSes = process.env.USE_SES_DAILY_SIGNUP_REPORT === "true",
+    sendViaBrevo = sendEmail,
+    sendViaSes,
+}: DeliverDailySignupReportOptions): Promise<void> {
+    if (useSes) {
+        const fromEmail = process.env.AWS_SES_FROM_EMAIL;
+        const fromName = process.env.AWS_SES_FROM_NAME || "ENERGDIVE Automation";
+        const from = fromEmail ? { email: fromEmail, name: fromName } : undefined;
+
+        // Resolve delivery function: use injected override when provided (e.g.
+        // in tests), otherwise dynamically import to keep the server-only
+        // boundary intact at module load time.
+        const deliver =
+            sendViaSes ??
+            (await import("@/lib/email/transactional")).sendTransactionalEmail;
+
+        await deliver({
+            to: recipient,
+            subject,
+            html: htmlContent,
+            from,
+            tags: [{ name: "type", value: "daily-user-signup-report" }],
+        });
+    } else {
+        await sendViaBrevo({
+            to: recipient,
+            subject,
+            htmlContent,
+            sender: {
+                email: process.env.FROM_EMAIL || "no-reply@info.energdive.com",
+                name: "ENERGDIVE Automation",
+            },
+            tags: ["daily-user-signup-report"],
+        });
+    }
+}
+
 export async function sendDailySignupReport(
     recipients: readonly string[] = DAILY_SIGNUP_REPORT_RECIPIENTS,
     now = new Date()
@@ -213,15 +286,10 @@ export async function sendDailySignupReport(
     const subject = `ENERGDIVE Daily User Signup Report – ${reportDate}`;
 
     for (const recipient of recipients) {
-        await sendEmail({
-            to: recipient,
+        await deliverDailySignupReportEmail({
+            recipient,
             subject,
             htmlContent,
-            sender: {
-                email: process.env.FROM_EMAIL || "no-reply@info.energdive.com",
-                name: "ENERGDIVE Automation",
-            },
-            tags: ["daily-user-signup-report"],
         });
     }
 
