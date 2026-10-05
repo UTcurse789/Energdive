@@ -21,6 +21,9 @@ export default function OnboardingModal() {
     const [showModal, setShowModal] = useState(false);
     const [checkedPathname, setCheckedPathname] = useState<string | null>(null);
     const [returnTo, setReturnTo] = useState(DEFAULT_POST_AUTH_REDIRECT);
+    // Once the user completes onboarding, permanently block re-showing the modal
+    // (even if Clerk's JWT is still stale and status API returns onboardingCompleted: false)
+    const [hasCompleted, setHasCompleted] = useState(false);
     const checked = checkedPathname === pathname;
 
     // Check if the current path is excluded
@@ -29,7 +32,7 @@ export default function OnboardingModal() {
     );
 
     useEffect(() => {
-        if (!isLoaded || !isSignedIn || isExcluded || checked) return;
+        if (!isLoaded || !isSignedIn || isExcluded || checked || hasCompleted) return;
 
         let cancelled = false;
 
@@ -65,9 +68,10 @@ export default function OnboardingModal() {
         return () => {
             cancelled = true;
         };
-    }, [isLoaded, isSignedIn, isExcluded, checked, pathname]);
+    }, [isLoaded, isSignedIn, isExcluded, checked, pathname, hasCompleted]);
 
     const handleComplete = useCallback(() => {
+        setHasCompleted(true);
         setShowModal(false);
     }, []);
 

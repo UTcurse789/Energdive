@@ -398,7 +398,13 @@ export default function OnboardingWizard({ returnTo = "/", mode = "page", onComp
 
 
             if (mode === "modal" && onComplete) {
+                // In modal mode: just close the modal, do NOT redirect/reload the page.
+                // A page reload would cause the onboarding status API to re-check
+                // before Clerk's JWT is refreshed, making the form re-appear.
+                sessionStorage.removeItem(POST_AUTH_REDIRECT_STORAGE_KEY);
+                document.cookie = `${POST_AUTH_REDIRECT_COOKIE}=; path=/; max-age=0; SameSite=Lax`;
                 onComplete();
+                return;
             }
 
             let finalRedirect = getSafeRedirectPath(returnTo || "/");
