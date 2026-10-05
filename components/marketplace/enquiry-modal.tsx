@@ -39,11 +39,11 @@ export function EnquiryModal({
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     // Basic validation
-    if (!formData.name.trim() || !formData.email.trim() || !formData.company.trim()) {
+    if (!formData.name.trim() || !formData.email.trim() || !formData.company.trim() || !formData.message.trim()) {
       setErrorMessage("Please complete all required fields.");
       return;
     }
@@ -51,8 +51,21 @@ export function EnquiryModal({
     setErrorMessage("");
     setStatus("submitting");
 
-    // Simulate network submission with mock delay
-    setTimeout(() => {
+    try {
+      const res = await fetch("/api/marketplace/enquiry", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to submit enquiry.");
+      }
+
       setStatus("success");
       setTimeout(() => {
         // Auto-close after successful feedback
@@ -68,8 +81,12 @@ export function EnquiryModal({
           targetName,
         });
         onClose();
-      }, 2500);
-    }, 800);
+      }, 3500);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Something went wrong. Please try again.";
+      setErrorMessage(msg);
+      setStatus("error");
+    }
   };
 
   const modalTitle =
@@ -127,12 +144,29 @@ export function EnquiryModal({
               </div>
               <h4 className="text-lg font-bold text-zinc-900">Enquiry Transmitted Successfully</h4>
               <p className="text-zinc-600 text-xs max-w-sm">
-                Your enquiry regarding <span className="font-semibold text-zinc-900">{targetName || "the requested solution"}</span> has been recorded. The vendor team will respond directly via email.
+                Your enquiry regarding <span className="font-semibold text-zinc-900">{targetName || "the requested solution"}</span> has been recorded. A confirmation email has been sent to your inbox, and our team will get back to you shortly.
               </p>
               <div className="pt-2">
-                <span className="text-[10px] uppercase font-bold text-zinc-400 tracking-wider">
-                  [Prototype State: Simulated Success]
-                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setStatus("idle");
+                    setFormData({
+                      name: "",
+                      company: "",
+                      email: "",
+                      phone: "",
+                      message: "",
+                      targetType: defaultTargetType,
+                      targetId,
+                      targetName,
+                    });
+                    onClose();
+                  }}
+                  className="px-4 py-1.5 text-xs font-semibold text-[#00A651] hover:text-[#008f45] transition-colors"
+                >
+                  Close Window
+                </button>
               </div>
             </div>
           ) : (
