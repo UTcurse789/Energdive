@@ -25,6 +25,10 @@ interface CompanyResourceHubProps {
   companyName: string;
   companySlug: string;
   defaultKind?: AssetKind;
+  hideHeader?: boolean;
+  title?: string;
+  eyebrow?: string;
+  description?: string;
 }
 
 const documentGroups = ["Presentation", "Company Brochure", "Product Catalogue", "Product Brochure", "Product Information", "Technical Document"];
@@ -37,6 +41,10 @@ export function CompanyResourceHub({
   companyName,
   companySlug,
   defaultKind = "all",
+  hideHeader = false,
+  title = "Technical assets & media",
+  eyebrow = "Vendor library",
+  description,
 }: CompanyResourceHubProps) {
   const { isLoaded, isSignedIn } = useAuth();
   const { openAuthModal } = useAuthModal();
@@ -163,17 +171,21 @@ export function CompanyResourceHub({
         </div>
       )}
 
-      <div className="mb-6 flex flex-col justify-between gap-4 border-b border-zinc-200 pb-5 sm:flex-row sm:items-end">
-        <div>
-          <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#00A651]">Vendor library</p>
-          <h2 className="mt-1 font-sans text-xl font-semibold tracking-tight text-zinc-950 sm:text-2xl">Technical assets & documents</h2>
-          <p className="mt-1 text-sm text-zinc-500">Filter presentations, catalogues, specifications, and media from {companyName}.</p>
+      {!hideHeader && (
+        <div className="mb-6 flex flex-col justify-between gap-4 border-b border-zinc-200 pb-5 sm:flex-row sm:items-end">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#00A651]">{eyebrow}</p>
+            <h2 className="mt-1 font-sans text-xl font-semibold tracking-tight text-zinc-950 sm:text-2xl">{title}</h2>
+            <p className="mt-1 text-sm text-zinc-500">
+              {description || `Filter presentations, catalogues, specifications, and media from ${companyName}.`}
+            </p>
+          </div>
+          <div className="relative w-full sm:w-72">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+            <input value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} placeholder="Search this library" className="h-10 w-full rounded-lg border border-zinc-200 bg-white pl-9 pr-3 text-xs text-zinc-800 outline-none transition focus:border-[#00A651] focus:ring-2 focus:ring-[#00A651]/10" />
+          </div>
         </div>
-        <div className="relative w-full sm:w-72">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
-          <input value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} placeholder="Search this library" className="h-10 w-full rounded-lg border border-zinc-200 bg-white pl-9 pr-3 text-xs text-zinc-800 outline-none transition focus:border-[#00A651] focus:ring-2 focus:ring-[#00A651]/10" />
-        </div>
-      </div>
+      )}
 
       <div className="grid gap-6 lg:grid-cols-[210px_minmax(0,1fr)]">
         <aside className="h-fit rounded-xl border border-zinc-200 bg-white p-4 lg:sticky lg:top-[190px]">

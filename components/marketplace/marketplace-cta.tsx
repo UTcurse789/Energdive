@@ -10,7 +10,7 @@ export function MarketplaceCTA() {
 
   return (
     <>
-      <section className="max-w-[1240px] mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="max-w-[1240px] mx-auto px-6 sm:px-6 lg:px-8">
         <div className="relative border-t border-b border-zinc-200 py-14 sm:py-16">
           {/* Left Green Accent Stripe */}
           <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-[#00A651]" />
@@ -56,7 +56,7 @@ export function MarketplaceCTA() {
         onClose={() => setIsOpen(false)}
         defaultTargetType="general"
         targetName="Marketplace Onboarding & Listing"
-        title="List Your Company on Energdive Marketplace"
+        title="List Your Company on ENERGDIVE Marketplace"
         subtitle="Submit your company and solution details for editorial review and directory inclusion."
       />
     </>

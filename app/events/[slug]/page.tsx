@@ -221,7 +221,7 @@ export default async function EventDetailPage({
                                 {event.date && (
                                     <div className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-500">
                                         <Calendar className="h-3.5 w-3.5 text-emerald-600" />
-                                        <DateChip value={event.date} />
+                                        <DateChip value={event.date} monthFormat="long" />
                                     </div>
                                 )}
                             </div>

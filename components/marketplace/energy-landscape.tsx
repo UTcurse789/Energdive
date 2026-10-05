@@ -40,7 +40,7 @@ export function EnergyLandscape({ sectors }: EnergyLandscapeProps) {
   };
 
   return (
-    <section className="max-w-[1240px] mx-auto px-4 sm:px-6 lg:px-8">
+    <section className="max-w-[1240px] mx-auto px-6 sm:px-6 lg:px-8">
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-zinc-200 pb-4 mb-6">
         <div>
           <div className="flex items-center gap-2 text-[10px] font-black tracking-widest text-[#00A651] uppercase mb-1">

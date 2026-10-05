@@ -64,7 +64,7 @@ export function CompanyHeader({
 
   return (
     <>
-      <header className="mx-auto max-w-[1200px] px-4 pt-6 sm:px-6 sm:pt-8 lg:px-8">
+      <header className="mx-auto max-w-[1200px] px-6 pt-6 sm:px-6 sm:pt-8 lg:px-8">
         <div className="relative overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm">
           <div className="absolute inset-x-0 top-0 h-1 bg-[#00A651]" />
           <div className="px-5 pb-7 pt-8 sm:px-7 sm:pb-8 sm:pt-10">

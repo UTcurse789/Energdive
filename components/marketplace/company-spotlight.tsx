@@ -25,7 +25,7 @@ export function CompanySpotlight({
   if (list.length === 0) return null;
 
   return (
-    <section className="max-w-[1240px] mx-auto px-4 sm:px-6 lg:px-8 font-sans">
+    <section className="max-w-[1240px] mx-auto px-6 sm:px-6 lg:px-8 font-sans">
       {/* Editorial Section Header */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-zinc-200 pb-4 mb-8">
         <div>
