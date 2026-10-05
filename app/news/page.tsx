@@ -91,6 +91,14 @@ export default async function NewsPage(props: { searchParams: Promise<{ [key: st
                 if (finalImage && finalImage.includes("placeholder")) finalImage = null;
 
                 const rawDateVal = attrs.Date || attrs.publishedAt || attrs.createdAt;
+                const authorRelation = attrs.author || attrs.Author;
+                const authorObj =
+                    authorRelation?.data?.attributes ||
+                    authorRelation?.data?.[0]?.attributes ||
+                    authorRelation?.attributes ||
+                    authorRelation?.[0] ||
+                    authorRelation;
+                const authorName = authorObj?.name || authorObj?.Name || (typeof authorRelation === "string" ? authorRelation : null);
 
                 return {
                     id: item.id,
@@ -108,7 +116,7 @@ export default async function NewsPage(props: { searchParams: Promise<{ [key: st
                     ),
                     date: formatContentDate(rawDateVal),
                     rawDate: rawDateVal,
-                    author: attrs.Author?.name || "ENERGDIVE News Desk",
+                    author: authorName || "ENERGDIVE News Desk",
                     readingTime: estimateReadingTime(excerptText + " " + (attrs.CONTENT || "")),
                 };
             });
