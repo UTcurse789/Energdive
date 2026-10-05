@@ -1,6 +1,7 @@
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { getClient } from "@/lib/db";
+import { NO_CACHE_HEADERS } from "@/lib/api/no-cache";
 
 export const dynamic = "force-dynamic";
 
@@ -13,7 +14,10 @@ export async function GET() {
     const { userId, sessionClaims } = await auth();
 
     if (!userId) {
-        return NextResponse.json({ exists: false, onboardingCompleted: false });
+        return NextResponse.json(
+            { exists: false, onboardingCompleted: false },
+            { headers: NO_CACHE_HEADERS }
+        );
     }
 
     // 1. Fast check: Middleware/Session Claims
@@ -30,11 +34,10 @@ export async function GET() {
         );
 
         if (res.rows.length === 0) {
-            return NextResponse.json({
-                exists: false,
-                onboardingCompleted: false,
-                source: "db_missing",
-            });
+            return NextResponse.json(
+                { exists: false, onboardingCompleted: false, source: "db_missing" },
+                { headers: NO_CACHE_HEADERS }
+            );
         }
 
         const dbUser = res.rows[0];
@@ -47,16 +50,15 @@ export async function GET() {
             });
         }
 
-        return NextResponse.json({
-            exists: true,
-            onboardingCompleted: dbCompleted,
-            source: "db_found",
-        });
+        return NextResponse.json(
+            { exists: true, onboardingCompleted: dbCompleted, source: "db_found" },
+            { headers: NO_CACHE_HEADERS }
+        );
     } catch (error) {
         console.error("[PROFILE_CHECK]", error);
         return NextResponse.json(
             { error: "Internal server error" },
-            { status: 500 }
+            { status: 500, headers: NO_CACHE_HEADERS }
         );
     } finally {
         client.release();

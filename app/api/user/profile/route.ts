@@ -2,6 +2,14 @@ import { auth, currentUser } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { ensureUserProfileRow, getUserProfile, hasUserDownloads } from "@/lib/queries";
 
+// Prevent Cloudflare / any CDN from caching user-specific responses
+const NO_CACHE_HEADERS = {
+    "Cache-Control": "no-store, no-cache, must-revalidate, private",
+    "CDN-Cache-Control": "no-store",
+    "Cloudflare-CDN-Cache-Control": "no-store",
+    "Surrogate-Control": "no-store",
+};
+
 /**
  * GET /api/user/profile
  * Returns the full user profile with industry + community selections.
@@ -12,7 +20,7 @@ export async function GET() {
         if (!userId) {
             return NextResponse.json(
                 { error: "Unauthorized" },
-                { status: 401 }
+                { status: 401, headers: NO_CACHE_HEADERS }
             );
         }
 
@@ -74,7 +82,7 @@ export async function GET() {
                     verification_status: null,
                     hasDownloads,
                 }
-            });
+            }, { headers: NO_CACHE_HEADERS });
         }
 
         return NextResponse.json({
@@ -83,12 +91,12 @@ export async function GET() {
                 ...profile,
                 hasDownloads
             }
-        });
+        }, { headers: NO_CACHE_HEADERS });
     } catch (error) {
         console.error("[USER_PROFILE]", error);
         return NextResponse.json(
             { error: "Internal server error" },
-            { status: 500 }
+            { status: 500, headers: NO_CACHE_HEADERS }
         );
     }
 }

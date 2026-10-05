@@ -83,8 +83,21 @@ const nextConfig: NextConfig = {
         ],
       },
       {
-        // All HTML pages: tell CDN/Cloudflare max 60s stale-while-revalidate.
-        source: "/:path*",
+        // ─── CRITICAL: Never cache any /api/* route ───────────────────────────
+        // Without this, Cloudflare caches user-specific API responses and serves
+        // one user's profile/feed/onboarding data to a completely different user.
+        source: "/api/:path*",
+        headers: [
+          { key: "Cache-Control", value: "no-store, no-cache, must-revalidate, private" },
+          { key: "CDN-Cache-Control", value: "no-store" },
+          { key: "Cloudflare-CDN-Cache-Control", value: "no-store" },
+          { key: "Surrogate-Control", value: "no-store" },
+          { key: "Pragma", value: "no-cache" },
+        ],
+      },
+      {
+        // Public HTML pages only (not /api): allow CDN to cache up to 60s
+        source: "/((?!api/).*)",
         missing: [
           { type: "header", key: "x-no-cache-override" },
         ],
