@@ -58,7 +58,7 @@ export function ProductHeader({
 
   return (
     <>
-      <header className="mx-auto max-w-[1200px] px-4 pt-6 sm:px-6 sm:pt-8 lg:px-8 font-sans">
+      <header className="mx-auto max-w-[1200px] px-6 pt-6 sm:px-6 sm:pt-8 lg:px-8 font-sans">
         <div className="relative overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm">
           {/* Top Green Accent Bar */}
           <div className="absolute inset-x-0 top-0 h-1 bg-[#00A651]" />

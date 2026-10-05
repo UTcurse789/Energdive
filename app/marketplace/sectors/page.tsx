@@ -49,7 +49,7 @@ export default async function SectorsPage() {
     <div className="min-h-screen">
       {/* Top Breadcrumb Nav Bar */}
       <div className="border-b border-zinc-200 bg-zinc-50">
-        <div className="mx-auto flex max-w-[1400px] px-4 py-3 sm:px-6 lg:px-8">
+        <div className="mx-auto flex max-w-[1400px] px-6 py-3 sm:px-6 lg:px-8">
           <MarketplaceBreadcrumbs
             crumbs={[{ label: "Sectors" }]}
             className="mb-0"
@@ -57,7 +57,7 @@ export default async function SectorsPage() {
         </div>
       </div>
 
-      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+      <div className="max-w-[1400px] mx-auto px-6 sm:px-6 lg:px-8 py-8 sm:py-12">
         {/* Header */}
         <div className="border-b border-zinc-200 pb-6 mb-8">
           <div className="flex items-center gap-2 text-[11px] font-black tracking-widest text-[#00A651] uppercase mb-1.5">

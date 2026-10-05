@@ -13,7 +13,7 @@ export function MarketplaceHero() {
       {/* Restrained emerald atmospheric glow */}
       <div className="absolute -top-24 right-1/4 w-[500px] h-[500px] bg-[#00A651]/4 rounded-full blur-3xl pointer-events-none" />
 
-      <div className="relative max-w-[1240px] mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="relative max-w-[1240px] mx-auto px-6 sm:px-6 lg:px-8">
         <div className="max-w-3xl mx-auto text-center">
           {/* Eyebrow badge */}
           {/* <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-zinc-100/90 border border-zinc-200/80 text-[10px] sm:text-[11px] font-bold tracking-widest text-zinc-700 uppercase mb-5">

@@ -1155,26 +1155,200 @@ export async function getMarketplaceCompanyVideos(
 }
 
 // ---------------------------------------------------------------------------
-// Articles — /api/contents is live (200 OK)
+// ---------------------------------------------------------------------------
+// Sector Aliases & Expansion for News filtering
+// ---------------------------------------------------------------------------
+
+const MARKETPLACE_SECTOR_ALIASES: Record<string, string[]> = {
+  "power generation": [
+    "Power Generation",
+    "Thermal Power",
+    "Thermal",
+    "Hydroelectric",
+    "Hydro",
+    "Turbines",
+    "Nuclear",
+    "Nuclear Energy",
+  ],
+  "solar energy": [
+    "Solar Energy",
+    "Solar",
+    "PV Modules",
+    "Solar Inverters",
+    "Tracking Systems",
+    "EPC Solar",
+    "Floating Solar",
+  ],
+  "wind energy": [
+    "Wind Energy",
+    "Wind",
+    "Onshore Turbines",
+    "Offshore Wind",
+    "Blades & Nacelles",
+    "Wind Farm O&M",
+  ],
+  "oil & gas": [
+    "Oil & Gas",
+    "Oil",
+    "Gas",
+    "Upstream",
+    "Pipelines",
+    "Refining",
+    "Petrochemicals",
+    "LNG Infrastructure",
+    "City Gas Distribution",
+    "LPG",
+    "Oil Markets",
+  ],
+  "transmission & distribution": [
+    "Transmission & Distribution",
+    "Transmission",
+    "Distribution",
+    "HVDC Systems",
+    "Substations & Switchgear",
+    "Power Transformers",
+    "Grid Automation",
+    "SCADA",
+    "Smart Grid",
+  ],
+  "energy storage": [
+    "Energy Storage",
+    "BESS",
+    "Battery Management Systems",
+    "Pumped Storage",
+    "Flow Batteries",
+  ],
+  "ev & mobility": [
+    "EV & Mobility",
+    "EV Charging",
+    "DC Fast Chargers",
+    "AC Wallboxes",
+    "Fleet Charging Systems",
+    "Charging Network Software",
+  ],
+  "green hydrogen": [
+    "Green Hydrogen",
+    "PEM Electrolyzers",
+    "Alkaline Electrolyzers",
+    "Green Ammonia",
+    "Hydrogen Logistics",
+    "E-Fuels",
+    "New Energies",
+  ],
+  "nuclear energy": [
+    "Nuclear Energy",
+    "Nuclear",
+    "Nuclear Reactors",
+    "Cooling & Steam Systems",
+    "Safety Enclosures",
+    "Radiation Monitoring",
+  ],
+  "energy technology": [
+    "Energy Technology",
+    "Smart Meters & AMI",
+    "Energy Management Systems",
+    "Asset Health Monitoring",
+    "Predictive AI",
+  ],
+  "epc & infrastructure": [
+    "EPC & Infrastructure",
+    "Turnkey Power EPC",
+    "Solar Park EPC",
+    "Transmission Lines",
+    "Substation EPC",
+  ],
+  "energy services": [
+    "Energy Services",
+    "O&M Services",
+    "Energy Audits",
+    "Asset Life Extension",
+    "Testing & Calibration",
+  ],
+};
+
+export function expandMarketplaceSectors(sectorNames: string[]): string[] {
+  const result = new Set<string>();
+  sectorNames.forEach((name) => {
+    if (!name?.trim()) return;
+    const clean = name.trim();
+    result.add(clean);
+    const key = clean.toLowerCase();
+    for (const [k, aliases] of Object.entries(MARKETPLACE_SECTOR_ALIASES)) {
+      if (k === key || aliases.some((a) => a.toLowerCase() === key)) {
+        aliases.forEach((a) => result.add(a));
+      }
+    }
+  });
+  return Array.from(result);
+}
+
+// ---------------------------------------------------------------------------
+// News Articles — Fetch only "News" for enabled marketplace sectors
 // ---------------------------------------------------------------------------
 
 export async function getMarketplaceArticlesFromStrapi(
-  limit = 4
+  limit = 4,
+  allowedSectors?: string[]
 ): Promise<MarketplaceArticle[]> {
   try {
+    const filters: Record<string, unknown> = {
+      type_of_content: {
+        name: {
+          $eq: "News",
+        },
+      },
+    };
+
+    if (allowedSectors && allowedSectors.length > 0) {
+      const expanded = expandMarketplaceSectors(allowedSectors);
+      if (expanded.length > 0) {
+        filters.sectors = {
+          name: {
+            $in: expanded,
+          },
+        };
+      }
+    }
+
     const res = await fetchFromStrapi<StrapiListResponse>("contents", {
+      filters,
       sort: ["publishedAt:desc", "Date:desc"],
       pagination: { pageSize: limit },
-      populate: ["FeaturedImage", "sectors", "author"],
+      populate: ["FeaturedImage", "sectors", "author", "type_of_content"],
     });
+
     if (res && Array.isArray(res.data) && res.data.length > 0) {
       const list = res.data
         .map(normalizeArticle)
         .filter((a) => a.title && a.slug);
       if (list.length > 0) return list;
     }
-  } catch {
-    // silent
+
+    // Fallback if specific sector filter returns fewer results:
+    // fetch latest News from any marketplace sector
+    if (allowedSectors && allowedSectors.length > 0) {
+      const fallbackRes = await fetchFromStrapi<StrapiListResponse>("contents", {
+        filters: {
+          type_of_content: {
+            name: {
+              $eq: "News",
+            },
+          },
+        },
+        sort: ["publishedAt:desc", "Date:desc"],
+        pagination: { pageSize: limit },
+        populate: ["FeaturedImage", "sectors", "author", "type_of_content"],
+      });
+
+      if (fallbackRes && Array.isArray(fallbackRes.data) && fallbackRes.data.length > 0) {
+        const list = fallbackRes.data
+          .map(normalizeArticle)
+          .filter((a) => a.title && a.slug);
+        if (list.length > 0) return list;
+      }
+    }
+  } catch (err) {
+    console.error("[Marketplace] getMarketplaceArticlesFromStrapi error:", err);
   }
   return getFallbackArticles(limit);
 }

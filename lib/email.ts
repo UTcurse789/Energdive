@@ -3232,7 +3232,7 @@ export async function sendMarketplaceEnquiryAdminNotification(
                                 Company Listing Request Received
                             </h2>
                             <p style="margin:0 0 24px;color:#4B5563;font-size:14px;line-height:1.6;">
-                                A user has submitted an inquiry to list their company on the <strong>Energdive Marketplace</strong>.
+                                A user has submitted an inquiry to list their company on the <strong>ENERGDIVE Marketplace</strong>.
                             </p>
 
                             <table style="width:100%;border-collapse:collapse;margin-bottom:24px;background:#F9FAFB;border-radius:8px;overflow:hidden;border:1px solid #E5E7EB;">
@@ -3326,7 +3326,7 @@ export async function sendMarketplaceEnquiryUserConfirmation(
                                 Dear <strong>${escapeHtml(payload.name)}</strong>,
                             </p>
                             <p style="margin:0 0 20px;color:#4B5563;font-size:14px;line-height:1.6;">
-                                Thank you for your interest in listing <strong>${escapeHtml(payload.company)}</strong> on the <strong>Energdive Marketplace</strong>. We have successfully received your query and your submission has been forwarded to our editorial and onboarding team.
+                                Thank you for your interest in listing <strong>${escapeHtml(payload.company)}</strong> on the <strong>ENERGDIVE Marketplace</strong>. We have successfully received your query and your submission has been forwarded to our editorial and onboarding team.
                             </p>
 
                             <div style="background:#F9FAFB;border:1px solid #E5E7EB;border-radius:12px;padding:20px;margin-bottom:24px;">

@@ -20,10 +20,9 @@ export const metadata = {
 };
 
 export default async function MarketplaceHomePage() {
-  const [allCompanies, allProducts, articles] = await Promise.all([
+  const [allCompanies, allProducts] = await Promise.all([
     getMarketplaceCompanies(),
     getMarketplaceProducts(),
-    getMarketplaceArticlesFromStrapi(4),
   ]);
 
   const spotlightCompanies = allCompanies.slice(0, 4);
@@ -32,6 +31,12 @@ export default async function MarketplaceHomePage() {
     allCompanies,
     allProducts,
   );
+
+  // Enabled sectors currently present in the marketplace directory
+  const enabledSectorNames = marketplaceSectors.map((s) => s.name);
+
+  // Fetch only NEWS for enabled marketplace sectors
+  const articles = await getMarketplaceArticlesFromStrapi(4, enabledSectorNames);
 
   return (
     <div className="pb-24 space-y-20 sm:space-y-24 font-sans">
