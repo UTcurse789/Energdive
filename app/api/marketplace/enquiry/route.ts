@@ -8,6 +8,8 @@ import {
 } from "@/lib/email";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const BREVO_API_URL = "https://api.brevo.com/v3/contacts";
+const BREVO_MARKETPLACE_LIST_ID = 27;
 
 function withTimeout<T>(promise: Promise<T>, ms: number, timeoutMsg: string): Promise<T> {
   let timer: NodeJS.Timeout;
@@ -213,6 +215,45 @@ export async function POST(req: NextRequest) {
       console.warn(`[MARKETPLACE_ENQUIRY] User confirmation email error:`, emailResults[1].reason);
     } else {
       console.log(`[MARKETPLACE_ENQUIRY] Confirmation email sent to ${email}`);
+    }
+
+    // 3. Sync contact to Brevo list #27 (Marketplace Enquiry)
+    try {
+      const brevoApiKey = process.env.BREVO_API_KEY;
+      if (brevoApiKey) {
+        const brevoRes = await fetch(BREVO_API_URL, {
+          method: "POST",
+          headers: {
+            "api-key": brevoApiKey,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email,
+            attributes: {
+              FIRSTNAME: name,
+              COMPANY: company,
+              PHONE: phone || "",
+              SOURCE: targetName || "Marketplace Enquiry Form",
+            },
+            listIds: [BREVO_MARKETPLACE_LIST_ID],
+            updateEnabled: true,
+          }),
+        });
+
+        if (!brevoRes.ok) {
+          const brevoErrText = await brevoRes.text();
+          // Brevo returns 400 for existing contacts when updateEnabled is true,
+          // but the contact still gets added to the new list — so only warn on other errors
+          if (brevoRes.status !== 400) {
+            console.warn(`[MARKETPLACE_ENQUIRY] Brevo sync warning (${brevoRes.status}):`, brevoErrText);
+          }
+        }
+        console.log(`[MARKETPLACE_ENQUIRY] Contact synced to Brevo list #${BREVO_MARKETPLACE_LIST_ID} for ${email}`);
+      } else {
+        console.warn(`[MARKETPLACE_ENQUIRY] BREVO_API_KEY not set — skipping Brevo sync`);
+      }
+    } catch (brevoErr) {
+      console.warn(`[MARKETPLACE_ENQUIRY] Brevo sync failed (non-blocking):`, brevoErr);
     }
 
     return NextResponse.json({

@@ -373,7 +373,31 @@ export function Header() {
         <>
             <header className="fixed top-0 inset-x-0 z-50 transition-all duration-300 font-sans bg-white" onMouseLeave={closeMenus}>
                 {/* 1. TOP BLACK BAR */}
-                <div className="bg-black text-white py-1.5 px-4 md:px-12 flex justify-between items-center text-[10px] md:text-[11px] font-semibold tracking-wider">
+                {/* Mobile View (< md): Sleek Social & Home bar only */}
+                <div className="bg-black text-white md:hidden py-1 px-4 flex items-center justify-center gap-4 text-[10px]">
+                    <Link
+                        href="/"
+                        aria-label="Home"
+                        className="p-1 rounded hover:bg-white/10 text-gray-300 hover:text-white transition-all flex items-center justify-center"
+                    >
+                        <Home className="w-3.5 h-3.5" />
+                    </Link>
+                    {SOCIAL_ICONS.map(({ Icon, href, label }) => (
+                        <a
+                            key={label}
+                            href={href}
+                            aria-label={label}
+                            target="_blank"
+                            rel="noopener"
+                            className="p-1 rounded hover:bg-white/10 text-gray-300 hover:text-white transition-all flex items-center justify-center"
+                        >
+                            <Icon className="w-3.5 h-3.5" />
+                        </a>
+                    ))}
+                </div>
+
+                {/* Desktop View (>= md): Single Row */}
+                <div className="hidden md:flex bg-black text-white py-1.5 px-6 lg:px-12 justify-between items-center text-[10px] md:text-[11px] font-semibold tracking-wider">
                     <div className="flex gap-2 items-center">
                         <Link
                             href="/"
@@ -398,18 +422,15 @@ export function Header() {
                     <div className="flex items-center gap-3 sm:gap-6">
                         <Link href="/energyjobs" className="flex items-center gap-1.5 uppercase cursor-pointer hover:text-gray-300 transition-colors">
                             <Briefcase className="w-3.5 h-3.5" />
-                            <span className="whitespace-nowrap uppercase hidden sm:inline">ENERGY Jobs</span>
-                            <span className="whitespace-nowrap uppercase sm:hidden">Jobs</span>
+                            <span className="whitespace-nowrap uppercase">ENERGY Jobs</span>
                         </Link>
                         <Link href="/insights-exchange" className="flex items-center gap-1.5 uppercase cursor-pointer hover:text-gray-300 transition-colors">
                             <BookOpen className="w-3.5 h-3.5" />
-                            <span className="whitespace-nowrap uppercase hidden sm:inline">Insights Exchange</span>
-                            <span className="whitespace-nowrap uppercase sm:hidden">Insights</span>
+                            <span className="whitespace-nowrap uppercase">Insights Exchange</span>
                         </Link>
                         <Link href="/advertise-with-us" className="flex items-center gap-1.5 uppercase cursor-pointer hover:text-gray-300 transition-colors">
                             <Megaphone className="w-3.5 h-3.5" />
-                            <span className="whitespace-nowrap uppercase hidden sm:inline">ADVERTISE WITH US</span>
-                            <span className="whitespace-nowrap uppercase sm:hidden">ADVERTISE</span>
+                            <span className="whitespace-nowrap uppercase">ADVERTISE WITH US</span>
                         </Link>
                     </div>
                 </div>

@@ -36,7 +36,7 @@ export function ExploreByNeed() {
   ];
 
   return (
-    <section className="max-w-[1240px] mx-auto px-4 sm:px-6 lg:px-8">
+    <section className="max-w-[1240px] mx-auto px-6 sm:px-6 lg:px-8">
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* Left: Section header */}
         <div className="lg:col-span-4">

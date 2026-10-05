@@ -53,10 +53,10 @@ export function MarketplaceNav() {
 
   return (
     <>
-      <div className="w-full bg-white/95 backdrop-blur-md border-b border-zinc-200/90 sticky top-[73px] md:top-[89px] z-40 shadow-xs transition-all">
-        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-12 sm:h-13 font-sans">
+      <div className="hidden md:block w-full bg-white/95 backdrop-blur-md border-b border-zinc-200/90 sticky top-[89px] z-40 shadow-xs transition-all">
+        <div className="max-w-[1400px] mx-auto px-5 sm:px-6 lg:px-8 flex items-center justify-between h-12 sm:h-13 font-sans">
           {/* Navigation Links */}
-          <div className="flex items-center gap-1 sm:gap-2">
+          <div className="flex items-center gap-1 sm:gap-2 overflow-x-auto no-scrollbar py-1">
             <span className="hidden md:flex items-center text-[10px] font-black tracking-widest text-[#00A651] uppercase mr-3 pr-3 border-r border-zinc-200">
               MARKETPLACE
             </span>

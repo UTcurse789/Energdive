@@ -140,7 +140,7 @@ export default async function ProductDetailPage({
     product.companySlug ? getMarketplaceCompanyBySlug(product.companySlug) : null,
     getMarketplaceRelatedProducts(product, 4),
     getMarketplaceProductResources(product.slug),
-    getMarketplaceArticlesFromStrapi(3),
+    getMarketplaceArticlesFromStrapi(3, [product.sector, product.category].filter(Boolean) as string[]),
   ]);
 
   const compactAction = (href: string, label: string) => (
@@ -505,7 +505,7 @@ export default async function ProductDetailPage({
     <div className="min-h-screen pb-20 font-sans">
       {/* Top Breadcrumb Nav Bar */}
       <div className="border-b border-zinc-200 bg-zinc-50">
-        <div className="mx-auto flex max-w-[1200px] flex-col justify-between gap-2 px-4 py-3 text-xs sm:flex-row sm:items-center sm:px-6 lg:px-8">
+        <div className="mx-auto flex max-w-[1200px] flex-col justify-between gap-2 px-6 py-3 text-xs sm:flex-row sm:items-center sm:px-6 lg:px-8">
           <MarketplaceBreadcrumbs
             crumbs={[
               { label: "Products", href: "/marketplace/products" },
@@ -530,7 +530,7 @@ export default async function ProductDetailPage({
       />
 
       {/* Main Tabbed Container */}
-      <div className="mx-auto max-w-[1200px] px-4 sm:px-6 lg:px-8 mt-6">
+      <div className="mx-auto max-w-[1200px] px-6 sm:px-6 lg:px-8 mt-6">
         <ProductProfileTabs
           overview={overview}
           specs={specs}

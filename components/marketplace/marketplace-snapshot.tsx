@@ -19,7 +19,7 @@ export function MarketplaceSnapshot({
 
   return (
     <section className="border-b border-zinc-200/80 bg-zinc-50/50 py-6 sm:py-8">
-      <div className="max-w-[1240px] mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-[1240px] mx-auto px-6 sm:px-6 lg:px-8">
         <div className="flex items-center gap-2 mb-4">
           <span className="w-1.5 h-1.5 rounded-full bg-[#00A651]" />
           <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">

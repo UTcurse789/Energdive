@@ -71,7 +71,7 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
   const [attachedProducts, relatedCompanies, articles, allCompanyResources, videos] = await Promise.all([
     getMarketplaceProductsByCompanySlug(company.slug, company.productIds),
     getMarketplaceRelatedCompanies(company, 4),
-    getMarketplaceArticlesFromStrapi(3),
+    getMarketplaceArticlesFromStrapi(3, [company.sector]),
     getMarketplaceCompanyResources(company.slug),
     getMarketplaceCompanyVideos(company.slug, company.name),
   ]);
@@ -196,14 +196,14 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
   return (
     <div className="min-h-screen pb-20">
       <div className="border-b border-zinc-200 bg-zinc-50">
-        <div className="mx-auto flex max-w-[1200px] flex-col justify-between gap-2 px-4 py-3 text-xs sm:flex-row sm:items-center sm:px-6 lg:px-8">
+        <div className="mx-auto flex max-w-[1200px] flex-col justify-between gap-2 px-6 py-3 text-xs sm:flex-row sm:items-center sm:px-6 lg:px-8">
           <MarketplaceBreadcrumbs crumbs={[{ label: "Companies", href: "/marketplace/companies" }, { label: company.name }]} className="mb-0" />
           <Link href="/marketplace/companies" className="inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-zinc-500 transition-colors hover:text-[#00A651]"><ArrowLeft className="h-3.5 w-3.5" /> Back to companies</Link>
         </div>
       </div>
 
       <CompanyHeader company={company} productCount={products.length} documentCount={documentCount} />
-      <div className="mx-auto max-w-[1200px] px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-[1200px] px-6 sm:px-6 lg:px-8">
         <CompanyProfileTabs
           overview={overview}
           solutions={solutions}

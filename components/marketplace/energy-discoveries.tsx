@@ -13,7 +13,7 @@ export function EnergyDiscoveries({ articles }: EnergyDiscoveriesProps) {
   const displayArticles = articles.slice(0, 4);
 
   return (
-    <section className="max-w-[1240px] mx-auto px-4 sm:px-6 lg:px-8 font-sans">
+    <section className="max-w-[1240px] mx-auto px-6 sm:px-6 lg:px-8 font-sans">
       {/* Editorial Section Header */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-zinc-200 pb-4 mb-8">
         <div>
@@ -33,7 +33,7 @@ export function EnergyDiscoveries({ articles }: EnergyDiscoveriesProps) {
           href="/news"
           className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-zinc-800 hover:text-[#00A651] transition-colors shrink-0"
         >
-          <span>All Editorial Coverage</span>
+          <span>All Energy News</span>
           <ArrowRight className="w-3.5 h-3.5" />
         </Link>
       </div>
@@ -43,7 +43,7 @@ export function EnergyDiscoveries({ articles }: EnergyDiscoveriesProps) {
         {displayArticles.map((article) => (
           <Link
             key={article.id}
-            href="/news"
+            href={`/news/${article.slug}`}
             className="group bg-white border border-zinc-200/90 rounded-2xl overflow-hidden hover:border-[#00A651] hover:shadow-xl transition-all duration-300 flex flex-col justify-between"
           >
             <div>
@@ -89,7 +89,7 @@ export function EnergyDiscoveries({ articles }: EnergyDiscoveriesProps) {
 
             {/* Card Footer */}
             <div className="p-5 pt-3 border-t border-zinc-100 flex items-center justify-between text-xs font-bold uppercase tracking-wider text-zinc-900 group-hover:text-[#00A651] transition-colors mt-auto">
-              <span>Read Coverage</span>
+              <span>Read News</span>
               <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
             </div>
           </Link>
