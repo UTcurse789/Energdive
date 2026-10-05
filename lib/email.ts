@@ -3178,3 +3178,207 @@ export async function sendFinalPaperRejectedEmail(
         htmlContent,
     });
 }
+
+export interface MarketplaceEnquiryEmailPayload {
+    name: string;
+    company: string;
+    email: string;
+    phone?: string | null;
+    message: string;
+    targetType?: string | null;
+    targetName?: string | null;
+    targetId?: string | null;
+}
+
+export async function sendMarketplaceEnquiryAdminNotification(
+    payload: MarketplaceEnquiryEmailPayload
+): Promise<void> {
+    const adminEmail = "sankalp@itenmedia.in";
+    const subject = `New Marketplace Listing Inquiry: ${payload.company} (${payload.name})`;
+    const logoUrl = getEnergdiveLogoUrl();
+    const formattedDate = new Intl.DateTimeFormat("en-GB", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        timeZone: "Asia/Kolkata",
+    }).format(new Date());
+
+    const htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>${escapeHtml(subject)}</title>
+</head>
+<body style="margin:0;padding:0;background-color:#0B0F19;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#0B0F19;padding:40px 20px;">
+        <tr>
+            <td align="center">
+                <table width="640" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 20px 40px rgba(0,0,0,0.3);">
+                    <tr>
+                        <td style="background:#0a2e1f;padding:32px 40px;text-align:center;border-bottom:4px solid #00A651;">
+                            <img src="${logoUrl}" alt="EnergDive Logo" width="180" style="display:block;margin:0 auto;max-width:200px;height:auto;" />
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding:40px;">
+                            <span style="display:inline-block;padding:4px 10px;background:#E8F7EE;color:#00A651;font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;border-radius:6px;margin-bottom:12px;">
+                                New B2B Listing Inquiry
+                            </span>
+                            <h2 style="margin:0 0 8px;color:#111827;font-size:22px;font-weight:800;">
+                                Company Listing Request Received
+                            </h2>
+                            <p style="margin:0 0 24px;color:#4B5563;font-size:14px;line-height:1.6;">
+                                A user has submitted an inquiry to list their company on the <strong>Energdive Marketplace</strong>.
+                            </p>
+
+                            <table style="width:100%;border-collapse:collapse;margin-bottom:24px;background:#F9FAFB;border-radius:8px;overflow:hidden;border:1px solid #E5E7EB;">
+                                <tr>
+                                    <td style="padding:12px 16px;font-weight:700;color:#374151;font-size:13px;width:140px;border-bottom:1px solid #E5E7EB;">Contact Name</td>
+                                    <td style="padding:12px 16px;color:#111827;font-size:13px;border-bottom:1px solid #E5E7EB;">${escapeHtml(payload.name)}</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding:12px 16px;font-weight:700;color:#374151;font-size:13px;border-bottom:1px solid #E5E7EB;">Organization</td>
+                                    <td style="padding:12px 16px;color:#111827;font-size:13px;font-weight:600;border-bottom:1px solid #E5E7EB;">${escapeHtml(payload.company)}</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding:12px 16px;font-weight:700;color:#374151;font-size:13px;border-bottom:1px solid #E5E7EB;">Corporate Email</td>
+                                    <td style="padding:12px 16px;color:#00A651;font-size:13px;border-bottom:1px solid #E5E7EB;"><a href="mailto:${escapeHtml(payload.email)}" style="color:#00A651;text-decoration:none;font-weight:600;">${escapeHtml(payload.email)}</a></td>
+                                </tr>
+                                <tr>
+                                    <td style="padding:12px 16px;font-weight:700;color:#374151;font-size:13px;border-bottom:1px solid #E5E7EB;">Phone / Mobile</td>
+                                    <td style="padding:12px 16px;color:#111827;font-size:13px;border-bottom:1px solid #E5E7EB;">${escapeHtml(payload.phone || "Not provided")}</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding:12px 16px;font-weight:700;color:#374151;font-size:13px;border-bottom:1px solid #E5E7EB;">Target Context</td>
+                                    <td style="padding:12px 16px;color:#111827;font-size:13px;border-bottom:1px solid #E5E7EB;">${escapeHtml(payload.targetName || "Marketplace Onboarding & Listing")} (${escapeHtml(payload.targetType || "general")})</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding:12px 16px;font-weight:700;color:#374151;font-size:13px;border-bottom:1px solid #E5E7EB;">Submitted At</td>
+                                    <td style="padding:12px 16px;color:#111827;font-size:13px;border-bottom:1px solid #E5E7EB;">${escapeHtml(formattedDate)} IST</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding:12px 16px;font-weight:700;color:#374151;font-size:13px;vertical-align:top;">Message / Needs</td>
+                                    <td style="padding:12px 16px;color:#374151;font-size:13px;line-height:1.6;white-space:pre-wrap;">${escapeHtml(payload.message)}</td>
+                                </tr>
+                            </table>
+
+                            <div style="text-align:center;">
+                                <a href="mailto:${escapeHtml(payload.email)}?subject=Regarding%20your%20Energdive%20Marketplace%20listing%20inquiry" style="display:inline-block;background:#00A651;color:#ffffff;font-size:14px;font-weight:700;text-decoration:none;padding:12px 28px;border-radius:8px;">
+                                    Reply to Applicant &rarr;
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="background-color:#F9FAFB;padding:20px 40px;text-align:center;border-top:1px solid #F3F4F6;">
+                            <p style="margin:0;color:#9CA3AF;font-size:11px;">&copy; ${new Date().getFullYear()} ENERGDIVE Marketplace Lead System. Internal notification for Sankalp.</p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>`;
+
+    await sendEmail({
+        to: adminEmail,
+        toName: "Sankalp",
+        subject,
+        htmlContent,
+    });
+}
+
+export async function sendMarketplaceEnquiryUserConfirmation(
+    payload: MarketplaceEnquiryEmailPayload
+): Promise<void> {
+    const subject = `Your Listing Inquiry Has Been Received – Energdive Marketplace`;
+    const logoUrl = getEnergdiveLogoUrl();
+
+    const htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>${escapeHtml(subject)}</title>
+</head>
+<body style="margin:0;padding:0;background-color:#0B0F19;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#0B0F19;padding:40px 20px;">
+        <tr>
+            <td align="center">
+                <table width="640" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 20px 40px rgba(0,0,0,0.3);">
+                    <tr>
+                        <td style="background:#0a2e1f;padding:32px 40px;text-align:center;border-bottom:4px solid #00A651;">
+                            <img src="${logoUrl}" alt="EnergDive Logo" width="180" style="display:block;margin:0 auto;max-width:200px;height:auto;" />
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding:40px;">
+                            <h2 style="margin:0 0 12px;color:#111827;font-size:22px;font-weight:800;">
+                                Inquiry Submitted Successfully
+                            </h2>
+                            <p style="margin:0 0 16px;color:#374151;font-size:15px;line-height:1.6;">
+                                Dear <strong>${escapeHtml(payload.name)}</strong>,
+                            </p>
+                            <p style="margin:0 0 20px;color:#4B5563;font-size:14px;line-height:1.6;">
+                                Thank you for your interest in listing <strong>${escapeHtml(payload.company)}</strong> on the <strong>Energdive Marketplace</strong>. We have successfully received your query and your submission has been forwarded to our editorial and onboarding team.
+                            </p>
+
+                            <div style="background:#F9FAFB;border:1px solid #E5E7EB;border-radius:12px;padding:20px;margin-bottom:24px;">
+                                <h3 style="margin:0 0 12px;color:#111827;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">Summary of Your Submission</h3>
+                                <table style="width:100%;font-size:13px;color:#4B5563;">
+                                    <tr>
+                                        <td style="padding:4px 0;width:120px;color:#6B7280;">Organization:</td>
+                                        <td style="padding:4px 0;font-weight:600;color:#111827;">${escapeHtml(payload.company)}</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding:4px 0;color:#6B7280;">Contact Email:</td>
+                                        <td style="padding:4px 0;color:#111827;">${escapeHtml(payload.email)}</td>
+                                    </tr>
+                                    ${payload.phone ? `
+                                    <tr>
+                                        <td style="padding:4px 0;color:#6B7280;">Phone:</td>
+                                        <td style="padding:4px 0;color:#111827;">${escapeHtml(payload.phone)}</td>
+                                    </tr>
+                                    ` : ""}
+                                </table>
+                            </div>
+
+                            <div style="background:#E8F7EE;border:1px solid #A5D6A7;border-radius:12px;padding:20px;margin-bottom:24px;">
+                                <h4 style="margin:0 0 8px;color:#007936;font-size:14px;font-weight:700;">What happens next?</h4>
+                                <p style="margin:0;color:#2E7D32;font-size:13px;line-height:1.6;">
+                                    Our editorial and directory team will review your organization's details. A representative will contact you directly at <strong>${escapeHtml(payload.email)}</strong> to assist with onboarding, solution cataloging, and verification.
+                                </p>
+                            </div>
+
+                            <p style="margin:0;color:#6B7280;font-size:13px;line-height:1.6;">
+                                If you have any additional questions or need immediate assistance, please reach out to us at <a href="mailto:contact@energdive.com" style="color:#00A651;text-decoration:none;font-weight:600;">contact@energdive.com</a>.
+                            </p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="background-color:#F9FAFB;padding:20px 40px;text-align:center;border-top:1px solid #F3F4F6;">
+                            <p style="margin:0 0 4px;color:#111827;font-size:12px;font-weight:700;">ENERGDIVE Marketplace</p>
+                            <p style="margin:0;color:#9CA3AF;font-size:11px;">&copy; ${new Date().getFullYear()} ENERGDIVE. All rights reserved.</p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>`;
+
+    await sendEmail({
+        to: payload.email,
+        toName: payload.name,
+        subject,
+        htmlContent,
+    });
+}
+

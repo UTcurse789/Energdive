@@ -23,11 +23,18 @@ export default async function ProductsPage() {
   const companies = allCompanies.map((c) => ({ slug: c.slug, name: c.name }));
 
   return (
-    <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-      {/* Breadcrumbs */}
-      <MarketplaceBreadcrumbs
-        crumbs={[{ label: "Products" }]}
-      />
+    <div className="min-h-screen">
+      {/* Top Breadcrumb Nav Bar */}
+      <div className="border-b border-zinc-200 bg-zinc-50">
+        <div className="mx-auto flex max-w-[1400px] px-4 py-3 sm:px-6 lg:px-8">
+          <MarketplaceBreadcrumbs
+            crumbs={[{ label: "Products" }]}
+            className="mb-0"
+          />
+        </div>
+      </div>
+
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
 
       {/* Header */}
       <div className="border-b border-zinc-200 pb-6 mb-8">
@@ -52,6 +59,7 @@ export default async function ProductsPage() {
           companies={companies}
         />
       </Suspense>
+      </div>
     </div>
   );
 }

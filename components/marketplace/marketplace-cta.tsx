@@ -56,7 +56,7 @@ export function MarketplaceCTA() {
         onClose={() => setIsOpen(false)}
         defaultTargetType="general"
         targetName="Marketplace Onboarding & Listing"
-        title="List Your Company on Energdive Marketplace"
+        title="List Your Company on ENERGDIVE Marketplace"
         subtitle="Submit your company and solution details for editorial review and directory inclusion."
       />
     </>

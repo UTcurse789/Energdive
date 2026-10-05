@@ -385,11 +385,11 @@ export default async function ProductDetailPage({
   // -------------------------------------------------------------------------
   const documents = (
     <section className="font-sans">
-      {sectionLabel(
+      {/* {sectionLabel(
         <FileStack className="h-3.5 w-3.5" />,
         "Official Literature",
         `Technical Catalogues & Assets for ${product.name}`
-      )}
+      )} */}
       {productResources && productResources.length > 0 ? (
         <ProductResources
           resources={productResources}

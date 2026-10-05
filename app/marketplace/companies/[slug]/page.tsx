@@ -162,16 +162,26 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
     </section>
   );
 
-  const assets = (
-    <CompanyResourceHub presentations={presentations} videos={videos} brochures={brochures} productResources={productResources} companyName={company.name} companySlug={company.slug} defaultKind="all" />
-  );
+  const hasResourcesOrVideos = documentCount > 0 || videos.length > 0;
 
   const insights = (
     <div className="space-y-12">
-      {videos.length > 0 && <section>
-        {sectionLabel(<Video className="h-3.5 w-3.5" />, "Media desk", "Project videos & briefings")}
-        <CompanyResourceHub presentations={presentations} videos={videos} brochures={brochures} productResources={productResources} companyName={company.name} companySlug={company.slug} defaultKind="videos" />
-      </section>}
+      {hasResourcesOrVideos && (
+        <section>
+          <CompanyResourceHub
+            presentations={presentations}
+            videos={videos}
+            brochures={brochures}
+            productResources={productResources}
+            companyName={company.name}
+            companySlug={company.slug}
+            defaultKind="all"
+            title="Technical assets, documents & media"
+            eyebrow="Vendor library"
+            description={`Filter presentations, catalogues, specifications, PDF documents, and media from ${company.name}.`}
+          />
+        </section>
+      )}
       <section>
         {sectionLabel(<Newspaper className="h-3.5 w-3.5" />, "Energdive intelligence", "Related market coverage", compactAction("/news", "All news"))}
         <div className="grid grid-cols-1 gap-6 md:grid-cols-3">{articles.map((article) => <MarketplaceArticleCard key={article.id} article={article} />)}</div>
@@ -194,7 +204,15 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
 
       <CompanyHeader company={company} productCount={products.length} documentCount={documentCount} />
       <div className="mx-auto max-w-[1200px] px-4 sm:px-6 lg:px-8">
-        <CompanyProfileTabs overview={overview} solutions={solutions} assets={assets} insights={insights} counts={{ solutions: products.length, assets: documentCount + videos.length, insights: videos.length + articles.length }} />
+        <CompanyProfileTabs
+          overview={overview}
+          solutions={solutions}
+          insights={insights}
+          counts={{
+            solutions: products.length,
+            insights: documentCount + videos.length + articles.length,
+          }}
+        />
       </div>
     </div>
   );

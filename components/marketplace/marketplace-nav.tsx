@@ -36,12 +36,12 @@ export function MarketplaceNav() {
       exact: false,
       icon: Package,
     },
-    // {
-    //   name: "Sectors",
-    //   href: "/marketplace/sectors",
-    //   exact: false,
-    //   icon: Layers,
-    // },
+    {
+      name: "Sectors",
+      href: "/marketplace/sectors",
+      exact: false,
+      icon: Layers,
+    },
   ];
 
   const isActive = (href: string, exact: boolean) => {
@@ -83,7 +83,7 @@ export function MarketplaceNav() {
           </div>
 
           {/* Quick CTA */}
-          {/* <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             <button
               onClick={() => setIsListingModalOpen(true)}
               className="inline-flex items-center gap-1.5 bg-[#00A651]/10 border border-[#00A651]/30 hover:bg-[#00A651] hover:text-white text-[#00A651] text-[10px] sm:text-[11px] font-black uppercase tracking-wider px-3 py-1.5 rounded-md transition-all cursor-pointer shadow-2xs"
@@ -92,7 +92,7 @@ export function MarketplaceNav() {
               <span className="hidden sm:inline">List Your Company</span>
               <span className="sm:hidden">List Company</span>
             </button>
-          </div> */}
+          </div>
         </div>
       </div>
 
@@ -101,7 +101,7 @@ export function MarketplaceNav() {
         onClose={() => setIsListingModalOpen(false)}
         defaultTargetType="general"
         targetName="Marketplace Onboarding & Listing"
-        title="List Your Company on Energdive Marketplace"
+        title="List Your Company on ENERGDIVE Marketplace"
         subtitle="Submit your company and solution details for editorial review and directory inclusion."
       />
     </>

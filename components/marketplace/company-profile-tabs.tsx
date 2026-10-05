@@ -1,19 +1,17 @@
 "use client";
 
 import { useEffect, useId, useState, type ReactNode } from "react";
-import { BarChart3, FileStack, Lightbulb, Package } from "lucide-react";
+import { BarChart3, Lightbulb, Package } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export type CompanyProfileTabId =
   | "overview"
   | "solutions"
-  | "assets"
   | "insights";
 
 interface CompanyProfileTabsProps {
   overview: ReactNode;
   solutions: ReactNode;
-  assets: ReactNode;
   insights: ReactNode;
   counts?: Partial<Record<CompanyProfileTabId, number>>;
 }
@@ -21,7 +19,6 @@ interface CompanyProfileTabsProps {
 const profileTabs = [
   { id: "overview" as const, label: "Overview", icon: BarChart3 },
   { id: "solutions" as const, label: "Products & Solutions", icon: Package },
-  { id: "assets" as const, label: "Technical Assets & Documents", icon: FileStack },
   { id: "insights" as const, label: "Insights & Media", icon: Lightbulb },
 ];
 
@@ -33,7 +30,6 @@ const profileTabs = [
 export function CompanyProfileTabs({
   overview,
   solutions,
-  assets,
   insights,
   counts = {},
 }: CompanyProfileTabsProps) {
@@ -68,7 +64,6 @@ export function CompanyProfileTabs({
   const panels: Record<CompanyProfileTabId, ReactNode> = {
     overview,
     solutions,
-    assets,
     insights,
   };
 
