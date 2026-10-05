@@ -3195,7 +3195,7 @@ export async function sendMarketplaceEnquiryAdminNotification(
 ): Promise<void> {
     const adminEmail = "sankalp@itenmedia.in";
     const subject = `New Marketplace Listing Inquiry: ${payload.company} (${payload.name})`;
-    const logoUrl = getEnergdiveLogoUrl();
+    const logoUrl = "https://www.energdive.com/energdive-logo-white.png";
     const formattedDate = new Intl.DateTimeFormat("en-GB", {
         day: "numeric",
         month: "short",
@@ -3297,7 +3297,7 @@ export async function sendMarketplaceEnquiryUserConfirmation(
     payload: MarketplaceEnquiryEmailPayload
 ): Promise<void> {
     const subject = `Your Listing Inquiry Has Been Received – Energdive Marketplace`;
-    const logoUrl = getEnergdiveLogoUrl();
+    const logoUrl = "https://www.energdive.com/energdive-logo-white.png";
 
     const htmlContent = `
 <!DOCTYPE html>
