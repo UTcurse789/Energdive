@@ -16,6 +16,12 @@ const DIGEST_FROM_NAME = process.env.DIGEST_FROM_NAME || "ENERGDIVE Intelligence
 import { buildMembershipCardHtml } from "./_card-template";
 import { generateMembershipCardPdf } from "./membership-pdf";
 import { getAdvertisements, getAdImageUrl } from "./api/getAdvertisements";
+// Type-only import — erased at runtime, does not trigger the server-only guard
+// in lib/email/transactional.ts at module load time.
+import type {
+    SendTransactionalEmailOptions,
+    TransactionalEmailResult,
+} from "./email/transactional";
 
 interface SendEmailOptions {
     to: string;
@@ -225,8 +231,180 @@ export async function sendEmail(options: SendEmailOptions): Promise<void> {
     );
 }
 
+export interface DeliverTransactionalOptions {
+    to: string;
+    toName?: string;
+    subject: string;
+    htmlContent: string;
+    attachment?: { name: string; content: string }[];
+    sender?: { email: string; name: string };
+    tags?: string[];
+    replyTo?: string;
+    useSes?: boolean;
+    sendViaBrevo?: typeof sendEmail;
+    sendViaSes?: (options: SendTransactionalEmailOptions) => Promise<TransactionalEmailResult>;
+}
+
+function mapTagsForSes(tags?: string[]): { name: string; value: string }[] | undefined {
+    if (!tags || tags.length === 0) return undefined;
+    return tags.map((tag, idx) => ({
+        name: idx === 0 ? "type" : `tag_${idx + 1}`,
+        value: tag,
+    }));
+}
+
+/**
+ * Core transactional email delivery dispatcher.
+ * Selects between AWS SES and Brevo based on the provided or resolved useSes flag.
+ *
+ * Feature flag semantics:
+ *   flag === "true"  → AWS SES via sendTransactionalEmail()
+ *   anything else    → existing Brevo sendEmail() (default)
+ *
+ * There is NO silent fallback from SES to Brevo. SES errors propagate to callers.
+ */
+export async function deliverTransactionalEmail({
+    to,
+    toName,
+    subject,
+    htmlContent,
+    attachment,
+    sender,
+    tags,
+    replyTo,
+    useSes = false,
+    sendViaBrevo = sendEmail,
+    sendViaSes,
+}: DeliverTransactionalOptions): Promise<void> {
+    if (useSes) {
+        const fromEmail = process.env.AWS_SES_FROM_EMAIL;
+        const fromName = process.env.AWS_SES_FROM_NAME || sender?.name || "ENERGDIVE Automation";
+        const from = fromEmail ? { email: fromEmail, name: fromName } : undefined;
+
+        const deliver =
+            sendViaSes ??
+            (await import("./email/transactional")).sendTransactionalEmail;
+
+        await deliver({
+            to,
+            subject,
+            html: htmlContent,
+            from,
+            replyTo,
+            attachments: attachment?.map((att) => ({
+                filename: att.name,
+                content: att.content,
+                encoding: "base64",
+            })),
+            tags: mapTagsForSes(tags),
+        });
+    } else {
+        await sendViaBrevo({
+            to,
+            toName,
+            subject,
+            htmlContent,
+            attachment,
+            sender,
+            tags,
+        });
+    }
+}
+
+/**
+ * 1. Resource-ready / resource-download notifications
+ * Flag: USE_SES_RESOURCE_EMAILS
+ */
+export async function deliverResourceEmail(
+    options: DeliverTransactionalOptions
+): Promise<void> {
+    return deliverTransactionalEmail({
+        ...options,
+        useSes: options.useSes ?? (process.env.USE_SES_RESOURCE_EMAILS === "true"),
+    });
+}
+
+/**
+ * 2. EnergJob application emails
+ * Flag: USE_SES_ENERGYJOB_EMAILS
+ */
+export async function deliverEnergJobEmail(
+    options: DeliverTransactionalOptions
+): Promise<void> {
+    return deliverTransactionalEmail({
+        ...options,
+        useSes: options.useSes ?? (process.env.USE_SES_ENERGYJOB_EMAILS === "true"),
+    });
+}
+
+/**
+ * 3. Abstract / paper submission emails
+ * Flag: USE_SES_ABSTRACT_EMAILS
+ */
+export async function deliverAbstractEmail(
+    options: DeliverTransactionalOptions
+): Promise<void> {
+    return deliverTransactionalEmail({
+        ...options,
+        useSes: options.useSes ?? (process.env.USE_SES_ABSTRACT_EMAILS === "true"),
+    });
+}
+
+/**
+ * 4. Portal / magic-link emails
+ * Flag: USE_SES_PORTAL_EMAILS
+ */
+export async function deliverPortalEmail(
+    options: DeliverTransactionalOptions
+): Promise<void> {
+    return deliverTransactionalEmail({
+        ...options,
+        useSes: options.useSes ?? (process.env.USE_SES_PORTAL_EMAILS === "true"),
+    });
+}
+
+/**
+ * 5. Membership welcome / membership access emails
+ * Flag: USE_SES_MEMBERSHIP_EMAILS
+ */
+export async function deliverMembershipEmail(
+    options: DeliverTransactionalOptions
+): Promise<void> {
+    return deliverTransactionalEmail({
+        ...options,
+        useSes: options.useSes ?? (process.env.USE_SES_MEMBERSHIP_EMAILS === "true"),
+    });
+}
+
+/**
+ * 6. General welcome email
+ * Flag: USE_SES_WELCOME_EMAILS
+ */
+export async function deliverWelcomeEmail(
+    options: DeliverTransactionalOptions
+): Promise<void> {
+    return deliverTransactionalEmail({
+        ...options,
+        useSes: options.useSes ?? (process.env.USE_SES_WELCOME_EMAILS === "true"),
+    });
+}
+
+/**
+ * 8 & 9. Signup / onboarding & Magic-login OTP emails
+ * Flag: USE_SES_OTP_EMAILS
+ */
+export async function deliverOtpEmail(
+    options: DeliverTransactionalOptions
+): Promise<void> {
+    return deliverTransactionalEmail({
+        ...options,
+        useSes: options.useSes ?? (process.env.USE_SES_OTP_EMAILS === "true"),
+    });
+}
+
 export async function sendResourceReadyEmail(
-    payload: ResourceReadyEmailPayload
+    payload: ResourceReadyEmailPayload,
+    deliveryOverrides?: Partial<DeliverTransactionalOptions>
 ): Promise<void> {
     const subject = "Your ENERGDIVE resource is ready";
     const displayName = payload.toName || payload.to.split("@")[0] || "Member";
@@ -293,20 +471,22 @@ export async function sendResourceReadyEmail(
 </body>
 </html>`;
 
-    await sendEmail({
+    await deliverResourceEmail({
         to: payload.to,
         toName: displayName,
         subject,
         htmlContent,
         attachment: attachments.length > 0 ? attachments : undefined,
         tags: ["resource-download", "resource"],
+        ...deliveryOverrides,
     });
 }
 
 export async function sendPortalAccessEmail(
     to: string,
     firstName: string,
-    magicLink: string
+    magicLink: string,
+    deliveryOverrides?: Partial<DeliverTransactionalOptions>
 ): Promise<void> {
     const subject = "Your ENERGDive Portal Access is Ready";
 
@@ -391,11 +571,18 @@ export async function sendPortalAccessEmail(
 </body>
 </html>`;
 
-    await sendEmail({ to, toName: firstName, subject, htmlContent });
+    await deliverPortalEmail({
+        to,
+        toName: firstName,
+        subject,
+        htmlContent,
+        ...deliveryOverrides,
+    });
 }
 
 export async function sendEnergJobApplicationApplicantEmail(
-    payload: EnergJobApplicationEmailPayload
+    payload: EnergJobApplicationEmailPayload,
+    deliveryOverrides?: Partial<DeliverTransactionalOptions>
 ): Promise<void> {
     const subject = `Application received for ${payload.jobTitle}`;
     const recruiterLabel = payload.recruiterName || payload.companyName;
@@ -620,17 +807,19 @@ export async function sendEnergJobApplicationApplicantEmail(
 </body>
 </html>`;
 
-    await sendEmail({
+    await deliverEnergJobEmail({
         to: payload.applicantEmail,
         toName: payload.applicantName,
         subject,
         htmlContent,
         tags: ["energjob", "application", "applicant"],
+        ...deliveryOverrides,
     });
 }
 
 export async function sendEnergJobApplicationRecruiterEmail(
-    payload: EnergJobApplicationEmailPayload
+    payload: EnergJobApplicationEmailPayload,
+    deliveryOverrides?: Partial<DeliverTransactionalOptions>
 ): Promise<void> {
     if (!payload.recruiterEmail) {
         return;
@@ -853,12 +1042,13 @@ export async function sendEnergJobApplicationRecruiterEmail(
 </body>
 </html>`;
 
-    await sendEmail({
+    await deliverEnergJobEmail({
         to: payload.recruiterEmail,
         toName: payload.recruiterName || payload.companyName,
         subject,
         htmlContent,
         tags: ["energjob", "application", "recruiter"],
+        ...deliveryOverrides,
     });
 }
 
@@ -877,7 +1067,8 @@ export interface AbstractSubmissionAdminNotificationPayload {
 }
 
 export async function sendAbstractSubmissionAdminNotification(
-    payload: AbstractSubmissionAdminNotificationPayload
+    payload: AbstractSubmissionAdminNotificationPayload,
+    deliveryOverrides?: Partial<DeliverTransactionalOptions>
 ): Promise<void> {
     const adminEmails = ["Kunal@itenmedia.in", "mrinmoy@energdive.com"];
     const subject = `New Abstract Submission: ${payload.title}`;
@@ -954,12 +1145,13 @@ export async function sendAbstractSubmissionAdminNotification(
     // Send to all admins
     for (const email of adminEmails) {
         try {
-            await sendEmail({
+            await deliverAbstractEmail({
                 to: email,
                 subject,
                 htmlContent,
                 attachment,
-                tags: ["abstract-submission", "admin-notification"]
+                tags: ["abstract-submission", "admin-notification"],
+                ...deliveryOverrides,
             });
         } catch (error) {
             console.error(`[EMAIL] Failed to send abstract notification to ${email}:`, error);
@@ -974,7 +1166,8 @@ export async function sendWelcomeEmail(
     to: string,
     firstName: string,
     frequency?: string,
-    preferences?: string[]
+    preferences?: string[],
+    deliveryOverrides?: Partial<DeliverTransactionalOptions>
 ): Promise<void> {
     const subject = "Welcome to ENERGDIVE!";
 
@@ -1055,7 +1248,13 @@ export async function sendWelcomeEmail(
 </body>
 </html>`;
 
-    await sendEmail({ to, toName: firstName, subject, htmlContent });
+    await deliverWelcomeEmail({
+        to,
+        toName: firstName,
+        subject,
+        htmlContent,
+        ...deliveryOverrides,
+    });
 }
 
 export async function sendNewsletterSubscriptionThanksEmail(to: string): Promise<void> {
@@ -2149,7 +2348,8 @@ export async function sendNewUserNotification(
 export async function sendMagicLinkEmail(
     to: string,
     name: string,
-    magicLink: string
+    magicLink: string,
+    deliveryOverrides?: Partial<DeliverTransactionalOptions>
 ): Promise<void> {
     const subject = "Verify your ENERGClub membership";
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://www.energdive.com";
@@ -2219,7 +2419,7 @@ export async function sendMagicLinkEmail(
 </body>
 </html>`;
 
-    await sendEmail({ to, toName: name, subject, htmlContent });
+    await deliverPortalEmail({ to, toName: name, subject, htmlContent, ...deliveryOverrides });
 }
 
 /**
@@ -2229,7 +2429,8 @@ export async function sendMagicLinkEmail(
 export async function sendOtpEmail(
     to: string,
     name: string,
-    otp: string
+    otp: string,
+    deliveryOverrides?: Partial<DeliverTransactionalOptions>
 ): Promise<void> {
     const subject = "Your ENERGClub verification code";
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://www.energdive.com";
@@ -2285,7 +2486,7 @@ export async function sendOtpEmail(
 </body>
 </html>`;
 
-    await sendEmail({ to, toName: name, subject, htmlContent });
+    await deliverOtpEmail({ to, toName: name, subject, htmlContent, ...deliveryOverrides });
 }
 
 /**
@@ -2294,7 +2495,8 @@ export async function sendOtpEmail(
 export async function sendMembershipWelcomeEmail(
     to: string,
     name: string,
-    membershipId: string
+    membershipId: string,
+    deliveryOverrides?: Partial<DeliverTransactionalOptions>
 ): Promise<void> {
     const subject = `Welcome to ENERGClub — Your Membership ID: ${membershipId}`;
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://www.energdive.com";
@@ -2348,14 +2550,15 @@ export async function sendMembershipWelcomeEmail(
 </body>
 </html>`;
 
-    await sendEmail({ to, toName: name, subject, htmlContent });
+    await deliverMembershipEmail({ to, toName: name, subject, htmlContent, ...deliveryOverrides });
 }
 
 export async function sendMembershipWelcomeCardEmail(
     to: string,
     name: string,
     membershipId: string,
-    details: MembershipWelcomeEmailDetails = {}
+    details: MembershipWelcomeEmailDetails = {},
+    deliveryOverrides?: Partial<DeliverTransactionalOptions>
 ): Promise<void> {
     const subject = `Welcome to ENERGClub — Your Membership ID: ${membershipId}`;
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://www.energdive.com";
@@ -2434,11 +2637,12 @@ export async function sendMembershipWelcomeCardEmail(
         console.error("[EMAIL] PDF generation failed (sending email without attachment):", pdfErr);
     }
 
-    await sendEmail({ to, toName: name, subject, htmlContent, attachment });
+    await deliverMembershipEmail({ to, toName: name, subject, htmlContent, attachment, ...deliveryOverrides });
 }
 
 export async function sendApplicationViewedEmail(
-    payload: EnergJobApplicationEmailPayload
+    payload: EnergJobApplicationEmailPayload,
+    deliveryOverrides?: Partial<DeliverTransactionalOptions>
 ): Promise<void> {
     const subject = `Your application has been viewed — ${payload.jobTitle}`;
     const logoUrl = getEnergdiveLogoUrl();
@@ -2565,17 +2769,19 @@ export async function sendApplicationViewedEmail(
 </body>
 </html>`;
 
-    await sendEmail({
+    await deliverEnergJobEmail({
         to: payload.applicantEmail,
         toName: payload.applicantName,
         subject,
         htmlContent,
         tags: ["energjob", "application", "status-update", "viewed"],
+        ...deliveryOverrides,
     });
 }
 
 export async function sendApplicationShortlistedEmail(
-    payload: EnergJobApplicationEmailPayload
+    payload: EnergJobApplicationEmailPayload,
+    deliveryOverrides?: Partial<DeliverTransactionalOptions>
 ): Promise<void> {
     const subject = `Congratulations! You've been shortlisted — ${payload.jobTitle}`;
     const logoUrl = getEnergdiveLogoUrl();
@@ -2702,19 +2908,21 @@ export async function sendApplicationShortlistedEmail(
 </body>
 </html>`;
 
-    await sendEmail({
+    await deliverEnergJobEmail({
         to: payload.applicantEmail,
         toName: payload.applicantName,
         subject,
         htmlContent,
         tags: ["energjob", "application", "status-update", "shortlisted"],
+        ...deliveryOverrides,
     });
 }
 
 export async function sendAbstractSubmissionAuthorConfirmation(
     email: string,
     name: string,
-    title: string
+    title: string,
+    deliveryOverrides?: Partial<DeliverTransactionalOptions>
 ): Promise<void> {
     const subject = `Abstract Submission Received: ${title}`;
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://www.energdive.com";
@@ -2772,19 +2980,21 @@ export async function sendAbstractSubmissionAuthorConfirmation(
 </body>
 </html>`;
 
-    await sendEmail({
+    await deliverAbstractEmail({
         to: email,
         toName: name,
         subject,
         htmlContent,
         tags: ["abstract-submission", "author-confirmation"],
+        ...deliveryOverrides,
     });
 }
 
 export async function sendAbstractAcceptedEmail(
     email: string,
     name: string,
-    title: string
+    title: string,
+    deliveryOverrides?: Partial<DeliverTransactionalOptions>
 ): Promise<void> {
     const subject = `Your abstract submission has been accepted! — ${title}`;
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://www.energdive.com";
@@ -2804,7 +3014,7 @@ export async function sendAbstractAcceptedEmail(
             <td align="center">
                 <table width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 20px 40px rgba(0,0,0,0.3);">
                     <tr>
-                        <td style="background:#0a2e1f;padding:40px;text-align:center;border-bottom:4px solid #09B697;">
+                        <td style="background:#0a2e1f;padding:40px;text-align:border-bottom:4px solid #09B697;">
                             <img src="${logoUrl}" alt="EnergDive Logo" width="180" style="display:block;margin:0 auto;max-width:200px;height:auto;" />
                         </td>
                     </tr>
@@ -2842,18 +3052,20 @@ export async function sendAbstractAcceptedEmail(
 </body>
 </html>`;
 
-    await sendEmail({
+    await deliverAbstractEmail({
         to: email,
         toName: name,
         subject,
         htmlContent,
+        ...deliveryOverrides,
     });
 }
 
 export async function sendAbstractRejectedEmail(
     email: string,
     name: string,
-    title: string
+    title: string,
+    deliveryOverrides?: Partial<DeliverTransactionalOptions>
 ): Promise<void> {
     const subject = `Update on your abstract submission — ${title}`;
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://www.energdive.com";
@@ -2911,18 +3123,20 @@ export async function sendAbstractRejectedEmail(
 </body>
 </html>`;
 
-    await sendEmail({
+    await deliverAbstractEmail({
         to: email,
         toName: name,
         subject,
         htmlContent,
+        ...deliveryOverrides,
     });
 }
 
 export async function sendPaperPublishedEmail(
     email: string,
     name: string,
-    title: string
+    title: string,
+    deliveryOverrides?: Partial<DeliverTransactionalOptions>
 ): Promise<void> {
     const subject = `Your paper has been published! — ${title}`;
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://www.energdive.com";
@@ -2979,18 +3193,20 @@ export async function sendPaperPublishedEmail(
 </body>
 </html>`;
 
-    await sendEmail({
+    await deliverAbstractEmail({
         to: email,
         toName: name,
         subject,
         htmlContent,
+        ...deliveryOverrides,
     });
 }
 
 export async function sendFinalPaperSubmissionEmail(
     email: string,
     name: string,
-    title: string
+    title: string,
+    deliveryOverrides?: Partial<DeliverTransactionalOptions>
 ): Promise<void> {
     const subject = `Final Paper Submission Received — ${title}`;
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://www.energdive.com";
@@ -3039,18 +3255,20 @@ export async function sendFinalPaperSubmissionEmail(
 </body>
 </html>`;
 
-    await sendEmail({
+    await deliverAbstractEmail({
         to: email,
         toName: name,
         subject,
         htmlContent,
+        ...deliveryOverrides,
     });
 }
 
 export async function sendFinalPaperAcceptedEmail(
     email: string,
     name: string,
-    title: string
+    title: string,
+    deliveryOverrides?: Partial<DeliverTransactionalOptions>
 ): Promise<void> {
     const subject = `Your final paper has been accepted! — ${title}`;
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://www.energdive.com";
@@ -3103,18 +3321,20 @@ export async function sendFinalPaperAcceptedEmail(
 </body>
 </html>`;
 
-    await sendEmail({
+    await deliverAbstractEmail({
         to: email,
         toName: name,
         subject,
         htmlContent,
+        ...deliveryOverrides,
     });
 }
 
 export async function sendFinalPaperRejectedEmail(
     email: string,
     name: string,
-    title: string
+    title: string,
+    deliveryOverrides?: Partial<DeliverTransactionalOptions>
 ): Promise<void> {
     const subject = `Update on your final paper — ${title}`;
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://www.energdive.com";
@@ -3171,11 +3391,12 @@ export async function sendFinalPaperRejectedEmail(
 </body>
 </html>`;
 
-    await sendEmail({
+    await deliverAbstractEmail({
         to: email,
         toName: name,
         subject,
         htmlContent,
+        ...deliveryOverrides,
     });
 }
 
