@@ -3,6 +3,7 @@ import { Hero } from "@/components/sections/hero";
 import type { VideoItem } from "@/components/sections/hero";
 import { FeaturedSection } from "@/components/sections/featured-section";
 import { LatestNewsSection } from "@/components/sections/latest-news-section";
+import { ThePublicationSection } from "@/components/sections/the-publication-section";
 import { SubscriptionsCTASection } from "@/components/sections/subscriptions-cta-section";
 import { DeferredAdBanner } from "@/components/ads/deferred-ad-banner";
 import { SectorBlock } from "@/components/ui/sector-block";
@@ -472,6 +473,12 @@ async function HomeDeferredContent({ latestNews }: { latestNews: any[] }) {
           </div>
         </div>
       </section>
+
+      {/* The Publication Section */}
+      <ThePublicationSection
+        coverImage={latestIssue?.coverImage}
+        issueSlug={latestIssue?.slug}
+      />
 
       {/* Subscriptions CTA Section: Login + Print Subscription + Newsletter (Light Theme) */}
       <SubscriptionsCTASection />
