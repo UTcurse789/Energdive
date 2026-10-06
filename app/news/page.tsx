@@ -12,6 +12,7 @@ import { getLatestIssue } from "@/lib/api/getLatestIssue";
 import { slugify } from "@/lib/utils";
 import NewsFeedClient from "./NewsFeedClient";
 import { ORGANIZATION_SCHEMA } from "@/lib/organization-schema";
+import { ReloadNewsToHome } from "@/components/news/reload-to-home";
 
 const STRAPI_BASE_URL = "https://cms.energdive.com";
 
@@ -244,6 +245,7 @@ export default async function NewsPage(props: { searchParams: Promise<{ [key: st
 
     return (
         <div className="min-h-screen bg-white text-slate-900 selection:bg-emerald-600 selection:text-white font-sans overflow-x-clip">
+            <ReloadNewsToHome />
             {/* Inject JSON-LD */}
             <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(newsGraphSchema).replace(/</g, '\\u003c') }} />
             

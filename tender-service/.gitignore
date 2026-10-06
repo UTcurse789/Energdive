@@ -1,0 +1,9 @@
+.env
+__pycache__/
+venv/
+data/pdfs/
+data/debug_html/
+storage/
+*.pyc
+logs/
+.agents/
