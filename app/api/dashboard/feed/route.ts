@@ -2,6 +2,7 @@ import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { getUserProfile } from "@/lib/queries";
 import { strapiImageUrl } from "@/lib/strapi-image";
+import { NO_CACHE_HEADERS } from "@/lib/api/no-cache";
 
 const STRAPI = process.env.NEXT_PUBLIC_STRAPI_URL || "http://localhost:1337";
 const TOKEN = process.env.STRAPI_API_TOKEN || "";
@@ -16,7 +17,7 @@ export async function GET(request: Request) {
     try {
         const { userId } = await auth();
         if (!userId) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: NO_CACHE_HEADERS });
         }
 
         const profile = await getUserProfile(userId);
@@ -54,7 +55,7 @@ export async function GET(request: Request) {
         const url =
             `${STRAPI}/api/contents?` +
             `populate=*` +
-            `&sort=Date:desc` +
+            `&sort[0]=publishedAt:desc&sort[1]=Date:desc&sort[2]=createdAt:desc` +
             `&pagination[page]=${page}` +
             `&pagination[pageSize]=${pageSize}` +
             sectorFilter +
@@ -125,9 +126,9 @@ export async function GET(request: Request) {
             pagination: json?.meta?.pagination || { page, pageSize, total: feedItems.length },
             sectors: communityNames,
             totalContent: json?.meta?.pagination?.total || 0,
-        });
+        }, { headers: NO_CACHE_HEADERS });
     } catch (error) {
         console.error("[DASHBOARD_FEED]", error);
-        return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+        return NextResponse.json({ error: "Internal server error" }, { status: 500, headers: NO_CACHE_HEADERS });
     }
 }

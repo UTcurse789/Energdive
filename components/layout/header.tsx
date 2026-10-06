@@ -4,18 +4,23 @@ import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
+import dynamic from "next/dynamic";
 import { cn } from "@/lib/utils";
 import { formatContentDate } from "@/lib/date";
-import { Search, ChevronDown, Facebook, Linkedin, Megaphone, ChevronRight, Zap, Menu, X, MapPin, Mail, Phone, Play, ArrowRight, Youtube, Instagram, LibraryBig, FileDown } from "lucide-react";
+import { Search, ChevronDown, Facebook, Linkedin, Megaphone, ChevronRight, Zap, Menu, X, MapPin, Mail, Phone, Play, ArrowRight, Youtube, Instagram, LibraryBig, FileDown, Briefcase, BookOpen, Home } from "lucide-react";
 import { SECTORS } from "@/data/dummy";
 import { motion, AnimatePresence } from "framer-motion";
 import { SignedIn, SignedOut, useAuth } from "@clerk/nextjs";
-import { GlobalSearch } from "@/components/global-search";
 import { strapiImageUrl } from "@/lib/strapi-image";
 import { CustomUserMenu } from "@/components/layout/CustomUserMenu";
 import { useAuthModal } from "@/hooks/use-auth-modal";
 
 import { usePostHog } from "@posthog/react";
+
+const GlobalSearch = dynamic(
+    () => import("@/components/global-search").then((module) => module.GlobalSearch),
+    { ssr: false }
+);
 
 type MagazineIssue = {
     id: number | string;
@@ -368,8 +373,39 @@ export function Header() {
         <>
             <header className="fixed top-0 inset-x-0 z-50 transition-all duration-300 font-sans bg-white" onMouseLeave={closeMenus}>
                 {/* 1. TOP BLACK BAR */}
-                <div className="bg-black text-white py-1.5 px-4 md:px-12 flex justify-between items-center text-[10px] md:text-[11px] font-semibold tracking-wider">
-                    <div className="flex gap-4 items-center">
+                {/* Mobile View (< md): Sleek Social & Home bar only */}
+                <div className="bg-black text-white md:hidden py-1 px-4 flex items-center justify-center gap-4 text-[10px]">
+                    <Link
+                        href="/"
+                        aria-label="Home"
+                        className="p-1 rounded hover:bg-white/10 text-gray-300 hover:text-white transition-all flex items-center justify-center"
+                    >
+                        <Home className="w-3.5 h-3.5" />
+                    </Link>
+                    {SOCIAL_ICONS.map(({ Icon, href, label }) => (
+                        <a
+                            key={label}
+                            href={href}
+                            aria-label={label}
+                            target="_blank"
+                            rel="noopener"
+                            className="p-1 rounded hover:bg-white/10 text-gray-300 hover:text-white transition-all flex items-center justify-center"
+                        >
+                            <Icon className="w-3.5 h-3.5" />
+                        </a>
+                    ))}
+                </div>
+
+                {/* Desktop View (>= md): Single Row */}
+                <div className="hidden md:flex bg-black text-white py-1.5 px-6 lg:px-12 justify-between items-center text-[10px] md:text-[11px] font-semibold tracking-wider">
+                    <div className="flex gap-2 items-center">
+                        <Link
+                            href="/"
+                            aria-label="Home"
+                            className="p-1.5 rounded-md hover:bg-white/10 hover:opacity-100 transition-all flex items-center justify-center text-gray-300 hover:text-white"
+                        >
+                            <Home className="w-3.5 h-3.5 cursor-pointer" />
+                        </Link>
                         {SOCIAL_ICONS.map(({ Icon, href, label }) => (
                             <a
                                 key={label}
@@ -377,17 +413,26 @@ export function Header() {
                                 aria-label={label}
                                 target="_blank"
                                 rel="noopener"
-                                className="hover:opacity-70 transition-opacity"
+                                className="p-1.5 rounded-md hover:bg-white/10 hover:opacity-100 transition-all flex items-center justify-center text-gray-300 hover:text-white"
                             >
                                 <Icon className="w-3.5 h-3.5 cursor-pointer" />
                             </a>
                         ))}
                     </div>
-                    <Link href="/advertise-with-us" className="flex items-center gap-2 uppercase cursor-pointer hover:text-gray-300 transition-colors">
-                        <Megaphone className="w-3.5 h-3.5" />
-                        <span className="whitespace-nowrap uppercase hidden sm:inline">ADVERTISE WITH US</span>
-                        <span className="whitespace-nowrap uppercase sm:hidden">ADVERTISE</span>
-                    </Link>
+                    <div className="flex items-center gap-3 sm:gap-6">
+                        <Link href="/energyjobs" className="flex items-center gap-1.5 uppercase cursor-pointer hover:text-gray-300 transition-colors">
+                            <Briefcase className="w-3.5 h-3.5" />
+                            <span className="whitespace-nowrap uppercase">ENERGY Jobs</span>
+                        </Link>
+                        <Link href="/insights-exchange" className="flex items-center gap-1.5 uppercase cursor-pointer hover:text-gray-300 transition-colors">
+                            <BookOpen className="w-3.5 h-3.5" />
+                            <span className="whitespace-nowrap uppercase">Insights Exchange</span>
+                        </Link>
+                        <Link href="/advertise-with-us" className="flex items-center gap-1.5 uppercase cursor-pointer hover:text-gray-300 transition-colors">
+                            <Megaphone className="w-3.5 h-3.5" />
+                            <span className="whitespace-nowrap uppercase">ADVERTISE WITH US</span>
+                        </Link>
+                    </div>
                 </div>
 
                 {/* 2. MAIN NAVIGATION */}
@@ -454,6 +499,9 @@ export function Header() {
                         <div className="relative flex items-center gap-x-3 md:gap-x-5 xl:gap-x-7 flex-1 justify-end">
                             <nav className="hidden sm:flex items-center gap-x-3 md:gap-x-5 xl:gap-x-7">
                                 <Link href="/energclub" target="_blank" className="text-[12px] xl:text-[13px] font-bold uppercase tracking-[1px] hover:opacity-70 whitespace-nowrap" onClick={closeMenus}>ENERGCLUB</Link>
+                                
+                                {/* <Link href="/marketplace" className="text-[12px] xl:text-[13px] font-bold uppercase tracking-[1px] hover:opacity-70 whitespace-nowrap" onClick={closeMenus}>MARKETPLACE</Link> */}
+
                                 <div className="relative group cursor-pointer" onMouseEnter={() => { setActiveMenu(null); }}>
                                     <span style={{ color: brandGreen }} className="flex items-center gap-1 text-[12px] xl:text-[13px] font-bold uppercase tracking-[1px] hover:opacity-70 whitespace-nowrap py-2">
                                         SUBSCRIBE <ChevronDown className="w-3 h-3 transition-transform group-hover:rotate-180" />
@@ -801,7 +849,21 @@ export function Header() {
                                             Resource Hub <ChevronRight size={14} />
                                         </Link>
 
-                                        {/* <Link
+                                        <Link
+                                            href="/energyjobs"
+                                            onClick={closeMenus}
+                                            className={cn(
+                                                "px-4 py-3 text-[14px] font-bold text-gray-800 flex justify-between items-center transition-colors",
+                                                hoveredMoreItem === "energyjobs"
+                                                    ? "bg-[#00A651] text-white"
+                                                    : "hover:bg-[#00A651] hover:text-white"
+                                            )}
+                                            onMouseEnter={() => setHoveredMoreItem("energyjobs")}
+                                        >
+                                            ENERGY Jobs <ChevronRight size={14} />
+                                        </Link>
+
+                                        <Link
                                             href="/insights-exchange"
                                             onClick={closeMenus}
                                             className={cn(
@@ -813,7 +875,7 @@ export function Header() {
                                             onMouseEnter={() => setHoveredMoreItem("insights-exchange")}
                                         >
                                             Insights Exchange <ChevronRight size={14} />
-                                        </Link> */}
+                                        </Link>
 
                                         <Link
                                             href="/about"
@@ -1038,8 +1100,28 @@ export function Header() {
                                         </div>
                                     )}
 
+                                    {/* ENERGY Jobs hover content */}
+                                    {hoveredMoreItem === "energyjobs" && (
+                                        <div className="flex items-start gap-12 h-full">
+                                            <div className="flex-1">
+                                                <h4 className="text-[12px] font-bold uppercase text-gray-400 border-b pb-3 mb-6 tracking-widest">ENERGY Jobs</h4>
+                                                <div className="w-14 h-14 rounded-lg flex items-center justify-center mb-5" style={{ background: '#00A65112' }}>
+                                                    <Briefcase size={24} style={{ color: '#00A651' }} />
+                                                </div>
+                                                <h3 className="text-2xl font-serif font-bold text-zinc-900 mb-4 leading-tight">Careers &amp; Hiring in Energy Transition</h3>
+                                                <p className="text-[14px] text-gray-500 leading-relaxed mb-4">ENERGY Jobs is ENERGDIVE&apos;s specialized platform for careers across power, renewables, oil &amp; gas, energy storage, clean mobility, and climate tech.</p>
+                                                <p className="text-[14px] text-gray-500 leading-relaxed mb-6">Explore curated job opportunities or recruit qualified energy professionals for your team.</p>
+                                                <div className="flex flex-wrap gap-3">
+                                                    <Link href="/energyjobs" onClick={closeMenus} className="inline-flex items-center gap-1.5 text-[11px] font-bold text-[#00A651] uppercase tracking-widest hover:underline">
+                                                        Explore Jobs <ArrowRight size={13} />
+                                                    </Link>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
                                     {/* Insights Exchange hover content */}
-                                    {/* {hoveredMoreItem === "insights-exchange" && (
+                                    {hoveredMoreItem === "insights-exchange" && (
                                         <div className="flex items-start gap-12 h-full">
                                             <div className="flex-1">
                                                 <h4 className="text-[12px] font-bold uppercase text-gray-400 border-b pb-3 mb-6 tracking-widest">ENERGDIVE Insights Exchange</h4>
@@ -1053,13 +1135,13 @@ export function Header() {
                                                     <Link href="/insights-exchange" onClick={closeMenus} className="inline-flex items-center gap-1.5 text-[11px] font-bold text-[#00A651] uppercase tracking-widest hover:underline">
                                                         Explore EIX <ArrowRight size={13} />
                                                     </Link>
-                                                    <Link href="/knowledge-hub/submit" onClick={closeMenus} className="inline-flex items-center gap-1.5 text-[11px] font-bold text-zinc-900 uppercase tracking-widest hover:underline">
+                                                    <Link href="/insights-exchange/call-for-papers" onClick={closeMenus} className="inline-flex items-center gap-1.5 text-[11px] font-bold text-zinc-900 uppercase tracking-widest hover:underline">
                                                         Submit a Paper <ArrowRight size={13} />
                                                     </Link>
                                                 </div>
                                             </div>
                                         </div>
-                                    )} */}
+                                    )}
 
                                     {/* About hover content — BRIEF OVERVIEW */}
                                     {hoveredMoreItem === "about" && (
@@ -1384,6 +1466,10 @@ export function Header() {
                                     </AnimatePresence>
                                 </div>
 
+                                <Link href="/marketplace" onClick={closeAll} className="px-6 py-4 text-[13px] font-bold uppercase tracking-[1px] text-[#00A651] hover:bg-gray-50 transition-colors border-t border-gray-100">
+                                    MARKETPLACE
+                                </Link>
+
                                 {/* MORE - Expandable */}
                                 <div className="border-t border-gray-100">
                                     <button
@@ -1410,6 +1496,9 @@ export function Header() {
                                                 </Link>
                                                 <Link href="/resource-hub" onClick={closeAll} className="block px-10 py-3 text-[13px] font-medium text-gray-700 hover:text-[#00A651] hover:bg-white transition-colors border-b border-gray-100">
                                                     Resource Hub
+                                                </Link>
+                                                <Link href="/energyjobs" onClick={closeAll} className="block px-10 py-3 text-[13px] font-medium text-gray-700 hover:text-[#00A651] hover:bg-white transition-colors border-b border-gray-100">
+                                                    ENERGY Jobs
                                                 </Link>
                                                 <Link href="/insights-exchange" onClick={closeAll} className="block px-10 py-3 text-[13px] font-medium text-gray-700 hover:text-[#00A651] hover:bg-white transition-colors border-b border-gray-100">
                                                     Insights Exchange
@@ -1480,7 +1569,7 @@ export function Header() {
                     )}
                 </AnimatePresence>
             </header >
-            <GlobalSearch isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
+            {isSearchOpen && <GlobalSearch isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />}
         </>
     );
 }

@@ -53,8 +53,8 @@ export async function GET() {
             fetchCms(`${STRAPI_BASE}/api/events?populate=image`, { cache: "no-store" }).catch(() => null),
             fetchCms(`${STRAPI_BASE}/api/issues?populate=CoverImage&pagination[limit]=12`, { next: { revalidate: 600 } }).catch(() => null),
             fetchCms(`${STRAPI_BASE}/api/sectors?populate=children&pagination[pageSize]=100`, { next: { revalidate: 600 } }).catch(() => null),
-            fetchCms(`${STRAPI_BASE}/api/contents?populate[sectors][fields][0]=name&populate[sectors][fields][1]=slug&populate[tags][fields][0]=name&pagination[pageSize]=500`, { next: { revalidate: 600 } }).catch(() => null),
-            fetchCms(`${STRAPI_BASE}/api/videos?populate[sectors][fields][0]=name&populate[sectors][fields][1]=slug&populate[tags][fields][0]=name&pagination[pageSize]=500`, { next: { revalidate: 600 } }).catch(() => null),
+            fetchCms(`${STRAPI_BASE}/api/contents?filters[$or][0][type_of_content][name][$eq]=Articles&filters[$or][1][type_of_content][name][$eq]=Featured Stories&populate[sectors][fields][0]=name&populate[sectors][fields][1]=slug&populate[tags][fields][0]=name&pagination[pageSize]=100`, { next: { revalidate: 600 } }).catch(() => null),
+            fetchCms(`${STRAPI_BASE}/api/videos?populate[sectors][fields][0]=name&populate[sectors][fields][1]=slug&populate[tags][fields][0]=name&pagination[pageSize]=100`, { next: { revalidate: 600 } }).catch(() => null),
             // Opinion + Interview articles for the mega menu
             fetchCms(`${STRAPI_BASE}/api/contents?filters[type_of_content][name][$eq]=Opinion&populate[FeaturedImage]=true&populate[content_tag]=true&populate[author][populate]=avatar&sort=Date:desc&pagination[limit]=30`, { next: { revalidate: 600 } }).catch(() => null),
             fetchCms(`${STRAPI_BASE}/api/resoucre-centers?fields[0]=resource_type&pagination[pageSize]=500`, {
@@ -120,6 +120,82 @@ export async function GET() {
             return nameToSlug[name] || name.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-");
         };
         
+        const normalizeText = (value?: string | null) => {
+            return (value || "")
+                .toLowerCase()
+                .trim()
+                .replace(/&/g, "and")
+                .replace(/[^a-z0-9]+/g, " ")
+                .replace(/\s+/g, " ");
+        };
+
+        const matchesActiveTab = (values: string[] = [], activeTab: string) => {
+            if (activeTab === "ALL") return true;
+            const normalizedTab = normalizeText(activeTab);
+            if (!normalizedTab) return true;
+
+            const tabWords = normalizedTab.split(" ").filter(Boolean);
+
+            return values.some((value) => {
+                const normalizedValue = normalizeText(value || "");
+                if (!normalizedValue) return false;
+                if (normalizedValue === normalizedTab) return true;
+
+                const valueWords = normalizedValue.split(" ").filter(Boolean);
+
+                const tabMatchesInValue = tabWords.length > 0 && tabWords.every((tw) => valueWords.includes(tw));
+                const valueMatchesInTab = valueWords.length > 0 && valueWords.every((vw) => tabWords.includes(vw));
+
+                return tabMatchesInValue || valueMatchesInTab;
+            });
+        };
+
+        const sectorsData = Array.isArray((sectors as any)?.data) ? (sectors as any).data : [];
+
+        // Match each sector's child sub-sectors against allItems (articles + videos)
+        sectorsData.forEach((sec: any) => {
+            const secName = sec?.attributes?.name || sec?.name || "";
+            const secSlug = sec?.attributes?.slug || sec?.slug || normalizeSectorSlug(secName);
+            if (!secSlug) return;
+            const parentKey = secSlug.trim().toLowerCase();
+
+            const children = sec?.attributes?.children?.data || sec?.children || [];
+            (Array.isArray(children) ? children : []).forEach((c: any) => {
+                const childName = c?.attributes?.name || c?.name;
+                if (!childName) return;
+
+                const upperChild = childName.trim().toUpperCase();
+                const combinedKey = `${parentKey}::${upperChild}`;
+
+                // Count items matching this parent sector AND this sub-sector
+                const count = allItems.filter((item) => {
+                    const itemSectors = (item?.attributes?.sectors?.data || item?.sectors || []);
+                    const itemTags = (item?.attributes?.tags?.data || item?.tags || []);
+
+                    const secNames = (Array.isArray(itemSectors) ? itemSectors : []).map(
+                        (s: any) => s?.attributes?.name || s?.name || ""
+                    );
+                    const secSlugs = (Array.isArray(itemSectors) ? itemSectors : []).map(
+                        (s: any) => s?.attributes?.slug || s?.slug || normalizeSectorSlug(s?.attributes?.name || s?.name)
+                    );
+                    const tagNames = (Array.isArray(itemTags) ? itemTags : []).map(
+                        (t: any) => t?.attributes?.name || t?.name || ""
+                    );
+
+                    const inParentSector = secSlugs.includes(secSlug) || secNames.some(
+                        (n: string) => normalizeText(n) === normalizeText(secName)
+                    );
+
+                    if (!inParentSector) return false;
+
+                    return matchesActiveTab([...secNames, ...tagNames], childName);
+                }).length;
+
+                tagCounts[combinedKey] = count;
+            });
+        });
+
+        // Global fallback tracking for raw tags
         allItems.forEach((item) => {
             const sectors = item?.attributes?.sectors?.data || item?.sectors || [];
             const tags = item?.attributes?.tags?.data || item?.tags || [];
@@ -139,15 +215,18 @@ export async function GET() {
                     if (!name) return;
                     const subKey = name.trim().toUpperCase();
                     const combinedKey = `${parentKey}::${subKey}`;
-                    tagCounts[combinedKey] = (tagCounts[combinedKey] || 0) + 1;
+                    if (tagCounts[combinedKey] === undefined) {
+                        tagCounts[combinedKey] = (tagCounts[combinedKey] || 0) + 1;
+                    }
                 });
             });
             
-            // Global fallback tracking
             [...sectorNames, ...tagNames].forEach(name => {
                 if (!name) return;
                 const normalized = name.trim().toUpperCase();
-                tagCounts[normalized] = (tagCounts[normalized] || 0) + 1;
+                if (tagCounts[normalized] === undefined) {
+                    tagCounts[normalized] = (tagCounts[normalized] || 0) + 1;
+                }
             });
         });
 

@@ -10,11 +10,10 @@ export const metadata = {
 export default async function ContentPage({
     searchParams,
 }: {
-    searchParams: { page?: string };
+    searchParams: Promise<{ page?: string }>;
 }) {
-    // Await searchParams in Next.js 15+ / recent versions if required, 
-    // but standard access for now (or use await in recent versions)
-    const page = Number(searchParams?.page) || 1;
+    const resolvedParams = await searchParams;
+    const page = Number(resolvedParams?.page) || 1;
 
     let content;
     let error;

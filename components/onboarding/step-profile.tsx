@@ -114,12 +114,12 @@ export default function StepProfile({
 
             <div className="space-y-5 m-5">
                 <div className="rounded-xl border border-zinc-200 bg-zinc-50/50 p-4">
-                    <div className="mb-3 flex items-center justify-between gap-3">
+                    {/* <div className="mb-3 flex items-center justify-between gap-3">
                         <div>
                             <h3 className="text-sm font-semibold text-zinc-900">Name details</h3>
                             <p className="text-xs text-zinc-500">This name will appear on your ENERGClub profile.</p>
                         </div>
-                    </div>
+                    </div> */}
                     <div className="grid gap-4 sm:grid-cols-3 xl:grid-cols-[160px_minmax(0,1fr)_minmax(0,1fr)]">
                         <div className="min-w-0 space-y-1 sm:col-span-2 xl:col-span-1">
                             <label className="block text-sm font-medium text-zinc-700">Salutation</label>

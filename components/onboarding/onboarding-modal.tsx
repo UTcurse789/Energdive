@@ -15,12 +15,31 @@ import {
 // Pages where the modal should NOT appear
 const EXCLUDED_PATHS = ["/auth", "/onboarding"];
 
+// sessionStorage key — persists across Clerk JWT refreshes & soft navigations
+const SESSION_KEY = "onboarding_modal_completed";
+
+function getSessionCompleted(): boolean {
+    try {
+        return typeof window !== "undefined" && sessionStorage.getItem(SESSION_KEY) === "1";
+    } catch {
+        return false;
+    }
+}
+
+function setSessionCompleted(): void {
+    try {
+        if (typeof window !== "undefined") sessionStorage.setItem(SESSION_KEY, "1");
+    } catch { /* ignore */ }
+}
+
 export default function OnboardingModal() {
     const { isLoaded, isSignedIn } = useAuth();
     const pathname = usePathname();
     const [showModal, setShowModal] = useState(false);
     const [checkedPathname, setCheckedPathname] = useState<string | null>(null);
     const [returnTo, setReturnTo] = useState(DEFAULT_POST_AUTH_REDIRECT);
+    // hasCompleted: starts from sessionStorage so it survives page reloads
+    const [hasCompleted, setHasCompleted] = useState(() => getSessionCompleted());
     const checked = checkedPathname === pathname;
 
     // Check if the current path is excluded
@@ -29,7 +48,8 @@ export default function OnboardingModal() {
     );
 
     useEffect(() => {
-        if (!isLoaded || !isSignedIn || isExcluded || checked) return;
+        // If already completed (from sessionStorage), never show again this session
+        if (!isLoaded || !isSignedIn || isExcluded || checked || hasCompleted) return;
 
         let cancelled = false;
 
@@ -43,7 +63,11 @@ export default function OnboardingModal() {
                 const data = await res.json();
                 if (!cancelled) {
                     setCheckedPathname(pathname);
-                    if (data.signedIn && !data.onboardingCompleted) {
+                    if (data.signedIn && data.onboardingCompleted) {
+                        // API says complete — save to sessionStorage so we never check again
+                        setSessionCompleted();
+                        setHasCompleted(true);
+                    } else if (data.signedIn && !data.onboardingCompleted) {
                         const target = getSafeRedirectFromClient();
                         const currentTarget = typeof window !== "undefined"
                             ? getSafeRedirectPath(`${window.location.pathname}${window.location.search}${window.location.hash}`)
@@ -65,9 +89,12 @@ export default function OnboardingModal() {
         return () => {
             cancelled = true;
         };
-    }, [isLoaded, isSignedIn, isExcluded, checked, pathname]);
+    }, [isLoaded, isSignedIn, isExcluded, checked, pathname, hasCompleted]);
 
     const handleComplete = useCallback(() => {
+        // Persist completion to sessionStorage — survives Clerk JWT refreshes & page reloads
+        setSessionCompleted();
+        setHasCompleted(true);
         setShowModal(false);
     }, []);
 
@@ -82,22 +109,22 @@ export default function OnboardingModal() {
                     className="fixed inset-0 z-[200] flex items-start justify-center bg-zinc-900/60 backdrop-blur-sm overflow-y-auto"
                 >
                     <motion.div
-                        initial={{ opacity: 0, scale: 0.95, y: 30 }}
+                        initial={{ opacity: 0, scale: 0.95, y: 20 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.95, y: 30 }}
-                        transition={{ type: "spring", duration: 0.5, bounce: 0.15 }}
-                        className="relative w-full max-w-3xl mx-4 my-8 sm:my-12"
+                        exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                        transition={{ type: "spring", duration: 0.45, bounce: 0.15 }}
+                        className="relative w-full max-w-3xl mx-2.5 my-3 sm:mx-4 sm:my-10"
                     >
                         {/* Modal Card */}
                         <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
                             {/* Logo */}
-                            <div className="flex justify-center px-6 pt-5 pb-2">
+                            <div className="flex justify-center px-4 pt-4 pb-1 sm:px-6 sm:pt-5 sm:pb-2">
                                 <Image
                                     src="/logo - energclub-energdive.png"
                                     alt="ENERGDIVE"
-                                    width={250}
-                                    height={70}
-                                    className="w-auto h-14 sm:h-16 object-contain"
+                                    width={220}
+                                    height={55}
+                                    className="w-auto h-9 sm:h-14 object-contain"
                                     priority
                                 />
                             </div>

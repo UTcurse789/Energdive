@@ -34,9 +34,7 @@ type HeroItem = {
     author?: { name?: string | null } | null;
     date?: string;
     href?: string;
-}
-
-import { AdBanner } from "@/components/ads/AdBanner";
+};
 
 export interface BentoItem {
     id: string | number;
@@ -67,8 +65,6 @@ export interface VideoItem {
 interface HeroProps {
     heroStories?: HeroItem[];
     topStories?: HeroItem[];
-    featuredStories?: BentoItem[];
-    videos?: VideoItem[];
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -77,12 +73,16 @@ function getImageUrl(article: any): string {
     const img = article?.FeaturedImage;
     if (!img) return "/magazine-default.jpg";
     const url =
-        img.formats?.small?.url ||
-        img.formats?.thumbnail?.url ||
+        img.formats?.large?.url ||
         img.formats?.medium?.url ||
+        img.formats?.small?.url ||
         img.url;
     if (!url) return "/magazine-default.jpg";
     return strapiImageUrl(url);
+}
+
+function getImageAlt(article: any, fallback: string): string {
+    return article?.FeaturedImage?.alternativeText?.trim() || fallback;
 }
 
 function getExcerpt(article: any): string {
@@ -95,14 +95,6 @@ function getExcerpt(article: any): string {
         .filter(Boolean)
         .join(" ")
         .trim();
-}
-
-function getHref(article: any): string {
-    if (article?.href) return article.href;
-    return buildContentUrl({
-        slug: article?.slug || "",
-        type_of_content: article?.type_of_content,
-    });
 }
 
 function slugify(str: string) {
@@ -146,7 +138,7 @@ function HeroSkeleton() {
 
 // ── Main Component ────────────────────────────────────────────────────────────
 
-export function Hero({ heroStories: propHeroStories, topStories: propTopStories, featuredStories = [], videos = [] }: HeroProps) {
+export function Hero({ heroStories: propHeroStories, topStories: propTopStories }: HeroProps) {
     const [coverStories, setCoverStories] = useState<HeroItem[]>([]);
     const [articles, setArticles] = useState<HeroItem[]>([]);
     const [loading, setLoading] = useState(!propHeroStories?.length);
@@ -156,29 +148,21 @@ export function Hero({ heroStories: propHeroStories, topStories: propTopStories,
     const autoPlayRef = useRef<NodeJS.Timeout | null>(null);
 
     useEffect(() => {
-        const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === "Escape") setActiveVideo(null);
-        };
-        if (activeVideo) {
-            window.addEventListener("keydown", handleKeyDown);
-            document.body.style.overflow = "hidden";
-        }
-        return () => {
-            window.removeEventListener("keydown", handleKeyDown);
-            document.body.style.overflow = "";
-        };
-    }, [activeVideo]);
-
-    useEffect(() => {
         let isMounted = true;
         if (propHeroStories?.length) return;
 
         fetch(
-            `${STRAPI_BASE}/api/contents?filters[show_hero_banner][$eq]=true&populate=*&pagination[pageSize]=10&sort=publishedAt:desc`
+            `${STRAPI_BASE}/api/contents?filters[type_of_content][name][$eq]=Cover%20Story&populate=*&pagination[pageSize]=10&sort[0]=publishedAt:desc`
         )
             .then((r) => r.json())
             .then((d) => {
-                if (isMounted) setCoverStories(d?.data || []);
+                const items = d?.data || [];
+                const sorted = items.sort((a: any, b: any) => {
+                    const aT = Date.parse(a.Date || a.publishedAt || a.createdAt || "") || 0;
+                    const bT = Date.parse(b.Date || b.publishedAt || b.createdAt || "") || 0;
+                    return bT - aT;
+                });
+                if (isMounted) setCoverStories(sorted);
             })
             .catch(console.error)
             .finally(() => {
@@ -187,11 +171,17 @@ export function Hero({ heroStories: propHeroStories, topStories: propTopStories,
 
         if (!propTopStories) {
             fetch(
-                `${STRAPI_BASE}/api/contents?filters[featured][$eq]=true&pagination[pageSize]=10&populate=*&sort=publishedAt:desc`
+                `${STRAPI_BASE}/api/contents?filters[featured][$eq]=true&pagination[pageSize]=15&populate=*&sort[0]=publishedAt:desc`
             )
                 .then((r) => r.json())
                 .then((d) => {
-                    if (isMounted) setArticles(d?.data || []);
+                    const items = d?.data || [];
+                    const sorted = items.sort((a: any, b: any) => {
+                        const aT = Date.parse(a.Date || a.publishedAt || a.createdAt || "") || 0;
+                        const bT = Date.parse(b.Date || b.publishedAt || b.createdAt || "") || 0;
+                        return bT - aT;
+                    });
+                    if (isMounted) setArticles(sorted);
                 })
                 .catch(console.error)
                 .finally(() => {
@@ -226,9 +216,14 @@ export function Hero({ heroStories: propHeroStories, topStories: propTopStories,
 
     useEffect(() => {
         if (carouselArticles.length > 1) {
-            autoPlayRef.current = setInterval(nextSlide, 6000);
+            const timeout = setTimeout(() => {
+                autoPlayRef.current = setInterval(nextSlide, 7000);
+            }, 8000);
+            return () => {
+                clearTimeout(timeout);
+                if (autoPlayRef.current) clearInterval(autoPlayRef.current);
+            };
         }
-        return () => { if (autoPlayRef.current) clearInterval(autoPlayRef.current); };
     }, [nextSlide, carouselArticles.length]);
 
     if (loading && !propHeroStories?.length) return <HeroSkeleton />;
@@ -243,7 +238,7 @@ export function Hero({ heroStories: propHeroStories, topStories: propTopStories,
 
     return (
         <section className="bg-white py-4 sm:py-6">
-            <div className="max-w-7xl mx-auto px-5 sm:px-10 lg:px-16">
+            <div className="max-w-7xl mx-auto px-8 sm:px-10 lg:px-16">
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
 
                     {/* ── 1. LEFT COLUMN: Cover Story (8 cols) ── */}
@@ -253,10 +248,10 @@ export function Hero({ heroStories: propHeroStories, topStories: propTopStories,
                             {featured.FeaturedImage?.url ? (
                                 <Image
                                     src={getImageUrl(featured)}
-                                    alt={featured.Title || "Featured energy story"}
+                                    alt={getImageAlt(featured, featured.Title || "Featured energy story")}
                                     fill
-                                    priority
-                                    sizes="(max-width: 1024px) 100vw, 66vw"
+                                    preload
+                                    sizes="(min-width: 1280px) 752px, (min-width: 1024px) 60vw, (min-width: 640px) calc(100vw - 5rem), calc(100vw - 4rem)"
                                     className={`object-cover transition-transform duration-700 ${
                                         isTransitioning ? "opacity-50 scale-105" : "opacity-100 scale-100"
                                     }`}
@@ -292,6 +287,7 @@ export function Hero({ heroStories: propHeroStories, topStories: propTopStories,
                                     <div className="absolute inset-y-0 left-4 flex items-center z-10">
                                         <button
                                             type="button"
+                                            aria-label="Previous slide"
                                             onClick={() => goToSlide((currentSlide - 1 + carouselArticles.length) % carouselArticles.length)}
                                             className="p-3 bg-black/30 backdrop-blur-sm rounded-full text-white hover:bg-black/50 transition-all shadow-md"
                                         >
@@ -301,6 +297,7 @@ export function Hero({ heroStories: propHeroStories, topStories: propTopStories,
                                     <div className="absolute inset-y-0 right-4 flex items-center z-10">
                                         <button
                                             type="button"
+                                            aria-label="Next slide"
                                             onClick={nextSlide}
                                             className="p-3 bg-black/30 backdrop-blur-sm rounded-full text-white hover:bg-black/50 transition-all shadow-md"
                                         >
@@ -326,10 +323,10 @@ export function Hero({ heroStories: propHeroStories, topStories: propTopStories,
                                     COVER STORY
                                 </span>
                                 {(featured.Date || featured.createdAt) && (
-                                    <span className="flex items-center gap-1 text-xs text-slate-400 font-semibold ml-1">
+                                    <span className="flex items-center gap-1 text-xs text-slate-600 font-semibold ml-1">
                                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
                                         <time dateTime={featured.Date || featured.createdAt || ""}>
-                                            {formatContentDate(featured.Date || featured.createdAt || "")}
+                                             {formatContentDate(featured.Date || featured.createdAt || "")}
                                         </time>
                                     </span>
                                 )}
@@ -344,7 +341,7 @@ export function Hero({ heroStories: propHeroStories, topStories: propTopStories,
                                 </h1>
                             </Link>
 
-                            <p className="text-slate-500 text-base md:text-lg leading-relaxed line-clamp-3">
+                            <p className="text-slate-600 text-base md:text-lg leading-relaxed line-clamp-3">
                                 {getExcerpt(featured)}
                             </p>
                         </div>
@@ -363,7 +360,7 @@ export function Hero({ heroStories: propHeroStories, topStories: propTopStories,
                         </div>
                         
                         <div className="flex flex-col gap-6">
-                            {topStories.slice(0, 5).map((item, idx) => {
+                            {topStories.slice(0, 5).map((item) => {
                                 const href = buildContentUrl({
                                     slug: item.slug || "",
                                     type_of_content: item.type_of_content,
@@ -373,10 +370,10 @@ export function Hero({ heroStories: propHeroStories, topStories: propTopStories,
 
                                 return (
                                     <article key={item.id} className="flex items-center gap-4 group relative">
-                                        <div className="relative w-32 aspect-[4/3] shrink-0 rounded-xl overflow-hidden bg-slate-100 border border-slate-200 shadow-sm">
+                                        <div className="relative w-32 aspect-[16/10] shrink-0 rounded-xl overflow-hidden bg-slate-100 border border-slate-200 shadow-xs">
                                             <Image
                                                 src={imgUrl}
-                                                alt={item.Title || "News thumbnail"}
+                                                alt={getImageAlt(item, item.Title || "News thumbnail")}
                                                 fill
                                                 sizes="128px"
                                                 className="object-cover group-hover:scale-105 transition-transform duration-500"

@@ -52,6 +52,7 @@ export default async function syncUserToBrevo(user: any) {
         console.log("✅ Brevo synced:", user.email);
     } catch (err: any) {
         console.error("❌ Brevo sync failed:", err.response?.data || err.message);
+        throw err;
     }
 }
 
@@ -78,7 +79,7 @@ export interface VerifiedUserBrevoPayload {
     preferredFrequency?: string | null;
 }
 
-export interface PartialZohoBrevoPayload {
+export interface PartialBrevoPayload {
     email: string;
     name?: string;
     phone?: string;
@@ -87,13 +88,14 @@ export interface PartialZohoBrevoPayload {
     communities?: string[];
     subCommunities?: string[];
     industry?: string;
+    source?: string;
 }
 
 /**
- * Add a Zoho-form lead to Brevo's Partial Zoho list while it is still
- * completing registration. Verification moves the contact to Subscribers.
+ * Add an incomplete registration to Brevo's Partial Zoho list. Completing
+ * onboarding moves the same contact to Subscribers.
  */
-export async function syncPartialZohoLeadToBrevo(user: PartialZohoBrevoPayload): Promise<void> {
+export async function syncPartialContactToBrevo(user: PartialBrevoPayload): Promise<void> {
     const email = user.email.trim().toLowerCase();
     if (!email || email.endsWith("@phone.energdive.com")) {
         console.warn("Brevo partial-Zoho sync skipped — invalid email:", user.email);
@@ -127,7 +129,7 @@ export async function syncPartialZohoLeadToBrevo(user: PartialZohoBrevoPayload):
         COMMUNITY: (user.communities || []).filter(Boolean).join(","),
         SUB_COMMUNITY: (user.subCommunities || []).filter(Boolean).join(","),
         INDUSTRY: user.industry || "",
-        SOURCE: "Zoho Form",
+        SOURCE: user.source || "Portal registration",
         VERIFICATION_STATUS: "Pending profile completion",
     };
 
@@ -148,6 +150,11 @@ export async function syncPartialZohoLeadToBrevo(user: PartialZohoBrevoPayload):
     );
 
     console.log("Brevo partial Zoho lead synced:", email);
+}
+
+// Retained for the existing Zoho webhook route and its source attribution.
+export async function syncPartialZohoLeadToBrevo(user: PartialBrevoPayload): Promise<void> {
+    await syncPartialContactToBrevo({ ...user, source: "Zoho Form" });
 }
 
 /**

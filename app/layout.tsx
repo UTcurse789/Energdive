@@ -49,11 +49,9 @@ import { ClerkProvider } from "@clerk/nextjs";
 import type { Metadata } from "next";
 import "./globals.css";
 import SiteLayout from "@/components/layout/site-layout";
+import { ClientAuthModals, ClientConsentAwareGTM } from "@/components/layout/client-layout-features";
 import { UtmTracker } from "@/components/UtmTracker";
 import { Suspense } from "react";
-import ConsentAwareGTM from "@/components/ConsentAwareGTM";
-import AuthPromptModal from "@/components/ui/auth-prompt-modal";
-import OnboardingModal from "@/components/onboarding/onboarding-modal";
 import { PostHogProvider } from "./providers";
 import { PostHogIdentify } from "@/components/PostHogIdentify";
 import { AuthModalProvider } from "@/hooks/use-auth-modal";
@@ -123,9 +121,7 @@ export default function RootLayout({
                 <UtmTracker />
               </Suspense>
               <PostHogIdentify />
-              <AuthPromptModal />
-              <OnboardingModal />
-              <AuthModal />
+              <ClientAuthModals />
               <SiteLayout>
                 {children}
               </SiteLayout>

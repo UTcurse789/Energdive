@@ -178,7 +178,6 @@ export default function AuthPromptModal() {
                                     fill
                                     style={{ objectFit: "contain" }}
                                     sizes="(max-width: 768px) 240px, 320px"
-                                    priority
                                 />
                             </div>
                         </div>

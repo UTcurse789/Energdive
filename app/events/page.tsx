@@ -179,7 +179,7 @@ export default function EventsPage() {
 
                                             <div className="mt-auto space-y-4">
                                                 <div className="flex flex-wrap items-center gap-4 text-[11px] font-bold uppercase tracking-wider text-zinc-400">
-                                                    <DateChip value={event.date} />
+                                                    <DateChip value={event.date} monthFormat="long" />
                                                 </div>
 
                                                 <a

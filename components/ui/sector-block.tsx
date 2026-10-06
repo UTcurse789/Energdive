@@ -44,7 +44,7 @@ export function SectorBlock({ title, slug, articles }: SectorBlockProps) {
                         {article.date && (
                             <time
                                 dateTime={article.date}
-                                className="mt-1.5 mb-1 block text-[10px] text-slate-400 font-medium uppercase tracking-wide"
+                                className="mt-1.5 mb-1 block text-[10px] text-slate-600 font-semibold uppercase tracking-wide"
                             >
                                 {article.date}
                             </time>

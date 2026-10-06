@@ -77,7 +77,7 @@ export function OpinionSection({
     const currentOpinion = opinions[opinionIndex];
     const currentInterview = interviews[interviewIndex];
     const containerClassName = contained
-        ? "max-w-6xl mx-auto px-5 sm:px-10 lg:px-16"
+        ? "max-w-6xl mx-auto px-8 sm:px-10 lg:px-16"
         : "w-full";
 
     return (
@@ -88,7 +88,7 @@ export function OpinionSection({
             {opinions.length > 0 && (
                 <section
                     aria-label="Opinion & Commentary"
-                    className="py-6 lg:py-8 bg-white"
+                    className={contained ? "py-6 lg:py-8 bg-white" : "py-2 lg:py-3 bg-white"}
                 >
                     <div className={containerClassName}>
 
@@ -118,7 +118,6 @@ export function OpinionSection({
                                         fill
                                         className="object-cover object-top grayscale group-hover/img:grayscale-0 transition-all duration-700"
                                         sizes="(max-width: 1024px) 100vw, 30vw"
-                                        priority
                                     />
                                     {/* Dark gradient overlay */}
                                     <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
@@ -168,7 +167,7 @@ export function OpinionSection({
                                     {currentOpinion.date && (
                                         <time
                                             dateTime={currentOpinion.date}
-                                            className="mb-2 block text-[10px] text-slate-400 font-medium uppercase tracking-wide"
+                                            className="mb-2 block text-[10px] text-slate-600 font-medium uppercase tracking-wide"
                                         >
                                             {currentOpinion.date}
                                         </time>
@@ -290,7 +289,7 @@ export function OpinionSection({
             {interviews.length > 0 && (
                 <section
                     aria-label="Exclusive Interviews"
-                    className="py-6 lg:py-8 bg-white"
+                    className={contained ? "py-6 lg:py-8 bg-white" : "py-2 lg:py-3 bg-white"}
                 >
                     <div className={containerClassName}>
 
@@ -331,7 +330,7 @@ export function OpinionSection({
                                     {currentInterview.date && (
                                         <time
                                             dateTime={currentInterview.date}
-                                            className="mb-2 block text-[10px] text-slate-400 font-medium uppercase tracking-wide"
+                                            className="mb-2 block text-[10px] text-slate-600 font-medium uppercase tracking-wide"
                                         >
                                             {currentInterview.date}
                                         </time>
@@ -379,7 +378,6 @@ export function OpinionSection({
                                         fill
                                         className="object-cover object-top grayscale group-hover/img:grayscale-0 transition-all duration-700"
                                         sizes="(max-width: 1024px) 100vw, 30vw"
-                                        priority
                                     />
                                     {/* Gradient overlay */}
                                     <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />

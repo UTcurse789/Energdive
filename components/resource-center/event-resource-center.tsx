@@ -190,6 +190,66 @@ function getResourceTypeFromQuery(
   );
 }
 
+const MONTH_MAP: Record<string, number> = {
+  jan: 1, january: 1,
+  feb: 2, february: 2,
+  mar: 3, march: 3,
+  apr: 4, april: 4,
+  may: 5,
+  jun: 6, june: 6,
+  jul: 7, july: 7,
+  aug: 8, august: 8,
+  sep: 9, sept: 9, september: 9, septmber: 9,
+  oct: 10, october: 10,
+  nov: 11, november: 11,
+  dec: 12, december: 12,
+};
+
+function getResourceDateTimestamp(resource: EventResource): number {
+  const text = `${resource.shortTitle || ""} ${resource.eventName || ""} ${resource.title || ""} ${resource.slug || ""}`;
+  const monthMatch = text.match(
+    /\b(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t(?:ember)?)?|septmber|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\b/i
+  );
+  const yearMatch = text.match(/\b(20\d{2})\b/);
+  const parsedYear = yearMatch ? parseInt(yearMatch[1], 10) : (resource.year || null);
+
+  const rawDate = new Date(resource.publishedAt);
+  const hasValidRawDate = !isNaN(rawDate.getTime());
+
+  if (monthMatch && parsedYear) {
+    const monthKey = monthMatch[1].toLowerCase();
+    const monthNum = MONTH_MAP[monthKey];
+    if (monthNum) {
+      const dayMatch = text.match(
+        new RegExp(
+          `(?:\\b(\\d{1,2})(?:st|nd|rd|th)?\\s+${monthMatch[1]}|${monthMatch[1]}\\s+(\\d{1,2})(?:st|nd|rd|th)?\\b)`,
+          "i"
+        )
+      );
+      const day = dayMatch ? parseInt(dayMatch[1] || dayMatch[2], 10) : 1;
+      const validDay = day >= 1 && day <= 31 ? day : 1;
+
+      const hours = hasValidRawDate ? rawDate.getUTCHours() : 0;
+      const mins = hasValidRawDate ? rawDate.getUTCMinutes() : 0;
+      const secs = hasValidRawDate ? rawDate.getUTCSeconds() : 0;
+      return Date.UTC(parsedYear, monthNum - 1, validDay, hours, mins, secs);
+    }
+  }
+
+  if (parsedYear && hasValidRawDate) {
+    return Date.UTC(
+      parsedYear,
+      rawDate.getUTCMonth(),
+      rawDate.getUTCDate(),
+      rawDate.getUTCHours(),
+      rawDate.getUTCMinutes(),
+      rawDate.getUTCSeconds()
+    );
+  }
+
+  return hasValidRawDate ? rawDate.getTime() : 0;
+}
+
 export function EventResourceCenter({
   resources,
   events,
@@ -376,23 +436,26 @@ export function EventResourceCenter({
 
       if (typePriority !== 0) return typePriority;
 
+      const timeA = getResourceDateTimestamp(a);
+      const timeB = getResourceDateTimestamp(b);
+
       switch (filters.sort) {
         case "Oldest First":
-          return new Date(a.publishedAt).getTime() - new Date(b.publishedAt).getTime();
+          return timeA - timeB;
         case "A–Z":
           return a.title.localeCompare(b.title);
         case "Z–A":
           return b.title.localeCompare(a.title);
         case "Featured":
           if (a.featured !== b.featured) return a.featured ? -1 : 1;
-          return new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime();
+          return timeB - timeA;
         case "Most Downloaded":
           // No download count data yet — fall back to featured then latest
           if (a.featured !== b.featured) return a.featured ? -1 : 1;
-          return new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime();
+          return timeB - timeA;
         case "Latest First":
         default:
-          return new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime();
+          return timeB - timeA;
       }
     });
   }, [filters, listedResources, resourceTypeRank, searchQuery]);

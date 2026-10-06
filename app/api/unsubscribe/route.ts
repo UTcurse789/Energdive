@@ -4,6 +4,7 @@ import { query } from "@/lib/db";
 
 const BREVO_SUBSCRIBERS_LIST_ID = 7;
 const BREVO_UNSUBSCRIBERS_LIST_ID = 8;
+const BREVO_NEWSLETTER_LIST_ID = 24;
 const BREVO_API = "https://api.brevo.com/v3/contacts";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -39,7 +40,9 @@ export async function POST(req: Request) {
                     UNSUB_DATE: unsubDate,
                 },
                 listIds: [BREVO_UNSUBSCRIBERS_LIST_ID],
-                unlinkListIds: [BREVO_SUBSCRIBERS_LIST_ID],
+                // An unsubscribe must also remove the address from the Daily
+                // Briefing audience; list 24 is queried by the digest sender.
+                unlinkListIds: [BREVO_SUBSCRIBERS_LIST_ID, BREVO_NEWSLETTER_LIST_ID],
             },
             {
                 headers: {

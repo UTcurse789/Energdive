@@ -4,7 +4,9 @@ import { query } from "@/lib/db";
 import { sendNewsletterSubscriptionThanksEmail } from "@/lib/email";
 import { getPostHogClient } from "@/lib/posthog-server";
 
-const BREVO_LIST_ID = 7;
+// Newsletter opt-ins belong in their dedicated Brevo audience, not the
+// EnergClub-member list.
+const BREVO_LIST_ID = 24;
 const BREVO_API = "https://api.brevo.com/v3/contacts";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;

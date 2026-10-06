@@ -21,7 +21,7 @@ export default function AnalysisPage() {
     useEffect(() => {
         async function fetchData() {
             try {
-                const url = `${STRAPI_BASE_URL}/api/contents?filters[type_of_content][name][$eq]=Analysis&populate=*&pagination[pageSize]=100&sort=Date:desc`;
+                const url = `${STRAPI_BASE_URL}/api/contents?filters[type_of_content][name][$eq]=Analysis&populate=*&pagination[pageSize]=100&sort[0]=Date:desc&sort[1]=publishedAt:desc&sort[2]=createdAt:desc`;
                 const res = await fetch(url);
                 const json = await res.json();
 

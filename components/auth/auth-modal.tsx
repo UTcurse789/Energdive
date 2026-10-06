@@ -456,7 +456,7 @@ export default function AuthModal() {
 
     return (
         <AnimatePresence>
-            <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-zinc-950/60 backdrop-blur-sm">
+            <div className="fixed inset-0 z-[150] flex items-center justify-center p-3 sm:p-4 bg-zinc-950/65 backdrop-blur-sm">
                 {/* Backdrop Dismissal */}
                 <motion.div
                     initial={{ opacity: 0 }}
@@ -468,42 +468,58 @@ export default function AuthModal() {
 
                 {/* Modal Container */}
                 <motion.div
-                    initial={{ opacity: 0, scale: 0.95, y: 15 }}
+                    initial={{ opacity: 0, scale: 0.96, y: 12 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.95, y: 15 }}
-                    transition={{ type: "spring", duration: 0.45, bounce: 0.15 }}
-                    className="relative w-full max-w-[420px] bg-white rounded-2xl shadow-2xl border border-zinc-200/60 overflow-hidden z-10"
+                    exit={{ opacity: 0, scale: 0.96, y: 12 }}
+                    transition={{ type: "spring", duration: 0.4, bounce: 0.12 }}
+                    className="relative w-full max-w-[340px] sm:max-w-[400px] max-h-[calc(100dvh-1.5rem)] sm:max-h-[90vh] bg-white rounded-2xl shadow-2xl border border-zinc-200/80 overflow-y-auto overscroll-contain z-10"
                 >
                     {/* Close Button */}
                     <button
                         onClick={closeAuthModal}
-                        className="absolute top-4 right-4 p-1.5 rounded-full text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 transition-colors"
+                        className="absolute top-3 right-3 sm:top-4 sm:right-4 w-8 h-8 flex items-center justify-center rounded-full text-zinc-400 hover:text-zinc-700 bg-zinc-100/60 sm:bg-transparent hover:bg-zinc-100 active:scale-95 transition-all z-20"
                         aria-label="Close modal"
                     >
-                        <X className="w-5 h-5" />
+                        <X className="w-4 h-4 sm:w-5 sm:h-5" />
                     </button>
 
                     {/* Content Pad */}
-                    <div className="p-8">
+                    <div className="px-4 py-4 sm:p-7">
                         {/* Header Box */}
-                        <div className="flex flex-col items-center text-center mb-6">
-                            <div className="flex items-center justify-center mb-4">
+                        <div className="flex flex-col items-center text-center mb-3 sm:mb-5">
+                            <div className="flex items-center justify-center mb-2 sm:mb-3">
                                 <Image
                                     src="/logo - energclub-energdive.png"
                                     alt="Logo"
-                                    width={280}
-                                    height={56}
+                                    width={220}
+                                    height={44}
                                     style={{ objectFit: "contain" }}
                                     priority
-                                    className="h-14 w-auto"
+                                    className="h-7 sm:h-10 w-auto"
                                 />
                             </div>
-                            <h2 className="text-2xl font-bold font-serif text-zinc-900 leading-tight">
-                                Access Premium Industry Resources
+                            <h2 className="text-lg sm:text-xl font-bold font-serif text-zinc-900 leading-snug tracking-tight">
+                                {isOTPStep ? "Enter Verification Code" : "Access Premium Industry Resources"}
                             </h2>
-                            <p className="text-xs text-zinc-500 mt-2.5 max-w-[280px]">
-                                Sign in or register to unlock analysis, insights, and exclusive content.
-                            </p>
+                            {isOTPStep ? (
+                                <div className="text-xs text-zinc-500 mt-1 sm:mt-1.5 max-w-[290px] leading-relaxed">
+                                    <span>
+                                        {!isNewUser && userFirstName ? `Welcome back, ${userFirstName}! ` : "Enter the code sent to "}
+                                    </span>
+                                    <span className="font-semibold text-zinc-800 break-all">{identifier}</span>{" "}
+                                    <button
+                                        type="button"
+                                        onClick={handleBack}
+                                        className="text-xs text-emerald-600 hover:text-emerald-700 font-bold hover:underline ml-0.5 inline-block"
+                                    >
+                                        (Change)
+                                    </button>
+                                </div>
+                            ) : (
+                                <p className="text-xs text-zinc-500 mt-1.5 sm:mt-2 max-w-[280px] leading-relaxed">
+                                    Sign in or register to unlock analysis, insights, and exclusive content.
+                                </p>
+                            )}
                         </div>
 
                         <AnimatePresence mode="wait">
@@ -517,8 +533,8 @@ export default function AuthModal() {
                                     transition={{ duration: 0.2 }}
                                 >
                                     {/* Email Field */}
-                                    <div className="space-y-2 mb-4">
-                                        <label className="text-[11px] font-bold tracking-wider text-zinc-500 uppercase">
+                                    <div className="space-y-1.5 sm:space-y-2 mb-3.5 sm:mb-4">
+                                        <label className="text-[10px] sm:text-[11px] font-bold tracking-wider text-zinc-500 uppercase">
                                             Work Email
                                         </label>
                                         <div className="relative">
@@ -531,7 +547,7 @@ export default function AuthModal() {
                                                 }}
                                                 onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
                                                 placeholder="name@company.com"
-                                                className="w-full h-11 px-4 pr-10 rounded-xl border border-zinc-200 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all duration-150"
+                                                className="w-full h-10 sm:h-11 px-3.5 sm:px-4 pr-10 rounded-xl border border-zinc-200 text-base sm:text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all duration-150"
                                                 autoFocus
                                             />
                                             {identifier.trim() && (
@@ -552,7 +568,7 @@ export default function AuthModal() {
                                     <button
                                         onClick={handleSubmit}
                                         disabled={loading || !identifier.trim()}
-                                        className="w-full h-11 rounded-xl bg-[#00A651] hover:bg-[#009347] text-white text-sm font-bold shadow-md shadow-emerald-500/10 hover:shadow-lg hover:shadow-emerald-500/15 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-150 flex items-center justify-center gap-2"
+                                        className="w-full h-10 sm:h-11 rounded-xl bg-[#00A651] hover:bg-[#009347] text-white text-sm font-bold shadow-sm shadow-emerald-500/15 hover:shadow-md hover:shadow-emerald-500/20 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-150 flex items-center justify-center gap-2"
                                     >
                                         {loading ? (
                                             <div className="w-4.5 h-4.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -565,20 +581,20 @@ export default function AuthModal() {
                                     </button>
 
                                     {/* Divider */}
-                                    <div className="flex items-center gap-3 my-5">
+                                    <div className="flex items-center gap-3 my-3 sm:my-4">
                                         <div className="flex-1 h-px bg-zinc-200/80" />
-                                        <span className="text-[10px] uppercase tracking-widest text-zinc-400 font-bold">
+                                        <span className="text-[9px] sm:text-[10px] uppercase tracking-widest text-zinc-400 font-bold">
                                             Social Login
                                         </span>
                                         <div className="flex-1 h-px bg-zinc-200/80" />
                                     </div>
 
                                     {/* Social Logins */}
-                                    <div className="grid grid-cols-2 gap-2.5">
+                                    <div className="grid grid-cols-2 gap-2 sm:gap-2.5">
                                         <button
                                             type="button"
                                             onClick={handleGoogleAuth}
-                                            className="flex items-center justify-center gap-2.5 h-11 rounded-xl border border-zinc-200 hover:border-zinc-300 hover:bg-zinc-50 transition-colors text-xs font-bold text-zinc-700"
+                                            className="flex items-center justify-center gap-2 sm:gap-2.5 h-10 sm:h-11 rounded-xl border border-zinc-200 hover:border-zinc-300 hover:bg-zinc-50 active:bg-zinc-100 transition-colors text-xs font-semibold sm:font-bold text-zinc-700"
                                         >
                                             <svg width="15" height="15" viewBox="0 0 24 24" className="shrink-0">
                                                 <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4" />
@@ -591,7 +607,7 @@ export default function AuthModal() {
                                         <button
                                             type="button"
                                             onClick={handleLinkedInAuth}
-                                            className="flex items-center justify-center gap-2.5 h-11 rounded-xl border border-zinc-200 hover:border-zinc-300 hover:bg-zinc-50 transition-colors text-xs font-bold text-zinc-700"
+                                            className="flex items-center justify-center gap-2 sm:gap-2.5 h-10 sm:h-11 rounded-xl border border-zinc-200 hover:border-zinc-300 hover:bg-zinc-50 active:bg-zinc-100 transition-colors text-xs font-semibold sm:font-bold text-zinc-700"
                                         >
                                             <svg width="15" height="15" viewBox="0 0 24 24" fill="#0A66C2" className="shrink-0">
                                                 <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
@@ -611,35 +627,15 @@ export default function AuthModal() {
                                     exit={{ opacity: 0, x: -10 }}
                                     transition={{ duration: 0.2 }}
                                 >
-                                    {!isNewUser ? (
-                                        <div className="p-3.5 rounded-xl text-xs mb-4 bg-emerald-50 text-emerald-800 border border-emerald-100/60 font-semibold leading-relaxed">
-                                            Welcome {userFirstName || "back"}! 👋 Enter your 6-digit OTP code to log in:
+                                    {info && info !== "We sent a verification code to your email." && (
+                                        <div className="p-2 sm:p-2.5 rounded-lg text-xs mb-2.5 bg-emerald-50 text-emerald-800 border border-emerald-100/60 font-medium leading-relaxed">
+                                            {info}
                                         </div>
-                                    ) : (
-                                        info && (
-                                            <div className="p-3.5 rounded-xl text-xs mb-4 bg-emerald-50 text-emerald-800 border border-emerald-100/60 font-semibold leading-relaxed">
-                                                {info}
-                                            </div>
-                                        )
                                     )}
 
-                                    {/* Sending details & Change link */}
-                                    <div className="flex items-center justify-between mb-4 px-1">
-                                        <span className="text-xs text-zinc-500">
-                                            Sending to <span className="font-bold text-zinc-700">{identifier}</span>
-                                        </span>
-                                        <button
-                                            type="button"
-                                            onClick={handleBack}
-                                            className="text-xs text-emerald-600 hover:text-emerald-700 font-bold"
-                                        >
-                                            Change
-                                        </button>
-                                    </div>
-
                                     {/* Code Input */}
-                                    <div className="space-y-2 mb-4">
-                                        <label className="text-[11px] font-bold tracking-wider text-zinc-500 uppercase">
+                                    <div className="space-y-1 sm:space-y-1.5 mb-3 sm:mb-3.5">
+                                        <label className="text-[10px] sm:text-[11px] font-bold tracking-wider text-zinc-500 uppercase">
                                             Verification Code
                                         </label>
                                         <input
@@ -651,7 +647,7 @@ export default function AuthModal() {
                                             }}
                                             onKeyDown={(e) => e.key === "Enter" && handleEmailOTPSubmit()}
                                             placeholder="Enter 6-digit code"
-                                            className="w-full h-11 px-4 rounded-xl border border-zinc-200 text-sm text-zinc-900 text-center tracking-[0.5em] font-mono placeholder:tracking-normal placeholder:font-sans placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all duration-150"
+                                            className="w-full h-10 sm:h-11 px-3.5 sm:px-4 rounded-xl border border-zinc-200 text-base sm:text-sm text-zinc-900 text-center tracking-[0.35em] sm:tracking-[0.5em] font-mono placeholder:tracking-normal placeholder:font-sans placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all duration-150"
                                             autoFocus
                                             maxLength={6}
                                             inputMode="numeric"
@@ -659,7 +655,7 @@ export default function AuthModal() {
                                     </div>
 
                                     {error && (
-                                        <p className="text-xs font-medium text-red-500 mb-3 animate-shake">
+                                        <p className="text-xs font-medium text-red-500 mb-2.5 animate-shake text-center">
                                             {error}
                                         </p>
                                     )}
@@ -667,7 +663,7 @@ export default function AuthModal() {
                                     <button
                                         onClick={handleEmailOTPSubmit}
                                         disabled={loading || code.length < 6}
-                                        className="w-full h-11 rounded-xl bg-[#00A651] hover:bg-[#009347] text-white text-sm font-bold shadow-md shadow-emerald-500/10 hover:shadow-lg active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-150 flex items-center justify-center gap-2"
+                                        className="w-full h-10 sm:h-11 rounded-xl bg-[#00A651] hover:bg-[#009347] text-white text-sm font-bold shadow-sm shadow-emerald-500/15 hover:shadow-md active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-150 flex items-center justify-center gap-2"
                                     >
                                         {loading ? (
                                             <div className="w-4.5 h-4.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -677,12 +673,12 @@ export default function AuthModal() {
                                     </button>
 
                                     {/* Resend Button */}
-                                    <p className="text-center mt-5 text-xs text-zinc-400">
+                                    <p className="text-center mt-2.5 sm:mt-3.5 text-xs text-zinc-400">
                                         Didn&apos;t receive the code?{" "}
                                         <button
                                             type="button"
                                             onClick={handleResend}
-                                            className="text-emerald-600 hover:text-emerald-700 font-bold"
+                                            className="text-emerald-600 hover:text-emerald-700 font-bold hover:underline"
                                         >
                                             Resend
                                         </button>
@@ -693,9 +689,9 @@ export default function AuthModal() {
                     </div>
 
                     {/* Security Footer */}
-                    <div className="border-t border-zinc-100 bg-zinc-50/50 py-3.5 flex items-center justify-center gap-2">
+                    <div className="border-t border-zinc-100 bg-zinc-50/50 py-2 sm:py-2.5 flex items-center justify-center gap-2">
                         <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
-                        <span className="text-[9px] uppercase tracking-[0.25em] text-zinc-400 font-bold">
+                        <span className="text-[9px] uppercase tracking-[0.2em] sm:tracking-[0.25em] text-zinc-400 font-bold">
                             Encrypted &amp; Secure
                         </span>
                     </div>

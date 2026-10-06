@@ -151,8 +151,8 @@ export async function EventsSection({ variant = "default" }: { variant?: "defaul
                                             </div>
                                         )}
                                         {event.location && (
-                                            <div className="flex items-center gap-1 text-slate-400">
-                                                <MapPin className="w-2.5 h-2.5 text-slate-400 shrink-0" />
+                                            <div className="flex items-center gap-1 text-slate-600 font-medium">
+                                                <MapPin className="w-2.5 h-2.5 text-slate-500 shrink-0" />
                                                 <span className="truncate">{event.location}</span>
                                             </div>
                                         )}

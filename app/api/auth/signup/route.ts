@@ -3,6 +3,7 @@ import { query } from "@/lib/db";
 import { generateOtp, setOtp } from "@/lib/otp-store";
 import { sendOtpEmail } from "@/lib/email";
 import { getPostHogClient } from "@/lib/posthog-server";
+import { syncPartialContactToBrevo } from "@/lib/brevoSync";
 
 /**
  * POST /api/auth/signup
@@ -64,6 +65,21 @@ export async function POST(req: NextRequest, { params }: { params: Promise<Recor
         );
 
         const pendingId = result.rows[0].id;
+
+        // Store an incomplete registration in Brevo list #21. A Brevo outage
+        // must not prevent the user from receiving their OTP.
+        try {
+            await syncPartialContactToBrevo({
+                email: normalizedEmail,
+                name: name.trim(),
+                phone: phone?.trim() || undefined,
+                company: company?.trim() || undefined,
+                source: "Portal signup",
+            });
+        } catch (brevoError: unknown) {
+            const message = brevoError instanceof Error ? brevoError.message : String(brevoError);
+            console.warn(`[signup] Partial Brevo sync failed (non-fatal): ${message}`);
+        }
 
         // Generate + send OTP
         const otp = generateOtp();

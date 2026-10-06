@@ -25,10 +25,13 @@ const nextConfig: NextConfig = {
       "framer-motion",
       "recharts",
       "react-icons",
+      "clsx",
+      "tailwind-merge",
+      "date-fns",
     ],
   },
 
-  // Aggressive cache headers for static assets & images
+  // Cache & Security headers for Best Practices, SEO & Performance
   async headers() {
     return [
       {
@@ -41,11 +44,67 @@ const nextConfig: NextConfig = {
         ],
       },
       {
-        source: "/:path*(jpg|jpeg|png|gif|svg|webp|ico|woff|woff2|ttf|otf|eot)",
+        source: "/:all*(jpg|jpeg|png|gif|svg|webp|ico|woff|woff2|ttf|otf|eot)",
         headers: [
           {
             key: "Cache-Control",
             value: "public, max-age=31536000, immutable",
+          },
+        ],
+      },
+      {
+        // Global Security & Best Practices headers for all routes
+        source: "/:path*",
+        headers: [
+          {
+            key: "X-Content-Type-Options",
+            value: "nosniff",
+          },
+          {
+            key: "X-Frame-Options",
+            value: "SAMEORIGIN",
+          },
+          {
+            key: "Referrer-Policy",
+            value: "strict-origin-when-cross-origin",
+          },
+          {
+            key: "Strict-Transport-Security",
+            value: "max-age=31536000; includeSubDomains; preload",
+          },
+          {
+            key: "Permissions-Policy",
+            value: "camera=(), microphone=(), geolocation=()",
+          },
+          {
+            key: "Cross-Origin-Opener-Policy",
+            value: "same-origin-allow-popups",
+          },
+        ],
+      },
+      {
+        // ─── CRITICAL: Never cache any /api/* route ───────────────────────────
+        // Without this, Cloudflare caches user-specific API responses and serves
+        // one user's profile/feed/onboarding data to a completely different user.
+        source: "/api/:path*",
+        headers: [
+          { key: "Cache-Control", value: "no-store, no-cache, must-revalidate, private" },
+          { key: "CDN-Cache-Control", value: "no-store" },
+          { key: "Cloudflare-CDN-Cache-Control", value: "no-store" },
+          { key: "Surrogate-Control", value: "no-store" },
+          { key: "Pragma", value: "no-cache" },
+        ],
+      },
+      {
+        // Public HTML pages only (not /api): allow CDN to cache up to 60s
+        source: "/((?!api/).*)",
+        missing: [
+          { type: "header", key: "x-no-cache-override" },
+        ],
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, s-maxage=60, stale-while-revalidate=60",
           },
         ],
       },
