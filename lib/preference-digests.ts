@@ -6,6 +6,7 @@ import { strapiMediaUrl } from "@/lib/strapi-image";
 import { getAdvertisements, getAdImageUrl } from "@/lib/api/getAdvertisements";
 import { loadPublicEnergJobs } from "@/lib/energjob-public";
 import { getLatestIssue } from "@/lib/api/getLatestIssue";
+import { getDailyBriefingClock, normalizeBriefingFirstName } from "@/lib/daily-briefing-rules";
 
 const STRAPI_BASE = process.env.NEXT_PUBLIC_STRAPI_URL || "https://cms.energdive.com";
 const STRAPI_TOKEN = process.env.STRAPI_API_TOKEN || "";
@@ -192,22 +193,11 @@ function shiftFromIst(date: Date): Date {
 }
 
 function getStartOfIstDay(date: Date): Date {
-    const ist = shiftToIst(date);
-    const start = new Date(Date.UTC(
-        ist.getUTCFullYear(),
-        ist.getUTCMonth(),
-        ist.getUTCDate(),
-        0,
-        0,
-        0,
-        0
-    ));
-    return shiftFromIst(start);
+    return getDailyBriefingClock(date).dayStart;
 }
 
 function isIstWeekday(date: Date): boolean {
-    const day = shiftToIst(date).getUTCDay();
-    return day >= 1 && day <= 5;
+    return getDailyBriefingClock(date).isWeekday;
 }
 
 function getStartOfIstWeek(date: Date): Date {
@@ -408,8 +398,13 @@ function normalizeContentItem(item: StrapiDigestContent): DigestItem | null {
         return null;
     }
 
-    const publishedAtRaw = item.publishedAt || item.Date || item.createdAt;
-    const publishedAt = publishedAtRaw ? new Date(publishedAtRaw) : new Date();
+    // News needs an actual publication timestamp. Drafts and undated records
+    // must never count as stories published today.
+    const publishedAtRaw = formats.includes("News Briefing")
+        ? item.publishedAt
+        : item.publishedAt || item.Date || item.createdAt;
+    if (!publishedAtRaw) return null;
+    const publishedAt = new Date(publishedAtRaw);
     if (Number.isNaN(publishedAt.getTime())) {
         return null;
     }
@@ -559,10 +554,12 @@ function buildSections(
     since: Date | null,
     catalog: DigestItem[],
     frequency: string = "daily",
-    perFormatLimit = 4
+    perFormatLimit = 4,
+    until = new Date()
 ): DigestSection[] {
     const sections: DigestSection[] = [];
     const usedKeys = new Set<string>();
+    const uniqueCatalog = Array.from(new Map(catalog.map((item) => [item.key, item])).values());
 
     for (const format of formats) {
         if (format !== "News Briefing" && format !== "Upcoming Events") {
@@ -582,9 +579,9 @@ function buildSections(
             limit = 4;
         }
 
-        const items = catalog
+        const items = uniqueCatalog
             .filter((item) => item.formats.includes(format))
-            .filter((item) => isEvent || !since || item.publishedAt >= since)
+            .filter((item) => isEvent || ((!since || item.publishedAt >= since) && item.publishedAt <= until))
             .filter((item) => !usedKeys.has(item.key))
             .sort((a, b) => {
                 if (isEvent) {
@@ -723,17 +720,6 @@ function getDueWindowStart(
     return new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 }
 
-function deriveDisplayName(email: string, firstName?: string | null): string {
-    if (firstName && firstName.trim()) {
-        return firstName.trim();
-    }
-    const localPart = email.split("@")[0] || "Reader";
-    const normalized = localPart.replace(/[._-]+/g, " ").trim();
-    return normalized
-        ? normalized.charAt(0).toUpperCase() + normalized.slice(1)
-        : "Reader";
-}
-
 async function logDigestSend(payload: {
     userId?: number | null;
     email: string;
@@ -795,6 +781,7 @@ function dedupeCandidatesByEmail(rows: DigestCandidateRow[]): DigestEmailCandida
 
     for (const row of rows) {
         const email = row.email.trim().toLowerCase();
+        const firstName = normalizeBriefingFirstName(row.first_name);
         const existing = grouped.get(email);
 
         if (!existing) {
@@ -802,7 +789,7 @@ function dedupeCandidatesByEmail(rows: DigestCandidateRow[]): DigestEmailCandida
                 id: row.id,
                 userIds: [row.id],
                 email,
-                first_name: row.first_name,
+                first_name: firstName,
                 preferred_frequency: row.preferred_frequency,
                 preferred_formats: row.preferred_formats,
                 last_content_digest_sent_at: row.last_content_digest_sent_at,
@@ -816,8 +803,8 @@ function dedupeCandidatesByEmail(rows: DigestCandidateRow[]): DigestEmailCandida
         // the latest Brevo preference, so keep the Brevo value on a match.
         if (row.source === "brevo") {
             existing.preferred_frequency = row.preferred_frequency;
-            if (row.first_name) {
-                existing.first_name = row.first_name;
+            if (firstName) {
+                existing.first_name = firstName;
             }
         }
 
@@ -832,9 +819,9 @@ function dedupeCandidatesByEmail(rows: DigestCandidateRow[]): DigestEmailCandida
             existing.last_content_digest_sent_at = row.last_content_digest_sent_at;
         }
 
-        if (row.id > existing.id || (!existing.first_name && row.first_name)) {
+        if (row.id > existing.id || (!existing.first_name && firstName)) {
             existing.id = row.id;
-            existing.first_name = row.first_name;
+            existing.first_name = firstName || existing.first_name;
             existing.preferred_frequency = row.preferred_frequency;
             existing.preferred_formats = row.preferred_formats;
         }
@@ -1081,7 +1068,7 @@ export async function processPreferenceDigests(
         const formats = ["News Briefing", "Upcoming Events"] as DigestFormat[];
         // Scheduled briefings only include news published today in IST.
         const since = getStartOfIstDay(now);
-        const sections = buildSections(formats, since, catalog, frequency);
+        const sections = buildSections(formats, since, catalog, frequency, 4, now);
         const itemKeys = sections.flatMap((section) => section.items.map((item) => item.key));
         // Never send an event-only, empty, backfilled, or thin briefing.
         // A daily email needs at least two fresh Top News stories; otherwise
@@ -1115,7 +1102,7 @@ export async function processPreferenceDigests(
         try {
             await sendPreferenceDigestEmail(
                 row.email,
-                deriveDisplayName(row.email, row.first_name),
+                row.first_name || "",
                 frequency,
                 sections,
                 sponsor,
@@ -1224,7 +1211,7 @@ export async function sendPreferenceDigestPreview(
 
     await sendPreferenceDigestEmail(
         email,
-        deriveDisplayName(email, options.firstName),
+        normalizeBriefingFirstName(options.firstName) || "",
         frequency,
         sections,
         sponsor,

@@ -16,6 +16,7 @@ const DIGEST_FROM_NAME = process.env.DIGEST_FROM_NAME || "ENERGDIVE Intelligence
 import { buildMembershipCardHtml } from "./_card-template";
 import { generateMembershipCardPdf } from "./membership-pdf";
 import { getAdvertisements, getAdImageUrl } from "./api/getAdvertisements";
+import { normalizeBriefingFirstName } from "./daily-briefing-rules";
 
 interface SendEmailOptions {
     to: string;
@@ -1694,6 +1695,10 @@ export async function sendPreferenceDigestEmail(
     extras: DailyBriefingExtras = { trending: [], jobs: [] }
 ): Promise<void> {
     const displayFrequency = `${frequency.charAt(0).toUpperCase()}${frequency.slice(1)}`;
+    const greetingName = normalizeBriefingFirstName(firstName);
+    const greetingHtml = greetingName
+        ? `Good evening, <span style="color:#0b6b55;">${escapeHtml(greetingName)}</span>,`
+        : "Good evening,";
     const subject = `Your ENERGDIVE ${displayFrequency} Briefing`;
     // Do not use a local or preview environment URL in a transactional email.
     const appUrl = "https://www.energdive.com";
@@ -2003,7 +2008,7 @@ export async function sendPreferenceDigestEmail(
                 </tr></table>
             </td></tr>
             <tr><td class="section-pad" style="padding:24px 32px 8px;">
-                <p style="margin:0 0 8px;color:#101828;font-size:21px;line-height:1.22;font-weight:800;letter-spacing:-0.25px;">Good evening, <span style="color:#0b6b55;">${escapeHtml(firstName)}</span> 👋</p>
+                <p style="margin:0 0 8px;color:#101828;font-size:21px;line-height:1.22;font-weight:800;letter-spacing:-0.25px;">${greetingHtml}</p>
                 <p class="greeting-copy" style="margin:0;color:#344054;font-size:14px;line-height:1.55;font-weight:600;">Your daily dose of essential energy stories,<br />opportunities &amp; events shaping the future.</p>
             </td></tr>
             ${topSponsorAdHtml}
@@ -2030,7 +2035,7 @@ export async function sendPreferenceDigestEmail(
 
     await sendEmail({
         to,
-        toName: firstName,
+        toName: greetingName || undefined,
         subject,
         htmlContent,
         sender: { email: DIGEST_FROM_EMAIL, name: DIGEST_FROM_NAME },

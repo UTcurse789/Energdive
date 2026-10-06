@@ -1,5 +1,6 @@
 import { processAbandonedCartDrip, processContentPreferenceDigests, processWeeklyReminders } from "./cron-jobs";
 import { sendDailySignupReport } from "./daily-signup-report";
+import { getDailyBriefingClock } from "./daily-briefing-rules";
 
 const globalForCron = globalThis as unknown as { isStarted?: boolean };
 
@@ -56,15 +57,8 @@ export function startCronScheduler() {
         if (isDigestRunning) return;
 
         try {
-            // Current time in IST
-            const nowUtc = new Date();
-            const istMs = nowUtc.getTime() + 5.5 * 60 * 60 * 1000;
-            const istDate = new Date(istMs);
-            const istHour = istDate.getUTCHours();
-            const istMinute = istDate.getUTCMinutes();
-            const istDay = istDate.getUTCDay();
-            const todayKey = istDate.toISOString().slice(0, 10); // YYYY-MM-DD
-            const isWeekday = istDay >= 1 && istDay <= 5;
+            const { hour: istHour, minute: istMinute, dateKey: todayKey, isWeekday } =
+                getDailyBriefingClock(new Date());
             // Daily Briefing always starts at 5:00 PM IST.
             const digestStartMinute = 0;
 
