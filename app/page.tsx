@@ -16,6 +16,7 @@ import { Article } from "@/types";
 import { formatContentDate } from "@/lib/date";
 import { getLatestIssueWithArticles } from "@/lib/api/getLatestIssue";
 import { CurrentIssueSection } from "@/components/sections/current-issue-section";
+import { ThePublicationSection } from "@/components/sections/the-publication-section";
 import { EnergyJobsSidebar } from "@/components/sections/energy-jobs-sidebar";
 import { strapiImageUrl } from "@/lib/strapi-image";
 import { buildContentUrl } from "@/lib/content-routes";
@@ -371,7 +372,7 @@ async function HomeDeferredContent({ latestNews }: { latestNews: any[] }) {
       {/* Latest News Section (full-width detailed view of hero section's top 5 news) */}
       <LatestNewsSection news={latestNews.slice(0, 7)} />
 
-      <EnergbitsSection news={heroTopStories.slice(7, 15)} />
+      <EnergbitsSection news={latestNews.slice(7, 15)} />
 
 
 
@@ -496,9 +497,10 @@ export default async function Home() {
     getHeroBannerContents(),
   ]);
 
-  const latestNews = (allContents || [])
+  const homepageNews = (allContents || [])
     .sort((a: any, b: any) => getArticleTimestamp(b) - getArticleTimestamp(a))
-    .slice(0, 7);
+    .slice(0, 15);
+  const latestNews = homepageNews.slice(0, 7);
 
   const homeJsonLd = {
     "@context": "https://schema.org",
@@ -548,7 +550,7 @@ export default async function Home() {
       <Hero heroStories={heroBannerContents} topStories={latestNews} />
 
       <Suspense fallback={null}>
-        <HomeDeferredContent latestNews={latestNews} />
+        <HomeDeferredContent latestNews={homepageNews} />
       </Suspense>
     </main>
   );

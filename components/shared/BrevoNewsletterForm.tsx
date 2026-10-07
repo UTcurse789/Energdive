@@ -108,14 +108,6 @@ export function BrevoNewsletterForm({
         };
         w.AUTOHIDE = false;
 
-        // Load Brevo main script (once)
-        if (!document.querySelector('script[src*="sibforms.com"]')) {
-            const script = document.createElement("script");
-            script.src = "https://sibforms.com/forms/end-form/build/main.js";
-            script.defer = true;
-            document.body.appendChild(script);
-        }
-
         const container = containerRef.current;
         if (!container) return;
 
@@ -204,7 +196,7 @@ export function BrevoNewsletterForm({
                 form.removeEventListener("submit", captureEmail);
             }
         };
-    }, [emailId, sibFormId, successId, source]);
+    }, [emailId, sibFormId, successId, errorId, source]);
 
     const wrapperClass = isDark ? "brevo-form-dark" : "brevo-form-light";
 

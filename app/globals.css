@@ -1004,3 +1004,20 @@ a.inline-link:hover {
     animation: none;
   }
 }
+@keyframes joining-confetti-fall {
+  0% { transform: translateY(-20px) rotate(0deg); opacity: 0; }
+  10% { opacity: 1; }
+  100% { transform: translateY(420px) rotate(540deg); opacity: 0; }
+}
+
+.joining-confetti {
+  position: absolute;
+  top: 0;
+  width: 8px;
+  height: 14px;
+  animation: joining-confetti-fall 2.4s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .joining-confetti { display: none; }
+}

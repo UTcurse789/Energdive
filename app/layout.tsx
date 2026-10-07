@@ -55,7 +55,6 @@ import { Suspense } from "react";
 import { PostHogProvider } from "./providers";
 import { PostHogIdentify } from "@/components/PostHogIdentify";
 import { AuthModalProvider } from "@/hooks/use-auth-modal";
-import AuthModal from "@/components/auth/auth-modal";
 import { ScrollToTop } from "@/components/scroll-to-top";
 import { ORGANIZATION_SCHEMA } from "@/lib/organization-schema";
 
@@ -115,7 +114,7 @@ export default function RootLayout({
           <PostHogProvider>
             <AuthModalProvider>
               {/* GTM — only loads after cookie consent is accepted */}
-              <ConsentAwareGTM gtmId="GTM-5P4C363M" />
+              <ClientConsentAwareGTM />
               <ScrollToTop />
               <Suspense fallback={null}>
                 <UtmTracker />

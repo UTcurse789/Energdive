@@ -588,8 +588,10 @@ function buildSections(
             limit = 4;
         }
 
-        const items = uniqueCatalog
-            .filter((item) => item.formats.includes(format))
+        const candidates = uniqueCatalog
+            .filter((item) => isEvent
+                ? item.formats.includes(format)
+                : item.formats.some((itemFormat) => DAILY_BRIEFING_EDITORIAL_FORMATS.includes(itemFormat)))
             .filter((item) => isEvent || ((!since || item.publishedAt >= since) && item.publishedAt <= until))
             .filter((item) => !usedKeys.has(item.key))
             .sort((a, b) => {
@@ -603,14 +605,13 @@ function buildSections(
 
         let items: DigestItem[];
         if (format === "News Briefing") {
-            const dayKey = getIstDateKey();
+            const dayKey = getIstDateKey(until);
             const featuredCandidates = candidates.filter(isFeaturedStory);
             const nonFeaturedCandidates = candidates.filter((item) => !isFeaturedStory(item));
 
-            // One Featured Story is included in every briefing. Each cycle
-            // visits every available feature once; a new shuffled order starts
-            // only after the current cycle is exhausted.
-            const dayNumber = Math.floor(Date.now() / (24 * 60 * 60 * 1_000));
+            // Include one available Featured Story, with a deterministic daily
+            // selection and a shuffled order for each calendar cycle.
+            const dayNumber = Math.floor((until.getTime() + IST_OFFSET_MS) / (24 * 60 * 60 * 1_000));
             const featuredCycle = featuredCandidates.length > 0
                 ? Math.floor(dayNumber / featuredCandidates.length)
                 : 0;
@@ -671,6 +672,12 @@ function buildSections(
     }
 
     return sections;
+}
+
+function isFeaturedStory(item: DigestItem): boolean {
+    const featuredLabels = ["feature", "featured story", "featured stories"];
+    return featuredLabels.includes(item.badge.trim().toLowerCase()) ||
+        featuredLabels.includes((item.contentTag || "").trim().toLowerCase());
 }
 
 function hasFreshEditorialContent(sections: DigestSection[]): boolean {
@@ -1155,7 +1162,7 @@ export async function processPreferenceDigests(
         // A daily email needs at least two fresh Top News stories; otherwise
         // the two-column email layout renders with an empty card, as well as
         // sending subscribers a briefing that has too little editorial value.
-        const prepared = !hasFreshNews(sections) || !hasEnoughTopNews(sections) || itemKeys.length === 0
+        const prepared = !hasFreshEditorialContent(sections) || !hasEnoughTopNews(sections) || itemKeys.length === 0
                 ? "no_new_matching_content" as const
                 : { sections, itemKeys, extras: await loadDailyBriefingExtras(catalog, sections) };
 
@@ -1284,7 +1291,7 @@ export async function sendPreferenceDigestPreview(
         throw new Error("No matching content or events are available for the requested preview.");
     }
 
-    if (!options.allowInsufficientTopNews && !hasEnoughTopStories(sections)) {
+    if (!options.allowInsufficientTopNews && !hasEnoughTopNews(sections)) {
         throw new Error("At least two fresh editorial stories are required to send a Daily Briefing preview.");
     }
 

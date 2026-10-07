@@ -27,6 +27,10 @@ export default clerkMiddleware(async (auth, req) => {
         response.headers.set("x-client-ip", clientIp);
     }
     return response;
+}, {
+    // Server auth redirects need their own URLs; provider props configure the client.
+    signInUrl: "/auth",
+    signUpUrl: "/auth",
 });
 
 export const config = {
