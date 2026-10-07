@@ -1,5 +1,5 @@
 import { auth, clerkClient } from "@clerk/nextjs/server";
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import { issueMagicToken, saveOnboardingProfile } from "@/lib/queries";
 import { getFullUserProfile } from "@/lib/getFullUserProfile";
 import { query } from "@/lib/db";
@@ -82,219 +82,231 @@ export async function POST(req: Request) {
             preferredFormats: body.preferredFormats,
         });
 
-        // ── Log consent (DPDP compliance) ───────────────────────────
-        const clientIp = extractIpAddress(req);
-        const dataSource = resolveDataSource("website");
-        const consentTimestamp = body.consentTimestamp || null;
-        try {
-            await logConsent({
-                userId: dbUserId,
-                email: body.email,
-                source: dataSource,
-                ipAddress: clientIp,
-                consentPurpose: "registration",
-                metadata: {
-                    clerkId: userId,
-                    consentTimestamp,
-                    utm_source: body.utm_source || null,
-                    utm_campaign: body.utm_campaign || null,
-                },
-            });
-            await updateUserConsentFields(userId, "website", clientIp, consentTimestamp);
-            console.log(`[ONBOARDING] Consent logged for: ${body.email}, consent at: ${consentTimestamp}`);
-        } catch (consentErr: unknown) {
-            const message = consentErr instanceof Error ? consentErr.message : String(consentErr);
-            console.warn(`[ONBOARDING] Consent log failed (non-fatal): ${message}`);
-        }
-
-        // ── Save UTM parameters to users table ─────────────────────
-        const utmSource = body.utm_source || null;
-        const utmMedium = body.utm_medium || null;
-        const utmCampaign = body.utm_campaign || null;
-        const utmTerm = body.utm_term || null;
-        const utmContent = body.utm_content || null;
-
-        if (utmSource || utmMedium || utmCampaign || utmTerm || utmContent) {
+        // Database commit is authoritative. A stale Clerk token or an unavailable
+        // integration must never turn a saved profile into a failed submission.
+        after(async () => {
             try {
-                await query(
-                    `UPDATE users SET
-                        utm_source = COALESCE(utm_source, $2),
-                        utm_medium = COALESCE(utm_medium, $3),
-                        utm_campaign = COALESCE(utm_campaign, $4),
-                        utm_term = COALESCE(utm_term, $5),
-                        utm_content = COALESCE(utm_content, $6),
-                        updated_at = NOW()
-                     WHERE clerk_id = $1`,
-                    [userId, utmSource, utmMedium, utmCampaign, utmTerm, utmContent]
-                );
-                console.log(`[ONBOARDING] UTM saved: src=${utmSource}, med=${utmMedium}, camp=${utmCampaign}`);
-            } catch (utmErr: unknown) {
-                const message = utmErr instanceof Error ? utmErr.message : String(utmErr);
-                console.warn(`[ONBOARDING] UTM save failed (non-fatal): ${message}`);
-            }
-        }
+                await (await clerkClient()).users.updateUserMetadata(userId, {
+                    publicMetadata: {
+                        onboarding_completed: true,
+                        ...(resolvedPhone ? { phone: resolvedPhone } : {}),
+                    },
+                }).catch(error => console.error("[ONBOARDING] Clerk metadata sync failed:", error));
 
-        await (await clerkClient()).users.updateUser(userId, {
-            firstName: body.firstName,
-            lastName: body.lastName,
-            publicMetadata: {
-                onboarding_completed: true,
-                ...(resolvedPhone ? { phone: resolvedPhone } : {}),
-            },
-        });
-
-        // ── Fetch FULL profile ─────────────────────────────
-        const fullUser = await getFullUserProfile(userId);
-
-        // ── Resolve real email (phone-first users have dummy @phone.energdive.com) ──
-        const dbEmailIsDummy = fullUser.email?.endsWith('@phone.energdive.com');
-        let syncEmail = fullUser.email;
-
-        if (dbEmailIsDummy) {
-            // Try body.email first (the real email user typed in onboarding form)
-            // Then try Clerk's current primary email (verify-second may have replaced dummy)
-            const bodyEmail = body.email?.trim();
-            if (bodyEmail && !bodyEmail.endsWith('@phone.energdive.com')) {
-                syncEmail = bodyEmail;
-            } else {
+                // ── Log consent (DPDP compliance) ───────────────────────────
+                const clientIp = extractIpAddress(req);
+                const dataSource = resolveDataSource("website");
+                const consentTimestamp = body.consentTimestamp || null;
                 try {
-                    const clerkUser = await (await clerkClient()).users.getUser(userId);
-                    const clerkEmail = clerkUser.primaryEmailAddress?.emailAddress;
-                    if (clerkEmail && !clerkEmail.endsWith('@phone.energdive.com')) {
-                        syncEmail = clerkEmail;
+                    await logConsent({
+                        userId: dbUserId,
+                        email: body.email,
+                        source: dataSource,
+                        ipAddress: clientIp,
+                        consentPurpose: "registration",
+                        metadata: {
+                            clerkId: userId,
+                            consentTimestamp,
+                            utm_source: body.utm_source || null,
+                            utm_campaign: body.utm_campaign || null,
+                        },
+                    });
+                    await updateUserConsentFields(userId, "website", clientIp, consentTimestamp);
+                    console.log(`[ONBOARDING] Consent logged for: ${body.email}, consent at: ${consentTimestamp}`);
+                } catch (consentErr: unknown) {
+                    const message = consentErr instanceof Error ? consentErr.message : String(consentErr);
+                    console.warn(`[ONBOARDING] Consent log failed (non-fatal): ${message}`);
+                }
+
+                // ── Save UTM parameters to users table ─────────────────────
+                const utmSource = body.utm_source || null;
+                const utmMedium = body.utm_medium || null;
+                const utmCampaign = body.utm_campaign || null;
+                const utmTerm = body.utm_term || null;
+                const utmContent = body.utm_content || null;
+
+                if (utmSource || utmMedium || utmCampaign || utmTerm || utmContent) {
+                    try {
+                        await query(
+                            `UPDATE users SET
+                                utm_source = COALESCE(utm_source, $2),
+                                utm_medium = COALESCE(utm_medium, $3),
+                                utm_campaign = COALESCE(utm_campaign, $4),
+                                utm_term = COALESCE(utm_term, $5),
+                                utm_content = COALESCE(utm_content, $6),
+                                updated_at = NOW()
+                             WHERE clerk_id = $1`,
+                            [userId, utmSource, utmMedium, utmCampaign, utmTerm, utmContent]
+                        );
+                        console.log(`[ONBOARDING] UTM saved: src=${utmSource}, med=${utmMedium}, camp=${utmCampaign}`);
+                    } catch (utmErr: unknown) {
+                        const message = utmErr instanceof Error ? utmErr.message : String(utmErr);
+                        console.warn(`[ONBOARDING] UTM save failed (non-fatal): ${message}`);
                     }
-                } catch { /* non-fatal */ }
-            }
-
-            // Update DB email from dummy → real
-            if (syncEmail !== fullUser.email) {
-                try {
-                    await query(
-                        `UPDATE users SET email = $2 WHERE clerk_id = $1`,
-                        [userId, syncEmail]
-                    );
-                    console.log(`[ONBOARDING] Replaced dummy email with real: ${syncEmail}`);
-                    fullUser.email = syncEmail; // update in-memory too
-                } catch { /* non-fatal */ }
-            }
-        }
-
-        const isDummyEmail = syncEmail?.endsWith('@phone.energdive.com');
-        const canSyncExternally = !isDummyEmail;
-
-
-        if (!canSyncExternally) {
-            console.warn(`[ONBOARDING] Skipping Brevo/Zoho sync — dummy email detected: ${syncEmail}`);
-        } else {
-            console.log(`[ONBOARDING] Syncing to external systems for: ${syncEmail}`);
-        }
-
-        // ── Send Welcome Email (only if real email) ────────────────
-        if (!isDummyEmail) {
-            try {
-                await sendWelcomeEmail(
-                    syncEmail,
-                    fullUser.first_name || body.firstName,
-                    fullUser.preferred_frequency || body.preferredFrequency,
-                    fullUser.preferred_formats || body.preferredFormats
-                );
-                console.log("✅ Welcome email sent to:", syncEmail);
-            } catch (emailErr) {
-                // Non-fatal — don't block onboarding if email fails
-                console.error("⚠️ Welcome email failed:", emailErr);
-            }
-        }
-
-        // ── Sync to Brevo → CRM (sequential, enriched) ─────────────
-        if (!isDummyEmail) {
-            try {
-                let membershipId = fullUser.membership_id as string | null | undefined;
-                if (!membershipId) {
-                    const membershipResult = await query(
-                        `SELECT membership_id FROM users WHERE id = $1 LIMIT 1`,
-                        [dbUserId]
-                    );
-                    membershipId = membershipResult.rows[0]?.membership_id || null;
                 }
 
-                if (membershipId) {
-                    const { token: accessToken } = await issueMagicToken(dbUserId);
-                    const primaryCommunity =
-                        fullUser.sub_communities?.[0] ||
-                        fullUser.communities?.[0] ||
-                        null;
-                    const memberName =
-                        `${fullUser.first_name || body.firstName || ""} ${fullUser.last_name || body.lastName || ""}`.trim() ||
-                        fullUser.first_name ||
-                        body.firstName ||
-                        "Member";
+                await (await clerkClient()).users.updateUser(userId, {
+                    firstName: body.firstName,
+                    lastName: body.lastName,
+                }).catch(error => console.error("[ONBOARDING] Clerk name sync failed:", error));
 
-                    await sendMembershipWelcomeCardEmail(
-                        syncEmail,
-                        memberName,
-                        membershipId,
-                        {
-                            company: fullUser.organization || body.organization || null,
-                            community: primaryCommunity,
-                            joinedAt: fullUser.created_at || new Date(),
-                            accessToken,
-                        }
-                    );
-                    console.log("âœ… Membership card email sent to:", syncEmail);
+                // ── Fetch FULL profile ─────────────────────────────
+                const fullUser = await getFullUserProfile(userId);
+
+                // ── Resolve real email (phone-first users have dummy @phone.energdive.com) ──
+                const dbEmailIsDummy = fullUser.email?.endsWith('@phone.energdive.com');
+                let syncEmail = fullUser.email;
+
+                if (dbEmailIsDummy) {
+                    // Try body.email first (the real email user typed in onboarding form)
+                    // Then try Clerk's current primary email (verify-second may have replaced dummy)
+                    const bodyEmail = body.email?.trim();
+                    if (bodyEmail && !bodyEmail.endsWith('@phone.energdive.com')) {
+                        syncEmail = bodyEmail;
+                    } else {
+                        try {
+                            const clerkUser = await (await clerkClient()).users.getUser(userId);
+                            const clerkEmail = clerkUser.primaryEmailAddress?.emailAddress;
+                            if (clerkEmail && !clerkEmail.endsWith('@phone.energdive.com')) {
+                                syncEmail = clerkEmail;
+                            }
+                        } catch { /* non-fatal */ }
+                    }
+
+                    // Update DB email from dummy → real
+                    if (syncEmail !== fullUser.email) {
+                        try {
+                            await query(
+                                `UPDATE users SET email = $2 WHERE clerk_id = $1`,
+                                [userId, syncEmail]
+                            );
+                            console.log(`[ONBOARDING] Replaced dummy email with real: ${syncEmail}`);
+                            fullUser.email = syncEmail; // update in-memory too
+                        } catch { /* non-fatal */ }
+                    }
+                }
+
+                const isDummyEmail = syncEmail?.endsWith('@phone.energdive.com');
+                const canSyncExternally = !isDummyEmail;
+
+
+                if (!canSyncExternally) {
+                    console.warn(`[ONBOARDING] Skipping Brevo/Zoho sync — dummy email detected: ${syncEmail}`);
                 } else {
-                    console.warn("[ONBOARDING] Membership card email skipped: membership_id missing");
+                    console.log(`[ONBOARDING] Syncing to external systems for: ${syncEmail}`);
                 }
-            } catch (emailErr) {
-                console.error("âš ï¸ Membership card email failed:", emailErr);
-            }
-        }
 
-        if (canSyncExternally) {
-            try {
-                const syncResult = await syncEnrichedLead(
-                    { ...fullUser, email: syncEmail, clerk_id: userId },
-                    syncEmail,
-                    resolvedPhone,
-                    body,
-                    { utm_source: utmSource, utm_medium: utmMedium, utm_campaign: utmCampaign, utm_term: utmTerm, utm_content: utmContent }
-                );
-                console.log("✅ Sync orchestrator result:", syncResult);
-            } catch (syncErr: any) {
-                // Non-fatal — don't block onboarding if sync fails
-                console.error("⚠️ Sync orchestrator failed:", syncErr.message);
-            }
-        }
+                // ── Send Welcome Email (only if real email) ────────────────
+                if (!isDummyEmail) {
+                    try {
+                        await sendWelcomeEmail(
+                            syncEmail,
+                            fullUser.first_name || body.firstName,
+                            fullUser.preferred_frequency || body.preferredFrequency,
+                            fullUser.preferred_formats || body.preferredFormats
+                        );
+                        console.log("✅ Welcome email sent to:", syncEmail);
+                    } catch (emailErr) {
+                        // Non-fatal — don't block onboarding if email fails
+                        console.error("⚠️ Welcome email failed:", emailErr);
+                    }
+                }
 
-        const distinctId = syncEmail || body.email;
-        getPostHogClient().capture({
-            distinctId,
-            event: "onboarding_completed",
-            properties: {
-                email: distinctId,
-                job_title: body.jobTitle || null,
-                organization: body.organization || null,
-                country: body.country || null,
-                community_count: body.communitySelections?.length || 0,
-                preferred_frequency: body.preferredFrequency || null,
-                utm_source: utmSource,
-                utm_medium: utmMedium,
-                utm_campaign: utmCampaign,
-            },
+                // ── Sync to Brevo → CRM (sequential, enriched) ─────────────
+                if (!isDummyEmail) {
+                    try {
+                        let membershipId = fullUser.membership_id as string | null | undefined;
+                        if (!membershipId) {
+                            const membershipResult = await query(
+                                `SELECT membership_id FROM users WHERE id = $1 LIMIT 1`,
+                                [dbUserId]
+                            );
+                            membershipId = membershipResult.rows[0]?.membership_id || null;
+                        }
+
+                        if (membershipId) {
+                            const { token: accessToken } = await issueMagicToken(dbUserId);
+                            const primaryCommunity =
+                                fullUser.sub_communities?.[0] ||
+                                fullUser.communities?.[0] ||
+                                null;
+                            const memberName =
+                                `${fullUser.first_name || body.firstName || ""} ${fullUser.last_name || body.lastName || ""}`.trim() ||
+                                fullUser.first_name ||
+                                body.firstName ||
+                                "Member";
+
+                            await sendMembershipWelcomeCardEmail(
+                                syncEmail,
+                                memberName,
+                                membershipId,
+                                {
+                                    company: fullUser.organization || body.organization || null,
+                                    community: primaryCommunity,
+                                    joinedAt: fullUser.created_at || new Date(),
+                                    accessToken,
+                                }
+                            );
+                            console.log("âœ… Membership card email sent to:", syncEmail);
+                        } else {
+                            console.warn("[ONBOARDING] Membership card email skipped: membership_id missing");
+                        }
+                    } catch (emailErr) {
+                        console.error("âš ï¸ Membership card email failed:", emailErr);
+                    }
+                }
+
+                if (canSyncExternally) {
+                    try {
+                        const syncResult = await syncEnrichedLead(
+                            { ...fullUser, email: syncEmail, clerk_id: userId },
+                            syncEmail,
+                            resolvedPhone,
+                            body,
+                            { utm_source: utmSource, utm_medium: utmMedium, utm_campaign: utmCampaign, utm_term: utmTerm, utm_content: utmContent }
+                        );
+                        console.log("✅ Sync orchestrator result:", syncResult);
+                    } catch (syncErr: unknown) {
+                        // Non-fatal — don't block onboarding if sync fails
+                        console.error("⚠️ Sync orchestrator failed:", syncErr instanceof Error ? syncErr.message : String(syncErr));
+                    }
+                }
+
+                const distinctId = syncEmail || body.email;
+                getPostHogClient().capture({
+                    distinctId,
+                    event: "onboarding_completed",
+                    properties: {
+                        email: distinctId,
+                        job_title: body.jobTitle || null,
+                        organization: body.organization || null,
+                        country: body.country || null,
+                        community_count: body.communitySelections?.length || 0,
+                        preferred_frequency: body.preferredFrequency || null,
+                        utm_source: utmSource,
+                        utm_medium: utmMedium,
+                        utm_campaign: utmCampaign,
+                    },
+                });
+
+                getPostHogClient().identify({
+                    distinctId,
+                    properties: {
+                        email: distinctId,
+                        first_name: body.firstName,
+                        last_name: body.lastName,
+                        job_title: body.jobTitle || null,
+                        organization: body.organization || null,
+                        country: body.country || null,
+                    },
+                });
+
+            } catch (error) {
+                console.error("[ONBOARDING] Post-save integrations failed; profile remains complete:", error);
+            }
         });
 
-        getPostHogClient().identify({
-            distinctId,
-            properties: {
-                email: distinctId,
-                first_name: body.firstName,
-                last_name: body.lastName,
-                job_title: body.jobTitle || null,
-                organization: body.organization || null,
-                country: body.country || null,
-            },
-        });
-
-        return NextResponse.json({ success: true, userId: dbUserId });
+        return NextResponse.json({ success: true, onboardingCompleted: true, userId: dbUserId });
     } catch (error) {
         console.error("[ONBOARDING_SUBMIT]", error);
         const message = error instanceof Error ? error.message : String(error);

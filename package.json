@@ -13,6 +13,7 @@
     "build": "next build",
     "start": "next start",
     "test:backstage-local": "tsx scripts/test-backstage-registration.ts",
+    "test:onboarding": "node scripts/test-onboarding-completion.cjs && node --test scripts/test-onboarding-modal.mjs",
     "sync:newsletter-brevo": "tsx scripts/sync-newsletter-letterbox-to-brevo.ts",
     "lint": "eslint"
   },

@@ -1,10 +1,11 @@
 "use client";
 
-import { useAuth } from "@clerk/nextjs";
+import { useAuth, useUser } from "@clerk/nextjs";
 import { usePathname } from "next/navigation";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
+import { hasCompletedOnboarding, rememberOnboardingCompletion } from "@/lib/onboarding-completion";
 import OnboardingWizard from "@/components/onboarding/wizard";
 import {
     DEFAULT_POST_AUTH_REDIRECT,
@@ -15,32 +16,19 @@ import {
 // Pages where the modal should NOT appear
 const EXCLUDED_PATHS = ["/auth", "/onboarding"];
 
-// sessionStorage key — persists across Clerk JWT refreshes & soft navigations
-const SESSION_KEY = "onboarding_modal_completed";
-
-function getSessionCompleted(): boolean {
-    try {
-        return typeof window !== "undefined" && sessionStorage.getItem(SESSION_KEY) === "1";
-    } catch {
-        return false;
-    }
-}
-
-function setSessionCompleted(): void {
-    try {
-        if (typeof window !== "undefined") sessionStorage.setItem(SESSION_KEY, "1");
-    } catch { /* ignore */ }
-}
-
 export default function OnboardingModal() {
-    const { isLoaded, isSignedIn } = useAuth();
+    const { isLoaded, isSignedIn, userId } = useAuth();
+    const { user, isLoaded: userLoaded } = useUser();
+    const completedInClerk = user?.publicMetadata?.onboarding_completed === true;
+    const wizardStartedFor = useRef<string | null>(null);
     const pathname = usePathname();
-    const [showModal, setShowModal] = useState(false);
+    const [modalUserId, setModalUserId] = useState<string | null>(null);
     const [checkedPathname, setCheckedPathname] = useState<string | null>(null);
     const [returnTo, setReturnTo] = useState(DEFAULT_POST_AUTH_REDIRECT);
-    // hasCompleted: starts from sessionStorage so it survives page reloads
-    const [hasCompleted, setHasCompleted] = useState(() => getSessionCompleted());
-    const checked = checkedPathname === pathname;
+    const [completedUserId, setCompletedUserId] = useState<string | null>(null);
+    const checkKey = `${userId}:${pathname}`;
+    const checked = checkedPathname === checkKey;
+    const hasCompleted = Boolean(userId && completedUserId === userId);
 
     // Check if the current path is excluded
     const isExcluded = EXCLUDED_PATHS.some(
@@ -49,37 +37,51 @@ export default function OnboardingModal() {
 
     useEffect(() => {
         // If already completed (from sessionStorage), never show again this session
-        if (!isLoaded || !isSignedIn || isExcluded || checked || hasCompleted) return;
+        if (!isLoaded || !userLoaded || !isSignedIn || !userId || isExcluded || checked || hasCompleted) return;
+        // Once opened, the wizard owns its success screen until Continue is clicked.
+        if (wizardStartedFor.current === userId) return;
+        const checkingUserId = userId;
 
         let cancelled = false;
 
         async function checkOnboardingStatus() {
             try {
-                const res = await fetch("/api/onboarding/status");
+                if (hasCompletedOnboarding(checkingUserId) || completedInClerk) {
+                    setCompletedUserId(checkingUserId);
+                    return;
+                }
+
+                // Email/OTP verification is enough to start an incomplete profile.
+                // Reconcile saved completion in the background; an unavailable status
+                // service must not silently suppress the joining form.
+                const target = getSafeRedirectFromClient();
+                const currentTarget = typeof window !== "undefined"
+                    ? getSafeRedirectPath(`${window.location.pathname}${window.location.search}${window.location.hash}`)
+                    : DEFAULT_POST_AUTH_REDIRECT;
+                setReturnTo(target !== DEFAULT_POST_AUTH_REDIRECT ? target : currentTarget);
+                wizardStartedFor.current = checkingUserId;
+                setModalUserId(checkingUserId);
+
+                const res = await fetch("/api/onboarding/status", { cache: "no-store" });
                 if (!res.ok) {
-                    setCheckedPathname(pathname);
+                    if (!cancelled) setCheckedPathname(checkKey);
                     return;
                 }
                 const data = await res.json();
                 if (!cancelled) {
-                    setCheckedPathname(pathname);
-                    if (data.signedIn && data.onboardingCompleted) {
+                    setCheckedPathname(checkKey);
+                    if (data.signedIn && data.onboardingCompleted === true && !hasCompletedOnboarding(checkingUserId)) {
                         // API says complete — save to sessionStorage so we never check again
-                        setSessionCompleted();
-                        setHasCompleted(true);
-                    } else if (data.signedIn && !data.onboardingCompleted) {
-                        const target = getSafeRedirectFromClient();
-                        const currentTarget = typeof window !== "undefined"
-                            ? getSafeRedirectPath(`${window.location.pathname}${window.location.search}${window.location.hash}`)
-                            : DEFAULT_POST_AUTH_REDIRECT;
-                        setReturnTo(target !== DEFAULT_POST_AUTH_REDIRECT ? target : currentTarget);
-                        setShowModal(true);
+                        rememberOnboardingCompletion(checkingUserId);
+                        setCompletedUserId(checkingUserId);
+                        setModalUserId(null);
+                        wizardStartedFor.current = null;
                     }
                 }
             } catch (err) {
-                console.error("[OnboardingModal] Status check failed:", err);
+                console.warn("[OnboardingModal] Status check unavailable; profile form remains open:", err);
                 if (!cancelled) {
-                    setCheckedPathname(pathname);
+                    setCheckedPathname(checkKey);
                 }
             }
         }
@@ -89,18 +91,19 @@ export default function OnboardingModal() {
         return () => {
             cancelled = true;
         };
-    }, [isLoaded, isSignedIn, isExcluded, checked, pathname, hasCompleted]);
+    }, [isLoaded, userLoaded, isSignedIn, userId, isExcluded, checked, pathname, checkKey, hasCompleted, completedInClerk]);
 
     const handleComplete = useCallback(() => {
         // Persist completion to sessionStorage — survives Clerk JWT refreshes & page reloads
-        setSessionCompleted();
-        setHasCompleted(true);
-        setShowModal(false);
-    }, []);
+        if (userId) rememberOnboardingCompletion(userId);
+        setCompletedUserId(userId ?? null);
+        setModalUserId(null);
+        wizardStartedFor.current = null;
+    }, [userId]);
 
     return (
         <AnimatePresence>
-            {showModal && (
+            {isSignedIn && !isExcluded && !hasCompleted && modalUserId === userId && (
                 <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
@@ -113,10 +116,13 @@ export default function OnboardingModal() {
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.95, y: 20 }}
                         transition={{ type: "spring", duration: 0.45, bounce: 0.15 }}
+                        role="dialog"
+                        aria-modal="true"
+                        aria-label="Complete your ENERGClub profile"
                         className="relative w-full max-w-3xl mx-2.5 my-3 sm:mx-4 sm:my-10"
                     >
                         {/* Modal Card */}
-                        <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
+                        <div className="bg-white rounded-2xl shadow-2xl overflow-clip">
                             {/* Logo */}
                             <div className="flex justify-center px-4 pt-4 pb-1 sm:px-6 sm:pt-5 sm:pb-2">
                                 <Image
@@ -131,7 +137,7 @@ export default function OnboardingModal() {
 
                             {/* Wizard Form */}
                             <div className="px-0">
-                                <OnboardingWizard returnTo={returnTo} mode="modal" onComplete={handleComplete} />
+                                <OnboardingWizard key={userId} returnTo={returnTo} mode="modal" onComplete={handleComplete} />
                             </div>
                         </div>
                     </motion.div>

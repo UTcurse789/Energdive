@@ -9,9 +9,9 @@ import DotGrid from "@/components/DotGrid";
 import { usePostHog } from "@posthog/react";
 import {
     DEFAULT_POST_AUTH_REDIRECT,
-    POST_AUTH_REDIRECT_COOKIE,
-    POST_AUTH_REDIRECT_STORAGE_KEY,
+    getSafeRedirectFromClient,
     getSafeRedirectPath,
+    getSsoCallbackUrl,
     persistPostAuthRedirect,
 } from "@/lib/post-auth-redirect";
 
@@ -101,10 +101,9 @@ export default function UnifiedAuthPage() {
     const resolvePostAuthRedirect = useCallback(
         () => {
             const fromUrl = getBrowserRedirectParam() ?? searchParams.get("redirect_url");
-            const fromStorage = typeof window !== "undefined"
-                ? sessionStorage.getItem(POST_AUTH_REDIRECT_STORAGE_KEY)
-                : null;
-            return getSafeRedirectPath(fromUrl ?? fromStorage);
+            return fromUrl !== null
+                ? getSafeRedirectPath(fromUrl)
+                : getSafeRedirectFromClient();
         },
         [searchParams]
     );
@@ -118,8 +117,7 @@ export default function UnifiedAuthPage() {
 
         // Persist to sessionStorage and a regular cookie so the server can
         // recover the intended return path if Clerk lands on /dashboard first.
-        sessionStorage.setItem(POST_AUTH_REDIRECT_STORAGE_KEY, resolved);
-        document.cookie = `${POST_AUTH_REDIRECT_COOKIE}=${encodeURIComponent(resolved)}; path=/; max-age=86400; SameSite=Lax`;
+        persistPostAuthRedirect(resolved);
         setMounted(true);
     }, [resolvePostAuthRedirect]);
 
@@ -443,10 +441,11 @@ export default function UnifiedAuthPage() {
         if (posthog) posthog.capture('login_clicked', { timestamp: new Date().toISOString(), path: window.location.pathname });
         try {
             const target = persistPostAuthRedirect(resolveFinalAuthRedirect());
+            const callbackUrl = getSsoCallbackUrl(target);
             await signIn!.authenticateWithRedirect({
                 strategy: "oauth_google",
-                redirectUrl: "/auth/sso-callback",
-                redirectUrlComplete: "/auth/sso-callback",
+                redirectUrl: callbackUrl,
+                redirectUrlComplete: callbackUrl,
             });
         } catch {
             setError("Google sign-in failed. Please try again.");
@@ -459,10 +458,11 @@ export default function UnifiedAuthPage() {
         if (posthog) posthog.capture('login_clicked', { timestamp: new Date().toISOString(), path: window.location.pathname });
         try {
             const target = persistPostAuthRedirect(resolveFinalAuthRedirect());
+            const callbackUrl = getSsoCallbackUrl(target);
             await signIn!.authenticateWithRedirect({
                 strategy: "oauth_linkedin_oidc",
-                redirectUrl: "/auth/sso-callback",
-                redirectUrlComplete: "/auth/sso-callback",
+                redirectUrl: callbackUrl,
+                redirectUrlComplete: callbackUrl,
             });
         } catch {
             setError("LinkedIn sign-in failed. Please try again.");

@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import JoiningSuccess from "./joining-success";
+import { rememberOnboardingCompletion } from "@/lib/onboarding-completion";
 import { useUser } from "@clerk/nextjs";
 import { useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
@@ -79,7 +81,7 @@ const onboardingSchema = z.object({
     firstName: z.string().min(2, "First name is required"),
     lastName: z.string().min(2, "Last name is required"),
     phone: z.string().optional(),
-    email: z.string().optional(),
+    email: z.email("Please enter a valid email address"),
     country: z.string().min(2, "Country is required"),
     state: z.string().min(2, "State / Region is required"),
     jobTitle: z.string().min(2, "Job title is required"),
@@ -108,11 +110,16 @@ interface OnboardingWizardProps {
 export default function OnboardingWizard({ returnTo = "/", mode = "page", onComplete }: OnboardingWizardProps) {
     const { user } = useUser();
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [completedRedirect, setCompletedRedirect] = useState<string | null>(null);
+    const [submitError, setSubmitError] = useState<string | null>(null);
+    const submittingRef = useRef(false);
 
     /* Taxonomy state */
     const [communities, setCommunities] = useState<Community[]>([]);
     const [industries, setIndustries] = useState<Industry[]>([]);
     const [loading, setLoading] = useState(true);
+    const [taxonomyAttempt, setTaxonomyAttempt] = useState(0);
+    const [taxonomyError, setTaxonomyError] = useState(false);
 
     /* Selection state (not directly in RHF for single select dropdowns) */
     const [selectedCommunityId, setSelectedCommunityId] = useState<number | null>(null);
@@ -221,7 +228,7 @@ export default function OnboardingWizard({ returnTo = "/", mode = "page", onComp
         const now = new Date();
         const istTime = new Date(now.getTime() + 330 * 60000);
         const istString = istTime.toISOString().replace("Z", "+05:30");
-        localStorage.setItem("consent_timestamp", istString);
+        try { localStorage.setItem("consent_timestamp", istString); } catch { /* optional */ }
     }, []);
 
     /* ── Fetch IP geolocation for country + state ────────────── */
@@ -271,23 +278,36 @@ export default function OnboardingWizard({ returnTo = "/", mode = "page", onComp
 
     /* ── Fetch taxonomy data (communities + industries) ──────── */
     useEffect(() => {
+        const controller = new AbortController();
         async function loadTaxonomy() {
+            setLoading(true);
+            setTaxonomyError(false);
             try {
                 const [communityRes, industryRes] = await Promise.all([
-                    fetch("/api/master/communities"),
-                    fetch("/api/master/industries"),
+                    fetch("/api/master/communities", { signal: controller.signal }),
+                    fetch("/api/master/industries", { signal: controller.signal }),
                 ]);
                 if (!communityRes.ok || !industryRes.ok) throw new Error("API error");
-                setCommunities(await communityRes.json());
-                setIndustries(await industryRes.json());
+                const [communityData, industryData] = await Promise.all([communityRes.json(), industryRes.json()]);
+                if (!Array.isArray(communityData) || !communityData.length || !Array.isArray(industryData) || !industryData.length) {
+                    throw new Error("Profile options are unavailable");
+                }
+                if (!controller.signal.aborted) {
+                    setCommunities(communityData);
+                    setIndustries(industryData);
+                }
             } catch (err) {
-                console.error("Taxonomy load error:", err);
+                if (!controller.signal.aborted) {
+                    console.error("Taxonomy load error:", err);
+                    setTaxonomyError(true);
+                }
             } finally {
-                setLoading(false);
+                if (!controller.signal.aborted) setLoading(false);
             }
         }
         loadTaxonomy();
-    }, []);
+        return () => controller.abort();
+    }, [taxonomyAttempt]);
 
     /* ── Helpers: sync community selections → RHF ────────────── */
     const handleCommunityChange = (communityId: number | null) => {
@@ -354,58 +374,52 @@ export default function OnboardingWizard({ returnTo = "/", mode = "page", onComp
 
     /* ── Submit handler ──────────────────────────────────────── */
     const onFormSubmit = async (data: OnboardingFormData) => {
+        if (submittingRef.current) return;
+        submittingRef.current = true;
         setIsSubmitting(true);
-
-        const utmData = {
-            utm_source: localStorage.getItem("utm_source"),
-            utm_medium: localStorage.getItem("utm_medium"),
-            utm_campaign: localStorage.getItem("utm_campaign"),
-            utm_term: localStorage.getItem("utm_term"),
-            utm_content: localStorage.getItem("utm_content"),
-        };
-
-        // Use form email if provided, otherwise Clerk email
-        const emailToSubmit = data.email?.trim() || primaryEmail;
-
-        // Combine dial code + phone number
-        const rawPhone = data.phone?.trim() || "";
-        const fullPhone = rawPhone ? `${dialCode}${rawPhone.replace(/^0+/, '')}` : "";
-
-        const completeData = {
-            ...data,
-            ...utmData,
-            phone: fullPhone,
-            email: emailToSubmit,
-            consentTimestamp: localStorage.getItem("consent_timestamp"),
-        };
+        setSubmitError(null);
 
         try {
+            const readLocal = (key: string) => {
+                try { return localStorage.getItem(key); } catch { return null; }
+            };
+            const utmData = {
+                utm_source: readLocal("utm_source"),
+                utm_medium: readLocal("utm_medium"),
+                utm_campaign: readLocal("utm_campaign"),
+                utm_term: readLocal("utm_term"),
+                utm_content: readLocal("utm_content"),
+            };
+
+            // Use form email if provided, otherwise Clerk email
+            const emailToSubmit = data.email?.trim() || primaryEmail;
+
+            // Combine dial code + phone number
+            const rawPhone = data.phone?.trim() || "";
+            const fullPhone = rawPhone ? `${dialCode}${rawPhone.replace(/^0+/, '')}` : "";
+
+            const completeData = {
+                ...data,
+                ...utmData,
+                phone: fullPhone,
+                email: emailToSubmit,
+                consentTimestamp: readLocal("consent_timestamp"),
+            };
+
             const res = await fetch("/api/onboarding/submit", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(completeData),
             });
 
-            if (!res.ok) throw new Error("Failed to save profile");
-
-            // Removed frontend user?.update() and user?.reload() to prevent race conditions 
-            // with the backend clerkClient().users.updateUser() call which can invalidate the session.
-
-            // Read stored redirect before clearing
-            const storedRedirect = typeof window !== "undefined"
-                ? sessionStorage.getItem(POST_AUTH_REDIRECT_STORAGE_KEY)
-                : null;
-
-
-            if (mode === "modal" && onComplete) {
-                // In modal mode: just close the modal, do NOT redirect/reload the page.
-                // A page reload would cause the onboarding status API to re-check
-                // before Clerk's JWT is refreshed, making the form re-appear.
-                sessionStorage.removeItem(POST_AUTH_REDIRECT_STORAGE_KEY);
-                document.cookie = `${POST_AUTH_REDIRECT_COOKIE}=; path=/; max-age=0; SameSite=Lax`;
-                onComplete();
-                return;
+            const result = await res.json();
+            if (!res.ok || result.success !== true) {
+                throw new Error(result.error || "Failed to save profile. Please try again.");
             }
+            if (user) rememberOnboardingCompletion(user.id);
+
+            let storedRedirect: string | null = null;
+            try { storedRedirect = sessionStorage.getItem(POST_AUTH_REDIRECT_STORAGE_KEY); } catch { /* optional */ }
 
             let finalRedirect = getSafeRedirectPath(returnTo || "/");
             if (finalRedirect === "/") {
@@ -415,44 +429,29 @@ export default function OnboardingWizard({ returnTo = "/", mode = "page", onComp
                 }
             }
 
-            sessionStorage.removeItem(POST_AUTH_REDIRECT_STORAGE_KEY);
+            try { sessionStorage.removeItem(POST_AUTH_REDIRECT_STORAGE_KEY); } catch { /* optional */ }
             document.cookie = `${POST_AUTH_REDIRECT_COOKIE}=; path=/; max-age=0; SameSite=Lax`;
 
-            window.location.href = finalRedirect;
+            setCompletedRedirect(finalRedirect);
         } catch (error) {
             console.error("Onboarding error:", error);
-            alert("Something went wrong. Please try again.");
+            setSubmitError(error instanceof Error ? error.message : "Something went wrong. Please try again.");
+        } finally {
+            submittingRef.current = false;
             setIsSubmitting(false);
         }
     };
 
-    /* ── Loading state ───────────────────────────────────────── */
-    if (loading) {
-        return (
-            <div className="w-full max-w-3xl bg-white rounded-2xl shadow-xl overflow-hidden border border-zinc-100">
-                <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="flex items-center justify-center py-20"
-                >
-                    <Loader2 className="w-8 h-8 animate-spin text-[#0AB996]" />
-                    <span className="ml-3 text-zinc-500">Loading…</span>
-                </motion.div>
-            </div>
-        );
-    }
-
-    if (!communities.length || !industries.length) {
-        return (
-            <div className="w-full max-w-3xl bg-white rounded-2xl shadow-xl overflow-hidden border border-zinc-100 text-center py-20 text-zinc-500">
-                <p>Failed to load data. Please refresh the page.</p>
-            </div>
-        );
+    if (completedRedirect !== null) {
+        return <JoiningSuccess onContinue={() => {
+            if (mode === "modal" && onComplete) onComplete();
+            window.location.assign(completedRedirect);
+        }} />;
     }
 
     /* ── Render ───────────────────────────────────────────────── */
     return (
-        <div className={mode === "modal" ? "w-full bg-white overflow-hidden" : "w-full max-w-3xl bg-white rounded-2xl shadow-xl overflow-hidden border border-zinc-100"}>
+        <div className={mode === "modal" ? "w-full bg-white overflow-clip" : "w-full max-w-3xl bg-white rounded-2xl shadow-xl overflow-clip border border-zinc-100"}>
             {/* Progress Bar – always full */}
             <div className="h-1.5 bg-zinc-100 w-full">
                 <div className="h-full bg-[#0AB996] w-full" />
@@ -460,16 +459,21 @@ export default function OnboardingWizard({ returnTo = "/", mode = "page", onComp
 
             <form onSubmit={handleSubmit(onFormSubmit)} className={mode === "modal" ? "p-3.5 sm:p-5 md:p-6 space-y-3.5 sm:space-y-4" : "p-4 sm:p-8 md:p-12 space-y-6 sm:space-y-8"}>
                 {/* ── Header ── */}
-                {mode !== "modal" && (
                 <div className="space-y-1">
                     <h2 className="text-2xl md:text-3xl font-bold text-zinc-900 tracking-tight">
-                        Hey! Let us Know You well
+                        Kindly complete your profile
                     </h2>
                     <p className="text-sm md:text-base text-zinc-500">
-                        Confirm your identity and professional details.
+                        Fill in the required details below, then select Submit profile to join ENERGClub.
                     </p>
+                    <p className="text-sm font-medium text-zinc-600">Fields marked * are required.</p>
                 </div>
-                )}
+
+                {loading && <p role="status" className="flex items-center gap-2 text-sm text-zinc-600"><Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />Loading community and industry options. You can fill in your details now.</p>}
+                {taxonomyError && <div role="alert" className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+                    <p>Community and industry options could not load. Your entered details are kept. Please retry before submitting.</p>
+                    <button type="button" onClick={() => setTaxonomyAttempt(attempt => attempt + 1)} className="mt-2 min-h-11 rounded-lg border border-amber-300 px-4 font-semibold focus-visible:outline-2 focus-visible:outline-offset-2">Retry loading options</button>
+                </div>}
 
                 {/* ════════════════════════════════════════════════════════ */}
                 {/*  Section 1 – Name & Contact Details                    */}
@@ -482,7 +486,7 @@ export default function OnboardingWizard({ returnTo = "/", mode = "page", onComp
                             <label className="block text-xs sm:text-sm font-medium text-zinc-700 truncate">Salutation</label>
                             <select
                                 {...register("salutation")}
-                                className={`${mode === "modal" ? "h-9 sm:h-10" : "h-10 sm:h-12"} w-full rounded-lg border border-zinc-200 bg-white px-2.5 sm:px-3 text-xs sm:text-sm outline-none transition-all focus:border-[#0AB996] focus:ring-2 focus:ring-[#0AB996]/20`}
+                                className={`${mode === "modal" ? "h-11 sm:h-12" : "h-10 sm:h-12"} w-full rounded-lg border border-zinc-200 bg-white px-2.5 sm:px-3 text-xs sm:text-sm outline-none transition-all focus:border-[#0AB996] focus:ring-2 focus:ring-[#0AB996]/20`}
                             >
                                 <option value="">Select</option>
                                 {SALUTATION_OPTIONS.map((s) => (
@@ -491,10 +495,12 @@ export default function OnboardingWizard({ returnTo = "/", mode = "page", onComp
                             </select>
                         </div>
                         <div className="min-w-0 space-y-1">
-                            <label className="block text-xs sm:text-sm font-medium text-zinc-700 truncate">First Name</label>
+                            <label htmlFor="onboarding-firstName" className="block text-xs sm:text-sm font-medium text-zinc-700 truncate">First Name *</label>
                             <input
                                 {...register("firstName")}
-                                className={`${mode === "modal" ? "h-9 sm:h-10" : "h-10 sm:h-12"} w-full rounded-lg border border-zinc-200 bg-white px-2.5 sm:px-4 text-xs sm:text-sm outline-none transition-all focus:border-[#0AB996] focus:ring-2 focus:ring-[#0AB996]/20`}
+                                id="onboarding-firstName"
+                                aria-required="true"
+                                className={`${mode === "modal" ? "h-11 sm:h-12" : "h-10 sm:h-12"} w-full rounded-lg border border-zinc-200 bg-white px-2.5 sm:px-4 text-xs sm:text-sm outline-none transition-all focus:border-[#0AB996] focus:ring-2 focus:ring-[#0AB996]/20`}
                                 placeholder="First name"
                             />
                             {errors.firstName && <p className="text-red-500 text-[10px] sm:text-xs">{errors.firstName.message}</p>}
@@ -503,10 +509,12 @@ export default function OnboardingWizard({ returnTo = "/", mode = "page", onComp
 
                     {/* Row 2: Last Name (100%) */}
                     <div className="min-w-0 space-y-1">
-                        <label className="block text-xs sm:text-sm font-medium text-zinc-700 truncate">Last Name</label>
+                        <label htmlFor="onboarding-lastName" className="block text-xs sm:text-sm font-medium text-zinc-700 truncate">Last Name *</label>
                         <input
                             {...register("lastName")}
-                            className={`${mode === "modal" ? "h-9 sm:h-10" : "h-10 sm:h-12"} w-full rounded-lg border border-zinc-200 bg-white px-2.5 sm:px-4 text-xs sm:text-sm outline-none transition-all focus:border-[#0AB996] focus:ring-2 focus:ring-[#0AB996]/20`}
+                            id="onboarding-lastName"
+                            aria-required="true"
+                            className={`${mode === "modal" ? "h-11 sm:h-12" : "h-10 sm:h-12"} w-full rounded-lg border border-zinc-200 bg-white px-2.5 sm:px-4 text-xs sm:text-sm outline-none transition-all focus:border-[#0AB996] focus:ring-2 focus:ring-[#0AB996]/20`}
                             placeholder="Last name"
                         />
                         {errors.lastName && <p className="text-red-500 text-[10px] sm:text-xs">{errors.lastName.message}</p>}
@@ -514,18 +522,21 @@ export default function OnboardingWizard({ returnTo = "/", mode = "page", onComp
 
                     {/* Row 3: Email (100%) */}
                     <div className="min-w-0 space-y-1">
-                        <label className="block text-xs sm:text-sm font-medium text-zinc-700 truncate">Email</label>
+                        <label htmlFor="onboarding-email" className="block text-xs sm:text-sm font-medium text-zinc-700 truncate">Email *</label>
                         <input
                             {...register("email")}
+                            id="onboarding-email"
+                            aria-required="true"
                             type="email"
                             readOnly={hasRealEmail}
-                            className={`${mode === "modal" ? "h-9 sm:h-10" : "h-10 sm:h-12"} w-full rounded-lg border border-zinc-200 px-2.5 sm:px-4 text-xs sm:text-sm outline-none transition-all focus:border-[#0AB996] focus:ring-2 focus:ring-[#0AB996]/20 ${
+                            className={`${mode === "modal" ? "h-11 sm:h-12" : "h-10 sm:h-12"} w-full rounded-lg border border-zinc-200 px-2.5 sm:px-4 text-xs sm:text-sm outline-none transition-all focus:border-[#0AB996] focus:ring-2 focus:ring-[#0AB996]/20 ${
                                 hasRealEmail
                                     ? "bg-zinc-100 text-zinc-500 cursor-not-allowed"
                                     : "bg-white"
                             }`}
                             placeholder="your@email.com"
                         />
+                        {errors.email && <p className="text-red-500 text-xs">{errors.email.message}</p>}
                     </div>
                 </div>
 
@@ -539,7 +550,7 @@ export default function OnboardingWizard({ returnTo = "/", mode = "page", onComp
                             value={dialCode}
                             onChange={(e) => setDialCode(e.target.value)}
                             aria-label="Country dial code"
-                            className={`${mode === "modal" ? "h-9 sm:h-10" : "h-10 sm:h-12"} w-[78px] sm:w-[90px] shrink-0 rounded-l-lg border border-r-0 border-zinc-200 bg-zinc-50 px-2 text-xs sm:text-sm font-medium text-zinc-700 outline-none transition-all focus:border-[#0AB996] focus:ring-2 focus:ring-[#0AB996]/20`}
+                            className={`${mode === "modal" ? "h-11 sm:h-12" : "h-10 sm:h-12"} w-[78px] sm:w-[90px] shrink-0 rounded-l-lg border border-r-0 border-zinc-200 bg-zinc-50 px-2 text-xs sm:text-sm font-medium text-zinc-700 outline-none transition-all focus:border-[#0AB996] focus:ring-2 focus:ring-[#0AB996]/20`}
                         >
                             {COUNTRIES.map((c) => (
                                 <option key={c.code} value={c.dial_code}>
@@ -550,8 +561,8 @@ export default function OnboardingWizard({ returnTo = "/", mode = "page", onComp
                         <input
                             {...register("phone")}
                             type="tel"
-                            className={`${mode === "modal" ? "h-9 sm:h-10" : "h-10 sm:h-12"} w-full rounded-r-lg border border-zinc-200 bg-white px-3 sm:px-4 text-xs sm:text-sm outline-none transition-all focus:border-[#0AB996] focus:ring-2 focus:ring-[#0AB996]/20`}
-                            placeholder="9876543210"
+                            className={`${mode === "modal" ? "h-11 sm:h-12" : "h-10 sm:h-12"} w-full rounded-r-lg border border-zinc-200 bg-white px-3 sm:px-4 text-xs sm:text-sm outline-none transition-all focus:border-[#0AB996] focus:ring-2 focus:ring-[#0AB996]/20`}
+                            placeholder="9000000000"
                         />
                     </div>
                 </div>
@@ -561,10 +572,12 @@ export default function OnboardingWizard({ returnTo = "/", mode = "page", onComp
                 {/* ════════════════════════════════════════════════════════ */}
                 <div className="grid grid-cols-2 gap-2 sm:gap-3">
                     <div className="min-w-0 space-y-1">
-                        <label className="block text-xs sm:text-sm font-medium text-zinc-700 truncate">Country</label>
+                        <label htmlFor="onboarding-country" className="block text-xs sm:text-sm font-medium text-zinc-700 truncate">Country *</label>
                         <select
                             {...register("country")}
-                            className={`${mode === "modal" ? "h-9 sm:h-10" : "h-10 sm:h-12"} w-full rounded-lg border border-zinc-200 bg-white px-2.5 sm:px-4 text-xs sm:text-sm outline-none transition-all focus:ring-2 focus:ring-[#0AB996]`}
+                            id="onboarding-country"
+                            aria-required="true"
+                            className={`${mode === "modal" ? "h-11 sm:h-12" : "h-10 sm:h-12"} w-full rounded-lg border border-zinc-200 bg-white px-2.5 sm:px-4 text-xs sm:text-sm outline-none transition-all focus:ring-2 focus:ring-[#0AB996]`}
                         >
                             {COUNTRIES.map((c) => (
                                 <option key={c.code} value={c.name}>{c.name}</option>
@@ -578,11 +591,13 @@ export default function OnboardingWizard({ returnTo = "/", mode = "page", onComp
                         {errors.country && <p className="text-red-500 text-[10px] sm:text-xs">{errors.country.message}</p>}
                     </div>
                     <div className="min-w-0 space-y-1">
-                        <label className="block text-xs sm:text-sm font-medium text-zinc-700 truncate">State / Region</label>
+                        <label htmlFor="onboarding-state" className="block text-xs sm:text-sm font-medium text-zinc-700 truncate">State / Region *</label>
                         {states.length > 0 ? (
                             <select
                                 {...register("state")}
-                                className={`${mode === "modal" ? "h-9 sm:h-10" : "h-10 sm:h-12"} w-full rounded-lg border border-zinc-200 bg-white px-2.5 sm:px-4 text-xs sm:text-sm outline-none transition-all focus:ring-2 focus:ring-[#0AB996]`}
+                                id="onboarding-state"
+                                aria-required="true"
+                                className={`${mode === "modal" ? "h-11 sm:h-12" : "h-10 sm:h-12"} w-full rounded-lg border border-zinc-200 bg-white px-2.5 sm:px-4 text-xs sm:text-sm outline-none transition-all focus:ring-2 focus:ring-[#0AB996]`}
                             >
                                 <option value="">Select state / region</option>
                                 {states.map((s) => (
@@ -592,7 +607,9 @@ export default function OnboardingWizard({ returnTo = "/", mode = "page", onComp
                         ) : (
                             <input
                                 {...register("state")}
-                                className={`${mode === "modal" ? "h-9 sm:h-10" : "h-10 sm:h-12"} w-full rounded-lg border border-zinc-200 px-2.5 sm:px-4 text-xs sm:text-sm outline-none transition-all focus:ring-2 focus:ring-[#0AB996]`}
+                                id="onboarding-state"
+                                aria-required="true"
+                                className={`${mode === "modal" ? "h-11 sm:h-12" : "h-10 sm:h-12"} w-full rounded-lg border border-zinc-200 px-2.5 sm:px-4 text-xs sm:text-sm outline-none transition-all focus:ring-2 focus:ring-[#0AB996]`}
                                 placeholder="State / region"
                             />
                         )}
@@ -605,19 +622,23 @@ export default function OnboardingWizard({ returnTo = "/", mode = "page", onComp
                 {/* ════════════════════════════════════════════════════════ */}
                 <div className="grid grid-cols-2 gap-2 sm:gap-3">
                     <div className="min-w-0 space-y-1">
-                        <label className="block text-xs sm:text-sm font-medium text-zinc-700 truncate">Job Title</label>
+                        <label htmlFor="onboarding-jobTitle" className="block text-xs sm:text-sm font-medium text-zinc-700 truncate">Job Title *</label>
                         <input
                             {...register("jobTitle")}
-                            className={`${mode === "modal" ? "h-9 sm:h-10" : "h-10 sm:h-12"} w-full rounded-lg border border-zinc-200 px-2.5 sm:px-4 text-xs sm:text-sm outline-none transition-all focus:border-transparent focus:ring-2 focus:ring-[#0AB996]`}
+                            id="onboarding-jobTitle"
+                            aria-required="true"
+                            className={`${mode === "modal" ? "h-11 sm:h-12" : "h-10 sm:h-12"} w-full rounded-lg border border-zinc-200 px-2.5 sm:px-4 text-xs sm:text-sm outline-none transition-all focus:border-transparent focus:ring-2 focus:ring-[#0AB996]`}
                             placeholder="e.g. Senior Analyst"
                         />
                         {errors.jobTitle && <p className="text-red-500 text-[10px] sm:text-xs">{errors.jobTitle.message}</p>}
                     </div>
                     <div className="min-w-0 space-y-1">
-                        <label className="block text-xs sm:text-sm font-medium text-zinc-700 truncate">Organisation</label>
+                        <label htmlFor="onboarding-organization" className="block text-xs sm:text-sm font-medium text-zinc-700 truncate">Organisation *</label>
                         <input
                             {...register("organization")}
-                            className={`${mode === "modal" ? "h-9 sm:h-10" : "h-10 sm:h-12"} w-full rounded-lg border border-zinc-200 px-2.5 sm:px-4 text-xs sm:text-sm outline-none transition-all focus:border-transparent focus:ring-2 focus:ring-[#0AB996]`}
+                            id="onboarding-organization"
+                            aria-required="true"
+                            className={`${mode === "modal" ? "h-11 sm:h-12" : "h-10 sm:h-12"} w-full rounded-lg border border-zinc-200 px-2.5 sm:px-4 text-xs sm:text-sm outline-none transition-all focus:border-transparent focus:ring-2 focus:ring-[#0AB996]`}
                             placeholder="Organisation name"
                         />
                         {errors.organization && <p className="text-red-500 text-[10px] sm:text-xs">{errors.organization.message}</p>}
@@ -644,7 +665,7 @@ export default function OnboardingWizard({ returnTo = "/", mode = "page", onComp
                 {/* Communities & Sub-communities Dropdowns (Parallel layout) */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
                     <div className="space-y-1">
-                        <label className="block text-xs sm:text-sm font-medium text-zinc-700">Community</label>
+                        <label className="block text-xs sm:text-sm font-medium text-zinc-700">Community *</label>
                         <div className="relative">
                             <select
                                 aria-label="Select a community"
@@ -653,7 +674,7 @@ export default function OnboardingWizard({ returnTo = "/", mode = "page", onComp
                                     const val = e.target.value;
                                     handleCommunityChange(val ? Number(val) : null);
                                 }}
-                                className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm border border-zinc-200 rounded-lg focus:ring-2 focus:ring-[#0AB996] focus:border-transparent outline-none transition-all bg-white appearance-none pr-10"
+                                className="min-h-11 w-full px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm border border-zinc-200 rounded-lg focus:ring-2 focus:ring-[#0AB996] focus:border-transparent outline-none transition-all bg-white appearance-none pr-10"
                             >
                                 <option value="">Select a community</option>
                                 {communities.map((c) => (
@@ -667,7 +688,7 @@ export default function OnboardingWizard({ returnTo = "/", mode = "page", onComp
                     </div>
 
                     <div className="space-y-1">
-                        <label className="block text-xs sm:text-sm font-medium text-zinc-700">Sub-community</label>
+                        <label className="block text-xs sm:text-sm font-medium text-zinc-700">Sub-community *</label>
                         <div className="relative">
                             <select
                                 aria-label="Select sub-community"
@@ -677,7 +698,7 @@ export default function OnboardingWizard({ returnTo = "/", mode = "page", onComp
                                     const val = e.target.value;
                                     handleSubCommunityChange(val ? Number(val) : null);
                                 }}
-                                className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm border border-zinc-200 rounded-lg focus:ring-2 focus:ring-[#0AB996] focus:border-transparent outline-none transition-all bg-white disabled:bg-zinc-100 disabled:text-zinc-400 appearance-none pr-10"
+                                className="min-h-11 w-full px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm border border-zinc-200 rounded-lg focus:ring-2 focus:ring-[#0AB996] focus:border-transparent outline-none transition-all bg-white disabled:bg-zinc-100 disabled:text-zinc-400 appearance-none pr-10"
                             >
                                 <option value="">Select sub-community</option>
                                 {currentSubCommunities.map((sub) => (
@@ -727,11 +748,13 @@ export default function OnboardingWizard({ returnTo = "/", mode = "page", onComp
                 {/* ════════════════════════════════════════════════════════ */}
                 <div className="grid grid-cols-2 gap-2 sm:gap-3">
                     <div className="space-y-1">
-                        <label className="block text-xs sm:text-sm font-medium text-zinc-700 truncate">Industry</label>
+                        <label htmlFor="onboarding-industry" className="block text-xs sm:text-sm font-medium text-zinc-700 truncate">Industry *</label>
                         <div className="relative">
                             <select
                                 {...industrySelectProps}
-                                className="w-full px-2.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm border border-zinc-200 rounded-lg focus:ring-2 focus:ring-[#0AB996] focus:border-transparent outline-none transition-all bg-white appearance-none pr-7 sm:pr-10 truncate"
+                                id="onboarding-industry"
+                                aria-required="true"
+                                className="min-h-11 w-full px-2.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm border border-zinc-200 rounded-lg focus:ring-2 focus:ring-[#0AB996] focus:border-transparent outline-none transition-all bg-white appearance-none pr-7 sm:pr-10 truncate"
                             >
                                 <option value={0}>Select industry</option>
                                 {industries.map((ind) => (
@@ -746,12 +769,14 @@ export default function OnboardingWizard({ returnTo = "/", mode = "page", onComp
                     </div>
 
                     <div className="space-y-1">
-                        <label className="block text-xs sm:text-sm font-medium text-zinc-700 truncate">Sub-Industry</label>
+                        <label htmlFor="onboarding-sub-industry" className="block text-xs sm:text-sm font-medium text-zinc-700 truncate">Sub-Industry *</label>
                         <div className="relative">
                             <select
                                 {...subIndustrySelectProps}
+                                id="onboarding-sub-industry"
+                                aria-required="true"
                                 disabled={!selectedIndustryId}
-                                className="w-full px-2.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm border border-zinc-200 rounded-lg focus:ring-2 focus:ring-[#0AB996] focus:border-transparent outline-none transition-all bg-white disabled:bg-zinc-100 disabled:text-zinc-400 appearance-none pr-7 sm:pr-10 truncate"
+                                className="min-h-11 w-full px-2.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm border border-zinc-200 rounded-lg focus:ring-2 focus:ring-[#0AB996] focus:border-transparent outline-none transition-all bg-white disabled:bg-zinc-100 disabled:text-zinc-400 appearance-none pr-7 sm:pr-10 truncate"
                             >
                                 <option value={0}>Select sub-industry</option>
                                 {currentSubIndustries.map((sub) => (
@@ -772,7 +797,7 @@ export default function OnboardingWizard({ returnTo = "/", mode = "page", onComp
                 <div className={mode === "modal" ? "grid gap-3 md:grid-cols-[0.8fr_1.2fr]" : "grid gap-4 md:grid-cols-[0.8fr_1.2fr]"}>
                     <div className="space-y-1.5 sm:space-y-2">
                         <label className="block text-xs sm:text-sm font-medium text-zinc-700">
-                            Frequency
+                            Frequency *
                         </label>
                         <div className="grid grid-cols-2 gap-2 sm:gap-3">
                             {FREQUENCIES.map((freq) => {
@@ -781,6 +806,7 @@ export default function OnboardingWizard({ returnTo = "/", mode = "page", onComp
                                     <button
                                         key={freq.value}
                                         type="button"
+                                        aria-pressed={isActive}
                                         onClick={() => selectFrequency(freq.value)}
                                         className={`relative px-3 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-semibold border-2 transition-all ${
                                             isActive
@@ -811,7 +837,7 @@ export default function OnboardingWizard({ returnTo = "/", mode = "page", onComp
 
                     <div className="space-y-1.5 sm:space-y-2">
                         <label className="block text-xs sm:text-sm font-medium text-zinc-700">
-                            Preferences
+                            Preferences *
                         </label>
                         <div className="flex flex-wrap gap-1.5 sm:gap-2">
                             {FORMATS.map((format) => {
@@ -820,6 +846,7 @@ export default function OnboardingWizard({ returnTo = "/", mode = "page", onComp
                                     <button
                                         key={format}
                                         type="button"
+                                        aria-pressed={isActive}
                                         onClick={() => toggleFormat(format)}
                                         className={`px-3 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-medium border transition-all flex items-center gap-1.5 ${
                                             isActive
@@ -853,9 +880,9 @@ export default function OnboardingWizard({ returnTo = "/", mode = "page", onComp
                                 const now = new Date();
                                 const istTime = new Date(now.getTime() + 330 * 60000);
                                 const istString = istTime.toISOString().replace("Z", "+05:30");
-                                localStorage.setItem("consent_timestamp", istString);
+                                try { localStorage.setItem("consent_timestamp", istString); } catch { /* optional */ }
                             } else {
-                                localStorage.removeItem("consent_timestamp");
+                                try { localStorage.removeItem("consent_timestamp"); } catch { /* optional */ }
                             }
                         }}
                         className="mt-0.5 border-zinc-300 data-[state=checked]:bg-[#0AB996] data-[state=checked]:border-[#0AB996]"
@@ -878,11 +905,13 @@ export default function OnboardingWizard({ returnTo = "/", mode = "page", onComp
                 {/* ════════════════════════════════════════════════════════ */}
                 {/*  Submit                                                */}
                 {/* ════════════════════════════════════════════════════════ */}
-                <div className={mode === "modal" ? "flex justify-end pt-4 border-t border-zinc-100" : "flex justify-end pt-6 border-t border-zinc-100"}>
+                {submitError && <p role="alert" className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{submitError}</p>}
+                {Object.keys(errors).length > 0 && <p role="alert" className="text-sm text-red-600">Please complete the required fields marked above before submitting.</p>}
+                <div className="sticky bottom-0 z-10 flex justify-end border-t border-zinc-200 bg-white py-3">
                     <button
                         type="submit"
-                        disabled={isSubmitting || !consentAccepted}
-                        className="px-8 py-2.5 bg-[#0AB996] text-white font-semibold rounded-lg shadow-lg shadow-[#0AB996]/20 hover:bg-[#099c82] transition-all active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed flex items-center gap-2"
+                        disabled={isSubmitting || !consentAccepted || loading || taxonomyError}
+                        className="min-h-12 w-full sm:w-auto justify-center px-8 py-2.5 bg-[#0AB996] text-white font-semibold rounded-lg shadow-lg shadow-[#0AB996]/20 hover:bg-[#099c82] transition-all active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed flex items-center gap-2"
                     >
                         {isSubmitting ? (
                             <>
@@ -890,7 +919,7 @@ export default function OnboardingWizard({ returnTo = "/", mode = "page", onComp
                                 Saving…
                             </>
                         ) : (
-                            "Complete Setup"
+                            "Submit profile"
                         )}
                     </button>
                 </div>

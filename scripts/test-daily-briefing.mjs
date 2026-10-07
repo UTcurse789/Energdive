@@ -36,7 +36,7 @@ function harness({ now = weekday, contents = [], recipients = [], contacts = [],
             sent.push(JSON.parse(options.body));
             return json({ messageId: "offline-test" });
         }
-        if (url.pathname === "/v3/contacts") return json({ contacts });
+        if (url.pathname === "/v3/contacts" || url.pathname === "/v3/contacts/lists/24/contacts") return json({ contacts });
         if (url.pathname === "/api/contents") return json({ data: contents });
         if (url.pathname === "/api/events") return json({ data: events });
         throw new Error(`Unexpected fetch in offline test: ${url}`);
@@ -136,7 +136,6 @@ test("fewer than two eligible stories skips all recipients without recording del
         [story(1), story(2, "2026-10-06T18:30:00Z")], // Tomorrow in Kolkata
         [story(1), { ...story(2), publishedAt: null, createdAt: weekday, Date: weekday }],
         [story(1), { ...story(2), publishedAt: "invalid" }],
-        [story(1), story(2, undefined, "Opinion"), story(3, undefined, "Articles")],
         [story(1), story(1)], // Duplicate records are one article
     ]) {
         const h = harness({
@@ -149,6 +148,61 @@ test("fewer than two eligible stories skips all recipients without recording del
         assert.equal(h.sent.length, 0);
         assert.equal(h.writes.length, 0, "Skipping must not mark subscribers as sent or create send logs");
     }
+});
+
+test("fresh editorial formats share the briefing with exactly one featured story", async () => {
+    const h = harness({
+        contents: [
+            story(1), story(2, undefined, "Opinion"), story(3, undefined, "Report"),
+            story(4, undefined, "Featured Stories"), story(5, undefined, "Featured Stories"),
+        ],
+        recipients: [recipient()],
+    });
+    const result = await h.load("lib/preference-digests").processPreferenceDigests();
+    assert.equal(result.sent, 1);
+    const keys = h.writes.find(({ sql }) => sql.includes("INSERT INTO content_digest_logs")).params[4];
+    assert.equal(keys.length, 4);
+    assert.equal(new Set(keys).size, 4);
+    assert.equal(keys.filter(key => ["content:4", "content:5"].includes(key)).length, 1);
+    assert.ok(keys.includes("content:1"));
+    assert.ok(keys.includes("content:2"));
+    assert.ok(keys.includes("content:3"));
+});
+
+test("the two-story gate counts fresh editorial content and excludes stale or future articles", async () => {
+    for (const [contents, expectedSent] of [
+        [[story(1), story(2, undefined, "Opinion"), story(3, undefined, "Articles")], 1],
+        [[story(1, undefined, "Opinion"), story(2, undefined, "Report")], 1],
+        [[story(1, undefined, "Opinion"), story(2, "2026-10-05T18:29:59Z", "Report")], 0],
+        [[story(1, undefined, "Opinion"), story(2, "2026-10-06T11:30:01Z", "Articles")], 0],
+    ]) {
+        const h = harness({ contents, recipients: [recipient()] });
+        const result = await h.load("lib/preference-digests").processPreferenceDigests();
+        assert.equal(result.sent, expectedSent);
+        assert.equal(h.sent.length, expectedSent);
+        if (!expectedSent) assert.equal(h.writes.length, 0);
+    }
+});
+
+test("preview shares the two-story gate and upcoming events are capped at the nearest three", async () => {
+    const insufficient = harness({ contents: [story(1)] });
+    await assert.rejects(
+        insufficient.load("lib/preference-digests").sendPreferenceDigestPreview({ email: "preview@example.test" }),
+        /At least two fresh editorial stories/
+    );
+    assert.equal(insufficient.sent.length, 0);
+    const h = harness({
+        contents: [story(1), story(2)],
+        events: [10, 8, 9, 7].map(day => ({
+            id: day, title: `Event ${day}`, occurrence: "upcoming", date: `2026-10-${day}`,
+            publishedAt: weekday,
+        })),
+    });
+    const result = await h.load("lib/preference-digests").sendPreferenceDigestPreview({ email: "preview@example.test" });
+    assert.equal(result.success, true);
+    const keys = h.writes.find(({ sql }) => sql.includes("INSERT INTO content_digest_logs")).params[4];
+    assert.deepEqual(Array.from(keys.filter(key => key.startsWith("event:"))), ["event:7", "event:8", "event:9"]);
+    assert.equal(h.sent.length, 1);
 });
 
 test("two stories published today send, including Kolkata midnight and delayed subscribers", async () => {
