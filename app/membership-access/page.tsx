@@ -1,21 +1,21 @@
 "use client";
 
 import { Suspense, useEffect, useRef, useState } from "react";
-import { useAuth, useSignIn } from "@clerk/nextjs";
+import { useAuth, useClerk, useSignIn } from "@clerk/nextjs";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { usePostHog } from "@posthog/react";
 import { getSafeRedirectPath } from "@/lib/post-auth-redirect";
 
-type Status = "loading" | "verifying" | "signing-in" | "redirecting" | "error";
+type Status = "loading" | "verifying" | "switching-account" | "signing-in" | "redirecting" | "error";
 
 function MembershipAccessContent() {
     const posthog = usePostHog();
-    const router = useRouter();
     const searchParams = useSearchParams();
     const destination = getSafeRedirectPath(searchParams.get("redirect_url") || "/dashboard");
     const { signIn, setActive } = useSignIn();
-    const { isLoaded, isSignedIn } = useAuth();
+    const { signOut } = useClerk();
+    const { isLoaded, isSignedIn, userId } = useAuth();
     const attempted = useRef(false);
 
     const [status, setStatus] = useState<Status>("loading");
@@ -26,17 +26,14 @@ function MembershipAccessContent() {
             return;
         }
 
-        if (isSignedIn) {
-            router.replace(destination);
-            return;
-        }
-
         if (attempted.current) {
             return;
         }
         attempted.current = true;
 
-        const token = searchParams.get("token");
+        // Some copied Markdown links contain a literal backslash before '&'.
+        // Backslashes are never part of the generated base64url token.
+        const token = searchParams.get("token")?.trim().replace(/\\+$/, "");
         if (!token) {
             setStatus("error");
             setError("The membership access link is incomplete.");
@@ -46,13 +43,36 @@ function MembershipAccessContent() {
         const authenticate = async () => {
             try {
                 setStatus("verifying");
-                const verifyRes = await fetch(
-                    `/api/auth/membership-access?token=${encodeURIComponent(token)}`
-                );
+                const verifyRes = await fetch("/api/auth/membership-access", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ token }),
+                    cache: "no-store",
+                });
                 const data = await verifyRes.json().catch(() => ({}));
 
                 if (!verifyRes.ok) {
                     throw new Error(data.error || `Verification failed (${verifyRes.status})`);
+                }
+
+                if (!data.userId) {
+                    throw new Error("The membership account could not be verified.");
+                }
+
+                if (isSignedIn) {
+                    if (userId === data.userId) {
+                        setStatus("redirecting");
+                        window.location.replace(destination);
+                    } else {
+                        setStatus("switching-account");
+                        const retryParams = new URLSearchParams({ token, redirect_url: destination });
+                        // Validate the link first, then reload after logout so the
+                        // linked member signs in with a fresh Clerk session.
+                        await signOut(() => {
+                            window.location.replace(`/membership-access?${retryParams.toString()}`);
+                        });
+                    }
+                    return;
                 }
 
                 if (!data.ticket) {
@@ -90,18 +110,13 @@ function MembershipAccessContent() {
                         ? err.message
                         : "";
 
-                if (message.toLowerCase().includes("already signed in")) {
-                    router.replace(destination);
-                    return;
-                }
-
                 setStatus("error");
                 setError(message || "We could not sign you in with this membership access link.");
             }
         };
 
         authenticate();
-    }, [destination, isLoaded, isSignedIn, posthog, router, searchParams, setActive, signIn]);
+    }, [destination, isLoaded, isSignedIn, userId, posthog, searchParams, setActive, signIn, signOut]);
 
     if (status === "error") {
         return (
@@ -134,6 +149,7 @@ function MembershipAccessContent() {
     const statusMessages: Record<Exclude<Status, "error">, string> = {
         loading: "Loading your membership access...",
         verifying: "Validating your card link...",
+        "switching-account": "Opening your membership account...",
         "signing-in": "Signing you in securely...",
         redirecting: destination === "/dashboard" ? "Opening your dashboard..." : "Opening your resources...",
     };
