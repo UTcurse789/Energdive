@@ -526,7 +526,7 @@ export async function getResourceCenterData() {
   } while (page <= pageCount);
 
   return {
-    resources,
+    resources: sortResourcesByDate(resources),
     events: buildEvents(resources),
   };
 }

@@ -5,6 +5,7 @@ import { useAuth, useSignIn } from "@clerk/nextjs";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { usePostHog } from "@posthog/react";
+import { getSafeRedirectPath } from "@/lib/post-auth-redirect";
 
 type Status = "loading" | "verifying" | "signing-in" | "redirecting" | "error";
 
@@ -12,6 +13,7 @@ function MembershipAccessContent() {
     const posthog = usePostHog();
     const router = useRouter();
     const searchParams = useSearchParams();
+    const destination = getSafeRedirectPath(searchParams.get("redirect_url") || "/dashboard");
     const { signIn, setActive } = useSignIn();
     const { isLoaded, isSignedIn } = useAuth();
     const attempted = useRef(false);
@@ -25,7 +27,7 @@ function MembershipAccessContent() {
         }
 
         if (isSignedIn) {
-            router.replace("/dashboard");
+            router.replace(destination);
             return;
         }
 
@@ -77,7 +79,9 @@ function MembershipAccessContent() {
                 setStatus("redirecting");
 
                 setTimeout(() => {
-                    window.location.replace(`/dashboard?reload=${Date.now()}`);
+                    window.location.replace(
+                        destination === "/dashboard" ? `/dashboard?reload=${Date.now()}` : destination
+                    );
                 }, 300);
             } catch (err: unknown) {
                 console.error("[MEMBERSHIP_ACCESS_PAGE]", err);
@@ -87,7 +91,7 @@ function MembershipAccessContent() {
                         : "";
 
                 if (message.toLowerCase().includes("already signed in")) {
-                    router.replace("/dashboard");
+                    router.replace(destination);
                     return;
                 }
 
@@ -97,7 +101,7 @@ function MembershipAccessContent() {
         };
 
         authenticate();
-    }, [isLoaded, isSignedIn, posthog, router, searchParams, setActive, signIn]);
+    }, [destination, isLoaded, isSignedIn, posthog, router, searchParams, setActive, signIn]);
 
     if (status === "error") {
         return (
@@ -131,7 +135,7 @@ function MembershipAccessContent() {
         loading: "Loading your membership access...",
         verifying: "Validating your card link...",
         "signing-in": "Signing you in securely...",
-        redirecting: "Opening your dashboard...",
+        redirecting: destination === "/dashboard" ? "Opening your dashboard..." : "Opening your resources...",
     };
 
     return (
