@@ -32,6 +32,11 @@ export async function POST(req: Request) {
 
         const unsubDate = new Date().toISOString();
 
+        // Persist suppression before the provider call. A provider outage must
+        // never leave queued local briefings eligible after an unsubscribe.
+        await query(`UPDATE users SET content_digest_opted_out = true, updated_at = NOW() WHERE LOWER(email) = $1`, [email]);
+        await query(`UPDATE subscribe_letterbox SET content_digest_opted_out = true, updated_at = NOW() WHERE LOWER(email) = $1`, [email]);
+
         await axios.put(
             `${BREVO_API}/${encodeURIComponent(email)}`,
             {
@@ -50,14 +55,6 @@ export async function POST(req: Request) {
                     "Content-Type": "application/json",
                 },
             }
-        );
-
-        await query(
-            `UPDATE users
-             SET content_digest_opted_out = true,
-                 updated_at = NOW()
-             WHERE LOWER(email) = $1`,
-            [email]
         );
 
         console.log("Contact unsubscribed in Brevo:", email);

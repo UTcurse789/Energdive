@@ -12,8 +12,6 @@ async function main() {
         email,
         firstName: "Kunal",
         frequency: "daily",
-        // This is an explicitly requested review preview, not a subscriber send.
-        allowInsufficientTopNews: true,
     });
 
     console.log(JSON.stringify(result, null, 2));
