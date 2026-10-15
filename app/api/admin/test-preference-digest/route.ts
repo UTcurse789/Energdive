@@ -7,8 +7,9 @@ const INTERNAL_SECRET = process.env.CRON_SECRET || "";
 /**
  * POST /api/admin/test-preference-digest
  *
- * Sends a one-off preview digest to any email address using the latest
- * matching content from Strapi.
+ * Requests the current edition for an active subscriber. Uses the same send
+ * gate, due frequency and duplicate identity as cron; it cannot force a send.
+ * Use the offline preview script for layout review on blocked days.
  *
  * Body:
  * {

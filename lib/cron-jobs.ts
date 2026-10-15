@@ -209,8 +209,8 @@ export async function processWeeklyReminders() {
 
 /**
  * Send personalized content digests based on onboarding subscription preferences.
- * Users receive at most one digest per daily/weekly/monthly period, and only
- * when new matching content exists since their previous digest.
+ * Daily/weekly editions share the IST weekday and three-published-News gate.
+ * The delivery store enforces frequency, expiry and duplicate protection.
  */
 export async function processContentPreferenceDigests(limit?: number) {
     const requestId = crypto.randomUUID().slice(0, 8);
