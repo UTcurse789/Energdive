@@ -503,10 +503,15 @@ function dedupeResources(resources: EventResource[]) {
 }
 
 function sortResourcesByDate(resources: EventResource[]) {
-  return [...resources].sort(
-    (a, b) =>
-      new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
-  );
+  return [...resources].sort((a, b) => {
+    const timestampA = Date.parse(a.publishedAt);
+    const timestampB = Date.parse(b.publishedAt);
+    const newestFirst =
+      (Number.isFinite(timestampB) ? timestampB : 0) -
+      (Number.isFinite(timestampA) ? timestampA : 0);
+
+    return newestFirst || a.slug.localeCompare(b.slug);
+  });
 }
 
 export async function getResourceCenterData() {
@@ -525,9 +530,11 @@ export async function getResourceCenterData() {
     page += 1;
   } while (page <= pageCount);
 
+  const sortedResources = sortResourcesByDate(resources);
+
   return {
-    resources,
-    events: buildEvents(resources),
+    resources: sortedResources,
+    events: buildEvents(sortedResources),
   };
 }
 
