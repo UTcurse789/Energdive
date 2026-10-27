@@ -55,6 +55,7 @@ import { Suspense } from "react";
 import { PostHogProvider } from "./providers";
 import { PostHogIdentify } from "@/components/PostHogIdentify";
 import { AuthModalProvider } from "@/hooks/use-auth-modal";
+import { ScrollToTop } from "@/components/scroll-to-top";
 import { ORGANIZATION_SCHEMA } from "@/lib/organization-schema";
 
 // export const metadata: Metadata = {
@@ -104,11 +105,17 @@ export default function RootLayout({
         />
       </head>
       <body className="antialiased font-sans" suppressHydrationWarning>
-        <ClerkProvider>
+        <ClerkProvider
+          signInUrl="/auth"
+          signUpUrl="/auth"
+          signInFallbackRedirectUrl="/"
+          signUpFallbackRedirectUrl="/"
+        >
           <PostHogProvider>
             <AuthModalProvider>
               {/* GTM — only loads after cookie consent is accepted */}
               <ClientConsentAwareGTM />
+              <ScrollToTop />
               <Suspense fallback={null}>
                 <UtmTracker />
               </Suspense>

@@ -6,13 +6,14 @@ export function getSafeRedirectPath(value: string | null | undefined): string {
     if (!value) return DEFAULT_POST_AUTH_REDIRECT;
 
     const sanitizePath = (path: string) => {
-        if (!path.startsWith("/") || path.startsWith("//")) {
+        if (!path.startsWith("/") || path.startsWith("//") || path.startsWith("/\\")) {
             return DEFAULT_POST_AUTH_REDIRECT;
         }
 
+        const pathname = path.split(/[?#]/, 1)[0];
         if (
-            path === "/auth" ||
-            path.startsWith("/auth/") ||
+            pathname === "/auth" ||
+            pathname.startsWith("/auth/") ||
             path === "/onboarding" ||
             path.startsWith("/onboarding?")
         ) {

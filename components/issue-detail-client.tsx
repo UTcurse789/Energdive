@@ -203,19 +203,48 @@ export function IssueDetailClient({ issue }: IssueDetailClientProps) {
                                 </p>
                             )}
 
-                            {/* Mobile action bar for quick reading access */}
-                            <div className="mt-6 lg:hidden flex flex-wrap items-center gap-3">
-                                <Link
-                                    href={`/issues/${issue.slug}/epdf`}
-                                    className="inline-flex items-center gap-2 rounded-md bg-[#00A651] px-5 py-2.5 text-center font-sans text-[14px] font-semibold text-white transition-colors duration-200 hover:bg-[#008c44] shadow-xs"
-                                >
-                                    <BookOpen className="w-4 h-4" />
-                                    <span>View ePDF</span>
-                                </Link>
+                            {/* Mobile Cover & Action Bar */}
+                            <div className="mt-8 mb-6 lg:hidden flex flex-col items-center">
+                                {/* Magazine Cover */}
+                                <div className="relative w-full max-w-[280px] sm:max-w-[320px] aspect-[3/4] shadow-[0_10px_30px_rgba(0,0,0,0.15)] bg-white flex items-center justify-center mb-6 border border-gray-200 p-2 group rounded-md">
+                                    <Link href={`/issues/${issue.slug}/epdf`} className="relative w-full h-full block" title="Read digital ePDF edition">
+                                        <Image
+                                            src={issue.coverImage}
+                                            alt={`${issue.month} ${issue.year} Cover`}
+                                            fill
+                                            sizes="(max-width: 640px) 280px, 320px"
+                                            className="object-contain transition-transform duration-300 group-hover:scale-[1.02]"
+                                            priority
+                                        />
+                                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-xs">
+                                            <span className="bg-white text-neutral-900 font-sans text-xs font-semibold px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1.5">
+                                                <BookOpen className="w-3.5 h-3.5 text-[#00A651]" />
+                                                Read ePDF
+                                            </span>
+                                        </div>
+                                    </Link>
+                                </div>
 
-                                {hasPdf && (
-                                    <PdfDownloadMobileButton slug={issue.slug} />
-                                )}
+                                {/* Mobile action buttons */}
+                                <div className={`grid ${hasPdf ? 'grid-cols-2' : 'grid-cols-1'} gap-3 w-full max-w-[320px] sm:max-w-[360px]`}>
+                                    <Link
+                                        href={`/issues/${issue.slug}/epdf`}
+                                        className="inline-flex items-center justify-center gap-2 h-11 px-3 sm:px-4 rounded-md bg-[#00A651] font-sans text-xs sm:text-sm font-semibold tracking-wide text-white transition-colors duration-200 hover:bg-[#008c44] shadow-xs whitespace-nowrap"
+                                    >
+                                        <BookOpen className="w-4 h-4 shrink-0" />
+                                        <span>View ePDF</span>
+                                    </Link>
+
+                                    {hasPdf && (
+                                        <PdfDownloadMobileButton slug={issue.slug} />
+                                    )}
+                                </div>
+
+                                <div className="mt-4 text-center">
+                                    <Link href="/issues" className="text-gray-600 font-serif text-[15px] hover:text-black transition-colors inline-flex items-center gap-1.5">
+                                        Browse the Full Archive <span className="font-sans">→</span>
+                                    </Link>
+                                </div>
                             </div>
                         </div>
 
@@ -353,13 +382,15 @@ function PdfDownloadMobileButton({ slug }: { slug: string }) {
     const { openAuthModal } = useAuthModal();
     const isLoggedIn = isLoaded && isSignedIn === true;
 
+    const commonClasses = "w-full inline-flex items-center justify-center gap-2 h-11 px-3 sm:px-4 rounded-md border border-neutral-300 bg-white font-sans text-xs sm:text-sm font-semibold tracking-wide text-neutral-700 transition-colors hover:border-neutral-900 hover:text-black whitespace-nowrap shadow-xs cursor-pointer";
+
     if (isLoggedIn) {
         return (
             <a
                 href={`/issues/${slug}/download`}
-                className="inline-flex items-center gap-1.5 rounded-md border border-neutral-300 bg-white px-4 py-2.5 text-center font-sans text-[14px] font-medium text-neutral-700 transition-colors hover:border-neutral-900 hover:text-black"
+                className={commonClasses}
             >
-                <Download className="w-4 h-4 text-neutral-500" />
+                <Download className="w-4 h-4 text-neutral-500 shrink-0" />
                 <span>Download PDF</span>
             </a>
         );
@@ -368,9 +399,9 @@ function PdfDownloadMobileButton({ slug }: { slug: string }) {
     return (
         <button
             onClick={() => openAuthModal(`/issues/${slug}?download=true`)}
-            className="inline-flex items-center gap-1.5 rounded-md border border-neutral-300 bg-white px-4 py-2.5 text-center font-sans text-[14px] font-medium text-neutral-700 transition-colors hover:border-neutral-900 hover:text-black cursor-pointer"
+            className={commonClasses}
         >
-            <Download className="w-4 h-4 text-neutral-500" />
+            <Download className="w-4 h-4 text-neutral-500 shrink-0" />
             <span>Download PDF</span>
         </button>
     );

@@ -16,6 +16,8 @@ const DIGEST_FROM_NAME = process.env.DIGEST_FROM_NAME || "ENERGDIVE Intelligence
 import { buildMembershipCardHtml } from "./_card-template";
 import { generateMembershipCardPdf } from "./membership-pdf";
 import { getAdvertisements, getAdImageUrl } from "./api/getAdvertisements";
+import { normalizeBriefingFirstName } from "./daily-briefing-rules";
+import { consumeBriefingPermit } from "./briefing-dispatch-permit";
 
 interface SendEmailOptions {
     to: string;
@@ -41,6 +43,8 @@ interface PreferenceDigestSection {
         href: string;
         crispLine: string;
         imageUrl: string | null;
+        imageWidth?: number;
+        imageHeight?: number;
         badge: string;
         publishedAt: Date;
         publisher?: string;
@@ -185,7 +189,15 @@ function buildEnergJobEmailShell(subject: string, body: string) {
  * Throws on failure so callers can handle/log.
  */
 export async function sendEmail(options: SendEmailOptions): Promise<void> {
+    if (options.tags?.includes("preference-digest") && !consumeBriefingPermit(options)) {
+        const frequency = options.tags.find(tag => tag.startsWith("digest-"))?.slice(7) || "daily";
+        const { processPreferenceDigests } = await import("./preference-digests");
+        const result = await processPreferenceDigests({ email: options.to, frequency });
+        if (!result.sent) throw new Error(`Briefing skipped: ${result.reason || result.results[0]?.reason || "unsubscribed_or_inactive"}`);
+        return;
+    }
     if (!BREVO_API_KEY) {
+        if (options.tags?.includes("preference-digest")) throw new Error("BREVO_API_KEY is not configured");
         console.error("[EMAIL] BREVO_API_KEY is not set — skipping email send");
         return;
     }
@@ -1285,363 +1297,11 @@ export async function sendNewsletterSubscriptionThanksEmail(to: string): Promise
     });
 }
 
-async function sendLegacyPreferenceDigestEmail(
-    to: string,
-    firstName: string,
-    frequency: string,
-    sections: PreferenceDigestSection[],
-    sponsor?: { imageUrl: string; targetUrl: string } | null
-): Promise<void> {
-    const displayFrequency = `${frequency.charAt(0).toUpperCase()}${frequency.slice(1)}`;
-    const subject = `Your ENERGDIVE ${displayFrequency} Briefing`;
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://www.energdive.com";
-    const logoUrl = `${appUrl}/Energdive-Logo.png`;
-    const bannerUrl = `https://cdn.energdive.com/email_banner_removebg_preview_80e2da0393.png`;
-    const manageUrl = `${appUrl}/dashboard/settings`;
-    const unsubscribeUrl = `${appUrl}/unsubscribe?email=${encodeURIComponent(to)}`;
-    const yr = new Date().getFullYear();
-
-    const todayDate = new Intl.DateTimeFormat("en-IN", {
-        day: "numeric",
-        month: "long",
-        year: "numeric",
-        timeZone: "Asia/Kolkata",
-    }).format(new Date()).toUpperCase();
-
-    /* ── Fetch Ads ─────────────────────────────────────────────── */
-    let opinionAdUrl: string | null = null;
-    let opinionAdTarget: string = appUrl;
-    let sectorHeroAdUrl: string | null = null;
-    let sectorHeroAdTarget: string = appUrl;
-
-    try {
-        const opinionAds = await getAdvertisements({ placement: "home_opinion" });
-        if (opinionAds && opinionAds.length > 0) {
-            const ad = opinionAds[0];
-            opinionAdUrl = getAdImageUrl(ad.creative?.[0] || ad.logo?.[0]);
-            opinionAdTarget = appendEmailAdUtm(ad.target_url || appUrl, ad.partner_name || ad.title);
-        }
-    } catch (err) {
-        console.error("[Email] Failed to fetch home_opinion ad for digest:", err);
-    }
-
-    try {
-        const sectorHeroAds = await getAdvertisements({ placement: "sector_hero" });
-        if (sectorHeroAds && sectorHeroAds.length > 0) {
-            const ad = sectorHeroAds[0];
-            sectorHeroAdUrl = getAdImageUrl(ad.creative?.[0] || ad.logo?.[0]);
-            sectorHeroAdTarget = appendEmailAdUtm(ad.target_url || appUrl, ad.partner_name || ad.title);
-        }
-    } catch (err) {
-        console.error("[Email] Failed to fetch sector_hero ad for digest:", err);
-    }
-
-    /* ── Separate sections by format ─────────────────────────────── */
-    const newsSection = sections.find((s) => s.format === "News Briefing");
-    const opinionSection = sections.find((s) => s.format === "Opinion");
-    const insightsSection = sections.find((s) => s.format === "Insights");
-    const otherSections = sections.filter(
-        (s) => s.format !== "News Briefing" && s.format !== "Opinion" && s.format !== "Insights"
-    );
-
-    /* ── Top Stories: 2-column grid with in-between opinion ad ────── */
-    let topStoriesHtml = "";
-    if (newsSection && newsSection.items.length > 0) {
-        const topItems = newsSection.items.slice(0, 4);
-
-        const renderNewsCard = (item: any, isRight = false) => {
-            if (!item) return `<td class="story-col" width="50%" valign="top" style="padding-bottom:16px;"></td>`;
-            return `<td class="story-col" width="50%" valign="top" style="padding:0 ${isRight ? '0 0 0 8px' : '0 8px 0 0'}; padding-bottom:16px;">
-                <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #f3f4f6;border-radius:12px;background:#ffffff;box-shadow:0 4px 6px rgba(0,0,0,0.02);overflow:hidden;">
-                    <tr><td style="position:relative;">
-                        ${item.imageUrl ? `<img src="${item.imageUrl}" alt="${escapeHtml(item.title)}" width="270" style="display:block;width:100%;height:150px;object-fit:cover;border-top-left-radius:12px;border-top-right-radius:12px;" />` : `<div style="width:100%;height:150px;background:#f3f4f6;border-top-left-radius:12px;border-top-right-radius:12px;"></div>`}
-                    </td></tr>
-                    <tr><td style="padding:16px;">
-                        <p style="margin:0 0 12px;color:#111827;font-size:13px;font-weight:700;line-height:1.4;"><a href="${item.href}" style="color:#111827;text-decoration:none;">${escapeHtml(item.title)}</a></p>
-                        <a href="${item.href}" style="display:inline-block;padding:6px 12px;background-color:#0a6c4c;color:#ffffff;font-size:12px;font-weight:700;text-decoration:none;border-radius:4px;">Read more &rarr;</a>
-                    </td></tr>
-                </table>
-            </td>`;
-        };
-
-        const news1_2 = `
-            <tr>
-                ${renderNewsCard(topItems[0], false)}
-                ${renderNewsCard(topItems[1], true)}
-            </tr>
-        `;
-
-        let opinionAdHtml = "";
-        if (opinionAdUrl) {
-            opinionAdHtml = `
-                <tr><td colspan="2" style="padding:8px 0 24px 0;">
-                    <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #f3f4f6;border-radius:12px;background:#ffffff;box-shadow:0 4px 6px rgba(0,0,0,0.02);overflow:hidden;">
-
-                        <tr><td style="padding:0;">
-                            <a href="${opinionAdTarget}" target="_blank" style="display:block;">
-                                <img src="${opinionAdUrl}" alt="Sponsored Ad" style="display:block;width:100%;max-width:100%;height:auto;" />
-                            </a>
-                        </td></tr>
-                    </table>
-                </td></tr>
-            `;
-        }
-
-        let news3_4 = "";
-        if (topItems.length > 2) {
-            news3_4 = `
-                <tr>
-                    ${renderNewsCard(topItems[2], false)}
-                    ${renderNewsCard(topItems[3], true)}
-                </tr>
-            `;
-        }
-
-        topStoriesHtml = `
-            <tr><td class="section-pad" style="padding:0 40px 16px;">
-                <h3 style="margin:0 0 20px;color:#111827;font-size:18px;font-weight:800;">Top Stories</h3>
-                <table width="100%" cellpadding="0" cellspacing="0">
-                    ${news1_2}
-                    ${opinionAdHtml}
-                    ${news3_4}
-                </table>
-                <div style="text-align:center;margin-top:16px;margin-bottom:16px;">
-                    <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://www.energdive.com'}/news" style="display:inline-block;padding:12px 24px;background-color:#111827;color:#ffffff;font-size:14px;font-weight:700;text-decoration:none;border-radius:6px;">Check more</a>
-                </div>
-            </td></tr>`;
-    }
-
-    /* ── Opinion: 2-column with circular images ──────────────────── */
-    let opinionHtml = "";
-    if (opinionSection && opinionSection.items.length > 0) {
-        const opItems = opinionSection.items.slice(0, 2);
-        const opCols = opItems
-            .map((item) => `<td class="opinion-col" width="50%" valign="top" style="padding:0 8px;">
-                <table width="100%" cellpadding="0" cellspacing="0">
-                    <tr>
-                        <td width="72" valign="top" style="padding-right:16px;">
-                            ${item.imageUrl ? `<img src="${item.imageUrl}" alt="${escapeHtml(item.title)}" width="72" height="72" style="display:block;width:72px;height:72px;object-fit:cover;border-radius:12px;" />` : `<div style="width:72px;height:72px;background:#f3f4f6;border-radius:12px;"></div>`}
-                        </td>
-                        <td valign="top">
-                            <p style="margin:0 0 10px;color:#111827;font-size:13px;font-weight:700;line-height:1.4;"><a href="${item.href}" style="color:#111827;text-decoration:none;">${escapeHtml(item.title)}</a></p>
-                            <a href="${item.href}" style="display:inline-block;padding:6px 12px;background-color:#0a6c4c;color:#ffffff;font-size:12px;font-weight:700;text-decoration:none;border-radius:4px;">Read more &rarr;</a>
-                        </td>
-                    </tr>
-                </table>
-            </td>`)
-            .join("");
-
-        opinionHtml = `
-            <tr><td class="section-pad" style="padding:0 32px 32px;">
-                <h3 style="margin:0 8px 20px;color:#111827;font-size:18px;font-weight:800;">Opinion</h3>
-                <table width="100%" cellpadding="0" cellspacing="0" style="border-bottom:1px solid #f3f4f6;padding-bottom:32px;"><tr>${opCols}</tr></table>
-            </td></tr>`;
-    }
-
-    /* ── Insights: full-width horizontal cards ────────────────────── */
-    let insightsHtml = "";
-    if (insightsSection && insightsSection.items.length > 0) {
-        const insightCards = insightsSection.items
-            .map((item) => {
-                const badgeLabel = escapeHtml(item.badge).toUpperCase();
-                return `<tr><td style="padding:0 0 16px;">
-                    <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #f3f4f6;border-radius:12px;overflow:hidden;background:#ffffff;box-shadow:0 4px 6px rgba(0,0,0,0.02);overflow:hidden;">
-                        <tr>
-                            ${item.imageUrl ? `<td class="insight-img" width="160" style="padding:0;"><img src="${item.imageUrl}" alt="${escapeHtml(item.title)}" width="160" style="display:block;width:160px;height:120px;object-fit:cover;" /></td>` : ""}
-                            <td class="insight-text" style="padding:16px 20px;" valign="middle">
-                                <p style="margin:0 0 6px;color:#111827;font-size:14px;font-weight:700;line-height:1.4;"><a href="${item.href}" style="color:#111827;text-decoration:none;">${escapeHtml(item.title)}</a></p>
-                                <p style="margin:0 0 12px;color:#6b7280;font-size:12px;line-height:1.5;">${escapeHtml(item.crispLine)}</p>
-                                <a href="${item.href}" style="display:inline-block;padding:6px 12px;background-color:#0a6c4c;color:#ffffff;font-size:11px;font-weight:700;text-decoration:none;border-radius:4px;">Read more &rarr;</a>
-                            </td>
-                        </tr>
-                    </table>
-                </td></tr>`;
-            })
-            .join("");
-
-        insightsHtml = `
-            <tr><td class="section-pad" style="padding:0 40px 32px;">
-                <h3 style="margin:0 0 20px;color:#111827;font-size:18px;font-weight:800;">Insights</h3>
-                <table width="100%" cellpadding="0" cellspacing="0">${insightCards}</table>
-            </td></tr>`;
-    }
-
-    /* ── Other sections: fallback list layout ─────────────────────── */
-    const otherHtml = otherSections
-        .map((section) => {
-            const cards = section.items
-                .map((item) => `<tr><td style="padding:0 0 14px;">
-                    <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #f3f4f6;border-radius:12px;overflow:hidden;background:#ffffff;box-shadow:0 4px 6px rgba(0,0,0,0.02);overflow:hidden;">
-                        <tr>
-                            ${item.imageUrl ? `<td class="other-img" width="140" style="padding:0;"><img src="${item.imageUrl}" alt="${escapeHtml(item.title)}" width="140" style="display:block;width:140px;height:auto;object-fit:contain;" /></td>` : ""}
-                            <td class="other-text" style="padding:16px 20px;" valign="middle">
-                                <p style="margin:0 0 10px;color:#111827;font-size:14px;font-weight:700;line-height:1.4;"><a href="${item.href}" style="color:#111827;text-decoration:none;">${escapeHtml(item.title)}</a></p>
-                                <p style="margin:0 0 12px;color:#6b7280;font-size:12px;line-height:1.5;">${escapeHtml(item.crispLine)}</p>
-                                <a href="${item.href}" style="display:inline-block;padding:6px 12px;background-color:#0a6c4c;color:#ffffff;font-size:12px;font-weight:700;text-decoration:none;border-radius:4px;">Read more &rarr;</a>
-                            </td>
-                        </tr>
-                    </table>
-                </td></tr>`)
-                .join("");
-            return `<tr><td class="section-pad" style="padding:0 40px 32px;">
-                <h3 style="margin:0 0 20px;color:#111827;font-size:18px;font-weight:800;">${escapeHtml(section.format)}</h3>
-                <table width="100%" cellpadding="0" cellspacing="0">${cards}</table>
-            </td></tr>`;
-        })
-        .join("");
-
-    const htmlContent = `<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>${subject}</title>
-    <!--[if mso]><style>table{border-collapse:collapse;}td{border-collapse:collapse;}</style><![endif]-->
-    <style type="text/css">
-        /* Reset */
-        body, table, td, p, a, li { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
-        img { -ms-interpolation-mode: bicubic; border: 0; outline: none; text-decoration: none; }
-        /* Responsive */
-        @media only screen and (max-width: 640px) {
-            .email-container { width: 100% !important; max-width: 100% !important; }
-            .stack-col { display: block !important; width: 100% !important; max-width: 100% !important; }
-            .hero-text { padding: 28px 24px 16px 24px !important; }
-            .hero-img { text-align: center !important; padding: 0 24px 20px !important; }
-            .hero-img img { width: 80% !important; max-width: 280px !important; margin: 0 auto !important; }
-            .section-pad { padding-left: 20px !important; padding-right: 20px !important; }
-            .story-col { display: block !important; width: 100% !important; padding: 0 0 16px 0 !important; }
-            .story-col table { width: 100% !important; }
-            .opinion-col { display: block !important; width: 100% !important; padding: 0 0 16px 0 !important; }
-            .insight-img { display: block !important; width: 100% !important; padding: 16px !important; box-sizing: border-box !important; }
-            .insight-img img { width: 100% !important; height: auto !important; max-height: 180px !important; border-radius: 8px !important; }
-            .insight-text { display: block !important; width: 100% !important; padding: 0 16px 16px !important; box-sizing: border-box !important; }
-            .footer-left { display: block !important; width: 100% !important; text-align: center !important; padding-bottom: 20px !important; }
-            .footer-left img { margin: 0 auto 12px !important; }
-            .footer-left p { text-align: center !important; }
-            .footer-left table { margin: 0 auto !important; }
-            .footer-right { display: block !important; width: 100% !important; text-align: center !important; }
-            .footer-right p { text-align: center !important; }
-            .other-img { display: block !important; width: 100% !important; padding: 16px !important; box-sizing: border-box !important; }
-            .other-img img { width: 100% !important; height: auto !important; max-height: 160px !important; border-radius: 8px !important; object-fit: contain !important; }
-            .other-text { display: block !important; width: 100% !important; padding: 0 16px 16px !important; box-sizing: border-box !important; }
-            h1 { font-size: 26px !important; }
-        }
-    </style>
-</head>
-<body style="margin:0;padding:0;background-color:#f4f5f7;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;">
-    <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f5f7;padding:30px 12px;">
-        <tr><td align="center">
-            <table class="email-container" width="640" cellpadding="0" cellspacing="0" style="width:100%;max-width:640px;background-color:#ffffff;overflow:hidden;">
-
-                <!-- ═══ HERO BANNER ═══ -->
-                <tr><td style="background:#ffffff;padding:0;">
-                    <table width="100%" cellpadding="0" cellspacing="0"><tr>
-                        <td class="stack-col hero-text" valign="top" style="padding:40px 0 20px 40px;width:50%;">
-                            <img src="${logoUrl}" alt="ENERGDIVE" width="220" style="display:block;max-width:220px;height:auto;margin-bottom:32px;" />
-                            <h1 style="margin:0 0 12px;color:#0a6c4c;font-size:18px;font-weight:900;line-height:1.15;letter-spacing:-0.5px;">${displayFrequency} Briefing</h1>
-                            <p style="margin:0 0 24px;color:#4b5563;font-size:16px;line-height:1.5;">Essential updates for a<br/>changing energy world.</p>
-                            <p style="margin:0;color:#0a6c4c;font-size:12px;font-weight:800;letter-spacing:0.5px;">${todayDate}</p>
-                        </td>
-                        <td class="stack-col hero-img" valign="bottom" align="right" style="width:50%;padding:0;">
-                            <img src="${bannerUrl}" alt="Energy Banner" width="300" style="display:block;width:100%;max-width:320px;height:auto;" />
-                        </td>
-                    </tr></table>
-                </td></tr>
-
-                <!-- ═══ HERO ADVERTISEMENT (home_platform_hero) ═══ -->
-                ${sponsor ? `
-                <tr><td style="padding:10px 40px 10px 40px;" class="section-pad">
-                    <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #f3f4f6;border-radius:12px;background:#ffffff;box-shadow:0 4px 6px rgba(0,0,0,0.02);overflow:hidden;">
-
-                        <tr><td style="padding:0;">
-                            <a href="${sponsor.targetUrl}" target="_blank" style="display:block;">
-                                <img src="${sponsor.imageUrl}" alt="Sponsored" style="display:block;width:100%;max-width:100%;height:auto;" />
-                            </a>
-                        </td></tr>
-                    </table>
-                </td></tr>
-                ` : ""}
-
-                <!-- ═══ SPACING ═══ -->
-                <tr><td style="height:32px;font-size:0;line-height:0;">&nbsp;</td></tr>
-
-                <!-- ═══ TOP STORIES ═══ -->
-                ${topStoriesHtml}
-
-                <!-- ═══ OPINION ═══ -->
-                ${opinionHtml}
-
-                <!-- ═══ INSIGHTS ═══ -->
-                ${insightsHtml}
-
-                <!-- ═══ OTHER SECTIONS ═══ -->
-                ${otherHtml}
-
-                <!-- ═══ SECTOR HERO ADVERTISEMENT (sector_hero) ═══ -->
-                ${sectorHeroAdUrl ? `
-                <tr><td class="section-pad" style="padding:0 40px 32px;">
-                    <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #f3f4f6;border-radius:12px;background:#ffffff;box-shadow:0 4px 6px rgba(0,0,0,0.02);overflow:hidden;">
-
-                        <tr><td style="padding:0;">
-                            <a href="${sectorHeroAdTarget}" target="_blank" style="display:block;">
-                                <img src="${sectorHeroAdUrl}" alt="Sponsored" style="display:block;width:100%;max-width:100%;height:auto;" />
-                            </a>
-                        </td></tr>
-                    </table>
-                </td></tr>
-                ` : ""}
-
-                <!-- ═══ FOOTER ═══ -->
-                <tr><td style="background:#ffffff;padding:24px 40px 40px;" class="section-pad">
-                    <table width="100%" cellpadding="0" cellspacing="0"><tr><td style="border-top:1px solid #f3f4f6;padding-top:32px;">
-                        <table width="100%" cellpadding="0" cellspacing="0">
-                            <tr>
-                                <td class="footer-left" valign="top" style="width:60%;">
-                                    <img src="${logoUrl}" alt="ENERGDIVE" width="140" style="display:block;max-width:140px;height:auto;margin-bottom:12px;" />
-                                    <p style="margin:0 0 16px;color:#6b7280;font-size:11px;line-height:1.6;">Your daily update on energy, markets<br/>and policy that matters.</p>
-                                    <table cellpadding="0" cellspacing="0"><tr>
-                                        <td style="padding-right:8px;"><a href="${appUrl}" style="display:inline-block;width:24px;height:24px;background:#0a6c4c;border-radius:50%;color:#ffffff;text-align:center;line-height:24px;font-size:12px;text-decoration:none;font-family:sans-serif;font-weight:bold;">in</a></td>
-                                        <td style="padding-right:8px;"><a href="${appUrl}" style="display:inline-block;width:24px;height:24px;background:#0a6c4c;border-radius:50%;color:#ffffff;text-align:center;line-height:24px;font-size:12px;text-decoration:none;font-family:sans-serif;font-weight:bold;">X</a></td>
-                                        <td><a href="${appUrl}" style="display:inline-block;width:24px;height:24px;background:#0a6c4c;border-radius:50%;color:#ffffff;text-align:center;line-height:24px;font-size:12px;text-decoration:none;font-family:sans-serif;font-weight:bold;">W</a></td>
-                                    </tr></table>
-                                </td>
-                                <td class="footer-right" valign="bottom" align="right" style="width:40%;">
-                                    <p style="margin:0 0 12px;color:#6b7280;font-size:11px;">
-                                        <a href="${manageUrl}" style="color:#6b7280;text-decoration:underline;">Manage Preferences</a>
-                                        &nbsp;|&nbsp;
-                                        <a href="${unsubscribeUrl}" style="color:#6b7280;text-decoration:underline;">Unsubscribe</a>
-                                    </p>
-                                    <p style="margin:0;color:#6b7280;font-size:11px;">
-                                        &copy; ${yr} ENERGDIVE. All rights reserved.
-                                    </p>
-                                </td>
-                            </tr>
-                        </table>
-                    </td></tr></table>
-                </td></tr>
-
-            </table>
-        </td></tr>
-    </table>
-</body>
-</html>`;
-
-    await sendEmail({
-        to,
-        toName: firstName,
-        subject,
-        htmlContent,
-        sender: {
-            email: DIGEST_FROM_EMAIL,
-            name: DIGEST_FROM_NAME,
-        },
-        tags: ["preference-digest", `digest-${frequency.toLowerCase()}`],
-    });
-}
-
 export interface DailyBriefingExtras {
     trending: PreferenceDigestSection["items"];
     articles?: PreferenceDigestSection["items"];
+    editionDate?: Date;
+    coveredDates?: { start: Date; end: Date };
     latestIssue?: {
         slug: string;
         title: string;
@@ -1681,19 +1341,38 @@ function getEmailImageUrl(imageUrl: string): string {
     }
 }
 
+/** Numeric proportional dimensions are the Outlook fallback: no reliance on
+ * object-fit, clipping or forced aspect ratios. Unknown dimensions use natural
+ * height and let the cell grow, preserving every pixel of the original. */
+export function renderBriefingImage(
+    item: { title: string; href?: string; imageUrl: string | null; imageWidth?: number; imageHeight?: number },
+    boxWidth: number, boxHeight: number
+): string {
+    const known = Boolean(item.imageWidth && item.imageHeight && item.imageWidth > 0 && item.imageHeight > 0);
+    const scale = known ? Math.min(boxWidth / item.imageWidth!, boxHeight / item.imageHeight!) : 1;
+    const width = known ? Math.max(1, Math.floor(item.imageWidth! * scale)) : boxWidth;
+    const height = known ? Math.max(1, Math.floor(item.imageHeight! * scale)) : undefined;
+    const image = item.imageUrl ? `<img class="briefing-full-image" src="${escapeHtml(getEmailImageUrl(item.imageUrl))}" alt="${escapeHtml(item.title)}" width="${width}"${height ? ` height="${height}"` : ""} border="0" style="display:block;width:${width}px;max-width:100%;height:auto;margin:0 auto;object-fit:contain;background-color:#ffffff;" />` : "&nbsp;";
+    return `<table class="briefing-image-frame" width="100%" height="${boxHeight}" cellpadding="0" cellspacing="0" role="presentation" bgcolor="#ffffff" style="width:100%;height:${boxHeight}px;background-color:#ffffff;"><tr><td align="center" valign="middle" bgcolor="#ffffff" style="background-color:#ffffff;padding:0;">${item.href ? `<a href="${escapeHtml(item.href)}" target="_blank">${image}</a>` : image}</td></tr></table>`;
+}
+
 /**
  * Email-client-safe editorial Daily Briefing. Tables provide the structural
  * layout; media queries only improve small-screen presentation.
  */
-export async function sendPreferenceDigestEmail(
+export async function renderPreferenceDigestEmail(
     to: string,
     firstName: string,
     frequency: string,
     sections: PreferenceDigestSection[],
     sponsor?: { imageUrl: string; targetUrl: string } | null,
     extras: DailyBriefingExtras = { trending: [], jobs: [] }
-): Promise<void> {
+): Promise<SendEmailOptions> {
     const displayFrequency = `${frequency.charAt(0).toUpperCase()}${frequency.slice(1)}`;
+    const greetingName = normalizeBriefingFirstName(firstName);
+    const greetingHtml = greetingName
+        ? `Good evening, <span style="color:#0b6b55;">${escapeHtml(greetingName)}</span>,`
+        : "Good evening,";
     const subject = `Your ENERGDIVE ${displayFrequency} Briefing`;
     // Do not use a local or preview environment URL in a transactional email.
     const appUrl = "https://www.energdive.com";
@@ -1705,7 +1384,19 @@ export async function sendPreferenceDigestEmail(
         month: "long",
         year: "numeric",
         timeZone: "Asia/Kolkata",
-    }).format(new Date()).toUpperCase();
+    }).format(extras.editionDate || new Date()).toUpperCase();
+
+    if (!sponsor) {
+        try {
+            const ads = await getAdvertisements({ placement: "email_top" });
+            const ad = ads.find(candidate => {
+                const image = getAdImageUrl(candidate.creative?.[0] || candidate.logo?.[0]);
+                return image && isDailyBriefingAdImageAllowed(image);
+            });
+            const imageUrl = ad ? getAdImageUrl(ad.creative?.[0] || ad.logo?.[0]) : null;
+            if (ad && imageUrl) sponsor = { imageUrl, targetUrl: appendEmailAdUtm(ad.target_url || appUrl, ad.partner_name || ad.title) };
+        } catch (error) { console.error("[Email] Failed to fetch email_top advertisement:", error); }
+    }
 
     let afterTopNewsAd: { imageUrl: string; targetUrl: string } | null = null;
     let afterNewsAd: { imageUrl: string; targetUrl: string } | null = null;
@@ -1767,13 +1458,12 @@ export async function sendPreferenceDigestEmail(
     } catch (error) {
         console.error("[Email] Failed to fetch email_end advertisement:", error);
     }
-    const newsItems = (sections.find((section) => section.format === "News Briefing")?.items || []).slice(0, 4);
+    const newsItems = sections.find((section) => section.format === "News Briefing")?.items || [];
     const eventItems = (sections.find((section) => section.format === "Upcoming Events")?.items || []).slice(0, 3);
     const articles = (extras.articles || []).slice(0, 3);
     const latestIssue = extras.latestIssue || null;
-    const trendingItems = extras.trending.slice(0, 3);
     const jobs = extras.jobs.slice(0, 3);
-    const hasTopNews = newsItems.length >= 2;
+    const hasTopNews = newsItems.length > 0;
     // Inline symbols are intentional: remote SVG assets are blocked by several
     // email clients and otherwise appear as broken-image icons.
     const icon = (name: "news" | "calendar" | "publisher" | "location" | "jobs" | "events", label: string) => {
@@ -1799,89 +1489,22 @@ export async function sendPreferenceDigestEmail(
         return `${clippedValue}\u2026`;
     };
 
-    const renderEditorialStory = (
-        item: PreferenceDigestSection["items"][number],
-        buttonLabel: string,
-        showAuthor = true,
-        buttonBelowCopy = false
-    ) => {
-        const publisher = item.publisher || "ENERGDIVE Editorial";
-        const imageUrl = item.imageUrl ? getEmailImageUrl(item.imageUrl) : null;
-        const image = imageUrl
-            ? `<a href="${item.href}" target="_blank"><img src="${imageUrl}" alt="${escapeHtml(item.title)}" width="240" height="140" border="0" style="display:block;width:240px;height:140px;object-fit:cover;border-radius:8px;" /></a>`
-            : `<table width="240" height="140" cellpadding="0" cellspacing="0" role="presentation" style="width:240px;height:140px;background:#e8eeec;border-radius:8px;"><tr><td>&nbsp;</td></tr></table>`;
-        const storyMeta = showAuthor
-            ? `${formatBriefingDate(item.publishedAt)}&nbsp;&nbsp;•&nbsp;&nbsp;${escapeHtml(publisher)}`
-            : formatBriefingDate(item.publishedAt);
-        const action = `<a href="${item.href}" target="_blank" style="display:inline-block;background:#ffffff;color:#0b6b55;padding:8px 12px;border:1px solid #0b6b55;border-radius:4px;font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap;">${buttonLabel}</a>`;
-        return `<tr><td style="padding:0 0 18px;">
-            <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="border-bottom:1px solid #e5e7eb;">
-                <tr>
-                    <td class="top-news-image" width="240" valign="top" style="width:240px;padding:0 16px 18px 0;">${image}</td>
-                    <td class="story-copy" valign="top" style="padding:0 0 18px;">
-                        <p style="margin:0 0 7px;color:#111827;font-size:16px;line-height:1.28;font-weight:800;letter-spacing:-0.15px;"><a href="${item.href}" target="_blank" style="color:#111827;text-decoration:none;">${escapeHtml(item.title)}</a></p>
-                        <p style="margin:0 0 9px;color:#667085;font-size:13px;line-height:1.45;max-height:38px;overflow:hidden;">${escapeHtml(item.crispLine)}</p>
-                        <p style="margin:0;color:#667085;font-size:11px;line-height:1.4;">${storyMeta}</p>
-                        ${buttonBelowCopy ? `<p style="margin:12px 0 0;">${action}</p>` : ""}
-                    </td>
-                    ${buttonBelowCopy ? "" : `<td class="story-action" width="96" valign="middle" align="right" style="width:96px;padding:0 0 18px 12px;">${action}</td>`}
-                </tr>
-            </table>
-        </td></tr>`;
-    };
-
     const renderTopNewsStory = (item: PreferenceDigestSection["items"][number]) => {
-        const imageUrl = item.imageUrl ? getEmailImageUrl(item.imageUrl) : null;
-        const image = imageUrl
-            ? `<a href="${item.href}" target="_blank"><img src="${imageUrl}" alt="${escapeHtml(item.title)}" width="220" height="156" border="0" style="display:block;width:220px;height:156px;object-fit:cover;border-radius:5px;" /></a>`
-            : `<table width="220" height="156" cellpadding="0" cellspacing="0" role="presentation" style="width:220px;height:156px;background:#e8eeec;border-radius:5px;"><tr><td>&nbsp;</td></tr></table>`;
-        return `<tr><td style="padding:0 0 8px;"><table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="border-bottom:1px solid #e5e7eb;"><tr>
-            <td class="top-news-thumb" width="220" valign="top" style="width:220px;padding:0 14px 8px 0;">${image}</td>
-            <td class="top-news-copy" valign="top" style="padding:0 8px 8px 0;"><table width="100%" height="156" cellpadding="0" cellspacing="0" role="presentation" style="height:156px;"><tr><td valign="top"><p style="margin:0 0 5px;color:#111827;font-size:14px;line-height:1.25;font-weight:800;letter-spacing:-0.1px;"><a href="${item.href}" target="_blank" style="color:#111827;text-decoration:none;">${escapeHtml(item.title)}</a></p><p style="margin:0;color:#667085;font-size:11px;line-height:1.35;max-height:45px;overflow:hidden;">${escapeHtml(briefingSummary(item.crispLine, 120))}</p></td></tr><tr><td valign="bottom" style="padding:0 0 8px;color:#667085;font-size:9px;line-height:1.3;">${formatBriefingDate(item.publishedAt)}</td></tr></table></td>
-            <td class="top-news-action" width="72" valign="bottom" align="right" style="width:72px;padding:0 0 16px 6px;"><a href="${item.href}" target="_blank" style="display:inline-block;background:#ffffff;color:#087a66;padding:6px 9px;border:1px solid #087a66;border-radius:4px;font-size:9px;font-weight:800;text-decoration:none;white-space:nowrap;">Read Now →</a></td>
+        const image = renderBriefingImage(item, 220, 156);
+        return `<tr><td bgcolor="#ffffff" style="background-color:#ffffff;padding:0 0 8px;"><table bgcolor="#ffffff" width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background-color:#ffffff;border-bottom:1px solid #e5e7eb;"><tr>
+            <td bgcolor="#ffffff" class="top-news-thumb" width="220" valign="top" style="background-color:#ffffff;width:220px;padding:0 14px 8px 0;">${image}</td>
+            <td bgcolor="#ffffff" class="top-news-copy" valign="top" style="background-color:#ffffff;padding:0 8px 8px 0;"><table bgcolor="#ffffff" width="100%" height="156" cellpadding="0" cellspacing="0" role="presentation" style="background-color:#ffffff;height:156px;"><tr><td bgcolor="#ffffff" valign="top"><p style="background-color:#ffffff;margin:0 0 5px;color:#111827;font-size:14px;line-height:1.25;font-weight:800;letter-spacing:-0.1px;"><a href="${item.href}" target="_blank" style="background-color:#ffffff;color:#111827;text-decoration:none;">${escapeHtml(item.title)}</a></p><p style="background-color:#ffffff;margin:0;color:#667085;font-size:11px;line-height:1.35;max-height:45px;overflow:hidden;">${escapeHtml(briefingSummary(item.crispLine, 120))}</p></td></tr><tr><td bgcolor="#ffffff" valign="bottom" style="background-color:#ffffff;padding:0 0 8px;color:#667085;font-size:9px;line-height:1.3;">${formatBriefingDate(item.publishedAt)}</td></tr></table></td>
+            <td bgcolor="#ffffff" class="top-news-action" width="72" valign="bottom" align="right" style="background-color:#ffffff;width:72px;padding:0 0 16px 6px;"><a href="${item.href}" target="_blank" style="background-color:#ffffff;display:inline-block;background:#ffffff;color:#087a66;padding:6px 9px;border:1px solid #087a66;border-radius:4px;font-size:9px;font-weight:800;text-decoration:none;white-space:nowrap;">Read Now →</a></td>
         </tr></table></td></tr>`;
     };
 
     const topNewsHtml = newsItems.map(renderTopNewsStory).join("");
 
-    const renderInterviewStory = (item: PreferenceDigestSection["items"][number]) => {
-        const imageUrl = item.imageUrl ? getEmailImageUrl(item.imageUrl) : null;
-        const image = imageUrl
-            ? `<a href="${item.href}" target="_blank"><img src="${imageUrl}" alt="${escapeHtml(item.title)}" width="240" height="220" border="0" style="display:block;width:240px;height:220px;object-fit:contain;object-position:center top;background:#111827;border-radius:8px;" /></a>`
-            : `<table width="240" height="220" cellpadding="0" cellspacing="0" role="presentation" style="width:240px;height:220px;background:#111827;border-radius:8px;"><tr><td>&nbsp;</td></tr></table>`;
-        return `<tr><td style="padding:0 0 18px;"><table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="border-bottom:1px solid #e5e7eb;"><tr>
-            <td class="interview-image" width="240" valign="top" style="width:240px;padding:0 16px 18px 0;">${image}</td>
-            <td class="interview-copy" valign="top" style="padding:0 0 18px;"><p style="margin:0 0 8px;color:#111827;font-size:17px;line-height:1.25;font-weight:800;letter-spacing:-0.2px;"><a href="${item.href}" target="_blank" style="color:#111827;text-decoration:none;">${escapeHtml(item.title)}</a></p><p style="margin:0 0 13px;color:#667085;font-size:13px;line-height:1.45;max-height:57px;overflow:hidden;">${escapeHtml(item.crispLine)}</p><table width="100%" cellpadding="0" cellspacing="0" role="presentation"><tr><td valign="middle" style="color:#667085;font-size:10px;line-height:1.3;">${formatBriefingDate(item.publishedAt)}</td><td valign="middle" align="right"><a href="${item.href}" target="_blank" style="display:inline-block;background:#ffffff;color:#087a66;padding:8px 11px;border:1px solid #087a66;border-radius:4px;font-size:10px;font-weight:800;text-decoration:none;white-space:nowrap;">Read Now &rarr;</a></td></tr></table></td>
-        </tr></table></td></tr>`;
-    };
-
     const featuredArticlesHtml = articles.map((item) => {
         const title = item.title.length > 82 ? `${item.title.slice(0, 79).trimEnd()}…` : item.title;
         const summary = briefingSummary(item.crispLine, 129);
-        const imageUrl = item.imageUrl ? getEmailImageUrl(item.imageUrl) : null;
-        const image = imageUrl
-            ? `<a href="${item.href}" target="_blank"><img src="${imageUrl}" alt="${escapeHtml(item.title)}" width="176" height="145" border="0" style="display:block;width:100%;height:145px;object-fit:cover;border-radius:7px 7px 0 0;" /></a>`
-            : `<table width="176" height="145" cellpadding="0" cellspacing="0" role="presentation" style="width:100%;height:145px;background:#e8eeec;border-radius:7px 7px 0 0;"><tr><td>&nbsp;</td></tr></table>`;
+        const image = renderBriefingImage(item, 176, 145);
         return `<td class="featured-article-card" width="33.33%" valign="top" style="width:33.33%;padding:0 5px 10px;"><table width="100%" height="320" cellpadding="0" cellspacing="0" role="presentation" style="height:320px;border:1px solid #e5e7eb;border-radius:7px;background:#ffffff;"><tr><td height="145" valign="top" style="height:145px;">${image}</td></tr><tr><td height="151" valign="top" style="height:151px;padding:12px 12px 14px;"><p style="margin:0 0 7px;color:#111827;font-size:13px;line-height:1.32;font-weight:800;height:52px;overflow:hidden;"><a href="${item.href}" target="_blank" style="color:#111827;text-decoration:none;">${escapeHtml(title)}</a></p><p style="margin:0;color:#667085;font-size:11px;line-height:1.45;height:66px;overflow:hidden;">${escapeHtml(summary)}</p></td></tr></table></td>`;
-    }).join("");
-
-    const trendingHtml = trendingItems.map((item) => {
-        const publisher = item.publisher || "ENERGDIVE News Desk";
-        const image = item.imageUrl
-            ? `<a href="${item.href}" target="_blank"><img src="${item.imageUrl}" alt="${escapeHtml(item.title)}" width="118" height="78" border="0" style="display:block;width:118px;height:78px;border-radius:7px;" /></a>`
-            : `<table width="118" height="78" cellpadding="0" cellspacing="0" role="presentation" style="width:118px;height:78px;background:#edf2ef;border-radius:7px;"><tr><td>&nbsp;</td></tr></table>`;
-        return `<tr><td style="padding:0 0 7px;">
-            <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="border:1px solid #e5e7eb;border-radius:9px;background:#ffffff;">
-                <tr>
-                    <td width="118" valign="middle" style="width:118px;padding:7px 12px 7px 7px;">${image}</td>
-                    <td valign="middle" style="padding:9px 10px 9px 0;">
-                        <p style="margin:0 0 6px;font-size:13px;line-height:1.35;font-weight:800;"><a href="${item.href}" target="_blank" style="color:#111827;text-decoration:none;">${escapeHtml(item.title)}</a></p>
-                        <p style="margin:0;color:#667085;font-size:10px;line-height:1.35;">${icon("calendar", "Published date")} ${formatBriefingDate(item.publishedAt)}&nbsp;&nbsp; ${icon("publisher", "Publisher")} ${escapeHtml(publisher)}</p>
-                    </td>
-                    <td width="24" valign="middle" align="center" style="width:24px;padding:9px 10px 9px 0;"><a href="${item.href}" target="_blank" aria-label="Read ${escapeHtml(item.title)}" style="color:#0b6b55;font-size:25px;line-height:1;text-decoration:none;">›</a></td>
-                </tr>
-            </table>
-        </td></tr>`;
     }).join("");
 
     const jobsHtml = jobs.map((job) => `<td class="mobile-job-col" width="33.33%" valign="top" style="width:33.33%;padding:0 8px;">
@@ -1897,7 +1520,7 @@ export async function sendPreferenceDigestEmail(
 
     const eventsHtml = eventItems.map((item) => `<td class="mobile-event-card" width="33.33%" valign="top" style="width:33.33%;padding:0 5px;">
         <table class="briefing-event-card" width="100%" height="260" cellpadding="0" cellspacing="0" role="presentation" style="height:260px;border:1px solid #dfe5e2;border-radius:7px;background:#ffffff;">
-            <tr><td class="briefing-logo-cell" height="100" align="center" valign="middle" style="height:100px;padding:10px;">${item.imageUrl ? `<img src="${getEmailImageUrl(item.imageUrl)}" alt="${escapeHtml(item.title)}" width="150" height="78" border="0" style="display:block;width:150px;height:78px;object-fit:contain;" />` : `<table width="150" height="78" cellpadding="0" cellspacing="0" role="presentation" style="width:150px;height:78px;background:#f4f7f5;border-radius:3px;"><tr><td>&nbsp;</td></tr></table>`}</td></tr>
+            <tr><td class="briefing-logo-cell" height="100" align="center" valign="middle" style="height:100px;padding:10px;">${renderBriefingImage(item, 150, 78)}</td></tr>
             <tr><td class="briefing-event-copy" height="112" valign="top" align="center" style="height:112px;padding:8px 14px 0;text-align:center;">
                 <p class="briefing-card-title" style="margin:0 0 10px;color:#071b2c;font-size:12px;font-weight:800;line-height:1.32;height:32px;overflow:hidden;"><a href="${item.href}" target="_blank" style="color:#071b2c;text-decoration:none;">${escapeHtml(item.title)}</a></p>
                 <p style="margin:0 0 5px;color:#667085;font-size:10px;line-height:1.3;white-space:nowrap;">&#9635; ${escapeHtml(item.eventDate || "Date to be announced")}</p>
@@ -1907,27 +1530,30 @@ export async function sendPreferenceDigestEmail(
         </table>
     </td>`).join("");
 
-    const topNewsBlock = hasTopNews ? `<tr><td class="section-pad" style="padding:30px 32px 8px;"><table width="100%" cellpadding="0" cellspacing="0" role="presentation"><tr><td>${sectionTitle("news", "Top Stories")}</td><td align="right"><a href="${appUrl}" target="_blank" style="color:#087a66;font-size:11px;font-weight:800;text-decoration:none;white-space:nowrap;">View all →</a></td></tr></table></td></tr>
-            <tr><td class="section-pad" style="padding:12px 32px 26px;"><table width="100%" cellpadding="0" cellspacing="0" role="presentation">${topNewsHtml}</table></td></tr>` : `<tr><td class="section-pad" style="padding:30px 32px 26px;">
+    const coverageHtml = extras.coveredDates
+        ? `<p style="margin:8px 0 0;color:#667085;font-size:11px;line-height:1.4;">Covered dates: ${formatBriefingDate(extras.coveredDates.start)} &ndash; ${formatBriefingDate(extras.coveredDates.end)} (through ${new Intl.DateTimeFormat("en-IN", { timeZone: "Asia/Kolkata", hour: "numeric", minute: "2-digit" }).format(extras.coveredDates.end)} IST)</p>`
+        : "";
+    const topNewsBlock = hasTopNews ? `<tr><td class="section-pad" bgcolor="#ffffff" style="background-color:#ffffff;padding:30px 32px 8px;"><table width="100%" cellpadding="0" cellspacing="0" role="presentation"><tr><td>${sectionTitle("news", "Top Stories")}${coverageHtml}</td><td align="right"><a href="${appUrl}" target="_blank" style="color:#087a66;font-size:11px;font-weight:800;text-decoration:none;white-space:nowrap;">View all →</a></td></tr></table></td></tr>
+            <tr><td class="section-pad" bgcolor="#ffffff" style="background-color:#ffffff;padding:12px 32px 26px;"><table width="100%" cellpadding="0" cellspacing="0" role="presentation">${topNewsHtml}</table></td></tr>` : `<tr><td class="section-pad" style="padding:30px 32px 26px;">
                 <p style="margin:0;color:#667085;font-size:14px;line-height:1.5;">No major energy news was published today. We'll be back tomorrow with the latest updates.</p>
             </td></tr>`;
     const featuredArticlesBlock = articles.length ? `<tr><td class="section-pad" style="padding:4px 32px 8px;border-top:1px solid #e5e7eb;"><table width="100%" cellpadding="0" cellspacing="0" role="presentation"><tr><td>${sectionTitle("news", "Featured Articles")}</td><td align="right"><a href="${appUrl}/articles" target="_blank" style="color:#087a66;font-size:11px;font-weight:800;text-decoration:none;white-space:nowrap;">View all &rarr;</a></td></tr></table></td></tr><tr><td class="section-pad" style="padding:12px 27px 22px;"><table width="100%" cellpadding="0" cellspacing="0" role="presentation"><tr>${featuredArticlesHtml}</tr></table></td></tr>` : "";
     const insightsExchangeCtaHtml = `<tr><td class="section-pad" style="padding:8px 32px 28px;"><table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background:#f6f3eb;border:1px solid #dce8df;"><tr><td style="padding:22px 24px;"><p style="margin:0 0 5px;color:#00a651;font-size:10px;font-weight:900;letter-spacing:1.2px;text-transform:uppercase;">ENERGDIVE Insights Exchange</p><p style="margin:0 0 8px;color:#18181b;font-size:18px;line-height:1.25;font-weight:800;">Share knowledge that powers the energy transition.</p><p style="margin:0 0 16px;color:#52525b;font-size:12px;line-height:1.5;">Submit your research, case study, white paper or technical note to EIX.</p><a href="${appUrl}/insights-exchange/call-for-papers" target="_blank" style="display:inline-block;background:#00A651;color:#ffffff;padding:10px 14px;font-size:11px;font-weight:800;letter-spacing:.4px;text-decoration:none;text-transform:uppercase;">Submit Abstract &rarr;</a></td></tr></table></td></tr>`;
     const latestIssueHtml = latestIssue ? `<tr><td class="section-pad" style="padding:4px 32px 26px;border-top:1px solid #e5e7eb;"><table width="100%" cellpadding="0" cellspacing="0" role="presentation"><tr><td style="padding:20px 0 0;"><p style="margin:0 0 12px;color:#111827;font-size:16px;font-weight:900;letter-spacing:-.2px;text-transform:uppercase;font-family:Georgia,'Times New Roman',serif;">Latest Issue</p><table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background:#f8faf9;border:1px solid #e5e7eb;"><tr><td class="issue-cover" width="92" valign="top" style="width:92px;padding:12px 16px 12px 12px;"><a href="${appUrl}/issues/${encodeURIComponent(latestIssue.slug)}" target="_blank"><img src="${getEmailImageUrl(latestIssue.coverImage)}" alt="${escapeHtml(latestIssue.title)} cover" width="92" border="0" style="display:block;width:92px;height:auto;" /></a></td><td valign="middle" style="padding:12px 8px 12px 0;"><p style="margin:0 0 5px;color:#667085;font-size:10px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;">ENERGDIVE Magazine</p><p style="margin:0 0 10px;color:#111827;font-size:16px;line-height:1.3;font-weight:800;">${escapeHtml(latestIssue.title)}</p><a href="${appUrl}/issues/${encodeURIComponent(latestIssue.slug)}" target="_blank" style="color:#087a66;font-size:11px;font-weight:800;text-decoration:none;">Read the issue &rarr;</a></td></tr></table></td></tr></table></td></tr>` : "";
     const middleOpinionAdHtml = afterNewsAd ? `<tr><td class="section-pad" style="padding:24px 32px 28px;">
-        <a href="${afterNewsAd.targetUrl}" target="_blank"><img src="${afterNewsAd.imageUrl}" alt="Sponsored" width="576" height="71" border="0" style="display:block;width:100%;max-width:576px;height:auto;border:0;border-radius:6px;" /></a>
+        <a href="${afterNewsAd.targetUrl}" target="_blank"><img src="${afterNewsAd.imageUrl}" alt="Sponsored" width="576" border="0" style="display:block;width:100%;max-width:576px;height:auto;border:0;border-radius:6px;" /></a>
     </td></tr>` : "";
     const afterTopNewsAdHtml = afterTopNewsAd ? `<tr><td class="section-pad" style="padding:24px 32px 28px;">
-        <a href="${afterTopNewsAd.targetUrl}" target="_blank"><img src="${afterTopNewsAd.imageUrl}" alt="Sponsored" width="576" height="71" border="0" style="display:block;width:100%;max-width:576px;height:auto;border:0;border-radius:6px;" /></a>
+        <a href="${afterTopNewsAd.targetUrl}" target="_blank"><img src="${afterTopNewsAd.imageUrl}" alt="Sponsored" width="576" border="0" style="display:block;width:100%;max-width:576px;height:auto;border:0;border-radius:6px;" /></a>
     </td></tr>` : "";
     const topSponsorAdHtml = sponsor ? `<tr><td class="section-pad" style="padding:24px 32px 28px;">
-        <a href="${sponsor.targetUrl}" target="_blank"><img src="${sponsor.imageUrl}" alt="Sponsored" width="576" height="71" border="0" style="display:block;width:100%;max-width:576px;height:auto;border:0;border-radius:6px;" /></a>
+        <a href="${sponsor.targetUrl}" target="_blank"><img src="${sponsor.imageUrl}" alt="Sponsored" width="576" border="0" style="display:block;width:100%;max-width:576px;height:auto;border:0;border-radius:6px;" /></a>
     </td></tr>` : "";
     const afterJobsAdHtml = afterJobsAd ? `<tr><td class="section-pad" style="padding:0 32px 28px;">
-        <a href="${afterJobsAd.targetUrl}" target="_blank"><img src="${afterJobsAd.imageUrl}" alt="Sponsored" width="576" height="71" border="0" style="display:block;width:100%;max-width:576px;height:auto;border:0;border-radius:6px;" /></a>
+        <a href="${afterJobsAd.targetUrl}" target="_blank"><img src="${afterJobsAd.imageUrl}" alt="Sponsored" width="576" border="0" style="display:block;width:100%;max-width:576px;height:auto;border:0;border-radius:6px;" /></a>
     </td></tr>` : "";
     const footerSectorAdHtml = endAd ? `<tr><td class="section-pad" style="padding:0 32px 28px;">
-        <a href="${endAd.targetUrl}" target="_blank"><img src="${endAd.imageUrl}" alt="Sponsored" width="576" height="71" border="0" style="display:block;width:100%;max-width:576px;height:auto;border:0;border-radius:6px;" /></a>
+        <a href="${endAd.targetUrl}" target="_blank"><img src="${endAd.imageUrl}" alt="Sponsored" width="576" border="0" style="display:block;width:100%;max-width:576px;height:auto;border:0;border-radius:6px;" /></a>
     </td></tr>` : "";
 
     const htmlContent = `<!DOCTYPE html>
@@ -1954,7 +1580,7 @@ export async function sendPreferenceDigestEmail(
             .top-news-image { padding:0 0 12px !important; }
             .top-news-image img { width:100% !important; max-width:none !important; height:auto !important; }
             .top-news-thumb { padding:0 0 10px !important; }
-            .top-news-thumb img { width:100% !important; max-width:none !important; height:auto !important; }
+            .top-news-thumb img { max-width:100% !important; height:auto !important; margin:0 auto !important; }
             .top-news-copy { padding:0 0 10px !important; }
             .top-news-copy table { height:auto !important; }
             .top-news-action { padding:0 0 14px !important; text-align:left !important; }
@@ -1967,7 +1593,7 @@ export async function sendPreferenceDigestEmail(
             .mobile-event-card { padding:0 0 8px !important; }
             .featured-article-card { padding:0 0 12px !important; }
             .briefing-logo-cell { height:70px !important; padding:8px 10px 4px !important; }
-            .briefing-logo-cell img { width:116px !important; height:58px !important; }
+            .briefing-logo-cell img { max-width:100% !important; height:auto !important; }
             .briefing-event-copy { padding:5px 12px 0 !important; }
             .briefing-event-copy .briefing-card-title { margin-bottom:5px !important; min-height:0 !important; }
             .footer-meta { padding:16px 0 0 !important; }
@@ -1989,7 +1615,7 @@ export async function sendPreferenceDigestEmail(
     </style>
 </head>
 <body style="margin:0;padding:0;background:#f3f5f4;font-family:Arial,Helvetica,sans-serif;">
-    <div class="preheader">Your daily snapshot of the energy stories, opportunities and events that matter.</div>
+    <div class="preheader">Your ${frequency.toLowerCase()} snapshot of energy stories, opportunities and events.</div>
     <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background:#f3f5f4;"><tr><td class="outer-pad" align="center" style="padding:24px 10px;">
         <table class="email-container" width="640" cellpadding="0" cellspacing="0" role="presentation" style="width:100%;max-width:640px;background:#ffffff;border:1px solid #edf0ee;">
             <tr><td class="section-pad" style="padding:26px 32px 20px;border-bottom:1px solid #e5e7eb;">
@@ -2003,8 +1629,8 @@ export async function sendPreferenceDigestEmail(
                 </tr></table>
             </td></tr>
             <tr><td class="section-pad" style="padding:24px 32px 8px;">
-                <p style="margin:0 0 8px;color:#101828;font-size:21px;line-height:1.22;font-weight:800;letter-spacing:-0.25px;">Good evening, <span style="color:#0b6b55;">${escapeHtml(firstName)}</span> 👋</p>
-                <p class="greeting-copy" style="margin:0;color:#344054;font-size:14px;line-height:1.55;font-weight:600;">Your daily dose of essential energy stories,<br />opportunities &amp; events shaping the future.</p>
+                <p style="margin:0 0 8px;color:#101828;font-size:21px;line-height:1.22;font-weight:800;letter-spacing:-0.25px;">${greetingHtml}</p>
+                <p class="greeting-copy" style="margin:0;color:#344054;font-size:14px;line-height:1.55;font-weight:600;">Your ${frequency.toLowerCase()} dose of essential energy stories,<br />opportunities &amp; events shaping the future.</p>
             </td></tr>
             ${topSponsorAdHtml}
             ${topNewsBlock}
@@ -2028,14 +1654,28 @@ export async function sendPreferenceDigestEmail(
 </body>
 </html>`;
 
-    await sendEmail({
+    return {
         to,
-        toName: firstName,
+        toName: greetingName || undefined,
         subject,
         htmlContent,
         sender: { email: DIGEST_FROM_EMAIL, name: DIGEST_FROM_NAME },
         tags: ["preference-digest", `digest-${frequency.toLowerCase()}`],
-    });
+    };
+}
+
+/** Legacy callers cannot dispatch supplied/stale HTML or bypass eligibility. */
+export async function sendPreferenceDigestEmail(
+    to: string, _firstName: string, frequency: string, _sections: PreferenceDigestSection[],
+    _sponsor?: { imageUrl: string; targetUrl: string } | null,
+    _extras?: DailyBriefingExtras
+): Promise<void> {
+    // Legacy payloads are deliberately ignored: only the newly gated edition
+    // may be delivered, even when this call originated from a saved queue job.
+    void _sections; void _sponsor; void _extras;
+    const { processPreferenceDigests } = await import("./preference-digests");
+    const result = await processPreferenceDigests({ email: to, frequency: frequency.toLowerCase() });
+    if (!result.sent) throw new Error(`Briefing skipped: ${result.reason || result.results[0]?.reason || "unsubscribed_or_inactive"}`);
 }
 
 /**

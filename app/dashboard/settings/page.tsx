@@ -431,7 +431,7 @@ export default function SettingsPage() {
                                         type="tel"
                                         value={phone}
                                         onChange={(e) => setPhone(e.target.value)}
-                                        placeholder="9876543210"
+                                        placeholder="9000000000"
                                         className="w-full h-11 rounded-r-lg px-4 text-sm outline-none transition-all"
                                         style={{ background: "var(--dash-surface-2)", border: "1px solid var(--dash-border)", color: "var(--dash-text)" }}
                                     />

@@ -12,6 +12,7 @@ import { getLatestIssue } from "@/lib/api/getLatestIssue";
 import { slugify } from "@/lib/utils";
 import NewsFeedClient from "./NewsFeedClient";
 import { ORGANIZATION_SCHEMA } from "@/lib/organization-schema";
+import { ReloadNewsToHome } from "@/components/news/reload-to-home";
 
 const STRAPI_BASE_URL = "https://cms.energdive.com";
 
@@ -91,6 +92,39 @@ export default async function NewsPage(props: { searchParams: Promise<{ [key: st
                 if (finalImage && finalImage.includes("placeholder")) finalImage = null;
 
                 const rawDateVal = attrs.Date || attrs.publishedAt || attrs.createdAt;
+                const authorRelation = attrs.author || attrs.Author;
+                const authorObj =
+                    authorRelation?.data?.attributes ||
+                    authorRelation?.data?.[0]?.attributes ||
+                    authorRelation?.attributes ||
+                    authorRelation?.[0] ||
+                    authorRelation;
+                const authorName = authorObj?.name || authorObj?.Name || (typeof authorRelation === "string" ? authorRelation : null);
+
+                // Collect all sectors from Strapi (can be in attrs.sectors, attrs.sector, or attrs.tags)
+                const rawSectors = Array.isArray(attrs.sectors?.data)
+                    ? attrs.sectors.data
+                    : Array.isArray(attrs.sectors)
+                        ? attrs.sectors
+                        : [];
+                const sectorNames = rawSectors
+                    .map((s: any) => s.attributes?.name || s.name)
+                    .filter(Boolean);
+
+                if (attrs.sector?.data?.attributes?.name) sectorNames.push(attrs.sector.data.attributes.name);
+                if (attrs.sector?.name) sectorNames.push(attrs.sector.name);
+
+                const rawTags = Array.isArray(attrs.tags?.data)
+                    ? attrs.tags.data
+                    : Array.isArray(attrs.tags)
+                        ? attrs.tags
+                        : [];
+                const tagNames = rawTags
+                    .map((t: any) => t.attributes?.name || t.name)
+                    .filter(Boolean);
+
+                const combinedSectors = Array.from(new Set([...sectorNames, ...tagNames]));
+                const primarySector = combinedSectors.find(s => s.toLowerCase() !== "energy") || combinedSectors[0] || "Energy";
 
                 return {
                     id: item.id,
@@ -99,16 +133,11 @@ export default async function NewsPage(props: { searchParams: Promise<{ [key: st
                     image: finalImage,
                     excerpt: excerptText,
                     category: attrs.type_of_content?.data?.attributes?.name || "NEWS",
-                    sector: (
-                        attrs.sectors?.[0]?.name ||
-                        attrs.sectors?.data?.[0]?.attributes?.name ||
-                        attrs.sector?.name ||
-                        attrs.sector?.data?.attributes?.name ||
-                        "Energy"
-                    ),
+                    sector: primarySector,
+                    sectors: combinedSectors.length > 0 ? combinedSectors : [primarySector],
                     date: formatContentDate(rawDateVal),
                     rawDate: rawDateVal,
-                    author: attrs.Author?.name || "ENERGDIVE News Desk",
+                    author: authorName || "ENERGDIVE News Desk",
                     readingTime: estimateReadingTime(excerptText + " " + (attrs.CONTENT || "")),
                 };
             });
@@ -122,8 +151,6 @@ export default async function NewsPage(props: { searchParams: Promise<{ [key: st
             articles.sort((a: any, b: any) => {
                 return getTimestamp(b.rawDate) - getTimestamp(a.rawDate);
             });
-
-            articles = articles.slice(start, start + limit);
         }
     } catch (error) {
         console.error("Error fetching news:", error);
@@ -145,9 +172,26 @@ export default async function NewsPage(props: { searchParams: Promise<{ [key: st
         );
     }
 
-    const heroArticle = isFirstPage ? articles[0] : null;
-    const topStories = isFirstPage ? articles.slice(1, 6) : [];
-    const gridArticles = isFirstPage ? articles.slice(6) : articles;
+    const allSortedArticles = articles;
+    const paginatedArticles = allSortedArticles.slice(start, start + limit);
+
+    if (paginatedArticles.length === 0 && page > 1) {
+        return (
+            <div className="min-h-screen bg-white">
+                <Header />
+                <div className="min-h-[50vh] flex flex-col items-center justify-center">
+                    <p className="text-xl font-bold text-slate-500">No news found.</p>
+                    <Link href="/news" className="mt-4 text-emerald-600 hover:underline font-bold">
+                        Return to Page 1
+                    </Link>
+                </div>
+            </div>
+        );
+    }
+
+    const heroArticle = isFirstPage ? paginatedArticles[0] : null;
+    const topStories = isFirstPage ? paginatedArticles.slice(1, 6) : [];
+    const gridArticles = isFirstPage ? paginatedArticles.slice(6) : paginatedArticles;
 
     const hasMore = start + limit < totalCount;
     const totalPages = 1 + (totalCount > 18 ? Math.ceil((totalCount - 18) / 12) : 0);
@@ -163,7 +207,7 @@ export default async function NewsPage(props: { searchParams: Promise<{ [key: st
 
     const itemListSchema = {
         "@type": "ItemList",
-        "itemListElement": articles.map((a, i) => {
+        "itemListElement": paginatedArticles.map((a, i) => {
             const isOrgAuthor = !a.author || /\b(desk|editorial|team|energdive|newsroom)\b/i.test(a.author);
             
             return {
@@ -201,6 +245,7 @@ export default async function NewsPage(props: { searchParams: Promise<{ [key: st
 
     return (
         <div className="min-h-screen bg-white text-slate-900 selection:bg-emerald-600 selection:text-white font-sans overflow-x-clip">
+            <ReloadNewsToHome />
             {/* Inject JSON-LD */}
             <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(newsGraphSchema).replace(/</g, '\\u003c') }} />
             
@@ -318,6 +363,7 @@ export default async function NewsPage(props: { searchParams: Promise<{ [key: st
                 {/* 3 & 4. PRIMARY NEWS STREAM (Filter Bar + Asymmetric Grid) */}
                 <NewsFeedClient 
                     initialArticles={gridArticles} 
+                    allArticles={allSortedArticles}
                     page={page} 
                     totalPages={totalPages} 
                     isFirstPage={isFirstPage} 

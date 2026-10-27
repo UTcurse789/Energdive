@@ -114,6 +114,8 @@ async function ensureSubscribeLetterboxTable() {
     await query(`ALTER TABLE subscribe_letterbox ADD COLUMN IF NOT EXISTS subscribed_from_title TEXT`);
     await query(`ALTER TABLE subscribe_letterbox ADD COLUMN IF NOT EXISTS subscribed_from_page TEXT`);
     await query(`ALTER TABLE subscribe_letterbox ADD COLUMN IF NOT EXISTS last_content_digest_sent_at TIMESTAMPTZ`);
+    await query(`ALTER TABLE subscribe_letterbox ADD COLUMN IF NOT EXISTS preferred_frequency VARCHAR(20)`);
+    await query(`ALTER TABLE subscribe_letterbox ADD COLUMN IF NOT EXISTS content_digest_opted_out BOOLEAN NOT NULL DEFAULT false`);
     await query(`CREATE INDEX IF NOT EXISTS idx_subscribe_letterbox_email ON subscribe_letterbox (LOWER(email))`);
     await query(`CREATE INDEX IF NOT EXISTS idx_subscribe_letterbox_timestamp ON subscribe_letterbox ("timestamp" DESC)`);
 }
@@ -199,6 +201,7 @@ async function resolveLocationByIp(ip: string): Promise<string | null> {
 
 async function insertSubscribeLetterbox(params: {
     email: string;
+    frequency: string;
     location: string | null;
     ip: string;
     source: string;
@@ -218,9 +221,10 @@ async function insertSubscribeLetterbox(params: {
                 source,
                 subscribed_from_url,
                 subscribed_from_title,
-                subscribed_from_page
+                subscribed_from_page,
+                preferred_frequency
              )
-             VALUES ($1, NOW(), $2, $3, $4, $5, $6, $7)`,
+             VALUES ($1, NOW(), $2, $3, $4, $5, $6, $7, $8)`,
             [
                 params.email,
                 params.location,
@@ -229,6 +233,7 @@ async function insertSubscribeLetterbox(params: {
                 params.subscribedFromUrl,
                 params.subscribedFromTitle,
                 params.subscribedFromPage,
+                params.frequency.split(/\s/)[0].toLowerCase(),
             ]
         );
         console.log("[subscribe] DB insert success for:", params.email);
@@ -334,6 +339,7 @@ export async function POST(req: NextRequest) {
 
         await insertSubscribeLetterbox({
             email,
+            frequency,
             location,
             ip,
             source,
