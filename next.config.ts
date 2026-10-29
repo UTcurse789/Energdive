@@ -95,6 +95,17 @@ const nextConfig: NextConfig = {
           },
         ],
       },
+      {
+        // Resource Hub ordering is calculated from live CMS records. Do not let
+        // an intermediary cache keep serving an older rendered issue sequence.
+        source: "/resource-hub",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "private, no-store, max-age=0, must-revalidate",
+          },
+        ],
+      },
     ];
   },
 
