@@ -90,6 +90,11 @@ const tabs = [
                             New Delhi 110075, India
                         </p>
                     </div>
+                    <div className="flex items-center gap-4 border-t border-zinc-200 pt-4">
+                        <div className="min-w-[24px] text-[#00A651]"><Phone /></div>
+                        <a href="tel:+919711433960" className="text-lg font-medium text-zinc-900 hover:text-[#00A651] transition-colors">+91 97114 33960</a>
+                        <CopyButton text="+919711433960" />
+                    </div>
                 </div>
             </div>
         )
@@ -149,20 +154,29 @@ const tabs = [
                 <div className="bg-linear-to-br from-[#00A651]/10 to-transparent p-1 rounded-3xl">
                     <div className="bg-white rounded-[1.3rem] p-10 text-center border border-[#00A651]/20 shadow-lg shadow-[#00A651]/5">
                         <Mail size={32} className="mx-auto text-[#00A651] mb-4" />
-                        <p className="text-zinc-400 mb-6">Send your media kit request to</p>
-                        <div className="flex items-center justify-center gap-2">
-                            <a href="mailto:advertisement@energdive.com" className="text-2xl font-bold text-zinc-900 hover:text-[#00A651] transition-colors">
-                                advertisement@energdive.com
-                            </a>
-                            <CopyButton text="advertisement@energdive.com" />
-                        </div>
-                        <div className="my-6 border-t border-zinc-100" />
-                        <div className="flex items-center justify-center gap-2">
-                            <Phone size={22} className="text-[#00A651]" />
-                            <a href="tel:+919711133843" className="text-xl font-medium text-zinc-900 hover:text-[#00A651] transition-colors">
-                                +91 97111 33843
-                            </a>
-                            <CopyButton text="+919711133843" />
+                        <h4 className="text-2xl font-bold text-zinc-900 mb-2">For Advertisement &amp; Brand Partnerships</h4>
+                        <p className="text-[#00A651] font-medium mb-6">Reach India&apos;s Energy Decision-Makers</p>
+                        <div className="border-t border-zinc-100 pt-6">
+                            <p className="text-xl font-semibold text-zinc-900">Kunal Chauhan</p>
+                            <p className="text-zinc-500 mt-1 mb-5">Director &amp; Business Head</p>
+                            <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-lg">
+                                <div className="flex items-center gap-2">
+                                    <a href="mailto:kunal@energdive.com" className="font-medium text-zinc-900 hover:text-[#00A651] transition-colors">kunal@energdive.com</a>
+                                    <CopyButton text="kunal@energdive.com" />
+                                </div>
+                                <span className="hidden sm:inline text-zinc-300">|</span>
+                                <div className="flex items-center gap-2">
+                                    <Phone size={20} className="text-[#00A651]" />
+                                    <a href="tel:+919711133843" className="font-medium text-zinc-900 hover:text-[#00A651] transition-colors">+91 97111 33843</a>
+                                    <CopyButton text="+919711133843" />
+                                </div>
+                                <span className="hidden sm:inline text-zinc-300">|</span>
+                                <div className="flex items-center gap-2">
+                                    <Phone size={20} className="text-[#00A651]" />
+                                    <a href="tel:+919711433960" className="font-medium text-zinc-900 hover:text-[#00A651] transition-colors">+91 97114 33960</a>
+                                    <CopyButton text="+919711433960" />
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
