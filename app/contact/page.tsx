@@ -156,6 +156,14 @@ const tabs = [
                             </a>
                             <CopyButton text="advertisement@energdive.com" />
                         </div>
+                        <div className="my-6 border-t border-zinc-100" />
+                        <div className="flex items-center justify-center gap-2">
+                            <Phone size={22} className="text-[#00A651]" />
+                            <a href="tel:+919711133843" className="text-xl font-medium text-zinc-900 hover:text-[#00A651] transition-colors">
+                                +91 97111 33843
+                            </a>
+                            <CopyButton text="+919711133843" />
+                        </div>
                     </div>
                 </div>
             </div>
