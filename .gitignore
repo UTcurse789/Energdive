@@ -57,3 +57,6 @@ dist
 
 # clerk configuration (can include secrets)
 /.clerk/
+
+# Local newsletter audit data and rendered verification artifacts
+/scratch/briefing-*

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClerkClient } from "@clerk/nextjs/server";
 import { query } from "@/lib/db";
 import { getUserByMagicToken } from "@/lib/queries";
+import { NO_CACHE_HEADERS } from "@/lib/api/no-cache";
 
 const clerk = createClerkClient({
     secretKey: process.env.CLERK_SECRET_KEY!,
@@ -42,12 +43,29 @@ async function ensureClerkUser(member: {
 }
 
 export async function GET(req: NextRequest) {
-    const token = req.nextUrl.searchParams.get("token");
+    return prepareMembershipAccess(req.nextUrl.searchParams.get("token"));
+}
+
+// Ticket exchanges use POST so a CDN cannot reuse an expired or consumed ticket.
+export async function POST(req: NextRequest) {
+    try {
+        const body = await req.json();
+        return prepareMembershipAccess(body?.token);
+    } catch {
+        return NextResponse.json(
+            { error: "Invalid request body" },
+            { status: 400, headers: NO_CACHE_HEADERS }
+        );
+    }
+}
+
+async function prepareMembershipAccess(rawToken: unknown) {
+    const token = typeof rawToken === "string" ? rawToken.trim().replace(/\\+$/, "") : "";
 
     if (!token) {
         return NextResponse.json(
             { error: "Missing token parameter" },
-            { status: 400 }
+            { status: 400, headers: NO_CACHE_HEADERS }
         );
     }
 
@@ -57,7 +75,7 @@ export async function GET(req: NextRequest) {
         if (!member) {
             return NextResponse.json(
                 { error: "Invalid or expired membership access link" },
-                { status: 401 }
+                { status: 401, headers: NO_CACHE_HEADERS }
             );
         }
 
@@ -69,8 +87,9 @@ export async function GET(req: NextRequest) {
 
         return NextResponse.json({
             success: true,
+            userId: clerkUserId,
             ticket: signInToken.token,
-        });
+        }, { headers: NO_CACHE_HEADERS });
     } catch (error: unknown) {
         console.error("[MEMBERSHIP_ACCESS]", error);
         return NextResponse.json(
@@ -78,7 +97,7 @@ export async function GET(req: NextRequest) {
                 error: "Unable to prepare membership access",
                 details: error instanceof Error ? error.message : String(error),
             },
-            { status: 500 }
+            { status: 500, headers: NO_CACHE_HEADERS }
         );
     }
 }

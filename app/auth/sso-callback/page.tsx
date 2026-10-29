@@ -1,11 +1,10 @@
 "use client";
 
 import { useAuth, AuthenticateWithRedirectCallback } from "@clerk/nextjs";
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import {
+    clearPostAuthRedirect,
     getSafeRedirectFromClient,
-    POST_AUTH_REDIRECT_STORAGE_KEY,
-    POST_AUTH_REDIRECT_COOKIE,
 } from "@/lib/post-auth-redirect";
 
 type WindowWithPostHog = Window & {
@@ -18,20 +17,15 @@ export default function SSOCallbackPage() {
     const { isLoaded, isSignedIn } = useAuth();
     const hasRedirected = useRef(false);
 
-    // Resolve redirect URL from sessionStorage/cookie/URL params
-    const getTargetUrl = (): string => {
-        if (typeof window === "undefined") return "/";
-        const res = getSafeRedirectFromClient();
-        console.log("[SSO CALLBACK] Resolved target URL:", res, "from search:", window.location.search);
-        return res;
-    };
+    // Keep successful navigation and interrupted-login recovery on local routes.
+    const target = getSafeRedirectFromClient();
+    const authUrl = `/auth?${new URLSearchParams({ redirect_url: target }).toString()}`;
 
     // Navigate immediately — call once only
-    const navigateAway = () => {
+    const navigateAway = useCallback(() => {
         if (hasRedirected.current) return;
         hasRedirected.current = true;
 
-        const target = getTargetUrl();
         console.log("[SSO CALLBACK] navigateAway() redirecting to:", target);
 
         // Fire PostHog event asynchronously (don't block redirect)
@@ -46,8 +40,7 @@ export default function SSOCallbackPage() {
         } catch {}
 
         // Clean up stored redirect
-        sessionStorage.removeItem(POST_AUTH_REDIRECT_STORAGE_KEY);
-        document.cookie = `${POST_AUTH_REDIRECT_COOKIE}=; path=/; max-age=0; SameSite=Lax`;
+        clearPostAuthRedirect();
 
         // Navigate immediately — replace so user can't go "back" to callback.
         // We use window.location.replace to force a full hard reload.
@@ -55,7 +48,7 @@ export default function SSOCallbackPage() {
         // version of pages during a soft navigation. A hard reload forces the server 
         // to re-evaluate the auth state and fetch fresh data.
         window.location.replace(target);
-    };
+    }, [target]);
 
     useEffect(() => {
         // If auth is loaded and user is signed in, redirect immediately.
@@ -66,7 +59,7 @@ export default function SSOCallbackPage() {
         }
         
         // Removed the 3 second timeout race condition that was causing premature redirects.
-    }, [isLoaded, isSignedIn]);
+    }, [isLoaded, isSignedIn, navigateAway]);
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-white">
@@ -74,7 +67,12 @@ export default function SSOCallbackPage() {
                 {/* Simple fast spinner */}
                 <div className="w-8 h-8 rounded-full border-[2.5px] border-zinc-100 border-t-[#00A651] animate-spin" />
                 <p className="text-sm text-zinc-400">Signing you in…</p>
-                <AuthenticateWithRedirectCallback />
+                <AuthenticateWithRedirectCallback
+                    signInUrl={authUrl}
+                    signUpUrl={authUrl}
+                    signInForceRedirectUrl={target}
+                    signUpForceRedirectUrl={target}
+                />
             </div>
         </div>
     );

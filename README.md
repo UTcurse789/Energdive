@@ -1,5 +1,10 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+Newsletter behavior, deployment migration, schedule settings and verification
+are documented in [docs/newsletter-briefing.md](docs/newsletter-briefing.md).
+Run `npm run test:briefing` for offline behavioral/database checks and
+`npm run preview:briefing` for daily/weekly HTML previews without email delivery.
+
 ## Getting Started
 
 First, run the development server:

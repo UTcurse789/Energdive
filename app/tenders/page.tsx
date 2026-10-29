@@ -1,351 +1,513 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import { Header } from "@/components/layout/header";
 import { motion, AnimatePresence } from "framer-motion";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowRight, Search, FileText, Filter, SlidersHorizontal, MapPin, Building2, Calendar, ChevronDown, CheckCircle2 } from "lucide-react";
-import { DateChip } from "@/components/ui/date-chip";
+import { 
+  ArrowRight, Search, FileText, Sparkles, MapPin, Building2, 
+  Calendar, CheckCircle2, AlertCircle, RefreshCw, Zap, 
+  ExternalLink, Layers, ArrowUpRight, Clock, Download,
+  SlidersHorizontal, ChevronRight, IndianRupee, ShieldAlert,
+  ArrowUpDown, Filter, X, Check, FileDown, Landmark, Activity,
+  Radio, BarChart3, ChevronDown, CheckCheck
+} from "lucide-react";
 import { formatContentDate } from "@/lib/date";
-
-const STRAPI_BASE_URL = process.env.NEXT_PUBLIC_STRAPI_URL || "https://cms.energdive.com";
+import { UnifiedTender, TenderStats, normalizePythonTender } from "@/lib/api/tenders";
 
 export default function TendersListingPage() {
-    const [tenders, setTenders] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [visibleCount, setVisibleCount] = useState(20);
-    const [searchQuery, setSearchQuery] = useState("");
-    const [activeFilter, setActiveFilter] = useState<"All" | "Open" | "Closed">("All");
+  const [tenders, setTenders] = useState<UnifiedTender[]>([]);
+  const [stats, setStats] = useState<TenderStats>({
+    totalTenders: 0,
+    energyRelated: 0,
+    aiCompleted: 0,
+    sectorBreakdown: [],
+  });
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedSector, setSelectedSector] = useState<string>("All");
+  const [statusFilter, setStatusFilter] = useState<"All" | "Open" | "Closed">("All");
+  const [sortBy, setSortBy] = useState<"newest" | "deadline" | "value">("newest");
+  const [visibleCount, setVisibleCount] = useState(24);
 
-    useEffect(() => {
-        async function fetchData() {
-            try {
-                const url = `${STRAPI_BASE_URL}/api/tenders?populate=*&pagination[pageSize]=100&sort=publishedAt:desc`;
-                const res = await fetch(url);
-                const json = await res.json();
+  useEffect(() => {
+    async function loadData() {
+      try {
+        setLoading(true);
+        // Fetch tenders from Python FastAPI engine via reverse proxy
+        const tendersRes = await fetch("/api/tender-backend/tenders?energy_only=false&page=1&page_size=100", {
+          cache: "no-store",
+        });
 
-                if (json.data) {
-                    const formattedData = json.data.map((item: any) => {
-                        const attrs = item.attributes || item;
-
-                        const sectorData = attrs.sectors?.data?.[0]?.attributes?.name || attrs.sectors?.[0]?.name || "Energy";
-
-                        return {
-                            id: item.id,
-                            title: attrs.title || attrs.Title || "Untitled Tender",
-                            slug: attrs.slug,
-                            organization: attrs.organization,
-                            country: attrs.country,
-                            state: attrs.state,
-                            tenderType: attrs.tender_type,
-                            tenderStatus: attrs.tender_status || "Open",
-                            deadline: attrs.tender_deadline ? formatContentDate(attrs.tender_deadline) : undefined,
-                            sector: sectorData,
-                            date: formatContentDate(attrs.publishedAt || attrs.createdAt),
-                            rawDate: attrs.publishedAt || attrs.createdAt,
-                            featured: attrs.featured === true || attrs.featured === "true",
-                        };
-                    });
-
-                    formattedData.sort((a: any, b: any) => {
-                        return new Date(b.rawDate).getTime() - new Date(a.rawDate).getTime();
-                    });
-
-                    setTenders(formattedData);
-                }
-            } catch (error) {
-                console.error("Error fetching tenders:", error);
-            } finally {
-                setLoading(false);
-            }
+        if (tendersRes.ok) {
+          const json = await tendersRes.json();
+          if (json.tenders) {
+            const formatted: UnifiedTender[] = json.tenders.map(normalizePythonTender);
+            setTenders(formatted);
+          }
         }
-        fetchData();
-    }, []);
 
-    const filteredTenders = tenders.filter(tender => {
-        const matchesSearch = 
-            tender.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            tender.organization?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            tender.country?.toLowerCase().includes(searchQuery.toLowerCase());
-        
-        const matchesStatus = 
-            activeFilter === "All" || 
-            (activeFilter === "Open" && tender.tenderStatus.toLowerCase().includes("open")) ||
-            (activeFilter === "Closed" && tender.tenderStatus.toLowerCase().includes("clos"));
+        // Fetch stats
+        const statsRes = await fetch("/api/tender-backend/stats", { cache: "no-store" });
+        if (statsRes.ok) {
+          const statsJson = await statsRes.json();
+          setStats({
+            totalTenders: statsJson.total_tenders || 0,
+            energyRelated: statsJson.energy_related || 0,
+            aiCompleted: statsJson.ai_completed || 0,
+            sectorBreakdown: statsJson.sector_breakdown || [],
+          });
+        }
+      } catch (err) {
+        console.error("Failed to load tenders from Python API:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
 
-        return matchesSearch && matchesStatus;
+    loadData();
+  }, []);
+
+  // Compute sector counts
+  const sectorCounts = useMemo(() => {
+    const counts: Record<string, number> = { All: tenders.length };
+    tenders.forEach((t) => {
+      const s = (t.sector || "Energy").trim();
+      counts[s] = (counts[s] || 0) + 1;
+    });
+    return counts;
+  }, [tenders]);
+
+  const availableSectors = useMemo(() => {
+    return Object.keys(sectorCounts);
+  }, [sectorCounts]);
+
+  // Filter and sort tenders
+  const filteredAndSortedTenders = useMemo(() => {
+    let list = tenders.filter((tender) => {
+      const q = searchQuery.toLowerCase().trim();
+      const matchesSearch =
+        !q ||
+        tender.title.toLowerCase().includes(q) ||
+        tender.organization.toLowerCase().includes(q) ||
+        tender.reference.toLowerCase().includes(q) ||
+        (tender.tenderId && tender.tenderId.toLowerCase().includes(q)) ||
+        (tender.sector && tender.sector.toLowerCase().includes(q)) ||
+        (tender.state && tender.state.toLowerCase().includes(q));
+
+      const matchesSector =
+        selectedSector === "All" ||
+        (tender.sector && tender.sector.toLowerCase() === selectedSector.toLowerCase());
+
+      const matchesStatus =
+        statusFilter === "All" ||
+        (statusFilter === "Open" && tender.tenderStatus.toLowerCase().includes("open")) ||
+        (statusFilter === "Closed" && tender.tenderStatus.toLowerCase().includes("clos"));
+
+      return matchesSearch && matchesSector && matchesStatus;
     });
 
-    const visibleTenders = filteredTenders.slice(0, visibleCount);
-    const activeTendersCount = tenders.filter(t => t.tenderStatus?.toLowerCase().includes('open')).length;
+    // Sorting
+    list.sort((a, b) => {
+      if (sortBy === "deadline") {
+        const dateA = a.deadline ? new Date(a.deadline).getTime() : Infinity;
+        const dateB = b.deadline ? new Date(b.deadline).getTime() : Infinity;
+        return dateA - dateB;
+      }
+      if (sortBy === "value") {
+        const valA = parseFloat((a.tenderValue || "0").replace(/[^0-9.]/g, "")) || 0;
+        const valB = parseFloat((b.tenderValue || "0").replace(/[^0-9.]/g, "")) || 0;
+        return valB - valA;
+      }
+      // default: newest published first
+      const dateA = a.publishedDate ? new Date(a.publishedDate).getTime() : 0;
+      const dateB = b.publishedDate ? new Date(b.publishedDate).getTime() : 0;
+      return dateB - dateA;
+    });
 
-    if (loading) return (
-        <main className="min-h-screen bg-[#FAFAFA] font-sans">
-            <Header />
-            <div className="pt-32 pb-20">
-                <div className="container mx-auto px-4 max-w-[1400px]">
-                    <Skeleton className="h-64 w-full rounded-3xl mb-12" />
-                    <div className="flex gap-8">
-                        <Skeleton className="h-[600px] w-1/4 rounded-2xl hidden lg:block" />
-                        <div className="flex-1 space-y-4">
-                            {[...Array(6)].map((_, i) => (
-                                <Skeleton key={i} className="h-32 w-full rounded-2xl" />
-                            ))}
-                        </div>
-                    </div>
+    return list;
+  }, [tenders, searchQuery, selectedSector, statusFilter, sortBy]);
+
+  const visibleTenders = filteredAndSortedTenders.slice(0, visibleCount);
+  const activeCount = tenders.filter((t) => t.tenderStatus?.toLowerCase().includes("open")).length;
+  const aiCount = stats.aiCompleted || tenders.filter(t => t.aiAnalysis?.summary).length;
+
+  return (
+    <div className="min-h-screen bg-[#F8FAFC] text-slate-900 font-sans selection:bg-[#00A651] selection:text-white">
+      <Header />
+
+      <main className="pt-16 sm:pt-20 pb-32">
+        
+        {/* ── 1. 🌟 REVOLUTIONARY HERO SECTION WITH LIVE INTELLIGENCE ── */}
+        <section className="container mx-auto px-3 sm:px-6 lg:px-8 max-w-[1400px] mb-6 sm:mb-10">
+          <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl bg-gradient-to-br from-slate-950 via-[#071d14] to-[#013319] p-6 sm:p-10 md:p-14 border border-emerald-900/40 shadow-2xl">
+            
+            {/* Ambient Lighting */}
+            <div className="absolute top-0 right-0 -translate-y-1/3 translate-x-1/4 w-[400px] sm:w-[700px] h-[400px] sm:h-[700px] bg-emerald-500/20 rounded-full blur-[120px] sm:blur-[160px] pointer-events-none" />
+            <div className="absolute bottom-0 left-0 translate-y-1/3 -translate-x-1/4 w-[300px] sm:w-[500px] h-[300px] sm:h-[500px] bg-teal-500/15 rounded-full blur-[90px] sm:blur-[120px] pointer-events-none" />
+
+            <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8 lg:gap-12">
+              
+              {/* Left Headline */}
+              <div className="max-w-3xl">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-[11px] sm:text-xs font-semibold uppercase tracking-wider mb-4 sm:mb-6">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                  Live Government Tender Intelligence • Daily CPPP Portal
                 </div>
-            </div>
-        </main>
-    );
-
-    return (
-        <div className="min-h-screen bg-[#F8FAFC] text-slate-900 font-sans selection:bg-[#00A651] selection:text-white">
-            <Header />
-
-            <main className="pt-15 pb-32">
                 
-                {/* ---------- PREMIUM HERO SECTION ---------- */}
-                <section className="relative w-full mb-12">
-                    <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-[1400px]">
-                        <div className="relative pb-10">
-                            <div className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-slate-900 via-[#0a1f16] to-[#004d26] shadow-2xl">
-                                {/* Abstract background elements */}
-                                <div className="absolute top-0 right-0 -translate-y-12 translate-x-1/3 w-[600px] h-[600px] bg-[#00A651] rounded-full blur-[120px] opacity-20" />
-                                <div className="absolute bottom-0 left-0 translate-y-1/3 -translate-x-1/4 w-[400px] h-[400px] bg-emerald-400 rounded-full blur-[100px] opacity-10" />
-                                <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10 mix-blend-overlay" />
-                                
-                                <div className="relative z-10 px-8 py-16 md:pt-10 md:pb-20 md:px-16 flex flex-col lg:flex-row items-center justify-between gap-12">
-                                    
-                                    <div className="max-w-3xl">
-                                        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
-                                            <h1 className="text-4xl md:text-6xl font-bold tracking-tight text-white leading-tight mb-6">
-                                                Global Energy <br/>
-                                                <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 to-[#00A651]">
-                                                    Tender Database
-                                                </span>
-                                            </h1>
-                                            <p className="text-lg text-slate-300 leading-relaxed max-w-2xl font-light">
-                                                Discover high-value procurement notices, contract opportunities, and strategic tenders across the entire energy value chain. Updated daily.
-                                            </p>
-                                        </motion.div>
-                                    </div>
+                <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-white leading-[1.12] mb-3 sm:mb-5">
+                  Global Energy & Public <br className="hidden sm:block" />
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 via-teal-200 to-[#00A651]">
+                    Procurement Radar
+                  </span>
+                </h1>
 
-                                    <motion.div 
-                                        initial={{ opacity: 0, scale: 0.9 }} 
-                                        animate={{ opacity: 1, scale: 1 }} 
-                                        transition={{ duration: 0.6, delay: 0.2 }}
-                                        className="w-full lg:w-auto min-w-[300px] bg-white/10 backdrop-blur-xl border border-white/20 p-8 rounded-3xl"
-                                    >
-                                        <h3 className="text-white font-semibold mb-6 text-lg">Market Overview</h3>
-                                        <div className="space-y-6">
-                                            <div>
-                                                <div className="text-sm text-slate-300 mb-1 uppercase tracking-wider font-semibold">Active Opportunities</div>
-                                                <div className="text-4xl font-bold text-white flex items-baseline gap-2">
-                                                    {activeTendersCount} <span className="text-emerald-400 text-lg">Live</span>
-                                                </div>
-                                            </div>
-                                            <div className="h-px bg-white/10 w-full" />
-                                            <div>
-                                                <div className="text-sm text-slate-300 mb-1 uppercase tracking-wider font-semibold">Total Tracked</div>
-                                                <div className="text-2xl font-semibold text-white">
-                                                    {tenders.length}+
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </motion.div>
+                <p className="text-xs sm:text-base text-slate-300 leading-relaxed font-light max-w-2xl">
+                  Track high-value energy tenders, statutory EPC contracts, critical milestone deadlines, and AI-powered executive procurement insights in real-time.
+                </p>
+              </div>
 
-                                </div>
-                            </div>
-
-                            {/* Floating Search Bar overlapping the bottom edge */}
-                            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-full max-w-4xl px-4 z-20">
-                                <div className="bg-white rounded-2xl shadow-[0_20px_40px_-15px_rgba(0,0,0,0.15)] border border-slate-100 p-2 flex items-center">
-                                    <div className="pl-6 pr-4 text-slate-400">
-                                        <Search className="w-6 h-6" />
-                                    </div>
-                                    <input 
-                                        type="text" 
-                                        placeholder="Search by keyword, organization, or location..." 
-                                        value={searchQuery}
-                                        onChange={(e) => setSearchQuery(e.target.value)}
-                                        className="flex-1 bg-transparent py-4 outline-none text-lg text-slate-700 placeholder:text-slate-400"
-                                    />
-                                    <button className="bg-[#00A651] hover:bg-emerald-600 text-white px-8 py-4 rounded-xl font-bold transition-all shadow-md shadow-emerald-500/20 ml-2">
-                                        Search
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                {/* ---------- MAIN CONTENT AREA ---------- */}
-                <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-[1400px] mt-24">
-                    <div className="flex flex-col lg:flex-row gap-8 items-start">
-                        
-                        {/* LEFT SIDEBAR FILTERS */}
-                        <aside className="w-full lg:w-72 shrink-0 bg-white border border-slate-200 rounded-2xl p-6 sticky top-28 shadow-sm">
-                            <div className="flex items-center gap-2 font-bold text-slate-900 text-lg mb-6 pb-4 border-b border-slate-100">
-                                <Filter className="w-5 h-5 text-[#00A651]" /> 
-                                Filter Results
-                            </div>
-
-                            <div className="space-y-8">
-                                <div>
-                                    <h4 className="text-sm font-semibold uppercase tracking-wider text-slate-500 mb-4">Status</h4>
-                                    <div className="space-y-3">
-                                        {["All", "Open", "Closed"].map((status) => (
-                                            <label key={status} className="flex items-center gap-3 cursor-pointer group">
-                                                <div className={`w-5 h-5 rounded-full border flex items-center justify-center transition-colors ${activeFilter === status ? 'border-[#00A651] bg-[#00A651]' : 'border-slate-300 group-hover:border-[#00A651]'}`}>
-                                                    {activeFilter === status && <div className="w-2 h-2 bg-white rounded-full" />}
-                                                </div>
-                                                <span className={`text-sm font-medium ${activeFilter === status ? 'text-slate-900' : 'text-slate-600'}`}>{status} Tenders</span>
-                                            </label>
-                                        ))}
-                                    </div>
-                                </div>
-                                
-                                {/* Placeholder for future filters */}
-                                <div>
-                                    <h4 className="text-sm font-semibold uppercase tracking-wider text-slate-500 mb-4">Sectors</h4>
-                                    <div className="text-sm text-slate-400 italic">Sector filtering coming soon...</div>
-                                </div>
-                            </div>
-                        </aside>
-
-                        {/* RIGHT DATA LIST */}
-                        <div className="flex-1 w-full min-w-0">
-                            
-                            {/* Toolbar */}
-                            <div className="flex items-center justify-between mb-6 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-                                <div className="text-sm font-semibold text-slate-600">
-                                    Showing <span className="text-slate-900 font-bold">{visibleTenders.length}</span> of <span className="text-slate-900 font-bold">{filteredTenders.length}</span> results
-                                </div>
-                                <div className="flex items-center gap-4 text-sm text-slate-600">
-                                    <span className="flex items-center gap-2 cursor-pointer hover:text-slate-900 font-medium">
-                                        Sort by: <span className="text-[#00A651]">Newest First</span> <ChevronDown className="w-4 h-4" />
-                                    </span>
-                                </div>
-                            </div>
-
-                            {/* LIST VIEW */}
-                            <div className="space-y-4">
-                                <AnimatePresence>
-                                    {visibleTenders.length === 0 ? (
-                                        <motion.div 
-                                            initial={{ opacity: 0, scale: 0.95 }}
-                                            animate={{ opacity: 1, scale: 1 }}
-                                            className="bg-white border border-slate-200 border-dashed rounded-2xl p-16 text-center flex flex-col items-center justify-center shadow-sm"
-                                        >
-                                            <div className="w-16 h-16 bg-slate-50 text-slate-400 rounded-full flex items-center justify-center mb-4">
-                                                <Search className="w-8 h-8" />
-                                            </div>
-                                            <h3 className="text-xl font-bold text-slate-900 mb-2">No tenders found</h3>
-                                            <p className="text-slate-500">We couldn't find any opportunities matching your criteria. Try adjusting your search filters.</p>
-                                        </motion.div>
-                                    ) : (
-                                        visibleTenders.map((tender, index) => {
-                                            const isOpen = tender.tenderStatus.toLowerCase().includes('open');
-                                            
-                                            return (
-                                                <motion.div
-                                                    initial={{ opacity: 0, y: 10 }}
-                                                    animate={{ opacity: 1, y: 0 }}
-                                                    transition={{ delay: index * 0.05 }}
-                                                    key={tender.id}
-                                                >
-                                                    <Link href={`/tenders/${tender.slug}`} className="block bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 hover:border-[#00A651]/50 hover:shadow-xl hover:shadow-[#00A651]/5 transition-all duration-300 group relative overflow-hidden">
-                                                        
-                                                        {/* Green hover accent bar */}
-                                                        <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#00A651] scale-y-0 group-hover:scale-y-100 transition-transform origin-top duration-300" />
-                                                        
-                                                        <div className="flex flex-col lg:flex-row gap-6 items-start lg:items-center">
-                                                            
-                                                            {/* Title & Core Details */}
-                                                            <div className="flex-1 min-w-0">
-                                                                <div className="flex flex-wrap items-center gap-3 mb-3">
-                                                                    <span className={`px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider rounded-md border ${isOpen ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-100 text-slate-600 border-slate-200'}`}>
-                                                                        {tender.tenderStatus}
-                                                                    </span>
-                                                                    {tender.sector && (
-                                                                        <span className="text-[11px] font-bold uppercase tracking-wider text-[#00A651]">
-                                                                            {tender.sector}
-                                                                        </span>
-                                                                    )}
-                                                                </div>
-                                                                <h2 className="text-xl sm:text-2xl font-bold text-slate-900 group-hover:text-[#00A651] transition-colors mb-4 line-clamp-2 leading-tight">
-                                                                    {tender.title}
-                                                                </h2>
-                                                                
-                                                                <div className="flex flex-wrap items-center gap-x-6 gap-y-3 text-sm text-slate-600">
-                                                                    {tender.organization && (
-                                                                        <div className="flex items-center gap-2">
-                                                                            <Building2 className="w-4 h-4 text-slate-400" />
-                                                                            <span className="font-medium">{tender.organization}</span>
-                                                                        </div>
-                                                                    )}
-                                                                    {(tender.country || tender.state) && (
-                                                                        <div className="flex items-center gap-2">
-                                                                            <MapPin className="w-4 h-4 text-slate-400" />
-                                                                            <span>{[tender.state, tender.country].filter(Boolean).join(", ")}</span>
-                                                                        </div>
-                                                                    )}
-                                                                    {tender.tenderType && (
-                                                                        <div className="flex items-center gap-2">
-                                                                            <FileText className="w-4 h-4 text-slate-400" />
-                                                                            <span>{tender.tenderType}</span>
-                                                                        </div>
-                                                                    )}
-                                                                </div>
-                                                            </div>
-
-                                                            {/* Right Action / Dates */}
-                                                            <div className="w-full lg:w-64 shrink-0 flex flex-row lg:flex-col items-center lg:items-end justify-between gap-4 p-4 lg:p-0 bg-slate-50 lg:bg-transparent rounded-xl border border-slate-100 lg:border-none">
-                                                                <div className="flex flex-col gap-1 lg:text-right">
-                                                                    <div className="text-[11px] uppercase tracking-wider font-semibold text-slate-400">Deadline</div>
-                                                                    <div className={`font-bold ${isOpen ? 'text-red-600' : 'text-slate-900'}`}>
-                                                                        {tender.deadline || "Not specified"}
-                                                                    </div>
-                                                                </div>
-                                                                <div className="w-px h-8 bg-slate-200 hidden sm:block lg:hidden" />
-                                                                <div className="flex flex-col gap-1 lg:text-right">
-                                                                    <div className="text-[11px] uppercase tracking-wider font-semibold text-slate-400">Published</div>
-                                                                    <div className="font-medium text-slate-700">
-                                                                        {tender.date}
-                                                                    </div>
-                                                                </div>
-                                                                <div className="hidden lg:flex items-center gap-2 mt-4 text-[#00A651] font-bold text-sm opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300">
-                                                                    View Details <ArrowRight className="w-4 h-4" />
-                                                                </div>
-                                                            </div>
-
-                                                        </div>
-                                                    </Link>
-                                                </motion.div>
-                                            );
-                                        })
-                                    )}
-                                </AnimatePresence>
-                            </div>
-
-                            {/* Pagination */}
-                            {visibleCount < filteredTenders.length && (
-                                <div className="mt-12 flex justify-center">
-                                    <button
-                                        type="button"
-                                        onClick={() => setVisibleCount((prev) => prev + 20)}
-                                        className="bg-white border-2 border-[#00A651] text-[#00A651] hover:bg-[#00A651] hover:text-white px-8 py-3 rounded-full font-bold transition-all shadow-sm hover:shadow-lg active:scale-95"
-                                    >
-                                        Load More Tenders
-                                    </button>
-                                </div>
-                            )}
-
-                        </div>
-                    </div>
+              {/* Right KPI Metric Dashboard (Glassmorphic) */}
+              <div className="w-full lg:w-auto min-w-[280px] sm:min-w-[340px] bg-white/10 backdrop-blur-xl border border-white/15 p-4 sm:p-6 rounded-2xl sm:rounded-3xl shadow-2xl space-y-3">
+                <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-emerald-300 border-b border-white/10 pb-3">
+                  <span className="flex items-center gap-1.5">
+                    <Activity className="w-4 h-4 text-emerald-400" /> Live Market Feed
+                  </span>
+                  <span className="text-[10px] text-emerald-400 font-mono flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" /> 24x7 Active
+                  </span>
                 </div>
-            </main>
-        </div>
-    );
+
+                <div className="grid grid-cols-2 gap-2.5 sm:gap-3.5">
+                  <div className="bg-white/5 border border-white/10 rounded-2xl p-3 sm:p-4">
+                    <div className="text-[10px] sm:text-xs text-slate-300 font-medium">Active Opportunities</div>
+                    <div className="text-2xl sm:text-3xl font-bold text-white mt-1 flex items-baseline gap-1.5">
+                      {loading ? "..." : activeCount}
+                      <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">Live</span>
+                    </div>
+                  </div>
+
+                  <div className="bg-white/5 border border-white/10 rounded-2xl p-3 sm:p-4">
+                    <div className="text-[10px] sm:text-xs text-slate-300 font-medium">AI Analyzed</div>
+                    <div className="text-2xl sm:text-3xl font-bold text-emerald-300 mt-1 flex items-baseline gap-1.5">
+                      {loading ? "..." : aiCount}
+                      <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">Ready</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="text-[11px] text-slate-300 flex items-center justify-between pt-2">
+                  <span>Total Database Records:</span>
+                  <span className="font-bold text-white font-mono">{tenders.length} Tenders</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ── 2. 🎛️ CONTROL & FILTER PANEL ── */}
+        <section className="container mx-auto px-3 sm:px-6 lg:px-8 max-w-[1400px] mb-6 sm:mb-8">
+          <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-sm border border-slate-200/90 space-y-4">
+            
+            {/* Top Bar: Search Bar + Status Tabs + Sorting */}
+            <div className="flex flex-col lg:flex-row gap-3 sm:gap-4 items-center justify-between">
+              
+              {/* Search Bar with Clear Button */}
+              <div className="relative w-full lg:max-w-lg">
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Search by tender title, ref number, org, state..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-10 py-2.5 sm:py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all text-slate-800 placeholder:text-slate-400"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery("")}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+
+              {/* Status Segmented Buttons + Sort Dropdown */}
+              <div className="flex flex-wrap items-center gap-2.5 w-full lg:w-auto justify-between lg:justify-end">
+                
+                {/* Status Segmented Control */}
+                <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl flex-1 sm:flex-initial justify-center">
+                  {(["All", "Open", "Closed"] as const).map((status) => (
+                    <button
+                      key={status}
+                      onClick={() => setStatusFilter(status)}
+                      className={`px-3 sm:px-4 py-1.5 sm:py-2 text-xs font-semibold rounded-lg transition-all ${
+                        statusFilter === status
+                          ? "bg-white text-slate-900 shadow-sm"
+                          : "text-slate-600 hover:text-slate-900"
+                      }`}
+                    >
+                      {status === "All" ? "All" : status === "Open" ? "Active" : "Closed"}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Sort By Dropdown */}
+                <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-3 py-2 rounded-xl text-xs font-semibold text-slate-700">
+                  <ArrowUpDown className="w-3.5 h-3.5 text-slate-400" />
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value as any)}
+                    className="bg-transparent focus:outline-none cursor-pointer text-slate-800 font-medium"
+                  >
+                    <option value="newest">Newest Published</option>
+                    <option value="deadline">Closing Soonest</option>
+                    <option value="value">Highest Value</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* Horizontal Sector Scroll with Live Badges */}
+            {availableSectors.length > 1 && (
+              <div className="pt-3 border-t border-slate-100 flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+                <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider shrink-0 mr-1 flex items-center gap-1">
+                  <Layers className="w-3.5 h-3.5" /> Sector:
+                </span>
+                {availableSectors.map((sector) => (
+                  <button
+                    key={sector}
+                    onClick={() => setSelectedSector(sector)}
+                    className={`px-3 py-1.5 text-xs rounded-xl font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 ${
+                      selectedSector === sector
+                        ? "bg-slate-900 text-white shadow-sm"
+                        : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                    }`}
+                  >
+                    <span>{sector}</span>
+                    <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${
+                      selectedSector === sector ? "bg-white/20 text-white" : "bg-slate-200 text-slate-700"
+                    }`}>
+                      {sectorCounts[sector] || 0}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* ── 3. 📦 TENDERS GRID & CARDS ── */}
+        <section className="container mx-auto px-3 sm:px-6 lg:px-8 max-w-[1400px]">
+          
+          {/* Header Count Bar */}
+          <div className="flex items-center justify-between mb-4 sm:mb-6 px-1">
+            <p className="text-xs sm:text-sm text-slate-500 font-medium">
+              Showing <span className="font-bold text-slate-900">{visibleTenders.length}</span> of{" "}
+              <span className="font-bold text-slate-900">{filteredAndSortedTenders.length}</span> Procurement Notices
+            </p>
+            {selectedSector !== "All" && (
+              <button
+                onClick={() => setSelectedSector("All")}
+                className="text-xs text-emerald-600 hover:text-emerald-700 font-semibold flex items-center gap-1"
+              >
+                Clear Sector Filter <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+
+          {loading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className="bg-white rounded-3xl p-6 border border-slate-200/80 space-y-4">
+                  <div className="flex justify-between">
+                    <Skeleton className="h-6 w-24 rounded-lg" />
+                    <Skeleton className="h-6 w-20 rounded-lg" />
+                  </div>
+                  <Skeleton className="h-16 w-full rounded-xl" />
+                  <Skeleton className="h-4 w-3/4 rounded-lg" />
+                  <Skeleton className="h-14 w-full rounded-2xl" />
+                  <div className="pt-4 border-t border-slate-100 flex justify-between">
+                    <Skeleton className="h-9 w-28 rounded-xl" />
+                    <Skeleton className="h-9 w-28 rounded-xl" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : filteredAndSortedTenders.length === 0 ? (
+            <div className="bg-white rounded-3xl p-8 sm:p-16 text-center border border-slate-200 max-w-xl mx-auto my-10 shadow-sm">
+              <AlertCircle className="w-12 h-12 text-slate-400 mx-auto mb-4" />
+              <h3 className="text-lg font-bold text-slate-900 mb-2">No tenders match your active filters</h3>
+              <p className="text-xs sm:text-sm text-slate-500 mb-6 max-w-md mx-auto">
+                We couldn&apos;t find any tenders matching your search query or sector filters.
+              </p>
+              <button
+                onClick={() => {
+                  setSearchQuery("");
+                  setSelectedSector("All");
+                  setStatusFilter("All");
+                }}
+                className="px-6 py-2.5 bg-slate-900 text-white text-xs font-bold rounded-xl hover:bg-slate-800 transition-all shadow-sm"
+              >
+                Reset All Filters
+              </button>
+            </div>
+          ) : (
+            <>
+              {/* 3-Column Responsive Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                <AnimatePresence>
+                  {visibleTenders.map((tender, index) => {
+                    const isOpen = tender.tenderStatus?.toLowerCase().includes("open");
+                    const hasAI = Boolean(tender.aiAnalysis?.summary);
+                    const pdfUrl = tender.pdfPath || tender.pdfUrl;
+
+                    return (
+                      <motion.div
+                        key={tender.id || tender.reference || index}
+                        initial={{ opacity: 0, y: 15 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.25, delay: Math.min(index * 0.02, 0.25) }}
+                        className="group bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-6 border border-slate-200/90 hover:border-emerald-500/50 hover:shadow-xl hover:shadow-emerald-500/5 transition-all flex flex-col justify-between relative overflow-hidden"
+                      >
+                        <div>
+                          
+                          {/* Top Row: Sector Pill & Status & Financial Value */}
+                          <div className="flex items-center justify-between gap-2 mb-3">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-[10px] sm:text-[11px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200/60 truncate max-w-[150px]">
+                                {tender.sector || "Energy"}
+                              </span>
+
+                              <span
+                                className={`px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase flex items-center gap-1 ${
+                                  isOpen
+                                    ? "bg-emerald-500 text-white shadow-sm"
+                                    : "bg-slate-100 text-slate-600"
+                                }`}
+                              >
+                                {isOpen && <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />}
+                                {isOpen ? "Active" : "Closed"}
+                              </span>
+                            </div>
+
+                            {/* Value Tag */}
+                            {tender.tenderValue && tender.tenderValue !== "0.00" && (
+                              <span className="text-[11px] font-bold font-mono text-slate-900 bg-slate-100 px-2.5 py-0.5 rounded-md shrink-0">
+                                ₹ {tender.tenderValue}
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Reference Number */}
+                          {tender.reference && (
+                            <div className="text-[10px] sm:text-[11px] font-mono text-slate-400 mb-1.5 truncate">
+                              Ref: {tender.reference}
+                            </div>
+                          )}
+
+                          {/* Title */}
+                          <Link href={`/tenders/${tender.slug}`} className="block group-hover:text-emerald-600 transition-colors">
+                            <h3 className="font-bold text-slate-900 text-sm sm:text-base leading-snug line-clamp-3 mb-3">
+                              {tender.title}
+                            </h3>
+                          </Link>
+
+                          {/* Authority & Location */}
+                          <div className="space-y-1.5 text-xs text-slate-500 mb-4">
+                            {tender.organization && (
+                              <div className="flex items-start gap-2">
+                                <Building2 className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
+                                <span className="font-semibold text-slate-700 line-clamp-1">{tender.organization}</span>
+                              </div>
+                            )}
+                            {(tender.state || tender.country || tender.location) && (
+                              <div className="flex items-center gap-2">
+                                <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                                <span className="truncate">{[tender.location, tender.state, tender.country].filter(Boolean).join(", ")}</span>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* 📅 Chronological Milestones Timeline Bar */}
+                          <div className="bg-slate-50 border border-slate-200/70 rounded-2xl p-3 mb-4 space-y-1.5">
+                            <div className="flex items-center justify-between text-[10px] sm:text-[11px]">
+                              <span className="text-slate-400 font-medium flex items-center gap-1">
+                                <Calendar className="w-3 h-3 text-slate-400" /> Published:
+                              </span>
+                              <span className="font-semibold text-slate-700">
+                                {tender.publishedDate ? formatContentDate(tender.publishedDate) : "Recent"}
+                              </span>
+                            </div>
+
+                            <div className="flex items-center justify-between text-[10px] sm:text-[11px]">
+                              <span className="text-slate-400 font-medium flex items-center gap-1">
+                                <Clock className="w-3 h-3 text-emerald-600" /> Deadline:
+                              </span>
+                              <span className="font-bold text-emerald-700">
+                                {tender.deadline ? formatContentDate(tender.deadline) : "Check Document"}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* AI Executive Summary Badge if available */}
+                          {hasAI && (
+                            <div className="bg-emerald-50/50 border border-emerald-100 rounded-2xl p-3 mb-4">
+                              <div className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 flex items-center gap-1 mb-1">
+                                <Sparkles className="w-3 h-3 text-emerald-600" /> AI Executive Insight
+                              </div>
+                              <p className="text-[11px] sm:text-xs text-slate-600 line-clamp-2 leading-relaxed">
+                                {tender.aiAnalysis?.summary}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Bottom Row: Actions */}
+                        <div className="pt-3.5 border-t border-slate-100 flex items-center justify-between gap-2">
+                          {pdfUrl ? (
+                            <a
+                              href={pdfUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition-colors"
+                            >
+                              <Download className="w-3.5 h-3.5 text-emerald-600" /> PDF Document
+                            </a>
+                          ) : (
+                            <span className="text-[10px] text-slate-400 font-mono">CPPP Portal</span>
+                          )}
+
+                          <Link
+                            href={`/tenders/${tender.slug}`}
+                            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-900 hover:bg-[#00A651] text-white text-xs font-bold transition-all shadow-sm group-hover:shadow-md"
+                          >
+                            Details <ArrowRight className="w-3.5 h-3.5" />
+                          </Link>
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+                </AnimatePresence>
+              </div>
+
+              {/* Load More Button */}
+              {visibleCount < filteredAndSortedTenders.length && (
+                <div className="text-center mt-10 sm:mt-14">
+                  <button
+                    onClick={() => setVisibleCount((prev) => prev + 24)}
+                    className="w-full sm:w-auto px-8 py-3.5 bg-white border border-slate-200 hover:border-slate-300 text-slate-800 text-xs sm:text-sm font-bold rounded-2xl shadow-sm hover:shadow-md transition-all inline-flex items-center justify-center gap-2"
+                  >
+                    Load More Opportunities <ArrowRight className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+        </section>
+      </main>
+    </div>
+  );
 }

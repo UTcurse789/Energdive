@@ -201,7 +201,7 @@ export default function StepVerify({
                                             )
                                         }
                                         className="flex-1 px-4 py-2 border border-zinc-200 rounded-lg focus:ring-2 focus:ring-[#0AB996] outline-none transition-all"
-                                        placeholder="9876543210"
+                                        placeholder="9000000000"
                                         maxLength={10}
                                         disabled={otpSent}
                                     />

@@ -83,8 +83,21 @@ const nextConfig: NextConfig = {
         ],
       },
       {
-        // All HTML pages: tell CDN/Cloudflare max 60s stale-while-revalidate.
-        source: "/:path*",
+        // ─── CRITICAL: Never cache any /api/* route ───────────────────────────
+        // Without this, Cloudflare caches user-specific API responses and serves
+        // one user's profile/feed/onboarding data to a completely different user.
+        source: "/api/:path*",
+        headers: [
+          { key: "Cache-Control", value: "no-store, no-cache, must-revalidate, private" },
+          { key: "CDN-Cache-Control", value: "no-store" },
+          { key: "Cloudflare-CDN-Cache-Control", value: "no-store" },
+          { key: "Surrogate-Control", value: "no-store" },
+          { key: "Pragma", value: "no-cache" },
+        ],
+      },
+      {
+        // Public HTML pages only (not /api): allow CDN to cache up to 60s
+        source: "/((?!api/).*)",
         missing: [
           { type: "header", key: "x-no-cache-override" },
         ],
@@ -109,9 +122,13 @@ const nextConfig: NextConfig = {
     ];
   },
 
-  // PostHog reverse proxy — routes PostHog requests through Next.js to avoid ad blockers
+  // PostHog & Tender API reverse proxies
   async rewrites() {
     return [
+      {
+        source: "/api/tender-backend/:path*",
+        destination: `${process.env.TENDER_API_INTERNAL_URL || "http://127.0.0.1:8000"}/api/v1/:path*`,
+      },
       {
         source: "/ingest/static/:path*",
         destination: "https://us-assets.i.posthog.com/static/:path*",
@@ -132,6 +149,11 @@ const nextConfig: NextConfig = {
 
   async redirects() {
     return [
+      {
+        source: "/news",
+        destination: "/",
+        permanent: false,
+      },
       {
         source: "/:path*",
         has: [

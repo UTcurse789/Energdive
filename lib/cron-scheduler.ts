@@ -1,5 +1,6 @@
 import { processAbandonedCartDrip, processContentPreferenceDigests, processWeeklyReminders } from "./cron-jobs";
 import { sendDailySignupReport } from "./daily-signup-report";
+import { getBriefingSchedule, getDailyBriefingClock } from "./daily-briefing-rules";
 
 const globalForCron = globalThis as unknown as { isStarted?: boolean };
 
@@ -50,35 +51,34 @@ export function startCronScheduler() {
     // Check every 5 minutes, fire only inside the 5 PM IST window. A failed
     // attempt remains eligible for a retry during that same hour.
     let lastDigestDate = "";
+    let lastWeekendSkipDate = "";
     let isDigestRunning = false;
     const digestCheckIntervalMs = 5 * 60 * 1000;
     const runDailyDigestCheck = async () => {
         if (isDigestRunning) return;
 
         try {
-            // Current time in IST
-            const nowUtc = new Date();
-            const istMs = nowUtc.getTime() + 5.5 * 60 * 60 * 1000;
-            const istDate = new Date(istMs);
-            const istHour = istDate.getUTCHours();
-            const istMinute = istDate.getUTCMinutes();
-            const istDay = istDate.getUTCDay();
-            const todayKey = istDate.toISOString().slice(0, 10); // YYYY-MM-DD
-            const isWeekday = istDay >= 1 && istDay <= 5;
-            // Daily Briefing always starts at 5:00 PM IST.
-            const digestStartMinute = 0;
+            const { hour: istHour, minute: istMinute, dateKey: todayKey, isWeekday } =
+                getDailyBriefingClock(new Date());
+            const [sendHour, digestStartMinute] = getBriefingSchedule().sendTime.split(":").map(Number);
 
             // Saturday and Sunday are a hard stop for scheduled briefings.
             if (!isWeekday) {
+                if (lastWeekendSkipDate !== todayKey) {
+                    console.log(`[CRON-SCHEDULER] Briefing skipped: weekend_Asia_Kolkata (${todayKey})`);
+                    lastWeekendSkipDate = todayKey;
+                }
                 return;
             }
 
             // Only fire between 17:00–17:59 IST, once per day
-            if (istHour === 17 && istMinute >= digestStartMinute && lastDigestDate !== todayKey) {
+            if (istHour === sendHour && istMinute >= digestStartMinute && lastDigestDate !== todayKey) {
                 isDigestRunning = true;
-                console.log(`[CRON-SCHEDULER] Firing daily preference digest at 5:${String(digestStartMinute).padStart(2, "0")} PM IST (${todayKey})...`);
-                await processContentPreferenceDigests();
-                lastDigestDate = todayKey;
+                console.log(`[CRON-SCHEDULER] Firing preference digest at ${getBriefingSchedule().sendTime} IST (${todayKey})...`);
+                const result = await processContentPreferenceDigests();
+                // Definite provider rejections can retry in this window; durable
+                // delivery claims prevent already accepted sends from repeating.
+                if (result.success) lastDigestDate = todayKey;
             }
         } catch (error) {
             console.error("[CRON-SCHEDULER] Preference digest processing failed:", error);
