@@ -111,7 +111,7 @@ export default function OpinionContent({ opinion, recommended = [] }: OpinionCon
             <ArticleStickyShare title={opinion.title} url={`https://www.energdive.com${sectionPath}/${opinion.slug}`} />
             <ScrollProgress />
 
-            <article className="container mx-auto px-4 sm:px-6 lg:px-[29px] max-w-[1152px] pt-[22px] lg:pt-[29px]">
+            <article className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-[1200px] pt-[22px] lg:pt-[29px]">
                 {/* Navigation */}
                 <nav className="flex items-center justify-between mb-[29px] lg:mb-9 border-b border-zinc-100 pb-[22px]">
                     <Link
@@ -136,7 +136,7 @@ export default function OpinionContent({ opinion, recommended = [] }: OpinionCon
                 </nav>
 
                 {/* Hero Section */}
-                <header className="grid grid-cols-1 lg:grid-cols-12 gap-[43px] lg:gap-[72px] mb-[58px] lg:mb-[86px] items-start">
+                <header className="max-w-[1160px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-[43px] lg:gap-[72px] mb-[58px] lg:mb-[86px] items-start">
                     <div className="lg:col-span-7 flex flex-col">
                         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
                             <span className="inline-block px-[11px] py-[4px] border border-zinc-200 text-zinc-500 text-[9px] font-black uppercase tracking-[0.3em] rounded mb-[22px]">
@@ -144,11 +144,11 @@ export default function OpinionContent({ opinion, recommended = [] }: OpinionCon
                             </span>
 
                             {/* Main Heading: Matches Opinion Component Style */}
-                            <h1 className="font-serif text-[27px] md:text-[43px] lg:text-[54px] font-bold leading-[1.15] tracking-tight text-zinc-900 mb-[29px]">
+                            <h1 className="font-serif text-3xl md:text-[2.8125rem] lg:text-[3.1875rem] font-bold leading-[1.15] tracking-tight text-zinc-900 mb-[29px]">
                                 {opinion.title}
                             </h1>
 
-                            <p className="text-[18px] md:text-[22px] text-zinc-500 font-serif italic leading-relaxed border-l-[4px] border-[#00A651] pl-[29px]">
+                            <p className="text-[1.0625rem] md:text-[1.3125rem] text-zinc-500 font-serif italic leading-relaxed border-l-[4px] border-[#00A651] pl-[29px]">
                                 {opinion.excerpt}
                             </p>
 
@@ -192,33 +192,47 @@ export default function OpinionContent({ opinion, recommended = [] }: OpinionCon
                     </div>
                 </header>
 
+                {/* Keep both placements inside the page margins below the side-rail breakpoint. */}
+                <div className="grid min-[1200px]:hidden grid-cols-1 min-[700px]:grid-cols-2 justify-items-center gap-6 min-[700px]:gap-8 max-w-[632px] mx-auto mb-14">
+                    <AdBanner
+                        placement={leftAdPlacement}
+                        sectorSlug={opinion.sectorSlug}
+                        variant="vertical"
+                        showSkeleton={false}
+                        className="w-[300px]"
+                    />
+                    <AdBanner
+                        placement={rightAdPlacement}
+                        sectorSlug={opinion.sectorSlug}
+                        variant="vertical"
+                        showSkeleton={false}
+                        className="w-[300px]"
+                    />
+                </div>
+
                 {/* Content Area */}
                 <div className="relative">
-                    <div className="relative max-w-[648px] mx-auto w-full">
-                        <div className="hidden min-[1280px]:block absolute top-0 bottom-0 right-[calc(100%+1.75rem)] w-[270px]">
-                            <div className="sticky top-24 w-[270px]">
+                    <div className="relative max-w-[640px] min-[1200px]:max-w-[512px] min-[1440px]:max-w-[720px] mx-auto w-full">
+                        <div className="hidden min-[1200px]:block absolute top-0 bottom-0 right-[calc(100%+1.5rem)] min-[1440px]:right-[calc(100%+1.75rem)] w-[300px]">
+                            <div className="sticky top-24 w-[300px]">
                                 <AdBanner
                                     placement={leftAdPlacement}
                                     sectorSlug={opinion.sectorSlug}
                                     variant="vertical"
                                     showSkeleton={false}
-                                    className="w-[270px]"
-                                    width={270}
-                                    height={540}
+                                    className="w-[300px]"
                                 />
                             </div>
                         </div>
 
-                        <div className="hidden min-[1280px]:block absolute top-0 bottom-0 left-[calc(100%+1.75rem)] w-[270px]">
-                            <div className="sticky top-24 w-[270px]">
+                        <div className="hidden min-[1200px]:block absolute top-0 bottom-0 left-[calc(100%+1.5rem)] min-[1440px]:left-[calc(100%+1.75rem)] w-[300px]">
+                            <div className="sticky top-24 w-[300px]">
                                 <AdBanner
                                     placement={rightAdPlacement}
                                     sectorSlug={opinion.sectorSlug}
                                     variant="vertical"
                                     showSkeleton={false}
-                                    className="w-[270px]"
-                                    width={270}
-                                    height={540}
+                                    className="w-[300px]"
                                 />
                             </div>
                         </div>
@@ -330,7 +344,7 @@ export default function OpinionContent({ opinion, recommended = [] }: OpinionCon
 
             {/* Footer Recommended */}
             <footer className="mt-[58px] bg-zinc-50 py-[58px] border-t border-zinc-100">
-                <div className="container mx-auto px-4 max-w-[1152px]">
+                <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-[1200px]">
                     <div className="flex justify-between items-end mb-[58px]">
                         <h4 className="text-[43px] font-black uppercase italic tracking-tighter">{footerTitle}</h4>
                         <Link href={sectionPath} className="text-[9px] font-black uppercase tracking-[0.2em] flex items-center gap-[7px] hover:text-[#00A651]">

@@ -128,6 +128,13 @@ function pickAdsToDisplay(
 ): Ad[] {
     if (ads.length === 0) return [];
 
+    // Carousel placements need the complete eligible set in the client so the
+    // active creative can advance without a page refresh. This intentionally
+    // takes precedence over maxItems (used for static ad slots).
+    if (CAROUSEL_PLACEMENTS.has(placement)) {
+        return ads;
+    }
+
     if (EXACT_LEADERBOARD_PLACEMENTS.has(placement)) {
         return pickRotatingAds(ads, placement, sectorSlug, maxItems ?? 1);
     }
@@ -170,8 +177,11 @@ const EXACT_CARD_SIZE = {
 
 const CAROUSEL_PLACEMENTS = new Set([
     "home_featured_partner",
+    "home_platform_hero",
     "home_opinion",
     "home_interview",
+    "sector_banner",
+    "sector_hero",
 ]);
 
 const AD_CAROUSEL_INTERVAL_MS = 2000;
@@ -205,7 +215,9 @@ export function AdBanner({
                     `&populate=*` +
                     `&sort=priority:desc`;
 
-                const res = await fetch(url);
+                // Ads can be activated or changed during a browsing session.
+                // Do not reuse a cached empty/stale placement response.
+                const res = await fetch(url, { cache: "no-store" });
                 if (!res.ok) {
                     console.error(`[AdBanner] Strapi error: ${res.status}`);
                     return;
