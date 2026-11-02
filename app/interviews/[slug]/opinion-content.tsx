@@ -41,7 +41,7 @@ export default function OpinionContent({ opinion, recommended }: any) {
             <ArticleStickyShare title={opinion.title} url={`https://www.energdive.com/interviews/${opinion.slug}`} />
             <ScrollProgress />
 
-            <article className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl pt-12">
+            <article className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-[1200px] pt-12">
                 {/* Navigation */}
                 <nav className="flex items-center justify-between mb-16 border-b border-zinc-100 pb-6">
                     <Link
@@ -66,7 +66,7 @@ export default function OpinionContent({ opinion, recommended }: any) {
                 </nav>
 
                 {/* Hero Section */}
-                <header className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-20 mb-24 items-start">
+                <header className="max-w-[1160px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-20 mb-24 items-start">
                     <div className="lg:col-span-7 space-y-8">
                         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
                             <span className="inline-block px-3 py-1 border border-zinc-200 text-zinc-500 text-[10px] font-black uppercase tracking-[0.3em] rounded mb-6">
@@ -74,11 +74,11 @@ export default function OpinionContent({ opinion, recommended }: any) {
                             </span>
 
                             {/* Main Heading: Matches Opinion Component Style */}
-                            <h1 className="font-serif text-3xl md:text-5xl lg:text-6xl font-bold leading-[1.15] tracking-tight text-zinc-900 mb-8">
+                            <h1 className="font-serif text-3xl md:text-[2.8125rem] lg:text-[3.1875rem] font-bold leading-[1.15] tracking-tight text-zinc-900 mb-8">
                                 {opinion.title}
                             </h1>
 
-                            <p className="text-xl md:text-2xl text-zinc-500 font-serif italic leading-relaxed border-l-4 border-[#00A651] pl-8">
+                            <p className="text-[1.0625rem] md:text-[1.3125rem] text-zinc-500 font-serif italic leading-relaxed border-l-4 border-[#00A651] pl-8">
                                 {opinion.excerpt}
                             </p>
 
@@ -114,10 +114,29 @@ export default function OpinionContent({ opinion, recommended }: any) {
                     </div>
                 </header>
 
+                {/* On narrower screens, keep both placements inside the page
+                    margins instead of pushing side rails to the browser edges. */}
+                <div className="grid min-[1200px]:hidden grid-cols-1 min-[700px]:grid-cols-2 justify-items-center gap-6 min-[700px]:gap-8 max-w-[632px] mx-auto mb-14">
+                    <AdBanner
+                        placement="interview_left"
+                        sectorSlug={opinion.sectorSlug}
+                        variant="vertical"
+                        showSkeleton={false}
+                        className="w-[300px]"
+                    />
+                    <AdBanner
+                        placement="interview_right"
+                        sectorSlug={opinion.sectorSlug}
+                        variant="vertical"
+                        showSkeleton={false}
+                        className="w-[300px]"
+                    />
+                </div>
+
                 {/* Content Area */}
                 <div className="relative">
-                    <div className="relative max-w-[720px] mx-auto w-full">
-                        <div className="hidden min-[1440px]:block absolute top-0 bottom-0 right-[calc(100%+2rem)] w-[300px]">
+                    <div className="relative max-w-[640px] min-[1200px]:max-w-[512px] min-[1440px]:max-w-[720px] mx-auto w-full">
+                        <div className="hidden min-[1200px]:block absolute top-0 bottom-0 right-[calc(100%+1.5rem)] min-[1440px]:right-[calc(100%+1.75rem)] w-[300px]">
                             <div className="sticky top-24 w-[300px]">
                                 <AdBanner
                                     placement="interview_left"
@@ -129,7 +148,7 @@ export default function OpinionContent({ opinion, recommended }: any) {
                             </div>
                         </div>
 
-                        <div className="hidden min-[1440px]:block absolute top-0 bottom-0 left-[calc(100%+2rem)] w-[300px]">
+                        <div className="hidden min-[1200px]:block absolute top-0 bottom-0 left-[calc(100%+1.5rem)] min-[1440px]:left-[calc(100%+1.75rem)] w-[300px]">
                             <div className="sticky top-24 w-[300px]">
                                 <AdBanner
                                     placement="interview_right"
@@ -244,11 +263,12 @@ export default function OpinionContent({ opinion, recommended }: any) {
                         </div> */}
                     </div>
                 </div>
+
             </article>
 
             {/* Footer Recommended */}
             <footer className="mt-16 bg-zinc-50 py-16 border-t border-zinc-100">
-                <div className="container mx-auto px-4 max-w-7xl">
+                <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-[1200px]">
                     <div className="flex justify-between items-end mb-16">
                         <h4 className="text-5xl font-black uppercase italic tracking-tighter">More Interviews.</h4>
                         <Link href="/interviews" className="text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2 hover:text-[#00A651]">
