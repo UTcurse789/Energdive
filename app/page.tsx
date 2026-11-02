@@ -144,7 +144,7 @@ function FeaturedVideosSidebar({ videos }: { videos: VideoItem[] }) {
       </div>
 
       <div className="flex flex-col gap-3">
-        {videos.slice(0, 2).map((video) => (
+        {videos.slice(0, 3).map((video) => (
           <Link
             key={video.id}
             href={`/videos/${video.slug}`}
@@ -369,8 +369,10 @@ async function HomeDeferredContent({ latestNews }: { latestNews: any[] }) {
       {/* Featured Section */}
       <FeaturedSection articles={finalBentoItems} partnerAds={featuredPartnerAds} />
 
-      {/* Latest News Section (full-width detailed view of hero section's top 5 news) */}
-      <LatestNewsSection news={latestNews.slice(0, 7)} />
+      {/* Latest News stays available on larger screens; mobile continues from Featured to Energbits. */}
+      <div className="hidden lg:block">
+        <LatestNewsSection news={latestNews.slice(0, 7)} />
+      </div>
 
       <EnergbitsSection news={latestNews.slice(7, 15)} />
 
@@ -396,6 +398,12 @@ async function HomeDeferredContent({ latestNews }: { latestNews: any[] }) {
                   articles={latestIssue.articles}
                 />
               )}
+
+              {/* On mobile, surface these before the sector feeds that follow the interview area. */}
+              <div className="lg:hidden space-y-5">
+                <FeaturedVideosSidebar videos={videos} />
+                <EventsSection variant="sidebar" />
+              </div>
 
               {/* Sector Intelligence Hubs */}
               <div>
@@ -469,11 +477,15 @@ async function HomeDeferredContent({ latestNews }: { latestNews: any[] }) {
                 </Link>
               </div>
 
-              {/* Featured Videos */}
-              <FeaturedVideosSidebar videos={videos} />
+              {/* Featured Videos — desktop right rail */}
+              <div className="hidden lg:block">
+                <FeaturedVideosSidebar videos={videos} />
+              </div>
 
-              {/* Upcoming Events */}
-              <EventsSection variant="sidebar" />
+              {/* Upcoming Events — desktop right rail */}
+              <div className="hidden lg:block">
+                <EventsSection variant="sidebar" />
+              </div>
             </aside>
           </div>
         </div>
