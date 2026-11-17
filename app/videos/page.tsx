@@ -3,11 +3,12 @@
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Play, Filter } from "lucide-react";
+import { ChevronLeft, ChevronRight, Play } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Header } from "@/components/layout/header";
 import { strapiImageUrl } from "@/lib/strapi-image";
-import { AdBanner } from "@/components/ads/AdBanner";
+
+const VIDEOS_PER_PAGE = 20;
 
 // --- Types for our mapped data ---
 interface Video {
@@ -25,34 +26,68 @@ interface Video {
     };
 }
 
+interface StrapiVideo {
+    id: number;
+    title: string;
+    slug: string;
+    Excerpt?: string;
+    youtubeId?: string;
+    thumbnail?: { url?: string | null } | null;
+    sectors?: Array<{ name?: string | null }> | null;
+    author?: {
+        name?: string | null;
+        avatar?: { url?: string | null } | null;
+    } | null;
+}
+
+function getVisiblePageNumbers(currentPage: number, totalPages: number): Array<number | "ellipsis"> {
+    if (totalPages <= 7) {
+        return Array.from({ length: totalPages }, (_, index) => index + 1);
+    }
+
+    if (currentPage <= 4) {
+        return [1, 2, 3, 4, 5, "ellipsis", totalPages];
+    }
+
+    if (currentPage >= totalPages - 3) {
+        return [1, "ellipsis", totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+    }
+
+    return [1, "ellipsis", currentPage - 1, currentPage, currentPage + 1, "ellipsis", totalPages];
+}
+
 export default function VideosPage() {
     const router = useRouter();
     const [videos, setVideos] = useState<Video[]>([]);
     const [loading, setLoading] = useState(true);
     const [activeCategory, setActiveCategory] = useState("All");
+    const [currentPage, setCurrentPage] = useState(1);
 
     useEffect(() => {
         async function getVideos() {
             try {
                 // We populate author and sectors to get names and images
                 const baseUrl = process.env.NEXT_PUBLIC_STRAPI_URL || "https://cms.energdive.com";
-                let allData: any[] = [];
+                let allData: StrapiVideo[] = [];
                 let page = 1;
                 let pageCount = 1;
 
                 do {
                     const response = await fetch(
-                        `${baseUrl}/api/videos?populate[0]=thumbnail&populate[1]=author.avatar&populate[2]=sectors&sort=publishedAt:desc&pagination[page]=${page}&pagination[pageSize]=100`
+                        `${baseUrl}/api/videos?populate[0]=thumbnail&populate[1]=author.avatar&populate[2]=sectors&sort=publishedAt:desc&pagination[page]=${page}&pagination[pageSize]=${VIDEOS_PER_PAGE}`
                     );
+                    if (!response.ok) {
+                        throw new Error(`Strapi returned ${response.status}`);
+                    }
                     const json = await response.json();
                     if (Array.isArray(json?.data)) {
-                        allData = allData.concat(json.data);
+                        allData = allData.concat(json.data as StrapiVideo[]);
                     }
                     pageCount = json?.meta?.pagination?.pageCount || 1;
                     page++;
                 } while (page <= pageCount);
 
-                const mappedData: Video[] = allData.map((item: any) => {
+                const mappedData: Video[] = allData.map((item) => {
                     // Fallback: If Strapi thumbnail is null, use YouTube's image service
                     const thumbUrl = item.thumbnail?.url
                         ? strapiImageUrl(item.thumbnail.url)
@@ -97,6 +132,17 @@ export default function VideosPage() {
     const filteredVideos = activeCategory === "All"
         ? videos
         : videos.filter((v) => v.category === activeCategory);
+    const totalPages = Math.max(1, Math.ceil(filteredVideos.length / VIDEOS_PER_PAGE));
+    const displayedVideos = filteredVideos.slice(
+        (currentPage - 1) * VIDEOS_PER_PAGE,
+        currentPage * VIDEOS_PER_PAGE
+    );
+    const visiblePageNumbers = getVisiblePageNumbers(currentPage, totalPages);
+
+    const selectCategory = (category: string) => {
+        setActiveCategory(category);
+        setCurrentPage(1);
+    };
 
     if (loading) {
         return (
@@ -164,7 +210,7 @@ export default function VideosPage() {
                         {categories.map((cat) => (
                             <button
                                 key={cat}
-                                onClick={() => setActiveCategory(cat)}
+                                onClick={() => selectCategory(cat)}
                                 className={`shrink-0 whitespace-nowrap rounded-lg px-4 py-1.5 text-sm font-medium transition-all ${
                                     activeCategory === cat
                                         ? "bg-black text-white"
@@ -183,7 +229,7 @@ export default function VideosPage() {
 
                 {/* Video Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-10 gap-y-14">
-                    {filteredVideos.map((video) => (
+                    {displayedVideos.map((video) => (
                         <div key={video.id} onClick={() => router.push(`/videos/${video.slug}`)} className="group block cursor-pointer">
                             <div className="flex flex-col h-full bg-transparent">
                                 <div className="relative aspect-video overflow-hidden rounded-xl mb-3">
@@ -222,6 +268,51 @@ export default function VideosPage() {
                     <div className="text-center py-32">
                         <p className="text-gray-500 text-lg">No videos found for this category.</p>
                     </div>
+                )}
+
+                {filteredVideos.length > VIDEOS_PER_PAGE && (
+                    <nav
+                        className="mt-14 flex items-center justify-center gap-3"
+                        aria-label="Video pagination"
+                    >
+                        <button
+                            type="button"
+                            onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+                            disabled={currentPage === 1}
+                            className="inline-flex items-center gap-1 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40"
+                        >
+                            <ChevronLeft size={16} />
+                            Previous
+                        </button>
+                        <div className="flex items-center gap-1" aria-label={`Page ${currentPage} of ${totalPages}`}>
+                            {visiblePageNumbers.map((page, index) => page === "ellipsis" ? (
+                                <span key={`ellipsis-${index}`} className="px-1 text-sm text-gray-500" aria-hidden="true">…</span>
+                            ) : (
+                                <button
+                                    key={page}
+                                    type="button"
+                                    onClick={() => setCurrentPage(page)}
+                                    aria-current={currentPage === page ? "page" : undefined}
+                                    className={`h-9 min-w-9 rounded-lg px-3 text-sm font-medium transition-colors ${
+                                        currentPage === page
+                                            ? "bg-black text-white"
+                                            : "text-gray-700 hover:bg-gray-100"
+                                    }`}
+                                >
+                                    {page}
+                                </button>
+                            ))}
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+                            disabled={currentPage === totalPages}
+                            className="inline-flex items-center gap-1 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40"
+                        >
+                            Next
+                            <ChevronRight size={16} />
+                        </button>
+                    </nav>
                 )}
             </div>
         </main>
