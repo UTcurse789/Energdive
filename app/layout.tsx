@@ -57,6 +57,7 @@ import { PostHogIdentify } from "@/components/PostHogIdentify";
 import { AuthModalProvider } from "@/hooks/use-auth-modal";
 import { ScrollToTop } from "@/components/scroll-to-top";
 import { ORGANIZATION_SCHEMA } from "@/lib/organization-schema";
+import Script from "next/script";
 
 // export const metadata: Metadata = {
 //   title: {
@@ -105,6 +106,11 @@ export default function RootLayout({
         />
       </head>
       <body className="antialiased font-sans" suppressHydrationWarning>
+        <Script
+          id="google-preferred-sources"
+          src="https://news.google.com/swg/js/v1/publisher.js"
+          strategy="afterInteractive"
+        />
         <ClerkProvider
           signInUrl="/auth"
           signUpUrl="/auth"
