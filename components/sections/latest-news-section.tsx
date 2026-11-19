@@ -7,6 +7,7 @@ import { strapiMediaUrl } from "@/lib/strapi-image";
 import { buildContentUrl } from "@/lib/content-routes";
 import { formatContentDate } from "@/lib/date";
 import { DeferredAdBanner } from "@/components/ads/deferred-ad-banner";
+import { PreferredSourceButton } from "@/src/components/PreferredSourceButton";
 
 interface NewsItem {
   id: number | string;
@@ -143,6 +144,18 @@ export function LatestNewsSection({ news }: LatestNewsSectionProps) {
             Explore All News
             <ArrowRight className="w-3.5 h-3.5 transition-transform duration-300 group-hover:translate-x-1" />
           </Link>
+        </div>
+
+        <div className="mb-8 rounded-xl border border-emerald-100 bg-white px-5 py-4 shadow-2xs sm:flex sm:items-center sm:justify-between sm:gap-6">
+          <div>
+            <h3 className="text-base font-bold text-slate-900">
+              Follow ENERGDIVE on Google
+            </h3>
+            <p className="mt-1 max-w-2xl text-sm leading-relaxed text-slate-600">
+              Add ENERGDIVE to your preferred sources on Google and discover more energy industry news and insights.
+            </p>
+          </div>
+          <PreferredSourceButton className="mt-4 shrink-0 sm:mt-0" />
         </div>
 
         {/* Top Row: 3 News Cards + 1 new_sidebar Ad Card */}

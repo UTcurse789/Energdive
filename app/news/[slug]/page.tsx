@@ -24,6 +24,7 @@ import { StickySidebar } from "@/components/ui/StickySidebar";
 import type { Metadata } from "next";
 import { strapiImageUrl } from "@/lib/strapi-image";
 import { getCanonicalUrl } from "@/lib/seo";
+import { PreferredSourceButton } from "@/src/components/PreferredSourceButton";
 
 const STRAPI_BASE_URL = "https://cms.energdive.com";
 
@@ -310,6 +311,7 @@ export default async function NewsDetailPage({
                                     {sectorName}
                                 </Link>
                             )}
+                            <PreferredSourceButton />
                         </div>
 
                         {/* Title */}

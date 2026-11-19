@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { strapiImageUrl } from "@/lib/strapi-image";
 import { buildContentUrl } from "@/lib/content-routes";
 import { formatContentDate } from "@/lib/date";
+import { PreferredSourceButton } from "@/src/components/PreferredSourceButton";
 
 const STRAPI_BASE = "https://cms.energdive.com";
 
@@ -358,6 +359,7 @@ export function Hero({ heroStories: propHeroStories, topStories: propTopStories 
                                 EXPLORE <ArrowRight size={14} className="stroke-[2.5]" />
                             </Link>
                         </div>
+                        <PreferredSourceButton className="mb-5" />
                         
                         <div className="flex flex-col gap-6">
                             {topStories.slice(0, 5).map((item) => {

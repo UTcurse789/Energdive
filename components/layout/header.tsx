@@ -499,6 +499,7 @@ export function Header() {
                         <div className="relative flex items-center gap-x-3 md:gap-x-5 xl:gap-x-7 flex-1 justify-end">
                             <nav className="hidden sm:flex items-center gap-x-3 md:gap-x-5 xl:gap-x-7">
                                 <Link href="/energclub" target="_blank" className="text-[12px] xl:text-[13px] font-bold uppercase tracking-[1px] hover:opacity-70 whitespace-nowrap" onClick={closeMenus}>ENERGCLUB</Link>
+                                {/* <Link href="/energdive-events" className="text-[12px] xl:text-[13px] font-bold uppercase tracking-[1px] hover:opacity-70 whitespace-nowrap" onClick={closeMenus}>ENERGDIVE EVENTS</Link> */}
                                 
                                 {/* <Link href="/marketplace" className="text-[12px] xl:text-[13px] font-bold uppercase tracking-[1px] hover:opacity-70 whitespace-nowrap" onClick={closeMenus}>MARKETPLACE</Link> */}
 
@@ -1523,6 +1524,9 @@ export function Header() {
                                     </Link> */}
                                     <Link href="/energclub" onClick={closeAll} className="px-6 py-4 text-[13px] font-bold uppercase tracking-[1px] hover:bg-gray-50 transition-colors block">
                                         ENERGCLUB
+                                    </Link>
+                                    <Link href="/energdive-events" onClick={closeAll} className="px-6 py-4 text-[13px] font-bold uppercase tracking-[1px] hover:bg-gray-50 transition-colors block">
+                                        ENERGDIVE EVENTS
                                     </Link>
                                     <div className="border-t border-gray-100 mt-2">
                                         <button 
