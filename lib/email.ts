@@ -6,7 +6,6 @@
  */
 
 const BREVO_API_KEY = process.env.BREVO_API_KEY || "";
-const BREVO_API_URL = "https://api.brevo.com/v3/smtp/email";
 const FROM_EMAIL = process.env.FROM_EMAIL || "no-reply@info.energdive.com";
 const FROM_NAME = process.env.FROM_NAME || "ENERGDIVE";
 const DIGEST_FROM_EMAIL =
@@ -18,6 +17,7 @@ import { generateMembershipCardPdf } from "./membership-pdf";
 import { getAdvertisements, getAdImageUrl } from "./api/getAdvertisements";
 import { normalizeBriefingFirstName } from "./daily-briefing-rules";
 import { consumeBriefingPermit } from "./briefing-dispatch-permit";
+import { emailService } from "./email/index";
 
 interface SendEmailOptions {
     to: string;
@@ -202,35 +202,14 @@ export async function sendEmail(options: SendEmailOptions): Promise<void> {
         return;
     }
 
-    const body: Record<string, unknown> = {
+    const result = await emailService.send({
         sender: options.sender || { name: FROM_NAME, email: FROM_EMAIL },
         to: [{ email: options.to, name: options.toName || options.to }],
         subject: options.subject,
         htmlContent: options.htmlContent,
-    };
-    if (options.attachment && options.attachment.length > 0) {
-        body.attachment = options.attachment;
-    }
-    if (options.tags && options.tags.length > 0) {
-        body.tags = options.tags;
-    }
-
-    const res = await fetch(BREVO_API_URL, {
-        method: "POST",
-        headers: {
-            "api-key": BREVO_API_KEY,
-            "Content-Type": "application/json",
-            Accept: "application/json",
-        },
-        body: JSON.stringify(body),
+        attachments: options.attachment,
+        tags: options.tags,
     });
-
-    if (!res.ok) {
-        const errorText = await res.text();
-        throw new Error(`Brevo API ${res.status}: ${errorText}`);
-    }
-
-    const result = (await res.json()) as { messageId?: string };
     console.log(
         `[EMAIL] Sent "${options.subject}" to ${options.to}${result.messageId ? ` (${result.messageId})` : ""
         }`
