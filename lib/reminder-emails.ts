@@ -5,8 +5,9 @@
  * Sends up to 4 total reminder emails, then stops permanently unless data is reset manually.
  */
 
+import { emailService } from "@/lib/email/index";
+
 const BREVO_API_KEY = process.env.BREVO_API_KEY || "";
-const BREVO_API_URL = "https://api.brevo.com/v3/smtp/email";
 const FROM_EMAIL = process.env.FROM_EMAIL || "no-reply@info.energdive.com";
 const FROM_NAME = process.env.FROM_NAME || "ENERGDIVE";
 const REMINDER_TIME_ZONE = "Asia/Kolkata";
@@ -249,27 +250,13 @@ export async function sendReminderEmail(params: ReminderEmailParams): Promise<bo
     const bodyContent = TEMPLATES[num](params.firstName, params.magicLink, params.declineLink);
     const htmlContent = emailWrapper(subject, bodyContent, params.to);
 
-    const body = {
+    await emailService.send({
         sender: { name: FROM_NAME, email: FROM_EMAIL },
         to: [{ email: params.to, name: params.firstName || params.to }],
         subject,
         htmlContent,
-    };
-
-    const res = await fetch(BREVO_API_URL, {
-        method: "POST",
-        headers: {
-            "api-key": BREVO_API_KEY,
-            "Content-Type": "application/json",
-            Accept: "application/json",
-        },
-        body: JSON.stringify(body),
+        successResponseMode: "accept-any-success",
     });
-
-    if (!res.ok) {
-        const errorText = await res.text();
-        throw new Error(`Brevo API ${res.status}: ${errorText}`);
-    }
 
     console.log(`[REMINDER] Sent reminder #${num} to ${params.to}`);
     return true;

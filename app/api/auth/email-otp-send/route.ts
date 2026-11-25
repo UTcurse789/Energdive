@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { generateOtp, setOtp } from "@/lib/otp-store";
+import { emailService } from "@/lib/email/index";
 
 const BREVO_API_KEY = process.env.BREVO_API_KEY || "";
-const BREVO_API_URL = "https://api.brevo.com/v3/smtp/email";
 const FROM_EMAIL = process.env.FROM_EMAIL || "no-reply@info.energdive.com";
 const FROM_NAME = process.env.FROM_NAME || "ENERGDIVE";
 
@@ -115,24 +115,21 @@ export async function POST(req: Request) {
 </body>
 </html>`;
 
-        const res = await fetch(BREVO_API_URL, {
-            method: "POST",
-            headers: {
-                "api-key": BREVO_API_KEY,
-                "Content-Type": "application/json",
-                Accept: "application/json",
-            },
-            body: JSON.stringify({
+        try {
+            await emailService.send({
                 sender: { name: FROM_NAME, email: FROM_EMAIL },
                 to: [{ email: normalizedEmail }],
                 subject: `${otp} — Your EnergDive Verification Code`,
                 htmlContent,
-            }),
-        });
+                recipientNamePolicy: "omit-when-absent",
+                successResponseMode: "accept-any-success",
+            });
+        } catch (emailError: unknown) {
+            const message = emailError instanceof Error ? emailError.message : String(emailError);
+            const brevoError = /^Brevo API (\d+):\s?([\s\S]*)$/.exec(message);
+            if (!brevoError) throw emailError;
 
-        if (!res.ok) {
-            const errorText = await res.text();
-            console.error(`[EMAIL_OTP] Brevo error: ${res.status} ${errorText}`);
+            console.error(`[EMAIL_OTP] Brevo error: ${brevoError[1]} ${brevoError[2]}`);
             return NextResponse.json(
                 { error: "Failed to send verification email" },
                 { status: 500 }

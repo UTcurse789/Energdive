@@ -16,6 +16,15 @@ export type HostedTemplate = {
 };
 
 /**
+ * Controls whether unnamed recipients receive the legacy email-address name
+ * fallback, or omit the name field entirely.
+ */
+export type RecipientNamePolicy = "default" | "omit-when-absent";
+
+/** Controls parsing requirements for successful provider responses. */
+export type SuccessResponseMode = "json" | "accept-any-success";
+
+/**
  * Provider-neutral outbound transactional message.
  *
  * A message supplies either htmlContent/subject or a provider-hosted template.
@@ -28,6 +37,8 @@ export type EmailMessage = {
     attachments?: EmailAttachment[];
     tags?: string[];
     template?: HostedTemplate;
+    recipientNamePolicy?: RecipientNamePolicy;
+    successResponseMode?: SuccessResponseMode;
 };
 
 export type EmailSendResult = {
